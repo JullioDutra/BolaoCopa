@@ -1,5 +1,6 @@
 from django.contrib import admin
-from .models import Carteira, Transacao, Saque
+from .models import Saque
+from accounts.models import Carteira, Transacao
 
 @admin.register(Saque)
 class SaqueAdmin(admin.ModelAdmin):

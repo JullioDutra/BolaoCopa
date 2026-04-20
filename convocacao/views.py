@@ -20,6 +20,12 @@ def montar_selecao(request):
     data_limite = timezone.make_aware(datetime.datetime(ano_atual, 5, 17, 23, 59, 59))
     prazo_encerrado = timezone.now() > data_limite
     
+    # --- A GRANDE SACADA: Usar o histórico financeiro em vez da coluna ausente ---
+    pagou_convocacao = Transacao.objects.filter(
+        carteira=request.user.carteira, 
+        descricao="Convocação Valendo Prêmio"
+    ).exists()
+    
     if request.method == 'POST':
         if prazo_encerrado:
             messages.error(request, "O prazo para convocações encerrou no dia 17 de Maio!")
@@ -31,7 +37,8 @@ def montar_selecao(request):
         if form.is_valid():
             nova_convocacao = form.save(commit=False)
             
-            if tipo_aposta == 'pago' and convocacao.modalidade != 'pago':
+            # Se ele quer pagar AGORA, e AINDA NÃO PAGOU no passado
+            if tipo_aposta == 'pago' and not pagou_convocacao:
                 custo = Decimal('10.00')
                 if request.user.carteira.saldo < custo:
                     messages.error(request, "Saldo insuficiente para o Modo Pago! Deposite R$10 ou salve como Resenha.")
@@ -44,13 +51,11 @@ def montar_selecao(request):
                         carteira=request.user.carteira, tipo='aposta', valor=custo,
                         descricao="Convocação Valendo Prêmio"
                     )
-                    nova_convocacao.modalidade = 'pago'
                     nova_convocacao.save()
                     form.save_m2m()
                 messages.success(request, "Convocação confirmada Valendo Prêmio! R$ 10,00 descontados.")
             else:
-                if convocacao.modalidade != 'pago':
-                    nova_convocacao.modalidade = 'resenha'
+                # Se for resenha OU se ele já pagou antes, apenas salva a lista
                 nova_convocacao.save()
                 form.save_m2m()
                 messages.success(request, "Convocação salva com sucesso!")
@@ -61,7 +66,7 @@ def montar_selecao(request):
     else:
         form = ConvocacaoForm(instance=convocacao)
 
-    # 3. CONVERSÃO FORÇADA PARA LISTAS (Evita o erro de boolean no template)
+    # 3. CONVERSÃO FORÇADA PARA LISTAS (Sua lógica perfeita de posições)
     jogadores_por_posicao = {
         'Goleiros': list(Jogador.objects.filter(posicao='Goleiro')),
         'Laterais': list(Jogador.objects.filter(posicao='Lateral')),
@@ -70,7 +75,7 @@ def montar_selecao(request):
         'Atacantes': list(Jogador.objects.filter(posicao='Atacante')),
     }
     
-    # Força a extração de IDs a ser uma lista de números, nunca um bool vazio
+    # Força a extração de IDs a ser uma lista de números
     convocados_lista = list(convocacao.jogadores.values_list('id', flat=True))
 
     return render(request, 'convocacao/montar_selecao.html', {
@@ -79,7 +84,6 @@ def montar_selecao(request):
         'convocados_ids': convocados_lista,
         'prazo_encerrado': prazo_encerrado
     })
-
 
 @acesso_liberado_required
 def ranking_convocacao(request):

@@ -1,19 +1,27 @@
 from django.contrib import admin
-from .models import Saque
-from accounts.models import Carteira
-from accounts.models import Transacao
-
+from .models import Carteira, Transacao, Saque
 
 @admin.register(Saque)
 class SaqueAdmin(admin.ModelAdmin):
-    # O que vai aparecer na tabela para você ler rápido
-    list_display = ('usuario', 'valor', 'chave_pix', 'data_solicitacao', 'aprovado')
+    # Mostra essas colunas na tela principal
+    list_display = ('usuario', 'valor', 'chave_pix', 'aprovado')
     
-    # Filtro lateral para você ver só quem tá "Pendente"
-    list_filter = ('aprovado', 'data_solicitacao')
+    # Cria um filtro lateral para você ver só os "Pendentes"
+    list_filter = ('aprovado',)
+    
+    # A MÁGICA: Permite você marcar o check de "aprovado" direto na lista, sem precisar abrir o saque
+    list_editable = ('aprovado',)
     
     # Barra de pesquisa
-    search_fields = ('usuario__username', 'usuario__email', 'chave_pix')
-    
-    # O Pulo do Gato: Permite você clicar no botão de "Aprovado" direto na lista, sem precisar abrir o pedido!
-    list_editable = ('aprovado',)
+    search_fields = ('usuario__first_name', 'usuario__username', 'chave_pix')
+
+@admin.register(Carteira)
+class CarteiraAdmin(admin.ModelAdmin):
+    list_display = ('usuario', 'saldo')
+    search_fields = ('usuario__username',)
+
+@admin.register(Transacao)
+class TransacaoAdmin(admin.ModelAdmin):
+    list_display = ('carteira', 'tipo', 'valor', 'descricao')
+    list_filter = ('tipo',)
+    search_fields = ('carteira__usuario__username',)

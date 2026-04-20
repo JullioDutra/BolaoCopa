@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Saque
+from .models import Saque, Deposito
 from accounts.models import Carteira, Transacao
 
 @admin.register(Saque)
@@ -26,3 +26,12 @@ class TransacaoAdmin(admin.ModelAdmin):
     list_display = ('carteira', 'tipo', 'valor', 'descricao')
     list_filter = ('tipo',)
     search_fields = ('carteira__usuario__username',)
+
+
+
+@admin.register(Deposito)
+class DepositoAdmin(admin.ModelAdmin):
+    list_display = ('usuario', 'valor', 'data_solicitacao', 'aprovado')
+    list_filter = ('aprovado',)
+    list_editable = ('aprovado',) # Botão de aprovação rápida
+    search_fields = ('usuario__username', 'usuario__first_name')

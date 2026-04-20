@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}Sacar - Cartolândia{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-6 card card-clean p-4 shadow-sm border-0 rounded-4">
+        <div class="text-center mb-4">
+            <i class="fa-solid fa-money-bill-transfer text-danger mb-3" style="font-size: 3rem;"></i>
+            <h3 class="fw-bold text-danger">Solicitar Saque</h3>
+            <p class="text-muted mb-0">Saldo Disponível: <strong class="text-success fs-5">R$ {{ user.carteira.saldo }}</strong></p>
+        </div>
+        
+        <form method="POST">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label class="form-label fw-bold">Valor a retirar (R$)</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white fw-bold">R$</span>
+                    <input type="number" step="0.01" min="10" max="{{ user.carteira.saldo }}" class="form-control fw-bold text-danger" name="valor" required>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label fw-bold">Sua Chave Pix</label>
+                <input type="text" class="form-control" name="chave_pix" placeholder="CPF, E-mail, Celular ou Aleatória" required>
+            </div>
+
+            <div class="mb-4 p-3 bg-light rounded-3 border border-warning">
+                <label class="form-label fw-bold text-dark"><i class="fa-solid fa-shield-halved text-warning"></i> Confirme sua senha para validar</label>
+                <input type="password" class="form-control border-warning" name="senha_confirmacao" placeholder="Digite a senha de login" required>
+                <small class="text-muted mt-1 d-block">Medida de segurança para evitar saques não autorizados.</small>
+            </div>
+
+            <button type="submit" class="btn btn-danger w-100 fw-bold btn-lg">Solicitar Transferência</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

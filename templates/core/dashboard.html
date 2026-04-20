@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+
+{% block title %}Painel - Cartolândia{% endblock %}
+
+{% block content %}
+<div class="alert shadow-sm border-0 mb-4 d-flex flex-column flex-md-row justify-content-between align-items-center" 
+     style="background-color: #f1f8e9; border-left: 5px solid var(--verde-escuro) !important;">
+    <div class="mb-3 mb-md-0">
+        <h5 class="mb-1 fw-bold" style="color: var(--verde-escuro);">
+            <i class="fa-solid fa-wallet me-2"></i>Saldo: R$ {{ user.carteira.saldo|default:"0,00" }}
+        </h5>
+        <a href="{% url 'pagamentos:extrato' %}" class="text-decoration-none small fw-bold text-muted">
+            <i class="fa-solid fa-list-ul"></i> Ver Extrato Completo
+        </a>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'pagamentos:solicitar_saque' %}" class="btn btn-outline-danger btn-sm fw-bold px-3">
+            <i class="fa-solid fa-money-bill-transfer"></i> Sacar
+        </a>
+        <a href="{% url 'pagamentos:solicitar_deposito' %}" class="btn btn-success btn-sm fw-bold px-4">
+            <i class="fa-solid fa-plus"></i> Adicionar Saldo
+        </a>
+    </div>
+</div>
+
+<div class="row mb-4 g-3">
+    <div class="col-md-6">
+        <div class="card bg-dark text-white text-center p-3 shadow-sm border-0 rounded-4 h-100" 
+             style="background: linear-gradient(45deg, #1b5e20, #2e7d32);">
+            <h6 class="fw-bold text-warning small mb-2">
+                <i class="fa-solid fa-lock me-1"></i> MERCADO DE CONVOCAÇÃO FECHA EM:
+            </h6>
+            <div id="timer-convocacao" class="fs-4 fw-bold font-monospace">--:--:--:--</div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card bg-dark text-white text-center p-3 shadow-sm border-0 rounded-4 h-100" 
+             style="background: linear-gradient(45deg, #0d47a1, #1565c0);">
+            {% if proximo_jogo %}
+                <h6 class="fw-bold text-info small mb-2">
+                    <i class="fa-solid fa-stopwatch me-1"></i> PALPITES ({{ proximo_jogo.time_casa }} x {{ proximo_jogo.time_fora }}) ENCERRAM EM:
+                </h6>
+                <div id="timer-jogo" class="fs-4 fw-bold font-monospace" 
+                     data-limite="{{ proximo_jogo.data_hora|date:'c' }}">--:--:--:--</div>
+            {% else %}
+                <h6 class="fw-bold text-info small mb-2">PRÓXIMO JOGO</h6>
+                <div class="fs-6 mt-1">Nenhum jogo agendado no momento.</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <h3 class="fw-bold" style="color: var(--verde-escuro);">Olá, {{ user.first_name|default:user.username }}!</h3>
+        <p class="text-muted">Acompanhe seu desempenho e gerencie seus palpites.</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4 mb-4">
+        <div class="card card-clean h-100 text-center p-4 shadow-sm border-0">
+            <div class="card-body d-flex flex-column">
+                <div class="mb-3">
+                    <i class="fa-solid fa-clipboard-list text-success" style="font-size: 3rem;"></i>
+                </div>
+                <h4 class="fw-bold">Convocação</h4>
+                <p class="text-muted small">Escale seus 26 jogadores. Edição livre até 17/05.</p>
+                <div class="mt-auto">
+                    <a href="{% url 'convocacao:montar_selecao' %}" class="btn btn-principal w-100 fw-bold">Escalar Seleção</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4 mb-4">
+        <div class="card card-clean h-100 text-center p-4 shadow-sm border-0">
+            <div class="card-body d-flex flex-column">
+                <div class="mb-3">
+                    <i class="fa-regular fa-futbol text-success" style="font-size: 3rem;"></i>
+                </div>
+                <h4 class="fw-bold">Bolão de Jogos</h4>
+                <p class="text-muted small">Palpite nos placares. Bloqueio 24h antes do jogo.</p>
+                <div class="mt-auto">
+                    <a href="{% url 'palpites:listar_jogos' %}" class="btn btn-outline-success w-100 fw-bold">Dar Palpites</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4 mb-4">
+        <div class="card card-clean h-100 text-center p-4 shadow-sm border-0 border-top border-warning border-4">
+            <div class="card-body d-flex flex-column">
+                <div class="mb-3">
+                    <i class="fa-solid fa-trophy text-warning" style="font-size: 3rem;"></i>
+                </div>
+                <h4 class="fw-bold">Ranking Geral</h4>
+                <p class="text-muted small">Veja quem está liderando a corrida pelo prêmio.</p>
+                <div class="mt-auto">
+                    <a href="{% url 'palpites:ranking_geral' %}" class="btn btn-warning text-dark w-100 fw-bold">Ver Classificação</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function updateTimers() {
+        const now = new Date().getTime();
+
+        // Timer Convocação: 17 de Maio às 23:59:59
+        const year = new Date().getFullYear();
+        const deadlineConvocacao = new Date(`May 17, ${year} 23:59:59`).getTime();
+        renderTime(deadlineConvocacao - now, "timer-convocacao");
+
+        // Timer Jogo: Data do Jogo menos 24 horas
+        const timerJogoElement = document.getElementById("timer-jogo");
+        if (timerJogoElement) {
+            const gameDateStr = timerJogoElement.getAttribute("data-limite");
+            const deadlineJogo = new Date(gameDateStr).getTime() - (24 * 60 * 60 * 1000);
+            renderTime(deadlineJogo - now, "timer-jogo");
+        }
+    }
+
+    function renderTime(diff, elementId) {
+        const element = document.getElementById(elementId);
+        if (!element) return;
+
+        if (diff <= 0) {
+            element.innerHTML = "<span class='text-danger'>FECHADO</span>";
+            return;
+        }
+
+        const d = Math.floor(diff / (1000 * 60 * 60 * 24)).toString().padStart(2, '0');
+        const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)).toString().padStart(2, '0');
+        const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0');
+        const s = Math.floor((diff % (1000 * 60)) / 1000).toString().padStart(2, '0');
+
+        element.innerHTML = `${d}d : ${h}h : ${m}m : ${s}s`;
+    }
+
+    setInterval(updateTimers, 1000);
+    updateTimers();
+</script>
+{% endblock %}

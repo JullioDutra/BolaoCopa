@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+
+{% block title %}Acesso - Cartolândia{% endblock %}
+
+{% block content %}
+<style>
+    /* Estilos para deixar os formulários do Django mais bonitos automaticamente */
+    .django-form p { margin-bottom: 1.2rem; text-align: left; }
+    .django-form label { font-weight: bold; margin-bottom: 0.4rem; display: block; color: #495057; }
+    .django-form ul.errorlist { color: #dc3545; list-style: none; padding: 0; margin-bottom: 10px; font-size: 0.9rem; font-weight: bold;}
+    
+    /* Personalização das Abas (Tabs) */
+    .nav-pills .nav-link { color: var(--verde-escuro); border-radius: 8px; transition: all 0.3s ease; }
+    .nav-pills .nav-link.active { background-color: var(--verde-escuro); color: white; box-shadow: 0 4px 6px rgba(27, 94, 32, 0.2); }
+</style>
+
+<div class="row justify-content-center mt-5 mb-5">
+    <div class="col-md-6 col-lg-5">
+        <div class="card card-clean p-4 p-md-5 shadow-lg border-0 text-center rounded-4">
+            
+            <div class="mb-4">
+                <i class="fa-solid fa-trophy text-warning mb-2" style="font-size: 3.5rem;"></i>
+                <h2 class="fw-bold" style="color: var(--verde-escuro);">Cartolândia</h2>
+                <p class="text-muted">A sua arena de palpites e convocações.</p>
+            </div>
+
+            <ul class="nav nav-pills nav-fill mb-4" id="pills-tab" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active fw-bold py-2" id="pills-login-tab" data-bs-toggle="pill" data-bs-target="#pills-login" type="button" role="tab">
+                        <i class="fa-solid fa-right-to-bracket"></i> Entrar
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link fw-bold py-2" id="pills-registro-tab" data-bs-toggle="pill" data-bs-target="#pills-registro" type="button" role="tab">
+                        <i class="fa-solid fa-user-plus"></i> Criar Conta
+                    </button>
+                </li>
+            </ul>
+
+            <div class="tab-content text-start" id="pills-tabContent">
+                
+                <div class="tab-pane fade show active" id="pills-login" role="tabpanel">
+                    <form method="POST" class="django-form mt-2">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="login">
+                        
+                        {% for field in form_login %}
+                            <p>
+                                {{ field.label_tag }}
+                                {% if field.name == 'username' %}
+                                    <input type="text" name="{{ field.html_name }}" class="form-control form-control-lg" placeholder="Nome de usuário ou E-mail" required>
+                                {% else %}
+                                    <input type="password" name="{{ field.html_name }}" class="form-control form-control-lg" placeholder="Sua senha secreta" required>
+                                {% endif %}
+                                {{ field.errors }}
+                            </p>
+                        {% endfor %}
+                        
+                        <button type="submit" class="btn btn-principal w-100 btn-lg mt-3 fw-bold shadow-sm">
+                            <i class="fa-solid fa-circle-check"></i> Acessar Painel
+                        </button>
+                    </form>
+                </div>
+
+                <div class="tab-pane fade" id="pills-registro" role="tabpanel">
+                    <form method="POST" class="django-form mt-2">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="registro">
+                        
+                        {{ form_registro.as_p }}
+                        
+                        <button type="submit" class="btn btn-success w-100 btn-lg mt-3 fw-bold shadow-sm">
+                            <i class="fa-solid fa-rocket"></i> Cadastrar e Jogar
+                        </button>
+                    </form>
+                </div>
+
+            </div>
+            
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,211 @@
+{% extends 'base.html' %}
+
+{% block title %}Montar Seleção - Cartolândia{% endblock %}
+
+{% block content %}
+<style>
+    /* Estilos para transformar os checkboxes em Cards Clicáveis */
+    .player-card-label {
+        cursor: pointer;
+        transition: transform 0.2s ease-in-out;
+    }
+    .player-card-label:hover {
+        transform: translateY(-5px);
+    }
+    .player-card {
+        border: 2px solid transparent;
+        border-radius: 12px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        background-color: #f8f9fa;
+    }
+    /* Quando o checkbox invisível estiver marcado, o card muda de cor */
+    .player-checkbox:checked + .player-card {
+        border-color: var(--verde-escuro);
+        background-color: #e8f5e9;
+        box-shadow: 0 4px 15px rgba(0, 128, 0, 0.2);
+    }
+    .player-checkbox:checked + .player-card .check-icon {
+        opacity: 1 !important;
+        transform: scale(1) !important;
+    }
+    .check-icon {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        color: var(--verde-escuro);
+        font-size: 1.5rem;
+        opacity: 0;
+        transform: scale(0.5);
+        transition: all 0.2s ease;
+    }
+    .player-img {
+        width: 100%;
+        height: 180px;
+        object-fit: cover;
+        background-color: #e9ecef;
+    }
+    /* Contador fixo no topo da tela (Mobile) ou barra lateral */
+    .sticky-counter {
+        position: sticky;
+        top: 20px;
+        z-index: 1000;
+    }
+</style>
+
+<div class="row mt-4">
+    <div class="col-12 text-center mb-4">
+        <h2 class="fw-bold" style="color: var(--verde-escuro);">📋 Convocação Oficial</h2>
+        <p class="text-muted">Escale exatamente 26 jogadores para a sua seleção.</p>
+    </div>
+</div>
+
+{% if prazo_encerrado %}
+<div class="row justify-content-center mb-5">
+    <div class="col-md-8">
+        <div class="alert alert-danger text-center shadow-sm rounded-4 p-4">
+            <h3 class="fw-bold mb-2"><i class="fa-solid fa-lock"></i> Mercado Fechado!</h3>
+            <p class="mb-0 fs-5">O prazo para convocações encerrou no dia 17 de Maio. Você não pode mais alterar a sua lista.</p>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if form.errors %}
+<div class="alert alert-danger">
+    <i class="fa-solid fa-triangle-exclamation"></i> Você deve selecionar exatamente 26 jogadores. Verifique a contagem.
+</div>
+{% endif %}
+
+<form method="POST" id="form-convocacao">
+    {% csrf_token %}
+    
+    <div class="row">
+        <div class="col-lg-3 mb-4 order-lg-2">
+            <div class="card card-clean p-4 sticky-counter text-center border-0 shadow-sm">
+                <h5 class="fw-bold text-muted mb-3">Jogadores Escolhidos</h5>
+                <h1 class="display-3 fw-bold mb-0" id="contador-texto">
+                    <span id="contador-numero" class="text-warning">0</span><span class="text-muted fs-3">/26</span>
+                </h1>
+                <p id="contador-aviso" class="small mt-2 text-muted">Faltam 26 jogadores</p>
+                
+                {% if not prazo_encerrado %}
+                <hr>
+                <div class="d-grid gap-2">
+                    <button type="submit" name="tipo_aposta" value="resenha" class="btn btn-outline-secondary fw-bold">
+                        <i class="fa-solid fa-floppy-disk"></i> Salvar Grátis
+                    </button>
+                    <button type="submit" name="tipo_aposta" value="pago" class="btn btn-success fw-bold">
+                        <i class="fa-solid fa-trophy"></i> Valendo Prêmio (R$ 10)
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="col-lg-9 order-lg-1">
+            <ul class="nav nav-pills nav-fill bg-white p-2 rounded-4 shadow-sm mb-4" id="posicoes-tab" role="tablist">
+                {% for posicao, jogadores in jogadores_por_posicao.items %}
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link fw-bold {% if forloop.first %}active{% endif %}" 
+                            id="{{ posicao|slugify }}-tab" data-bs-toggle="pill" 
+                            data-bs-target="#{{ posicao|slugify }}" type="button" role="tab"
+                            {% if forloop.first %}style="background-color: var(--verde-escuro); color: white;"{% else %}style="color: var(--verde-escuro);"{% endif %}>
+                        {{ posicao }} ({{ jogadores|length }})
+                    </button>
+                </li>
+                {% endfor %}
+            </ul>
+
+            <div class="tab-content" id="posicoes-tabContent">
+                {% for posicao, jogadores in jogadores_por_posicao.items %}
+                <div class="tab-pane fade {% if forloop.first %}show active{% endif %}" id="{{ posicao|slugify }}" role="tabpanel">
+                    
+                    <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-3">
+                        {% for jogador in jogadores %}
+                        <div class="col">
+                            <label class="player-card-label w-100">
+                                <input type="checkbox" name="jogadores" value="{{ jogador.id }}" class="d-none player-checkbox" 
+                                       {% if jogador.id in convocados_ids %}checked{% endif %}
+                                       {% if prazo_encerrado %}disabled{% endif %}>
+                                
+                                <div class="card player-card h-100 position-relative shadow-sm">
+                                    <i class="fa-solid fa-circle-check check-icon"></i>
+                                    
+                                    {% if jogador.foto %}
+                                        <img src="{{ jogador.foto.url }}" class="player-img" alt="{{ jogador.nome }}">
+                                    {% else %}
+                                        <img src="https://ui-avatars.com/api/?name={{ jogador.nome|urlencode }}&background=random&color=fff&size=200" class="player-img" alt="{{ jogador.nome }}">
+                                    {% endif %}
+                                    
+                                    <div class="card-body text-center p-2">
+                                        <h6 class="card-title fw-bold mb-1 text-truncate" title="{{ jogador.nome }}">{{ jogador.nome }}</h6>
+                                        <p class="card-text small text-muted mb-0"><i class="fa-solid fa-shield-halved"></i> {{ jogador.clube }}</p>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                        {% empty %}
+                        <div class="col-12">
+                            <p class="text-muted text-center py-4">Nenhum jogador cadastrado nesta posição.</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</form>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const checkboxes = document.querySelectorAll('.player-checkbox');
+        const numeroDisplay = document.getElementById('contador-numero');
+        const avisoDisplay = document.getElementById('contador-aviso');
+
+        // Função que muda a cor das abas quando clica
+        const tabButtons = document.querySelectorAll('[data-bs-toggle="pill"]');
+        tabButtons.forEach(btn => {
+            btn.addEventListener('shown.bs.tab', function (e) {
+                tabButtons.forEach(b => {
+                    b.style.backgroundColor = 'transparent';
+                    b.style.color = 'var(--verde-escuro)';
+                });
+                e.target.style.backgroundColor = 'var(--verde-escuro)';
+                e.target.style.color = 'white';
+            });
+        });
+
+        // Função que atualiza o contador de selecionados
+        function atualizarContador() {
+            const quantidade = document.querySelectorAll('.player-checkbox:checked').length;
+            numeroDisplay.textContent = quantidade;
+
+            // Logica de cores e textos do contador
+            if (quantidade === 26) {
+                numeroDisplay.className = 'text-success';
+                avisoDisplay.textContent = 'Seleção Completa! Pronto para salvar.';
+                avisoDisplay.className = 'small mt-2 text-success fw-bold';
+            } else if (quantidade > 26) {
+                numeroDisplay.className = 'text-danger';
+                avisoDisplay.textContent = `Remova ${quantidade - 26} jogador(es)!`;
+                avisoDisplay.className = 'small mt-2 text-danger fw-bold';
+            } else {
+                numeroDisplay.className = 'text-warning';
+                avisoDisplay.textContent = `Faltam ${26 - quantidade} jogadores`;
+                avisoDisplay.className = 'small mt-2 text-muted';
+            }
+        }
+
+        // Adiciona o evento de clique em todos os cards
+        checkboxes.forEach(box => {
+            box.addEventListener('change', atualizarContador);
+        });
+
+        // Roda a verificação assim que a página carrega
+        atualizarContador();
+    });
+</script>
+{% endblock %}

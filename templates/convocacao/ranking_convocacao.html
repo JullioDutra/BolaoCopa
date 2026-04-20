@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block title %}Resultado da Convocação - Cartolândia{% endblock %}
+
+{% block content %}
+<div class="row mt-4 mb-4">
+    <div class="col-12 text-center">
+        <h2 class="fw-bold" style="color: var(--verde-escuro);"><i class="fa-solid fa-clipboard-check text-success"></i> Resultado da Convocação</h2>
+        <p class="text-muted">Lista oficial confirmou <strong>{{ total_oficiais }}</strong> jogadores. Veja quem acertou mais!</p>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card card-clean border-0 shadow-sm rounded-4">
+            <div class="card-body p-0">
+                <ul class="list-group list-group-flush rounded-4">
+                    {% for item in ranking %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4 
+                            {% if forloop.counter == 1 %}bg-warning bg-opacity-10 border-warning border-2 border-start-0 border-end-0 border-top-0{% endif %}">
+                            
+                            <div class="d-flex align-items-center">
+                                <div class="me-3 fs-4 fw-bold text-muted">{{ forloop.counter }}º</div>
+                                <div>
+                                    <h5 class="mb-0 fw-bold">{{ item.usuario.first_name|default:item.usuario.username }}</h5>
+                                    <span class="badge {% if item.modalidade == 'pago' %}bg-success{% else %}bg-secondary{% endif %} mt-1">
+                                        {% if item.modalidade == 'pago' %}Valendo Prêmio{% else %}Resenha{% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <div class="text-end">
+                                <h3 class="fw-bold mb-0 text-success">{{ item.acertos }} <span class="fs-6 text-muted">/ {{ total_oficiais }}</span></h3>
+                                <small class="text-muted">Acertos</small>
+                            </div>
+                        </li>
+                    {% empty %}
+                        <li class="list-group-item text-center py-5 text-muted">Ainda não há resultados disponíveis.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        
+        <div class="mt-4 text-center">
+            <a href="{% url 'convocacao:montar_selecao' %}" class="btn btn-outline-secondary fw-bold">Voltar para Minha Seleção</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+
+{% block title %}Relatório Gerencial - Cartolândia{% endblock %}
+
+{% block content %}
+<div class="row mt-4 mb-4">
+    <div class="col-12 d-flex justify-content-between align-items-center">
+        <div>
+            <h2 class="fw-bold text-danger"><i class="fa-solid fa-user-tie"></i> Painel da Diretoria</h2>
+            <p class="text-muted">Visão global financeira do sistema (Restrito).</p>
+        </div>
+        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary fw-bold">Voltar ao Site</a>
+    </div>
+</div>
+
+<div class="row mb-5 g-3">
+    <div class="col-md-4">
+        <div class="card bg-dark text-white p-4 shadow border-0 h-100 rounded-4" style="background: linear-gradient(45deg, #1b5e20, #2e7d32);">
+            <h6 class="text-warning fw-bold mb-3"><i class="fa-solid fa-vault"></i> CAIXA DO SISTEMA (LUCRO)</h6>
+            <h2 class="display-5 fw-bold mb-0">R$ {{ lucro_sistema }}</h2>
+            <small class="text-light mt-2 d-block">Livre para saque do administrador.</small>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card card-clean p-4 shadow-sm border-0 h-100 rounded-4 bg-white border-start border-primary border-4">
+            <h6 class="text-primary fw-bold mb-3"><i class="fa-solid fa-users"></i> SALDO DOS JOGADORES</h6>
+            <h2 class="display-5 fw-bold mb-0 text-dark">R$ {{ total_usuarios }}</h2>
+            <small class="text-muted mt-2 d-block">Total retido nas carteiras dos usuários.</small>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card card-clean p-4 shadow-sm border-0 h-100 rounded-4 bg-white border-start border-danger border-4">
+            <h6 class="text-danger fw-bold mb-3"><i class="fa-solid fa-money-bill-transfer"></i> SAQUES PENDENTES</h6>
+            <h2 class="display-5 fw-bold mb-0 text-dark">{{ saques_pendentes }}</h2>
+            <a href="/admin/pagamentos/saque/" class="small text-danger fw-bold mt-2 d-block text-decoration-none">Ir para aprovação →</a>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-5">
+    
+    <div class="col-lg-5">
+        <div class="card card-clean border-0 shadow-sm rounded-4 h-100">
+            <div class="card-header bg-white border-0 pt-4 pb-0">
+                <h5 class="fw-bold" style="color: var(--verde-escuro);"><i class="fa-solid fa-wallet"></i> Saldo por Jogador</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Jogador</th>
+                                <th class="text-end">Saldo (R$)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for carteira in carteiras %}
+                            <tr>
+                                <td class="fw-bold text-muted">
+                                    <i class="fa-solid fa-circle-user me-2"></i>{{ carteira.usuario.first_name|default:carteira.usuario.username }}
+                                </td>
+                                <td class="text-end fw-bold {% if carteira.saldo > 0 %}text-success{% endif %}">
+                                    {{ carteira.saldo }}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="2" class="text-center text-muted">Nenhuma carteira encontrada.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-7">
+        <div class="card card-clean border-0 shadow-sm rounded-4 h-100">
+            <div class="card-header bg-white border-0 pt-4 pb-0">
+                <h5 class="fw-bold" style="color: var(--verde-escuro);"><i class="fa-solid fa-list-ul"></i> Auditoria: Últimas Movimentações</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    {% for transacao in ultimas_transacoes %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-0 border-bottom">
+                        <div class="ms-2 me-auto">
+                            <div class="fw-bold text-dark">
+                                {{ transacao.carteira.usuario.first_name|default:transacao.carteira.usuario.username }}
+                            </div>
+                            <small class="text-muted">{{ transacao.descricao }}</small>
+                        </div>
+                        <span class="badge rounded-pill px-3 py-2 fs-6
+                            {% if transacao.tipo == 'deposito' or transacao.tipo == 'premio' %}bg-success
+                            {% elif transacao.tipo == 'saque' or transacao.tipo == 'aposta' %}bg-danger
+                            {% else %}bg-secondary{% endif %}">
+                            {% if transacao.tipo == 'saque' or transacao.tipo == 'aposta' %}-{% else %}+{% endif %} R$ {{ transacao.valor }}
+                        </span>
+                    </li>
+                    {% empty %}
+                        <li class="list-group-item text-center text-muted py-4">Nenhuma movimentação no sistema.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block title %}Ranking Global - Cartolândia{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-4">
+    <div class="col-md-8">
+        <div class="card card-clean p-4">
+            <h2 class="fw-bold text-center mb-4" style="color: var(--verde-escuro);">🏆 Ranking Global</h2>
+            
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th scope="col">Posição</th>
+                        <th scope="col">Jogador</th>
+                        <th scope="col">Modalidade</th>
+                        <th scope="col" class="text-end">Pontos</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for posicao in ranking %}
+                    <tr>
+                        <th scope="row">
+                            {% if forloop.counter == 1 %}🥇 1º
+                            {% elif forloop.counter == 2 %}🥈 2º
+                            {% elif forloop.counter == 3 %}🥉 3º
+                            {% else %}{{ forloop.counter }}º{% endif %}
+                        </th>
+                        <td class="fw-bold">{{ posicao.usuario__username }}</td>
+                        <td>
+                            <span class="badge {% if posicao.usuario__participacao__tipo == 'pago' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                                {{ posicao.usuario__participacao__tipo|title }}
+                            </span>
+                        </td>
+                        <td class="text-end fw-bold fs-5 text-success">
+                            {{ posicao.total_pontos|default:"0" }}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="text-center text-muted">Nenhum palpite finalizado ainda.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

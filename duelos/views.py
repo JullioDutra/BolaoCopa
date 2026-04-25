@@ -102,7 +102,7 @@ def status_partida_api(request, partida_id):
         tempo_passado = (agora - partida.turno_iniciado_em).total_seconds()
         
         # Gestão do tempo esgotado (15 segundos por turno)
-        if tempo_passado >= 15:
+        if tempo_passado >= 30:
             # Troca de turno automática
             partida.turno_de = partida.jogador_convidado if partida.turno_de == partida.jogador_criador else partida.jogador_criador
             partida.turno_iniciado_em = agora
@@ -110,7 +110,7 @@ def status_partida_api(request, partida_id):
             partida.save()
             tempo_passado = 0
 
-    tempo_restante = max(0, 15 - int(tempo_passado))
+    tempo_restante = max(0, 30 - int(tempo_passado))
 
     return JsonResponse({
         'status': partida.status,

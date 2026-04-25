@@ -140,7 +140,7 @@
                                     
                                     <div class="card-body text-center p-2">
                                         <h6 class="card-title fw-bold mb-1 text-truncate" title="{{ jogador.nome }}">{{ jogador.nome }}</h6>
-                                        <p class="card-text small text-muted mb-0"><i class="fa-solid fa-shield-halved"></i> {{ jogador.clube }}</p>
+                                        <p class="card-text small text-muted mb-0"><i class="fa-solid fa-shield-halved"></i> {{ jogador.clube_atual|default:"Sem Clube" }}</p>
                                     </div>
                                 </div>
                             </label>
@@ -158,6 +158,93 @@
         </div>
     </div>
 </form>
+
+{% if convocados_ids|length == 26 %}
+<div class="row mt-5 mb-5 justify-content-center">
+    <div class="col-12 text-center">
+        <hr class="mb-5">
+        <h3 class="fw-bold mb-4" style="color: var(--verde-escuro);">Sua Seleção está pronta! 🇧🇷</h3>
+        <button type="button" onclick="gerarImagem()" class="btn btn-success btn-lg fw-bold shadow-lg px-5" id="btn-gerar-img">
+            <i class="fa-brands fa-whatsapp fs-4"></i> Baixar Card para o Grupo
+        </button>
+    </div>
+
+    <div class="col-md-6 col-lg-5 mt-4">
+        <div id="cartao-selecao" class="p-4 shadow-lg rounded-4" 
+             style="background: linear-gradient(135deg, #0a4f27 0%, #112a1a 100%); border: 3px solid #f1c40f; color: white;">
+            
+            <div class="text-center mb-4">
+                <h2 class="fw-bold text-uppercase mb-0 text-warning" style="letter-spacing: 2px; border-bottom: 2px solid rgba(241, 196, 15, 0.3); padding-bottom: 10px; display: inline-block;">
+                    Convocação Oficial
+                </h2>
+                
+                <h5 class="fw-bold mt-3 mb-1">Técnico(a): {{ user.first_name|default:user.username }}</h5>
+                
+                <p class="fst-italic mt-2 mb-3" style="color: #e0e0e0; font-size: 0.95rem;">
+                    "essa é a minha convocação para copa do mundo 2026..."
+                </p>
+                
+                <span class="badge bg-white text-dark fw-bold px-3 py-2" style="font-size: 0.85rem;">Cartolândia 2026</span>
+            </div>
+
+            <div class="row g-2" style="font-size: 0.85rem;">
+                <div class="col-6 border-end border-success border-opacity-50">
+                    <ul class="list-unstyled mb-0 ps-2">
+                        
+                        <li class="text-warning fw-bold small text-uppercase mb-1 border-bottom border-warning border-opacity-25">Atacantes</li>
+                        {% for jogador in jogadores_por_posicao.Atacantes %}
+                            {% if jogador.id in convocados_ids %}
+                                <li class="fw-bold mb-1 text-truncate">{{ jogador.nome }}</li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        <li class="text-warning fw-bold small text-uppercase mt-3 mb-1 border-bottom border-warning border-opacity-25">Meias</li>
+                        {% for jogador in jogadores_por_posicao.Meias %}
+                            {% if jogador.id in convocados_ids %}
+                                <li class="fw-bold mb-1 text-truncate">{{ jogador.nome }}</li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                    </ul>
+                </div>
+                
+                <div class="col-6">
+                    <ul class="list-unstyled mb-0 ps-2">
+                        
+                        <li class="text-info fw-bold small text-uppercase mb-1 border-bottom border-info border-opacity-25">Zagueiros</li>
+                        {% for jogador in jogadores_por_posicao.Zagueiros %}
+                            {% if jogador.id in convocados_ids %}
+                                <li class="fw-bold mb-1 text-truncate">{{ jogador.nome }}</li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        <li class="text-info fw-bold small text-uppercase mt-3 mb-1 border-bottom border-info border-opacity-25">Laterais</li>
+                        {% for jogador in jogadores_por_posicao.Laterais %}
+                            {% if jogador.id in convocados_ids %}
+                                <li class="fw-bold mb-1 text-truncate">{{ jogador.nome }}</li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        <li class="text-danger fw-bold small text-uppercase mt-3 mb-1 border-bottom border-danger border-opacity-25">Goleiros</li>
+                        {% for jogador in jogadores_por_posicao.Goleiros %}
+                            {% if jogador.id in convocados_ids %}
+                                <li class="fw-bold mb-1 text-truncate">{{ jogador.nome }}</li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                    </ul>
+                </div>
+            </div>
+
+            <div class="text-center mt-4 pt-3 border-top border-success border-opacity-50">
+                <small class="text-white-50 fw-bold">Jogue em: cartolandia.pythonanywhere.com</small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -207,5 +294,36 @@
         // Roda a verificação assim que a página carrega
         atualizarContador();
     });
+
+    // Função para gerar a imagem do WhatsApp (Agora com correções para celular/CORS)
+    function gerarImagem() {
+        const cartao = document.getElementById('cartao-selecao');
+        const btn = document.getElementById('btn-gerar-img');
+        const textoOriginal = btn.innerHTML;
+        
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Gerando Card...';
+        btn.disabled = true;
+
+        // Adicionado: useCORS e allowTaint garantem que não falhe ao "printar"
+        html2canvas(cartao, { 
+            scale: 2, 
+            backgroundColor: null,
+            useCORS: true,
+            allowTaint: true
+        }).then(canvas => {
+            const link = document.createElement('a');
+            link.download = 'Minha_Selecao_Cartolandia.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            
+            btn.innerHTML = textoOriginal;
+            btn.disabled = false;
+        }).catch(err => {
+            // Previne que o botão fique travado caso o navegador bloqueie
+            alert("Não foi possível gerar a imagem no seu dispositivo. Tente tirar um print da tela!");
+            btn.innerHTML = textoOriginal;
+            btn.disabled = false;
+        });
+    }
 </script>
 {% endblock %}

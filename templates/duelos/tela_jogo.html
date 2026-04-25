@@ -1,0 +1,203 @@
+{% extends 'base.html' %}
+
+{% block title %}Duelo em Andamento - Cartolândia{% endblock %}
+
+{% block content %}
+<style>
+    .campinho-bg {
+        background-color: var(--verde-campo);
+        border: 4px solid white;
+        border-radius: 10px;
+        min-height: 400px;
+        position: relative;
+        padding: 20px;
+    }
+    .jogador-slot {
+        background: rgba(255, 255, 255, 0.9);
+        border: 2px dashed #333;
+        border-radius: 8px;
+        padding: 10px;
+        text-align: center;
+        font-weight: bold;
+        transition: all 0.3s ease;
+    }
+    .jogador-revelado {
+        background: #c8e6c9 !important; /* Verde claro */
+        border-style: solid;
+        border-color: var(--verde-escuro);
+        color: var(--verde-escuro);
+    }
+</style>
+
+<div class="row mt-4">
+    <div class="col-md-4 mb-4">
+        <div class="card card-clean p-4 text-center shadow-sm h-100">
+            <h5 class="text-muted mb-3">{{ partida.categoria.titulo }}</h5>
+            
+            <h1 class="display-4 fw-bold text-danger mb-0" id="timer">--</h1>
+            <small class="text-muted fw-bold">SEGUNDOS</small>
+            
+            <hr>
+            
+            <h4 class="fw-bold mb-4" id="status-vez">Conectando...</h4>
+            
+            <div class="d-flex justify-content-between mb-4 bg-light p-3 rounded-3 border">
+                <div>
+                    <h6 class="mb-0 text-success"><i class="fa-solid fa-user"></i> {{ partida.jogador_criador.first_name|default:partida.jogador_criador.username }}</h6>
+                    <h3 class="fw-bold mb-0 text-success" id="pts-j1">{{ partida.pontos_criador }}</h3>
+                </div>
+                <div>
+                    <h6 class="mb-0 text-primary">{{ partida.jogador_convidado.first_name|default:partida.jogador_convidado.username }} <i class="fa-solid fa-user"></i></h6>
+                    <h3 class="fw-bold mb-0 text-primary" id="pts-j2">{{ partida.pontos_convidado }}</h3>
+                </div>
+            </div>
+
+            <form id="form-chute" onsubmit="enviarPalpite(event)">
+                <div class="input-group input-group-lg">
+                    <input type="text" id="palpite" class="form-control" placeholder="Nome do jogador..." disabled autocomplete="off">
+                    <button class="btn btn-success fw-bold" type="submit" id="btn-chute" disabled>Chutar</button>
+                </div>
+            </form>
+            
+            <div id="feedback-msg" class="mt-3 text-danger fw-bold" style="min-height: 24px;"></div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <div class="card card-clean shadow-sm p-3">
+            
+            {% if partida.categoria.tipo == 'elenco' %}
+            <div class="campinho-bg row row-cols-3 g-3 align-items-center justify-content-center">
+                {% for item in partida.categoria.itens.all %}
+                <div class="col">
+                    <div class="jogador-slot" id="slot-{{ item.id }}">
+                        <i class="fa-solid fa-shirt fs-4 mb-2 d-block text-muted"></i>
+                        <span class="nome-oculto">????</span>
+                        <span class="nome-real d-none">{{ item.nome }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+        </div>
+    </div>
+</div>
+
+<script>
+    const partidaId = "{{ partida.id }}";
+    const meuUsuarioId = parseInt("{{ request.user.id }}");
+    const statusUrl = "{% url 'duelos:status_partida_api' partida.id %}";
+    const chutarUrl = "{% url 'duelos:enviar_palpite_api' partida.id %}";
+    
+    // Função para pegar o token CSRF (Proteção do Django) do próprio cookie
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    let meuTurno = false;
+
+    // 1. FUNÇÃO DE SINCRONIZAÇÃO (Bate no servidor a cada 1.5s)
+    function atualizarPartida() {
+        fetch(statusUrl)
+            .then(res => res.json())
+            .then(data => {
+                
+                if (data.status === 'finalizado') {
+                    window.location.reload(); // Atualiza pra tela de fim de jogo
+                    return;
+                }
+
+                // Atualiza Placar e Timer
+                document.getElementById('pts-j1').innerText = data.pontos_j1;
+                document.getElementById('pts-j2').innerText = data.pontos_j2;
+                document.getElementById('timer').innerText = data.tempo_restante;
+
+                // Gerencia os Turnos e Trava/Destrava o Input
+                let palpiteInput = document.getElementById('palpite');
+                let btnChute = document.getElementById('btn-chute');
+                let statusVez = document.getElementById('status-vez');
+
+                if (data.turno_atual_id === meuUsuarioId) {
+                    if (!meuTurno) {
+                        palpiteInput.disabled = false;
+                        btnChute.disabled = false;
+                        palpiteInput.focus();
+                        statusVez.innerText = "É A SUA VEZ!";
+                        statusVez.className = "fw-bold mb-4 text-success";
+                    }
+                    meuTurno = true;
+                } else {
+                    meuTurno = false;
+                    palpiteInput.disabled = true;
+                    btnChute.disabled = true;
+                    statusVez.innerText = "Vez do Adversário...";
+                    statusVez.className = "fw-bold mb-4 text-muted";
+                }
+
+                // Pinta de verde os jogadores revelados
+                data.revelados_ids.forEach(id => {
+                    let slot = document.getElementById(`slot-${id}`);
+                    if (slot && !slot.classList.contains('jogador-revelado')) {
+                        slot.classList.add('jogador-revelado');
+                        // Esconde o '????' e mostra o Nome Real
+                        slot.querySelector('.nome-oculto').classList.add('d-none');
+                        slot.querySelector('.nome-real').classList.remove('d-none');
+                    }
+                });
+            });
+    }
+
+    // 2. FUNÇÃO DE CHUTAR (Manda pro servidor via AJAX)
+    function enviarPalpite(event) {
+        event.preventDefault(); // Impede a página de recarregar
+        
+        let inputField = document.getElementById('palpite');
+        let chute = inputField.value;
+        if (!chute) return;
+
+        // Limpa e bloqueia na hora para não dar duplo clique
+        inputField.value = '';
+        inputField.disabled = true;
+        document.getElementById('btn-chute').disabled = true;
+
+        fetch(chutarUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken') // Manda o token de segurança
+            },
+            body: JSON.stringify({ 'palpite': chute })
+        })
+        .then(res => res.json())
+        .then(data => {
+            let msgBox = document.getElementById('feedback-msg');
+            if (data.acertou) {
+                msgBox.innerHTML = '<span class="text-success"><i class="fa-solid fa-check"></i> Boa! Acertou!</span>';
+            } else {
+                msgBox.innerHTML = '<span class="text-danger"><i class="fa-solid fa-xmark"></i> Errou ou Tempo Esgotado!</span>';
+            }
+            // Força uma atualização imediata para passar a vez visualmente mais rápido
+            atualizarPartida(); 
+            
+            // Limpa a mensagem depois de 2 segundos
+            setTimeout(() => { msgBox.innerHTML = ''; }, 2000);
+        });
+    }
+
+    // Inicia o "Motor" do jogo
+    setInterval(atualizarPartida, 1500);
+    atualizarPartida(); // Roda a primeira vez imediatamente
+</script>
+{% endblock %}

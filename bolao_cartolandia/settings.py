@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'convocacao',
     'palpites',
     'pagamentos',
+    'duelos',
 ]
 
 MIDDLEWARE = [
@@ -128,3 +129,6 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 # Arquivos de Upload (Fotos, Escudos)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+
+LOGIN_URL = 'login'

@@ -1,0 +1,188 @@
+{% extends 'base.html' %}
+
+{% block title %}Duelo: Jogo da trajetória{% endblock %}
+
+{% block content %}
+<style>
+    .escudo-item {
+        transition: all 0.5s ease;
+    }
+    .status-vez-badge {
+        padding: 10px 20px;
+        border-radius: 50px;
+        font-weight: bold;
+        display: inline-block;
+        transition: all 0.3s ease;
+    }
+</style>
+
+<div class="row justify-content-center mt-4">
+    <div class="col-md-10">
+        <div class="card card-clean shadow-lg border-0 p-5 text-center rounded-4">
+            
+            <div class="row align-items-center mb-5">
+                <div class="col-md-3 text-start">
+                    <h2 class="fw-bold text-danger mb-0" id="timer">15</h2>
+                    <small class="text-muted fw-bold text-uppercase">Segundos</small>
+                </div>
+                <div class="col-md-6">
+                    <h3 class="fw-bold text-primary mb-3"><i class="fa-solid fa-route"></i> Jogo da trajetória</h3>
+                    <div id="status-vez" class="status-vez-badge bg-light text-muted shadow-sm">Conectando...</div>
+                </div>
+                <div class="col-md-3 text-end">
+                    <div class="d-flex justify-content-end gap-3">
+                        <div class="text-center border-end pe-3">
+                            <small class="d-block text-muted text-uppercase">Criador</small>
+                            <span class="fw-bold text-success">{{ partida.jogador_criador.username }}</span>
+                            <h4 class="fw-bold mb-0" id="pts-j1">0</h4>
+                        </div>
+                        <div class="text-center">
+                            <small class="d-block text-muted text-uppercase">Convidado</small>
+                            <span class="fw-bold text-primary">{{ partida.jogador_convidado.username }}</span>
+                            <h4 class="fw-bold mb-0" id="pts-j2">0</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex flex-wrap justify-content-center gap-4 py-5 bg-light rounded-4 border border-dashed mb-5" id="area-escudos">
+                {% for item in partida.categoria.itens.all %}
+                <div class="escudo-item" id="escudo-{{ forloop.counter0 }}" style="display: none;">
+                    <div class="card shadow-sm border-0 rounded-circle p-2 bg-white" style="width: 120px; height: 120px;">
+                        {% if item.imagem %}
+                            <img src="{{ item.imagem.url }}" class="img-fluid rounded-circle h-100 object-fit-contain">
+                        {% else %}
+                            <div class="h-100 d-flex align-items-center justify-content-center fw-bold text-dark">{{ item.nome }}</div>
+                        {% endif %}
+                    </div>
+                    <small class="d-block mt-2 fw-bold text-muted text-uppercase">{{ forloop.counter }}º Clube</small>
+                </div>
+                {% endfor %}
+            </div>
+
+            <form onsubmit="enviarPalpite(event)" class="w-75 mx-auto" id="form-chute">
+                <div class="input-group input-group-lg shadow-sm">
+                    <input type="text" id="palpite" class="form-control border-0 bg-light" placeholder="Chute o nome do jogador..." disabled autocomplete="off">
+                    <button class="btn btn-primary px-4 fw-bold" type="submit" id="btn-chute" disabled>ENVIAR</button>
+                </div>
+            </form>
+
+            <div class="mt-4 border-top pt-3">
+                <button class="btn btn-outline-danger btn-sm fw-bold" onclick="desistirJogo()">
+                    <i class="fa-solid fa-flag-checkered"></i> Desistir da Partida
+                </button>
+            </div>
+
+            <div id="feedback-msg" class="mt-3 fw-bold" style="min-height: 28px;"></div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    const partidaId = "{{ partida.id }}";
+    const meuUsuarioId = parseInt("{{ request.user.id }}");
+    const statusUrl = "{% url 'duelos:status_partida_api' partida.id %}";
+    const chutarUrl = "{% url 'duelos:enviar_palpite_api' partida.id %}";
+    const desistirUrl = "{% url 'duelos:desistir_partida_api' partida.id %}";
+    
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    let meuTurno = false;
+    let pollInterval = setInterval(atualizarPartida, 1500);
+
+    function atualizarPartida() {
+        fetch(statusUrl).then(res => res.json()).then(data => {
+            if (data.status === 'finalizado') { 
+                clearInterval(pollInterval); 
+                alert("FIM DE JOGO!");
+                window.location.href = "{% url 'duelos:listar_desafios' %}"; 
+                return; 
+            }
+
+            document.getElementById('pts-j1').innerText = data.pontos_j1;
+            document.getElementById('pts-j2').innerText = data.pontos_j2;
+            document.getElementById('timer').innerText = data.tempo_restante;
+
+            let input = document.getElementById('palpite');
+            let btn = document.getElementById('btn-chute');
+            let statusBadge = document.getElementById('status-vez');
+
+            if (data.turno_atual_id === meuUsuarioId) {
+                if (!meuTurno) { input.disabled = false; btn.disabled = false; input.focus(); }
+                statusBadge.innerText = "SUA VEZ DE CHUTAR!";
+                statusBadge.className = "status-vez-badge bg-primary text-white shadow-sm";
+                meuTurno = true;
+            } else {
+                input.disabled = true; btn.disabled = true;
+                statusBadge.innerText = "OPONENTE PENSANDO...";
+                statusBadge.className = "status-vez-badge bg-light text-muted";
+                meuTurno = false;
+            }
+
+            let limite = data.erros_acumulados + 1;
+            for (let i = 0; i < limite; i++) {
+                let esc = document.getElementById(`escudo-${i}`);
+                if (esc && esc.style.display === 'none') {
+                    esc.style.display = 'block';
+                    esc.animate([
+                        { opacity: 0, transform: 'scale(0.5)' },
+                        { opacity: 1, transform: 'scale(1)' }
+                    ], { duration: 400, easing: 'ease-out' });
+                }
+            }
+        }).catch(err => console.error("Erro na atualização:", err));
+    }
+
+    function enviarPalpite(event) {
+        event.preventDefault();
+        let input = document.getElementById('palpite');
+        let chute = input.value;
+        if (!chute) return;
+        
+        input.value = '';
+        input.disabled = true;
+
+        fetch(chutarUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+            body: JSON.stringify({ 'palpite': chute })
+        })
+        .then(res => res.json()).then(data => {
+            let msg = document.getElementById('feedback-msg');
+            msg.innerHTML = data.acertou ? 
+                '<span class="text-success fs-5">MITOU! ACERTOU! <i class="fa-solid fa-check"></i></span>' : 
+                '<span class="text-danger fs-5">ERROU! PASSA A VEZ... <i class="fa-solid fa-xmark"></i></span>';
+            
+            atualizarPartida();
+            setTimeout(() => msg.innerHTML = '', 2000);
+        });
+    }
+
+    function desistirJogo() {
+        if (confirm("Tem certeza que deseja desistir? Seu adversário ganhará a partida!")) {
+            fetch(desistirUrl, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': getCookie('csrftoken') }
+            }).then(() => {
+                atualizarPartida();
+            });
+        }
+    }
+
+    atualizarPartida();
+</script>
+{% endblock %}

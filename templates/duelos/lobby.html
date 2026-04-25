@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+
+{% block title %}Lobby - Cartolândia{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-6">
+        <div class="card card-clean p-4 shadow text-center rounded-4 border-0">
+            
+            <div class="mb-4">
+                <div class="spinner-grow text-success mb-3" style="width: 3rem; height: 3rem;" role="status">
+                    <span class="visually-hidden">Aguardando...</span>
+                </div>
+                <h3 class="fw-bold text-dark">Aguardando Oponente...</h3>
+                <p class="text-muted">Desafio: <strong>{{ partida.categoria.titulo }}</strong></p>
+            </div>
+
+            <div class="p-4 bg-light rounded-3 border mb-4">
+                <label class="form-label fw-bold text-muted small text-uppercase">Copie e envie para seu amigo:</label>
+                <div class="input-group input-group-lg shadow-sm">
+                    <input type="text" id="linkConvite" class="form-control bg-white text-primary fw-bold" value="{{ link_convite }}" readonly>
+                    <button class="btn btn-outline-primary" type="button" onclick="copiarLink()">
+                        <i class="fa-regular fa-copy"></i> Copiar
+                    </button>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-center align-items-center gap-4 mt-2">
+                <div class="text-center">
+                    <i class="fa-solid fa-user-circle fs-1 text-success mb-2"></i>
+                    <h6 class="fw-bold mb-0">Você</h6>
+                </div>
+                <div class="fs-3 text-muted fw-bold">VS</div>
+                <div class="text-center" style="opacity: 0.5;">
+                    <i class="fa-solid fa-user-circle fs-1 text-secondary mb-2"></i>
+                    <h6 class="fw-bold mb-0">???</h6>
+                </div>
+            </div>
+            
+            <div class="mt-4 pt-3 border-top">
+                <a href="{% url 'duelos:listar_desafios' %}" class="text-danger text-decoration-none small fw-bold">
+                    <i class="fa-solid fa-xmark"></i> Cancelar Sala
+                </a>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    function copiarLink() {
+        var copyText = document.getElementById("linkConvite");
+        copyText.select();
+        copyText.setSelectionRange(0, 99999); // Para mobile
+        navigator.clipboard.writeText(copyText.value);
+        
+        // Dá um feedback visual no botão
+        let btn = copyText.nextElementSibling;
+        let iconOriginal = btn.innerHTML;
+        btn.innerHTML = '<i class="fa-solid fa-check"></i> Copiado!';
+        btn.classList.replace('btn-outline-primary', 'btn-success');
+        btn.classList.add('text-white');
+        
+        setTimeout(() => {
+            btn.innerHTML = iconOriginal;
+            btn.classList.replace('btn-success', 'btn-outline-primary');
+            btn.classList.remove('text-white');
+        }, 2000);
+    }
+
+    // A MÁGICA DO POLLING (A cada 2 segundos)
+    const partidaId = "{{ partida.id }}";
+    const checkUrl = "{% url 'duelos:checar_oponente_api' partida.id %}";
+
+    function verificarOponente() {
+        fetch(checkUrl)
+            .then(response => response.json())
+            .then(data => {
+                // Se a API avisar que a partida começou (status == andamento)
+                if (data.comecou) {
+                    // Redireciona imediatamente o criador para a tela do jogo!
+                    window.location.href = `/duelos/jogo/${partidaId}/`;
+                }
+            })
+            .catch(error => console.error('Erro ao checar status:', error));
+    }
+
+    // Inicia o "relógio" que bate no servidor a cada 2000 milissegundos (2 segundos)
+    setInterval(verificarOponente, 2000);
+</script>
+{% endblock %}

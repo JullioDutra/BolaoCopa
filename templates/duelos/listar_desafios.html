@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{% block title %}Arena de Duelos - Cartolândia{% endblock %}
+
+{% block content %}
+<div class="row mt-5 mb-4">
+    <div class="col-12 text-center position-relative">
+        <div class="d-md-flex justify-content-md-end mb-3 mb-md-0">
+            <a href="{% url 'duelos:historico_duelos' %}" class="btn btn-outline-secondary fw-bold shadow-sm">
+                <i class="fa-solid fa-clock-rotate-left"></i> Meu Histórico
+            </a>
+        </div>
+        
+        <h2 class="fw-bold mt-3" style="color: var(--verde-escuro);">
+            <i class="fa-solid fa-khanda text-danger"></i> Arena de Duelos
+        </h2>
+        <p class="text-muted fs-5">Escolha o seu desafio. O sistema sorteará um tema misterioso para o duelo!</p>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-5 mb-4">
+        <div class="card card-clean h-100 text-center p-5 shadow border-0 border-top border-5 border-success rounded-4">
+            <div class="mb-3">
+                <i class="fa-solid fa-users text-success" style="font-size: 4rem;"></i>
+            </div>
+            <h3 class="fw-bold">Elencos clássicos</h3>
+            <p class="text-muted">
+                Consegue identificar todos os titulares de uma equipa histórica? 
+                Cada acerto é um ponto. Ganha quem tiver mais memória tática!
+            </p>
+            
+            <div class="mt-auto pt-4">
+                <form method="POST" action="{% url 'duelos:criar_duelo' 'elenco' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-success btn-lg w-100 fw-bold shadow-sm rounded-pill">
+                        <i class="fa-solid fa-futbol"></i> Jogar Elencos
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-5 mb-4">
+        <div class="card card-clean h-100 text-center p-5 shadow border-0 border-top border-5 border-primary rounded-4">
+            <div class="mb-3">
+                <i class="fa-solid fa-route text-primary" style="font-size: 4rem;"></i>
+            </div>
+            <h3 class="fw-bold">Jogo da trajetória</h3>
+            <p class="text-muted">
+                Um jogador misterioso e os clubes por onde passou. 
+                Os escudos aparecem conforme os erros. Seja o primeiro a descobrir!
+            </p>
+            
+            <div class="mt-auto pt-4">
+                <form method="POST" action="{% url 'duelos:criar_duelo' 'trajetoria' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold shadow-sm rounded-pill">
+                        <i class="fa-solid fa-shield-halved"></i> Jogar Trajetória
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12 text-center">
+        <p class="small text-muted italic">
+            <i class="fa-solid fa-circle-info"></i> 
+            Ao criar uma sala, receberá um link para enviar ao seu adversário.
+        </p>
+    </div>
+</div>
+{% endblock %}

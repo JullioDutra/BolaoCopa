@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+
+{% block title %}Meu Histórico de Duelos - Cartolândia{% endblock %}
+
+{% block content %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="fw-bold text-dark"><i class="fa-solid fa-clock-rotate-left"></i> Histórico de Duelos</h2>
+            <a href="{% url 'duelos:listar_desafios' %}" class="btn btn-primary fw-bold">Novo Duelo</a>
+        </div>
+
+        <div class="card card-clean shadow-sm border-0 rounded-4 p-0 overflow-hidden">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 text-center">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Data</th>
+                            <th>Modo</th>
+                            <th>Oponente</th>
+                            <th>Os Seus Pontos</th>
+                            <th>Resultado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for partida in partidas %}
+                            <tr>
+                                <td class="text-muted">{{ partida.data_criacao|date:"d/m/Y H:i" }}</td>
+                                
+                                <td>
+                                    {% if partida.categoria.tipo == 'elenco' %}
+                                        <span class="badge bg-success"><i class="fa-solid fa-users"></i> Elenco</span>
+                                    {% else %}
+                                        <span class="badge bg-primary"><i class="fa-solid fa-route"></i> Trajetória</span>
+                                    {% endif %}
+                                </td>
+                                
+                                <td class="fw-bold">
+                                    {% if request.user == partida.jogador_criador %}
+                                        {{ partida.jogador_convidado.username|default:"---" }}
+                                    {% else %}
+                                        {{ partida.jogador_criador.username|default:"---" }}
+                                    {% endif %}
+                                </td>
+                                
+                                <td class="fw-bold fs-5">
+                                    {% if request.user == partida.jogador_criador %}
+                                        {{ partida.pontos_criador }}
+                                    {% else %}
+                                        {{ partida.pontos_convidado }}
+                                    {% endif %}
+                                </td>
+                                
+                                <td>
+                                    {% if partida.vencedor == request.user %}
+                                        <span class="badge bg-success p-2 px-3"><i class="fa-solid fa-trophy"></i> Vitória</span>
+                                    {% elif partida.vencedor == None %}
+                                        <span class="badge bg-secondary p-2 px-3"><i class="fa-solid fa-handshake"></i> Empate</span>
+                                    {% else %}
+                                        <span class="badge bg-danger p-2 px-3"><i class="fa-solid fa-skull"></i> Derrota</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-muted py-5">
+                                    <i class="fa-solid fa-ghost fs-3 mb-2 d-block"></i>
+                                    Ainda não jogou nenhum duelo.
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

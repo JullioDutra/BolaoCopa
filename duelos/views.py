@@ -93,7 +93,7 @@ def tela_jogo(request, partida_id):
     return render(request, template, {'partida': partida})
 
 def status_partida_api(request, partida_id):
-    """Heartbeat do jogo: gere o tempo e os turnos."""
+    """Heartbeat do jogo: gere o tempo e os turnos (agora com 30 segundos)."""
     partida = get_object_or_404(PartidaDuelo, id=partida_id)
     agora = timezone.now()
     tempo_passado = 0
@@ -101,7 +101,7 @@ def status_partida_api(request, partida_id):
     if partida.status == 'andamento':
         tempo_passado = (agora - partida.turno_iniciado_em).total_seconds()
         
-        # Gestão do tempo esgotado (15 segundos por turno)
+        # Gestão do tempo esgotado (ALTERADO PARA 30 SEGUNDOS)
         if tempo_passado >= 30:
             # Troca de turno automática
             partida.turno_de = partida.jogador_convidado if partida.turno_de == partida.jogador_criador else partida.jogador_criador
@@ -110,6 +110,7 @@ def status_partida_api(request, partida_id):
             partida.save()
             tempo_passado = 0
 
+    # Calcula o tempo restante baseado nos 30 segundos
     tempo_restante = max(0, 30 - int(tempo_passado))
 
     return JsonResponse({

@@ -4,77 +4,118 @@
 
 {% block content %}
 <style>
+    body { padding-bottom: 90px; } /* Espaço para input mobile */
+    
     .escudo-item {
         transition: all 0.5s ease;
     }
+    
     .status-vez-badge {
-        padding: 10px 20px;
+        padding: 8px 16px;
         border-radius: 50px;
         font-weight: bold;
         display: inline-block;
         transition: all 0.3s ease;
     }
+
+    /* Formulário fixo no rodapé para Mobile */
+    @media (max-width: 767px) {
+        .form-chute-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: white;
+            padding: 15px;
+            box-shadow: 0 -5px 15px rgba(0,0,0,0.15);
+            z-index: 1050;
+            border-top: 2px solid var(--bs-primary);
+        }
+        .escudos-area { padding: 20px 10px !important; }
+        .escudo-card { width: 80px !important; height: 80px !important; }
+    }
 </style>
 
-<div class="row justify-content-center mt-4">
+<div class="row justify-content-center mt-3">
     <div class="col-md-10">
-        <div class="card card-clean shadow-lg border-0 p-5 text-center rounded-4">
+        <div class="card card-clean shadow-sm border-0 p-3 p-md-5 text-center rounded-4 mb-4">
             
-            <div class="row align-items-center mb-5">
-                <div class="col-md-3 text-start">
-                    <h2 class="fw-bold text-danger mb-0" id="timer">30</h2>
-                    <small class="text-muted fw-bold text-uppercase">Segundos</small>
+            <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 bg-light p-3 rounded-4 border">
+                <div class="text-center px-2">
+                    <h2 class="fw-bold text-danger mb-0 lh-1" id="timer">30</h2>
+                    <small class="text-muted fw-bold text-uppercase" style="font-size: 0.65rem;">Segundos</small>
                 </div>
-                <div class="col-md-6">
-                    <h3 class="fw-bold text-primary mb-3"><i class="fa-solid fa-route"></i> Jogo da trajetória</h3>
-                    <div id="status-vez" class="status-vez-badge bg-light text-muted shadow-sm">Conectando...</div>
+                
+                <div class="text-center px-2 flex-grow-1">
+                    <h5 class="fw-bold text-primary mb-2 d-none d-md-block"><i class="fa-solid fa-route"></i> Jogo da trajetória</h5>
+                    <div id="status-vez" class="status-vez-badge bg-light text-muted border shadow-sm">Conectando...</div>
                 </div>
-                <div class="col-md-3 text-end">
-                    <div class="d-flex justify-content-end gap-3">
-                        <div class="text-center border-end pe-3">
-                            <small class="d-block text-muted text-uppercase">Criador</small>
-                            <span class="fw-bold text-success">{{ partida.jogador_criador.username }}</span>
-                            <h4 class="fw-bold mb-0" id="pts-j1">0</h4>
-                        </div>
-                        <div class="text-center">
-                            <small class="d-block text-muted text-uppercase">Convidado</small>
-                            <span class="fw-bold text-primary">{{ partida.jogador_convidado.username }}</span>
-                            <h4 class="fw-bold mb-0" id="pts-j2">0</h4>
-                        </div>
+
+                <div class="d-flex text-center gap-3 px-2">
+                    <div class="border-end pe-3">
+                        <small class="d-block text-muted text-uppercase" style="font-size: 0.6rem;">{{ partida.jogador_criador.username }}</small>
+                        <h4 class="fw-bold text-success mb-0" id="pts-j1">0</h4>
+                    </div>
+                    <div>
+                        <small class="d-block text-muted text-uppercase" style="font-size: 0.6rem;">{{ partida.jogador_convidado.username }}</small>
+                        <h4 class="fw-bold text-primary mb-0" id="pts-j2">0</h4>
                     </div>
                 </div>
             </div>
 
-            <div class="d-flex flex-wrap justify-content-center gap-4 py-5 bg-light rounded-4 border border-dashed mb-5" id="area-escudos">
+            <div class="d-flex flex-wrap justify-content-center gap-3 py-4 bg-white rounded-4 border border-dashed mb-4 escudos-area" id="area-escudos">
                 {% for item in partida.categoria.itens.all %}
                 <div class="escudo-item" id="escudo-{{ forloop.counter0 }}" style="display: none;">
-                    <div class="card shadow-sm border-0 rounded-circle p-2 bg-white" style="width: 120px; height: 120px;">
+                    <div class="card shadow-sm border-0 rounded-circle p-2 bg-light mx-auto escudo-card" style="width: 100px; height: 100px;">
                         {% if item.imagem %}
                             <img src="{{ item.imagem.url }}" class="img-fluid rounded-circle h-100 object-fit-contain">
                         {% else %}
-                            <div class="h-100 d-flex align-items-center justify-content-center fw-bold text-dark">{{ item.nome }}</div>
+                            <div class="h-100 d-flex align-items-center justify-content-center fw-bold text-dark text-truncate" style="font-size: 0.75rem;">{{ item.nome }}</div>
                         {% endif %}
                     </div>
-                    <small class="d-block mt-2 fw-bold text-muted text-uppercase">{{ forloop.counter }}º Clube</small>
+                    <small class="d-block mt-2 fw-bold text-muted text-uppercase" style="font-size: 0.7rem;">{{ forloop.counter }}º Clube</small>
                 </div>
                 {% endfor %}
             </div>
 
-            <form onsubmit="enviarPalpite(event)" class="w-75 mx-auto" id="form-chute">
-                <div class="input-group input-group-lg shadow-sm">
-                    <input type="text" id="palpite" class="form-control border-0 bg-light" placeholder="Chute o nome do jogador..." disabled autocomplete="off">
-                    <button class="btn btn-primary px-4 fw-bold" type="submit" id="btn-chute" disabled>ENVIAR</button>
-                </div>
-            </form>
+            <div class="form-chute-container">
+                <form onsubmit="enviarPalpite(event)" class="w-100 mx-auto" style="max-width: 600px;">
+                    <div class="input-group input-group-lg shadow-sm">
+                        <span class="input-group-text bg-light border-end-0 text-primary"><i class="fa-solid fa-user-secret"></i></span>
+                        <input type="text" id="palpite" class="form-control border-start-0 ps-0 fw-bold bg-light" placeholder="Chute o nome..." disabled autocomplete="off">
+                        <button class="btn btn-primary px-3 px-md-4 fw-bold" type="submit" id="btn-chute" disabled>ENVIAR</button>
+                    </div>
+                </form>
+                <div id="feedback-msg" class="mt-2 fw-bold text-center" style="min-height: 24px; font-size: 0.9rem;"></div>
+            </div>
 
-            <div class="mt-4 border-top pt-3">
-                <button class="btn btn-outline-danger btn-sm fw-bold" onclick="desistirJogo()">
-                    <i class="fa-solid fa-flag-checkered"></i> Desistir da Partida
+            <div class="mt-2">
+                <button class="btn btn-link text-danger text-decoration-none fw-bold" onclick="desistirJogo()">
+                    <i class="fa-solid fa-flag-checkered"></i> Desistir
                 </button>
             </div>
 
-            <div id="feedback-msg" class="mt-3 fw-bold" style="min-height: 28px;"></div>
+        </div>
+    </div>
+</div>
 
+<div class="modal fade" id="modalFimJogo" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 text-center">
+            <div class="modal-body p-5">
+                <i class="fa-solid fa-star text-primary mb-3" style="font-size: 4rem;"></i>
+                <h2 class="fw-bold text-dark mb-2">Mistério Revelado!</h2>
+                
+                <div class="alert alert-primary fw-bold fs-4 mb-4 text-uppercase shadow-sm">
+                    {{ partida.categoria.resposta_oculta }}
+                </div>
+                
+                <h5 class="text-success fw-bold mb-4" id="modal-vencedor">...</h5>
+                
+                <a href="{% url 'duelos:listar_desafios' %}" class="btn btn-primary btn-lg w-100 fw-bold rounded-pill shadow-sm">
+                    Voltar para a Arena
+                </a>
+            </div>
         </div>
     </div>
 </div>
@@ -85,7 +126,9 @@
     const statusUrl = "{% url 'duelos:status_partida_api' partida.id %}";
     const chutarUrl = "{% url 'duelos:enviar_palpite_api' partida.id %}";
     const desistirUrl = "{% url 'duelos:desistir_partida_api' partida.id %}";
-    
+    let meuTurno = false;
+    let pollInterval = setInterval(atualizarPartida, 1500);
+
     function getCookie(name) {
         let cookieValue = null;
         if (document.cookie && document.cookie !== '') {
@@ -101,15 +144,17 @@
         return cookieValue;
     }
 
-    let meuTurno = false;
-    let pollInterval = setInterval(atualizarPartida, 1500);
-
     function atualizarPartida() {
         fetch(statusUrl).then(res => res.json()).then(data => {
             if (data.status === 'finalizado') { 
                 clearInterval(pollInterval); 
-                alert("FIM DE JOGO!");
-                window.location.href = "{% url 'duelos:listar_desafios' %}"; 
+                
+                let vencedor = "O Jogo terminou empatado!";
+                if (data.pontos_j1 > data.pontos_j2) vencedor = "🏆 Vitória de {{ partida.jogador_criador.username|escapejs }}!";
+                if (data.pontos_j2 > data.pontos_j1) vencedor = "🏆 Vitória de {{ partida.jogador_convidado.username|escapejs }}!";
+                
+                document.getElementById('modal-vencedor').innerText = vencedor;
+                new bootstrap.Modal(document.getElementById('modalFimJogo')).show();
                 return; 
             }
 
@@ -123,13 +168,13 @@
 
             if (data.turno_atual_id === meuUsuarioId) {
                 if (!meuTurno) { input.disabled = false; btn.disabled = false; input.focus(); }
-                statusBadge.innerText = "SUA VEZ DE CHUTAR!";
+                statusBadge.innerText = "Sua Vez!";
                 statusBadge.className = "status-vez-badge bg-primary text-white shadow-sm";
                 meuTurno = true;
             } else {
                 input.disabled = true; btn.disabled = true;
-                statusBadge.innerText = "OPONENTE PENSANDO...";
-                statusBadge.className = "status-vez-badge bg-light text-muted";
+                statusBadge.innerText = "Adversário...";
+                statusBadge.className = "status-vez-badge bg-white text-muted border";
                 meuTurno = false;
             }
 
@@ -138,13 +183,10 @@
                 let esc = document.getElementById(`escudo-${i}`);
                 if (esc && esc.style.display === 'none') {
                     esc.style.display = 'block';
-                    esc.animate([
-                        { opacity: 0, transform: 'scale(0.5)' },
-                        { opacity: 1, transform: 'scale(1)' }
-                    ], { duration: 400, easing: 'ease-out' });
+                    esc.animate([{ transform: 'scale(0)' }, { transform: 'scale(1)' }], { duration: 300 });
                 }
             }
-        }).catch(err => console.error("Erro na atualização:", err));
+        }).catch(err => console.error(err));
     }
 
     function enviarPalpite(event) {
@@ -160,26 +202,20 @@
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
             body: JSON.stringify({ 'palpite': chute })
-        })
-        .then(res => res.json()).then(data => {
+        }).then(res => res.json()).then(data => {
             let msg = document.getElementById('feedback-msg');
             msg.innerHTML = data.acertou ? 
-                '<span class="text-success fs-5">MITOU! ACERTOU! <i class="fa-solid fa-check"></i></span>' : 
-                '<span class="text-danger fs-5">ERROU! PASSA A VEZ... <i class="fa-solid fa-xmark"></i></span>';
-            
+                '<span class="text-success fs-6"><i class="fa-solid fa-check"></i> Boa!</span>' : 
+                '<span class="text-danger fs-6"><i class="fa-solid fa-x"></i> Errou!</span>';
             atualizarPartida();
             setTimeout(() => msg.innerHTML = '', 2000);
         });
     }
 
     function desistirJogo() {
-        if (confirm("Tem certeza que deseja desistir? Seu adversário ganhará a partida!")) {
-            fetch(desistirUrl, {
-                method: 'POST',
-                headers: { 'X-CSRFToken': getCookie('csrftoken') }
-            }).then(() => {
-                atualizarPartida();
-            });
+        if (confirm("Desistir concede a vitória ao oponente. Continuar?")) {
+            fetch(desistirUrl, { method: 'POST', headers: { 'X-CSRFToken': getCookie('csrftoken') } })
+            .then(() => atualizarPartida());
         }
     }
 

@@ -2,6 +2,38 @@
 {% block title %}Registrar Palpite - Cartolândia{% endblock %}
 
 {% block content %}
+<style>
+    /* Estilização focada nas caixas de placar para visualização perfeita no celular */
+    .caixa-placar input {
+        font-size: 2.5rem !important; /* Deixa o número gigante */
+        font-weight: 900 !important;  /* Deixa o número bem gordinho (bold) */
+        height: 70px;
+        width: 80px !important;       /* Largura fixa para não esmagar no mobile */
+        text-align: center;
+        border: 3px solid var(--verde-escuro);
+        border-radius: 12px;
+        color: #1a1a1a;
+        box-shadow: inset 0 3px 6px rgba(0,0,0,0.1);
+        padding: 0;
+    }
+    
+    .caixa-placar input:focus {
+        border-color: #f1c40f;
+        box-shadow: 0 0 10px rgba(241, 196, 15, 0.5);
+        outline: none;
+    }
+
+    /* Esconde as setinhas nativas de aumentar/diminuir número para não cobrir o texto */
+    .caixa-placar input[type=number]::-webkit-inner-spin-button, 
+    .caixa-placar input[type=number]::-webkit-outer-spin-button { 
+        -webkit-appearance: none; 
+        margin: 0; 
+    }
+    .caixa-placar input[type=number] {
+        -moz-appearance: textfield;
+    }
+</style>
+
 <div class="row justify-content-center mt-5">
     <div class="col-md-7">
         <div class="card card-clean p-4 shadow-sm text-center">
@@ -23,35 +55,44 @@
 
             <form method="POST">
                 {% csrf_token %}
-                <div class="d-flex justify-content-center align-items-center gap-2 mb-5">
-                    <div class="text-end" style="width: 35%;">
-                        {% if jogo.escudo_casa %}<img src="{{ jogo.escudo_casa.url }}" width="40" class="mb-2 d-block ms-auto">{% endif %}
-                        <h5 class="fw-bold mb-0 text-truncate">{{ jogo.time_casa }}</h5>
+                
+                <div class="d-flex justify-content-center align-items-center mb-5">
+                    
+                    <div class="text-end" style="flex: 1;">
+                        {% if jogo.escudo_casa %}<img src="{{ jogo.escudo_casa.url }}" width="50" class="mb-2 d-block ms-auto">{% endif %}
+                        <h5 class="fw-bold mb-0 text-truncate" title="{{ jogo.time_casa }}">{{ jogo.time_casa }}</h5>
                     </div>
                     
-                    <div style="width: 15%;">{{ form.gols_casa }}</div>
-                    <h4 class="text-muted mx-2 mb-0">X</h4>
-                    <div style="width: 15%;">{{ form.gols_fora }}</div>
-                    
-                    <div class="text-start" style="width: 35%;">
-                        {% if jogo.escudo_fora %}<img src="{{ jogo.escudo_fora.url }}" width="40" class="mb-2 d-block me-auto">{% endif %}
-                        <h5 class="fw-bold mb-0 text-truncate">{{ jogo.time_fora }}</h5>
+                    <div class="caixa-placar mx-2">
+                        {{ form.gols_casa }}
                     </div>
+                    
+                    <h4 class="text-muted mb-0 fw-bold fs-3">X</h4>
+                    
+                    <div class="caixa-placar mx-2">
+                        {{ form.gols_fora }}
+                    </div>
+                    
+                    <div class="text-start" style="flex: 1;">
+                        {% if jogo.escudo_fora %}<img src="{{ jogo.escudo_fora.url }}" width="50" class="mb-2 d-block me-auto">{% endif %}
+                        <h5 class="fw-bold mb-0 text-truncate" title="{{ jogo.time_fora }}">{{ jogo.time_fora }}</h5>
+                    </div>
+                    
                 </div>
 
                 <div class="d-flex justify-content-center flex-wrap gap-3 mt-4 pt-3 border-top">
-                    <button type="submit" name="tipo_aposta" value="resenha" class="btn btn-outline-secondary btn-lg px-4 shadow-sm">
+                    <button type="submit" name="tipo_aposta" value="resenha" class="btn btn-outline-secondary btn-lg px-4 shadow-sm fw-bold">
                         {% if palpite_existente %}Atualizar como Resenha{% else %}Salvar na Resenha (Grátis){% endif %}
                     </button>
                     
-                    <button type="submit" name="tipo_aposta" value="pago" class="btn btn-success btn-lg px-4 shadow">
-                        {% if palpite_existente %}Atualizar para Valendo Prêmio{% else %}Valendo Prêmio (R$ 10,00){% endif %}
+                    <button type="submit" name="tipo_aposta" value="pago" class="btn btn-success btn-lg px-4 shadow fw-bold">
+                        {% if palpite_existente %}Atualizar Valendo Prêmio{% else %}Valendo Prêmio (R$ 10,00){% endif %}
                     </button>
                 </div>
             </form>
             
             <div class="mt-4">
-                <a href="{% url 'palpites:listar_jogos' %}" class="text-muted text-decoration-none">← Voltar para a lista</a>
+                <a href="{% url 'palpites:listar_jogos' %}" class="text-muted text-decoration-none fw-bold">← Voltar para a lista</a>
             </div>
             
         </div>

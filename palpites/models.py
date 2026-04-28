@@ -68,8 +68,8 @@ class Jogo(models.Model):
     
     @property
     def aceita_palpite(self):
-        """ Retorna True se faltar MAIS de 24 horas para o jogo começar """
-        limite_para_apostar = self.data_hora - timedelta(hours=24)
+        """ Retorna True se faltar MAIS de 1 horas para o jogo começar """
+        limite_para_apostar = self.data_hora - timedelta(hours=1)
         return timezone.now() < limite_para_apostar
     
     def save(self, *args, **kwargs):

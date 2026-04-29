@@ -16,7 +16,8 @@ from .models import (
     Campeonato, 
     InscricaoCampeonato, 
     ConfrontoCampeonato,
-    Campeonato
+    Campeonato,
+    InscricaoCampeonato
 )
 
 
@@ -497,3 +498,23 @@ def processar_avanco_fase(confronto, vencedor):
         prox_confronto.jogador2 = vencedor
         
     prox_confronto.save()
+
+def painel_campeonato(request, campeonato_id):
+    # Garante que apenas o criador (admin) acede a este painel
+    campeonato = get_object_or_404(Campeonato, id=campeonato_id, admin=request.user)
+    
+    # Lista de inscritos
+    inscritos = InscricaoCampeonato.objects.filter(campeonato=campeonato).order_by('data_inscricao')
+    
+    # Gerar o link de convite absoluto
+    link_convite = request.build_absolute_uri(
+        reverse('duelos:entrar_campeonato', kwargs={'codigo_convite': campeonato.codigo_convite})
+    )
+    
+    context = {
+        'campeonato': campeonato,
+        'inscritos': inscritos,
+        'link_convite': link_convite,
+        'total_inscritos': inscritos.count(),
+    }
+    return render(request, 'duelos/painel_campeonato.html', context)

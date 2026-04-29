@@ -1,62 +1,64 @@
 {% extends 'base.html' %}
 
-{% block title %}Arena de Duelos - Cartolândia{% endblock %}
+{% block title %}Arena do X1 - Cartolândia{% endblock %}
 
 {% block content %}
 <div class="row mt-5 mb-4">
     <div class="col-12 text-center position-relative">
         <div class="d-md-flex justify-content-md-end mb-3 mb-md-0">
             <a href="{% url 'duelos:historico_duelos' %}" class="btn btn-outline-secondary fw-bold shadow-sm">
-                <i class="fa-solid fa-clock-rotate-left"></i> Meu Histórico
+                <i class="fa-solid fa-book-open"></i> Minha Súmula
             </a>
         </div>
         
         <h2 class="fw-bold mt-3" style="color: var(--verde-escuro);">
-            <i class="fa-solid fa-khanda text-danger"></i> Arena de Duelos
+            <i class="fa-solid fa-trophy text-warning"></i> Arena do X1
         </h2>
-        <p class="text-muted fs-5">Escolha o seu desafio. O sistema sorteará um tema misterioso para o duelo!</p>
+        <p class="text-muted fs-5">Escolha a sua tática. O juiz vai sortear um desafio surpresa pro duelo!</p>
     </div>
 </div>
 
 <div class="row justify-content-center">
+    <!-- Card Elencos -->
     <div class="col-md-5 mb-4">
         <div class="card card-clean h-100 text-center p-5 shadow border-0 border-top border-5 border-success rounded-4">
             <div class="mb-3">
-                <i class="fa-solid fa-users text-success" style="font-size: 4rem;"></i>
+                <i class="fa-solid fa-clipboard-list text-success" style="font-size: 4rem;"></i>
             </div>
-            <h3 class="fw-bold">Elencos clássicos</h3>
+            <h3 class="fw-bold">Prancheta do Professor</h3>
             <p class="text-muted">
-                Consegue identificar todos os titulares de uma equipa histórica? 
-                Cada acerto é um ponto. Ganha quem tiver mais memória tática!
+                Lembra de cor a escalação daquele esquadrão inesquecível? 
+                Cada titular que você cravar é caixa. Quem tiver a melhor memória tática, leva os três pontos!
             </p>
             
             <div class="mt-auto pt-4">
                 <form method="POST" action="{% url 'duelos:criar_duelo' 'elenco' %}">
                     {% csrf_token %}
                     <button type="submit" class="btn btn-success btn-lg w-100 fw-bold shadow-sm rounded-pill">
-                        <i class="fa-solid fa-futbol"></i> Jogar Elencos
+                        <i class="fa-solid fa-futbol"></i> Escalar o Time
                     </button>
                 </form>
             </div>
         </div>
     </div>
 
+    <!-- Card Trajetória -->
     <div class="col-md-5 mb-4">
         <div class="card card-clean h-100 text-center p-5 shadow border-0 border-top border-5 border-primary rounded-4">
             <div class="mb-3">
-                <i class="fa-solid fa-route text-primary" style="font-size: 4rem;"></i>
+                <i class="fa-solid fa-shoe-prints text-primary" style="font-size: 4rem;"></i>
             </div>
-            <h3 class="fw-bold">Jogo da trajetória</h3>
+            <h3 class="fw-bold">Carreira Misteriosa</h3>
             <p class="text-muted">
-                Um jogador misterioso e os clubes por onde passou. 
-                Os escudos aparecem conforme os erros. Seja o primeiro a descobrir!
+                Onde esse bagre (ou craque) desfilou seu futebol? 
+                Os escudos vão aparecendo no telão a cada chute na trave. O primeiro a cravar o nome, ganha!
             </p>
             
             <div class="mt-auto pt-4">
                 <form method="POST" action="{% url 'duelos:criar_duelo' 'trajetoria' %}">
                     {% csrf_token %}
                     <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold shadow-sm rounded-pill">
-                        <i class="fa-solid fa-shield-halved"></i> Jogar Trajetória
+                        <i class="fa-solid fa-earth-americas"></i> Descobrir o Craque
                     </button>
                 </form>
             </div>
@@ -66,9 +68,9 @@
 
 <div class="row mt-4">
     <div class="col-12 text-center">
-        <p class="small text-muted italic">
-            <i class="fa-solid fa-circle-info"></i> 
-            Ao criar uma sala, receberá um link para enviar ao seu adversário.
+        <p class="small text-muted fst-italic">
+            <i class="fa-solid fa-bullhorn"></i> 
+            Fica esperto: Ao confirmar a tática, você vai pegar o link do convite pra mandar pro seu rival e iniciar a resenha.
         </p>
     </div>
 </div>

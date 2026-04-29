@@ -22,6 +22,10 @@ from .models import (
 @login_required
 def listar_desafios(request):
     """Tela inicial para escolha do modo de jogo."""
+    salas_abertas = PartidaDesafio.objects.filter(status='aguardando').order_by('-criado_em')
+    context = {
+        'salas_abertas': salas_abertas,
+    }
     return render(request, 'duelos/listar_desafios.html')
 
 @login_required

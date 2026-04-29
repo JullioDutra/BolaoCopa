@@ -18,4 +18,8 @@ urlpatterns = [
     path('api/chutar/<int:partida_id>/', views.enviar_palpite_api, name='enviar_palpite_api'),
     path('api/desistir/<int:partida_id>/', views.desistir_partida_api, name='desistir_partida_api'),
     path('historico/', views.historico_duelos, name='historico_duelos'),
+    path('campeonatos/criar/', views.criar_campeonato, name='criar_campeonato'),
+    path('campeonatos/<int:campeonato_id>/', views.painel_campeonato, name='painel_campeonato'),
+    path('campeonatos/entrar/<uuid:codigo_convite>/', views.entrar_campeonato, name='entrar_campeonato'),
+    path('campeonatos/<int:campeonato_id>/gerar-chaves/', views.gerar_chaveamento, name='gerar_chaveamento'),
 ]

@@ -439,6 +439,28 @@ def ver_chaveamento(request, campeonato_id):
     return render(request, 'duelos/ver_chaveamento.html', context)
 
 @login_required
+@login_required
+def lobby_espera(request, partida_id):
+    """Lobby de espera com link de convite."""
+    partida = get_object_or_404(PartidaDuelo, id=partida_id)
+    
+    if request.user != partida.jogador_criador:
+        messages.error(request, "Acesso negado.")
+        return redirect('dashboard')
+        
+    link_convite = request.build_absolute_uri(f"/duelos/entrar/{partida.id}/")
+    
+    # Verifica se a partida faz parte de uma chave de campeonato
+    eh_campeonato = hasattr(partida, 'confrontocampeonato')
+    
+    return render(request, 'duelos/lobby.html', {
+        'partida': partida,
+        'link_convite': link_convite,
+        'eh_campeonato': eh_campeonato
+    })
+
+
+@login_required
 def iniciar_jogo_campeonato(request, confronto_id):
     """Entrada da sala de jogo específica de uma chave do campeonato."""
     confronto = get_object_or_404(ConfrontoCampeonato, id=confronto_id)
@@ -448,24 +470,61 @@ def iniciar_jogo_campeonato(request, confronto_id):
         messages.warning(request, "Este confronto já está decidido!")
         return redirect('duelos:ver_chaveamento', campeonato_id=confronto.campeonato.id)
 
-    # Se a partida ainda não existe no banco, o sistema cria
+    # 1. Se a partida ainda NÃO EXISTE, o PRIMEIRO jogador a clicar cria a sala e fica aguardando
     if not confronto.partida_vinculada:
+        # Quem clicou vira o "criador" (host) da sala
+        j_criador = request.user
+        j_convidado = confronto.jogador2 if request.user == confronto.jogador1 else confronto.jogador1
+
         partida = PartidaDuelo.objects.create(
             categoria=confronto.desafio_sorteado,
-            jogador_criador=confronto.jogador1,
-            jogador_convidado=confronto.jogador2,
-            turno_de=confronto.jogador1, # Começa sempre pelo jogador 1 da chave
-            status='andamento',
-            turno_iniciado_em=timezone.now()
+            jogador_criador=j_criador,
+            jogador_convidado=j_convidado,
+            turno_de=confronto.jogador1, # O jogador 1 da chave sempre tem a vantagem do primeiro palpite
+            status='aguardando' # <-- O CRONÔMETRO AINDA NÃO RODA
         )
         confronto.partida_vinculada = partida
         confronto.status = 'andamento'
         confronto.save()
+        
+        # Como ele foi o primeiro a chegar, vai pro vestiário (Lobby) esperar o outro
+        return redirect('duelos:lobby_espera', partida_id=partida.id)
+        
+    # 2. Se a partida JÁ EXISTE, significa que alguém já está lá esperando
     else:
         partida = confronto.partida_vinculada
+        
+        # Se a partida está aguardando e quem clicou FOI O ADVERSÁRIO (O segundo a chegar)
+        if partida.status == 'aguardando' and request.user != partida.jogador_criador:
+            # Apita o árbitro! O segundo chegou, a bola rola agora.
+            partida.status = 'andamento'
+            partida.turno_iniciado_em = timezone.now()
+            partida.save()
+            return redirect('duelos:tela_jogo', partida_id=partida.id)
+            
+        # Se a partida está aguardando mas quem clicou foi o mesmo cara que criou (voltou na tela)
+        elif partida.status == 'aguardando' and request.user == partida.jogador_criador:
+            return redirect('duelos:lobby_espera', partida_id=partida.id)
+            
+        # Se a partida já está em andamento ou finalizada
+        else:
+            return redirect('duelos:tela_jogo', partida_id=partida.id)
 
-    # Redireciona para a URL do seu jogo principal
-    return redirect('duelos:tela_jogo', partida_id=partida.id)
+# ------------------- LÓGICA DE RESETAR O CAMPEONATO -------------------
+@login_required
+def resetar_campeonato(request, campeonato_id):
+    """Apaga a tabela gerada e volta o campeonato para a fase de inscrições."""
+    campeonato = get_object_or_404(Campeonato, id=campeonato_id, admin=request.user)
+    
+    # O VAR apaga todas as chaves geradas
+    ConfrontoCampeonato.objects.filter(campeonato=campeonato).delete()
+    
+    # Volta o status do campeonato para 'inscricoes'
+    campeonato.status = 'inscricoes'
+    campeonato.save()
+    
+    messages.success(request, "Campeonato reiniciado! As chaves foram apagadas e o torneio voltou para a fase de inscrições.")
+    return redirect('duelos:painel_campeonato', campeonato_id=campeonato.id)
 
 def processar_avanco_fase(confronto, vencedor):
     """

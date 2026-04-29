@@ -1,14 +1,15 @@
 import requests
+import time
+import urllib.parse
 from bs4 import BeautifulSoup
 from django.core.management.base import BaseCommand
 from django.core.files.base import ContentFile
 from duelos.models import Clube
 
 class Command(BaseCommand):
-    help = 'Robô Scout: Busca, valida e baixa escudos dos clubes automaticamente via Wikipedia'
+    help = 'Robô Scout v2: Busca, valida e baixa escudos dos clubes sem cair no bloqueio da Wikipedia'
 
     def handle(self, *args, **kwargs):
-        # Filtra apenas os clubes que ainda estão sem escudo
         clubes_sem_escudo = Clube.objects.filter(escudo='') | Clube.objects.filter(escudo__isnull=True)
         total = clubes_sem_escudo.count()
 
@@ -16,12 +17,8 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS("Todos os clubes já possuem escudo! O vestiário tá completo."))
             return
 
-        self.stdout.write(self.style.WARNING(f"Iniciando a caçada por {total} escudos... O Robô Scout entrou em campo!"))
+        self.stdout.write(self.style.WARNING(f"Iniciando a caçada por {total} escudos... O Robô Scout v2 entrou em campo!"))
 
-        # ==========================================
-        # A GRANDE PESQUISA (Dicionário Mestre)
-        # Corrige nomes curtos/ambíguos para o nome exato da Wikipedia
-        # ==========================================
         termos_exatos = {
             "Monaco": "AS Monaco FC",
             "Milan": "Associazione Calcio Milan",
@@ -81,64 +78,74 @@ class Command(BaseCommand):
             "CSKA Moscou": "PFC CSKA Moscovo"
         }
 
-        # Simula ser um navegador real para não ser bloqueado
+        # Crachá oficial pro robô não ser barrado na porta do estádio (Wikipedia)
         headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            'User-Agent': 'CartolandiaScoutBot/2.0 (admin@cartolandia.local) Python-Requests'
         }
 
         for clube in clubes_sem_escudo:
-            # Se não estiver no dicionário mestre, ele adiciona "futebol" pra ajudar a Wikipedia a entender
             termo_busca = termos_exatos.get(clube.nome, f"{clube.nome} futebol")
+            
+            # Codifica a URL (troca os espaços por %20 e ajusta acentos)
+            termo_encoded = urllib.parse.quote(termo_busca)
             
             self.stdout.write(f"Buscando: {clube.nome}...")
             
-            # 1. Pesquisa na API da Wikipedia para achar o link da página do clube
-            url_search = f"https://pt.wikipedia.org/w/api.php?action=opensearch&search={termo_busca}&limit=1&format=json"
+            url_search = f"https://pt.wikipedia.org/w/api.php?action=opensearch&search={termo_encoded}&limit=1&format=json"
             
             try:
-                res_search = requests.get(url_search, headers=headers).json()
+                res = requests.get(url_search, headers=headers)
                 
-                # Se não achou na Wikipedia em Português, tenta na em Inglês
-                if len(res_search[3]) == 0:
-                    url_search_en = f"https://en.wikipedia.org/w/api.php?action=opensearch&search={termo_busca}&limit=1&format=json"
-                    res_search = requests.get(url_search_en, headers=headers).json()
+                # Se não retornar 200 OK, a gente pula pra evitar quebrar o JSON
+                if res.status_code != 200:
+                    self.stdout.write(self.style.WARNING(f"  [!] Bloqueio detectado ao buscar {clube.nome}. Status {res.status_code}"))
+                    time.sleep(1)
+                    continue
+                    
+                res_search = res.json()
+                
+                # Se não achou na Wikipedia PT, tenta na EN
+                if len(res_search) < 4 or len(res_search[3]) == 0:
+                    url_search_en = f"https://en.wikipedia.org/w/api.php?action=opensearch&search={termo_encoded}&limit=1&format=json"
+                    res_en = requests.get(url_search_en, headers=headers)
+                    if res_en.status_code == 200:
+                        res_search = res_en.json()
 
-                if len(res_search[3]) > 0:
+                if len(res_search) >= 4 and len(res_search[3]) > 0:
                     page_url = res_search[3][0]
                     
-                    # 2. Entra na página do clube e raspa o HTML
+                    # 2. Entra na página do clube
                     html = requests.get(page_url, headers=headers).text
                     soup = BeautifulSoup(html, 'html.parser')
                     
-                    # 3. Procura a imagem que fica dentro da ficha técnica (infobox)
+                    # 3. Procura a imagem dentro da ficha técnica (infobox)
                     img_tag = soup.select_one('table.infobox img')
                     
                     if img_tag and img_tag.has_attr('src'):
                         img_url = "https:" + img_tag['src']
                         
-                        # 4. VALIDAÇÃO: Testa se a imagem realmente existe no servidor
                         img_response = requests.get(img_url, headers=headers)
                         
-                        # Se o código for 200 (OK) e for um arquivo de imagem real
                         if img_response.status_code == 200 and 'image' in img_response.headers.get('Content-Type', ''):
-                            # Pega a extensão da imagem (png, svg, jpg)
                             ext = img_url.split('.')[-1].lower()
                             if ext not in ['png', 'jpg', 'jpeg', 'webp', 'svg', 'gif']:
                                 ext = 'png'
                                 
                             nome_arquivo = f"{clube.nome.replace(' ', '_').lower()}.{ext}"
                             
-                            # Salva a imagem física no banco de dados
                             clube.escudo.save(nome_arquivo, ContentFile(img_response.content), save=True)
                             self.stdout.write(self.style.SUCCESS(f"  [+] Golaço! Escudo garantido: {clube.nome}"))
                         else:
-                            self.stdout.write(self.style.ERROR(f"  [-] Imagem corrompida ou inacessível para: {clube.nome}"))
+                            self.stdout.write(self.style.ERROR(f"  [-] Imagem corrompida para: {clube.nome}"))
                     else:
-                        self.stdout.write(self.style.WARNING(f"  [-] Escudo não encontrado na página para: {clube.nome}"))
+                        self.stdout.write(self.style.WARNING(f"  [-] Escudo não encontrado na ficha técnica: {clube.nome}"))
                 else:
                     self.stdout.write(self.style.WARNING(f"  [-] Clube não encontrado na Wikipedia: {clube.nome}"))
                     
             except Exception as e:
-                self.stdout.write(self.style.ERROR(f"  [!] O VAR marcou falta! Erro ao buscar {clube.nome}: {e}"))
+                self.stdout.write(self.style.ERROR(f"  [!] Erro na jogada ao buscar {clube.nome}: {e}"))
+            
+            # Cera estratégica (meio segundo) pra não levar cartão vermelho da Wikipedia
+            time.sleep(0.5)
 
-        self.stdout.write(self.style.SUCCESS("\nApita o árbitro! Varredura finalizada. Os escudos estão no vestiário! 🏆"))
+        self.stdout.write(self.style.SUCCESS("\nApita o árbitro! O Robô v2 finalizou o trabalho! 🏆"))

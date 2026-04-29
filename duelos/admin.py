@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import CategoriaDesafio, ItemDesafio, PartidaDuelo, Clube, JogadorBanco
+from .models import CategoriaDesafio, ItemDesafio, PartidaDuelo, Clube, JogadorBanco, Campeonato, InscricaoCampeonato, ConfrontoCampeonato
 
 # --- NOVOS BANCOS CENTRALIZADOS ---
 @admin.register(Clube)
@@ -35,3 +35,24 @@ class CategoriaDesafioAdmin(admin.ModelAdmin):
 class PartidaDueloAdmin(admin.ModelAdmin):
     list_display = ('jogador_criador', 'jogador_convidado', 'categoria', 'status', 'vencedor')
     list_filter = ('status',)
+
+@admin.register(Campeonato)
+class CampeonatoAdmin(admin.ModelAdmin):
+    list_display = ('nome', 'admin', 'status', 'data_limite_inscricao', 'criado_em')
+    list_filter = ('status', 'criado_em')
+    search_fields = ('nome', 'admin__username', 'admin__first_name')
+    readonly_fields = ('codigo_convite', 'criado_em')
+    list_editable = ('status',) # Permite mudar o status direto na listagem
+
+@admin.register(InscricaoCampeonato)
+class InscricaoCampeonatoAdmin(admin.ModelAdmin):
+    list_display = ('jogador', 'campeonato', 'data_inscricao')
+    list_filter = ('campeonato', 'data_inscricao')
+    search_fields = ('jogador__username', 'jogador__first_name', 'campeonato__nome')
+
+@admin.register(ConfrontoCampeonato)
+class ConfrontoCampeonatoAdmin(admin.ModelAdmin):
+    list_display = ('campeonato', 'fase', 'ordem_chave', 'jogador1', 'jogador2', 'status', 'vencedor')
+    list_filter = ('campeonato', 'fase', 'status')
+    search_fields = ('jogador1__username', 'jogador2__username', 'campeonato__nome')
+    autocomplete_fields = ('jogador1', 'jogador2', 'vencedor', 'desafio_sorteado', 'partida_vinculada')

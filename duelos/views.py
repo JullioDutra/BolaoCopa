@@ -15,7 +15,8 @@ from .models import (
     JogadorBanco, 
     Campeonato, 
     InscricaoCampeonato, 
-    ConfrontoCampeonato
+    ConfrontoCampeonato,
+    PartidaDesafio
 )
 
 

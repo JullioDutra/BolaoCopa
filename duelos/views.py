@@ -8,18 +8,15 @@ from django.utils import timezone
 from django.db.models import Q
 from django.urls import reverse
 
-# Importação dos Models limpa (sem a vírgula no final)
 from .models import (
-    PartidaDesafio,
-    CategoriaDesafio, 
     PartidaDuelo, 
+    CategoriaDesafio, 
     ItemDesafio, 
     JogadorBanco, 
     Campeonato, 
     InscricaoCampeonato, 
     ConfrontoCampeonato
 )
-
 
 @login_required
 def listar_desafios(request):

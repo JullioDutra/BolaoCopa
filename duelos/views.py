@@ -140,6 +140,7 @@ def status_partida_api(request, partida_id):
 
 
 
+
 @login_required
 def enviar_palpite_api(request, partida_id):
     """Valida o palpite e processa a lógica de pontuação e encerramento."""
@@ -193,10 +194,23 @@ def enviar_palpite_api(request, partida_id):
                 partida.vencedor = partida.jogador_convidado
             
         partida.save()
+
+        # ==============================================================
+        # 👇 LÓGICA DE AVANÇO DO CAMPEONATO AQUI 👇
+        # ==============================================================
+        if partida.status == 'finalizado' and hasattr(partida, 'confrontocampeonato'):
+            vencedor_chave = partida.vencedor
+            
+            # Se deu empate no mata-mata, temos que passar alguém. (Aqui o criador avança como 'vantagem do empate')
+            if not vencedor_chave:
+                vencedor_chave = partida.jogador_criador 
+                
+            processar_avanco_fase(partida.confrontocampeonato, vencedor_chave)
+        # ==============================================================
+
         return JsonResponse({'sucesso': True, 'acertou': acertou})
         
     return JsonResponse({'sucesso': False}, status=400)
-
 
 @login_required
 def desistir_partida_api(request, partida_id):
@@ -215,9 +229,17 @@ def desistir_partida_api(request, partida_id):
                 partida.vencedor = partida.jogador_criador
                 
             partida.save()
+
+            # ==============================================================
+            # 👇 LÓGICA DE AVANÇO DO CAMPEONATO AQUI 👇
+            # ==============================================================
+            if hasattr(partida, 'confrontocampeonato'):
+                processar_avanco_fase(partida.confrontocampeonato, partida.vencedor)
+            # ==============================================================
+
             return JsonResponse({'sucesso': True})
             
-    return JsonResponse({'sucesso': False}, status=400) 
+    return JsonResponse({'sucesso': False}, status=400)
 
 
 @login_required

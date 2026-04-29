@@ -1,14 +1,30 @@
 <div class="match-card">
     <!-- Jogador 1 -->
-    <div class="match-player {% if confronto.vencedor == confronto.jogador1 %}player-winner{% elif confronto.vencedor and confronto.jogador1 %}player-loser{% endif %}">
-        <span>{{ confronto.jogador1.first_name|default:confronto.jogador1.username|default:"A Definir..." }}</span>
-        {% if confronto.vencedor == confronto.jogador1 %}<i class="fa-solid fa-check text-success"></i>{% endif %}
+    <div class="match-player {% if confronto.jogador1 and confronto.vencedor == confronto.jogador1 %}player-winner{% elif confronto.vencedor and confronto.jogador1 %}player-loser{% endif %}">
+        <span>
+            {% if confronto.jogador1 %}
+                {{ confronto.jogador1.first_name|default:confronto.jogador1.username }}
+            {% else %}
+                <span class="text-muted fst-italic">A Definir...</span>
+            {% endif %}
+        </span>
+        {% if confronto.jogador1 and confronto.vencedor == confronto.jogador1 %}
+            <i class="fa-solid fa-check text-success"></i>
+        {% endif %}
     </div>
 
     <!-- Jogador 2 -->
-    <div class="match-player {% if confronto.vencedor == confronto.jogador2 %}player-winner{% elif confronto.vencedor and confronto.jogador2 %}player-loser{% endif %}">
-        <span>{{ confronto.jogador2.first_name|default:confronto.jogador2.username|default:"A Definir..." }}</span>
-        {% if confronto.vencedor == confronto.jogador2 %}<i class="fa-solid fa-check text-success"></i>{% endif %}
+    <div class="match-player {% if confronto.jogador2 and confronto.vencedor == confronto.jogador2 %}player-winner{% elif confronto.vencedor and confronto.jogador2 %}player-loser{% endif %}">
+        <span>
+            {% if confronto.jogador2 %}
+                {{ confronto.jogador2.first_name|default:confronto.jogador2.username }}
+            {% else %}
+                <span class="text-muted fst-italic">A Definir...</span>
+            {% endif %}
+        </span>
+        {% if confronto.jogador2 and confronto.vencedor == confronto.jogador2 %}
+            <i class="fa-solid fa-check text-success"></i>
+        {% endif %}
     </div>
 
     <!-- Botões de Ação -->

@@ -342,7 +342,7 @@ def painel_campeonato(request, campeonato_id):
 # ==========================================
 @login_required
 def gerar_chaveamento(request, campeonato_id):
-    """Sorteia e cria a tabela de chaves de mata-mata (Agora até Oitavas de Final)."""
+    """Sorteia e cria a tabela distribuindo os W.O.s corretamente para evitar 'Vazio vs Vazio'."""
     campeonato = get_object_or_404(Campeonato, id=campeonato_id, admin=request.user)
 
     if campeonato.status != 'inscricoes':
@@ -358,7 +358,7 @@ def gerar_chaveamento(request, campeonato_id):
         messages.error(request, "Falta quórum! Precisa de pelo menos 3 jogadores.")
         return redirect('duelos:painel_campeonato', campeonato_id=campeonato.id)
 
-    # Nova Lógica Dinâmica de Vagas (Agora até 16 jogadores)
+    # Define o tamanho da chave baseado no número de jogadores
     if num_jogadores <= 4:
         fase_inicial = 'semi'
         vagas = 4
@@ -372,17 +372,33 @@ def gerar_chaveamento(request, campeonato_id):
         messages.error(request, "A capacidade máxima desta versão da Copa é de 16 jogadores!")
         return redirect('duelos:painel_campeonato', campeonato_id=campeonato.id)
 
-    # Preenche com "Fantasmas" (None) até bater o número de vagas
-    while len(jogadores) < vagas:
-        jogadores.append(None)
-
     categorias_disponiveis = list(CategoriaDesafio.objects.all())
     
-    # 1. Cria os confrontos da Fase Inicial (com os jogadores)
+    # ==============================================================
+    # 1. NOVA LÓGICA DE DISTRIBUIÇÃO (Fim do "Vazio vs Vazio")
+    # ==============================================================
+    qtd_confrontos = vagas // 2
+    pares = [{'j1': None, 'j2': None} for _ in range(qtd_confrontos)]
+    
+    # Como as vagas sempre são "a próxima potência de 2" (ex: 9 a 16 inscritos pra 16 vagas),
+    # o número de inscritos SEMPRE é maior que a quantidade de confrontos iniciais (8).
+    # Isso garante que a primeira passada no 'for' preenche o j1 de TODOS os jogos!
+    for i, jogador in enumerate(jogadores):
+        if i < qtd_confrontos:
+            pares[i]['j1'] = jogador # Cabeças de chave
+        else:
+            pares[i - qtd_confrontos]['j2'] = jogador # Adversários
+            
+    # Embaralha os confrontos para os W.O.s não ficarem todos concentrados no final da tabela
+    random.shuffle(pares)
+
+    # ==============================================================
+    # 2. CRIAR OS CONFRONTOS NO BANCO
+    # ==============================================================
     ordem = 1
-    for i in range(0, vagas, 2):
-        j1 = jogadores[i]
-        j2 = jogadores[i+1]
+    for par in pares:
+        j1 = par['j1']
+        j2 = par['j2']
         desafio = random.choice(categorias_disponiveis) if categorias_disponiveis else None
 
         confronto = ConfrontoCampeonato.objects.create(
@@ -394,15 +410,15 @@ def gerar_chaveamento(request, campeonato_id):
             ordem_chave=ordem
         )
 
-        # Regra do W.O. (Sorteio favorável)
+        # Regra do W.O.: Como não existe "Vazio vs Vazio", se faltar o j2, o j1 avança!
         if j1 and not j2:
             processar_avanco_fase(confronto, j1)
-        elif j2 and not j1:
-            processar_avanco_fase(confronto, j2)
 
         ordem += 1
 
-    # 2. Constrói o resto da Árvore "Vazia" para o layout de Chaveamento ficar perfeito!
+    # ==============================================================
+    # 3. CONSTRUIR A ÁRVORE FUTURA PARA O DESIGN DA TELA
+    # ==============================================================
     fases_arvore = []
     if fase_inicial == 'oitavas':
         fases_arvore = [('quartas', 4), ('semi', 2), ('final', 1)]
@@ -422,9 +438,8 @@ def gerar_chaveamento(request, campeonato_id):
     campeonato.status = 'andamento'
     campeonato.save()
 
-    messages.success(request, "Sorteio realizado! A tabela está montada.")
+    messages.success(request, "Sorteio realizado! A tabela está montada de forma justa.")
     return redirect('duelos:ver_chaveamento', campeonato_id=campeonato.id)
-
 
 @login_required
 def ver_chaveamento(request, campeonato_id):

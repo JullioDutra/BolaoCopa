@@ -337,48 +337,52 @@ def painel_campeonato(request, campeonato_id):
 # ==========================================
 # MODO CAMPEONATO - CHAVEAMENTO E JOGABILIDADE
 # ==========================================
+# ==========================================
+# MODO CAMPEONATO - CHAVEAMENTO E JOGABILIDADE
+# ==========================================
 @login_required
 def gerar_chaveamento(request, campeonato_id):
-    """Sorteia e cria a tabela de chaves de mata-mata."""
+    """Sorteia e cria a tabela de chaves de mata-mata (Agora até Oitavas de Final)."""
     campeonato = get_object_or_404(Campeonato, id=campeonato_id, admin=request.user)
 
     if campeonato.status != 'inscricoes':
         messages.error(request, "As chaves já foram geradas ou o torneio já acabou.")
         return redirect('dashboard')
 
-    # Pega todo mundo que assinou a súmula e embaralha (Sorteio cego)
     inscricoes = list(campeonato.inscritos.all())
     random.shuffle(inscricoes)
     jogadores = [inscricao.jogador for inscricao in inscricoes]
     num_jogadores = len(jogadores)
 
     if num_jogadores < 3:
-        messages.error(request, "Falta quórum! Precisa de pelo menos 3 jogadores para dar jogo.")
+        messages.error(request, "Falta quórum! Precisa de pelo menos 3 jogadores.")
         return redirect('duelos:painel_campeonato', campeonato_id=campeonato.id)
 
-    # Lógica de chaves (4 ou 8 vagas). Se tiver 5 a 8 pessoas, usamos a chave de Quartas de Final (8 vagas).
+    # Nova Lógica Dinâmica de Vagas (Agora até 16 jogadores)
     if num_jogadores <= 4:
         fase_inicial = 'semi'
         vagas = 4
-    else:
+    elif num_jogadores <= 8:
         fase_inicial = 'quartas'
         vagas = 8
+    elif num_jogadores <= 16:
+        fase_inicial = 'oitavas'
+        vagas = 16
+    else:
+        messages.error(request, "A capacidade máxima desta versão da Copa é de 16 jogadores!")
+        return redirect('duelos:painel_campeonato', campeonato_id=campeonato.id)
 
-    # Se tivermos um número "quebrado" (ex: 7 jogadores pra 8 vagas), o algoritmo preenche com "None"
-    # Quem cair contra "None" avança de fase de graça (W.O. automático / Bye)
+    # Preenche com "Fantasmas" (None) até bater o número de vagas
     while len(jogadores) < vagas:
         jogadores.append(None)
 
-    # Pegamos todos os desafios para sortear
     categorias_disponiveis = list(CategoriaDesafio.objects.all())
-
-    # Monta os confrontos de 2 em 2
+    
+    # 1. Cria os confrontos da Fase Inicial (com os jogadores)
     ordem = 1
     for i in range(0, vagas, 2):
         j1 = jogadores[i]
         j2 = jogadores[i+1]
-
-        # Sorteia se vai ser Elenco ou Trajetória, e qual específico
         desafio = random.choice(categorias_disponiveis) if categorias_disponiveis else None
 
         confronto = ConfrontoCampeonato.objects.create(
@@ -390,55 +394,89 @@ def gerar_chaveamento(request, campeonato_id):
             ordem_chave=ordem
         )
 
-        # Regra do W.O. (se um jogador foi sorteado contra "Ninguém", ele avança)
+        # Regra do W.O. (Sorteio favorável)
         if j1 and not j2:
-            confronto.status = 'wo'
-            confronto.vencedor = j1
-            confronto.save()
+            processar_avanco_fase(confronto, j1)
         elif j2 and not j1:
-            confronto.status = 'wo'
-            confronto.vencedor = j2
-            confronto.save()
+            processar_avanco_fase(confronto, j2)
 
         ordem += 1
 
-    # Atualiza o status do campeonato
+    # 2. Constrói o resto da Árvore "Vazia" para o layout de Chaveamento ficar perfeito!
+    fases_arvore = []
+    if fase_inicial == 'oitavas':
+        fases_arvore = [('quartas', 4), ('semi', 2), ('final', 1)]
+    elif fase_inicial == 'quartas':
+        fases_arvore = [('semi', 2), ('final', 1)]
+    elif fase_inicial == 'semi':
+        fases_arvore = [('final', 1)]
+
+    for nome_fase, qtd_jogos in fases_arvore:
+        for i in range(1, qtd_jogos + 1):
+            ConfrontoCampeonato.objects.get_or_create(
+                campeonato=campeonato,
+                fase=nome_fase,
+                ordem_chave=i
+            )
+
     campeonato.status = 'andamento'
     campeonato.save()
 
-    messages.success(request, "Sorteio realizado com sucesso! O chaveamento está pronto.")
+    messages.success(request, "Sorteio realizado! A tabela está montada.")
     return redirect('duelos:ver_chaveamento', campeonato_id=campeonato.id)
+
 
 @login_required
 def ver_chaveamento(request, campeonato_id):
-    """Página pública para os jogadores verem a tabela de jogos."""
+    """Página pública para os jogadores verem a árvore do torneio."""
     campeonato = get_object_or_404(Campeonato, id=campeonato_id)
     
-    # Se ainda tá em inscrições, não tem chave pra mostrar
     if campeonato.status == 'inscricoes':
-        if campeonato.admin == request.user:
-            return redirect('duelos:painel_campeonato', campeonato_id=campeonato.id)
-        else:
-            messages.info(request, "As chaves ainda não foram geradas pelo administrador.")
-            return redirect('duelos:listar_desafios')
+        return redirect('duelos:painel_campeonato', campeonato_id=campeonato.id)
         
     confrontos = campeonato.confrontos.all().order_by('ordem_chave')
     
-    # Separando os jogos por fase
+    # Separando para o layout em colunas
     fases = {
+        'oitavas': confrontos.filter(fase='oitavas'),
         'quartas': confrontos.filter(fase='quartas'),
         'semi': confrontos.filter(fase='semi'),
         'final': confrontos.filter(fase='final')
     }
     
-    context = {
-        'campeonato': campeonato,
-        'confrontos': confrontos, # Enviando também todos caso queira iterar de forma simples no HTML
-        'fases': fases,
-    }
-    return render(request, 'duelos/ver_chaveamento.html', context)
+    return render(request, 'duelos/ver_chaveamento.html', {'campeonato': campeonato, 'fases': fases})
 
-@login_required
+
+def processar_avanco_fase(confronto, vencedor):
+    """Sobe o vencedor na árvore do campeonato."""
+    confronto.vencedor = vencedor
+    confronto.status = 'finalizado'
+    confronto.save()
+
+    if confronto.fase == 'final':
+        campeonato = confronto.campeonato
+        campeonato.status = 'finalizado'
+        campeonato.save()
+        return
+
+    # Adicionado o cruzamento das Oitavas -> Quartas
+    mapa_fases = {'oitavas': 'quartas', 'quartas': 'semi', 'semi': 'final'}
+    proxima_fase = mapa_fases.get(confronto.fase)
+    proxima_ordem = ((confronto.ordem_chave - 1) // 2) + 1
+
+    prox_confronto, created = ConfrontoCampeonato.objects.get_or_create(
+        campeonato=confronto.campeonato,
+        fase=proxima_fase,
+        ordem_chave=proxima_ordem
+    )
+
+    if confronto.ordem_chave % 2 != 0:
+        prox_confronto.jogador1 = vencedor
+    else:
+        prox_confronto.jogador2 = vencedor
+        
+    prox_confronto.save()
+
 @login_required
 def lobby_espera(request, partida_id):
     """Lobby de espera com link de convite."""

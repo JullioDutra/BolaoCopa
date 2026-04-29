@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Duelo: Jogo da trajetória{% endblock %}
+{% block title %}Carreira Misteriosa - Cartolândia{% endblock %}
 
 {% block content %}
 <style>
@@ -45,15 +45,22 @@
     <div class="col-md-10">
         <div class="card card-clean shadow-sm border-0 p-3 p-md-5 text-center rounded-4 mb-4">
             
+            <!-- DICA DO JOGO (Alerta dispensável para não poluir o mobile) -->
+            <div class="alert alert-light border-start border-4 border-primary text-start small mb-4 shadow-sm alert-dismissible fade show" role="alert">
+                <i class="fa-solid fa-lightbulb text-warning fs-5 me-2 float-start"></i>
+                <strong>Como funciona:</strong> A cada erro (ou tempo esgotado), o próximo clube por onde o jogador passou é revelado. Quem cravar o nome do craque primeiro, leva a vitória!
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+
             <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 bg-light p-3 rounded-4 border">
                 <div class="text-center px-2">
                     <h2 class="fw-bold text-danger mb-0 lh-1" id="timer">30</h2>
-                    <small class="text-muted fw-bold text-uppercase" style="font-size: 0.65rem;">Segundos</small>
+                    <small class="text-muted fw-bold text-uppercase" style="font-size: 0.65rem;"><i class="fa-regular fa-clock"></i> Segundos</small>
                 </div>
                 
                 <div class="text-center px-2 flex-grow-1">
-                    <h5 class="fw-bold text-primary mb-2 d-none d-md-block"><i class="fa-solid fa-route"></i> Jogo da trajetória</h5>
-                    <div id="status-vez" class="status-vez-badge bg-light text-muted border shadow-sm">Conectando...</div>
+                    <h5 class="fw-bold text-primary mb-2 d-none d-md-block"><i class="fa-solid fa-shoe-prints"></i> Carreira Misteriosa</h5>
+                    <div id="status-vez" class="status-vez-badge bg-light text-muted border shadow-sm">Aquecendo...</div>
                 </div>
 
                 <div class="d-flex text-center gap-3 px-2">
@@ -86,9 +93,9 @@
             <div class="form-chute-container">
                 <form onsubmit="enviarPalpite(event)" class="w-100 mx-auto" style="max-width: 600px;">
                     <div class="input-group input-group-lg shadow-sm">
-                        <span class="input-group-text bg-light border-end-0 text-primary"><i class="fa-solid fa-user-secret"></i></span>
-                        <input type="text" id="palpite" list="lista-jogadores" class="form-control border-start-0 ps-0 fw-bold bg-light" placeholder="Chute o nome..." disabled autocomplete="off">
-                        <button class="btn btn-primary px-3 px-md-4 fw-bold" type="submit" id="btn-chute" disabled>ENVIAR</button>
+                        <span class="input-group-text bg-light border-end-0 text-primary"><i class="fa-solid fa-magnifying-glass"></i></span>
+                        <input type="text" id="palpite" list="lista-jogadores" class="form-control border-start-0 ps-0 fw-bold bg-light" placeholder="Quem é o dono da carreira?..." disabled autocomplete="off">
+                        <button class="btn btn-primary px-3 px-md-4 fw-bold" type="submit" id="btn-chute" disabled><i class="fa-solid fa-futbol"></i> CHUTAR</button>
                     </div>
                 </form>
                 <div id="feedback-msg" class="mt-2 fw-bold text-center" style="min-height: 24px; font-size: 0.9rem;"></div>
@@ -96,7 +103,7 @@
 
             <div class="mt-2">
                 <button class="btn btn-link text-danger text-decoration-none fw-bold" onclick="desistirJogo()">
-                    <i class="fa-solid fa-flag-checkered"></i> Desistir
+                    <i class="fa-solid fa-ban"></i> Jogar a toalha (Desistir)
                 </button>
             </div>
 
@@ -108,17 +115,18 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg rounded-4 text-center">
             <div class="modal-body p-5">
-                <i class="fa-solid fa-star text-primary mb-3" style="font-size: 4rem;"></i>
-                <h2 class="fw-bold text-dark mb-2">Mistério Revelado!</h2>
+                <i class="fa-solid fa-medal text-warning mb-3" style="font-size: 4rem;"></i>
+                <h2 class="fw-bold text-dark mb-2">Fim de Jogo!</h2>
+                <p class="text-muted">O dono dessa trajetória era:</p>
                 
-                <div class="alert alert-primary fw-bold fs-4 mb-4 text-uppercase shadow-sm">
+                <div class="alert alert-primary fw-bold fs-3 mb-4 text-uppercase shadow-sm">
                     {{ partida.categoria.resposta_oculta }}
                 </div>
                 
                 <h5 class="text-success fw-bold mb-4" id="modal-vencedor">...</h5>
                 
                 <a href="{% url 'duelos:listar_desafios' %}" class="btn btn-primary btn-lg w-100 fw-bold rounded-pill shadow-sm">
-                    Voltar para a Arena
+                    <i class="fa-solid fa-arrow-right-to-bracket"></i> Voltar para a Arena
                 </a>
             </div>
         </div>
@@ -173,12 +181,12 @@
 
             if (data.turno_atual_id === meuUsuarioId) {
                 if (!meuTurno) { input.disabled = false; btn.disabled = false; input.focus(); }
-                statusBadge.innerText = "Sua Vez!";
+                statusBadge.innerHTML = '<i class="fa-solid fa-stopwatch"></i> Sua vez de chutar!';
                 statusBadge.className = "status-vez-badge bg-primary text-white shadow-sm";
                 meuTurno = true;
             } else {
                 input.disabled = true; btn.disabled = true;
-                statusBadge.innerText = "Adversário...";
+                statusBadge.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Rival pensando...';
                 statusBadge.className = "status-vez-badge bg-white text-muted border";
                 meuTurno = false;
             }
@@ -210,15 +218,15 @@
         }).then(res => res.json()).then(data => {
             let msg = document.getElementById('feedback-msg');
             msg.innerHTML = data.acertou ? 
-                '<span class="text-success fs-6"><i class="fa-solid fa-check"></i> Boa!</span>' : 
-                '<span class="text-danger fs-6"><i class="fa-solid fa-x"></i> Errou!</span>';
+                '<span class="text-success fs-5"><i class="fa-solid fa-futbol"></i> Golaço! Na gaveta!</span>' : 
+                '<span class="text-danger fs-5"><i class="fa-solid fa-plane-up"></i> Isolou! Passou longe...</span>';
             atualizarPartida();
-            setTimeout(() => msg.innerHTML = '', 2000);
+            setTimeout(() => msg.innerHTML = '', 2500);
         });
     }
 
     function desistirJogo() {
-        if (confirm("Desistir concede a vitória ao oponente. Continuar?")) {
+        if (confirm("Se você jogar a toalha, a vitória vai pro seu adversário. Quer mesmo arregar?")) {
             fetch(desistirUrl, { method: 'POST', headers: { 'X-CSRFToken': getCookie('csrftoken') } })
             .then(() => atualizarPartida());
         }

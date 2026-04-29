@@ -8,17 +8,24 @@
         <div class="card card-clean p-4 shadow text-center rounded-4 border-0">
             
             <div class="mb-4">
-                <div class="spinner-grow text-success mb-3" style="width: 3rem; height: 3rem;" role="status">
-                    <span class="visually-hidden">Aguardando...</span>
+                <!-- Bola rolando como "loading" -->
+                <div class="mb-3">
+                    <i class="fa-solid fa-futbol fa-spin text-success" style="font-size: 3.5rem;"></i>
                 </div>
-                <h3 class="fw-bold text-dark">Aguardando Oponente...</h3>
-                <p class="text-muted">Desafio: <strong>{{ partida.categoria.titulo }}</strong></p>
+                <h3 class="fw-bold text-dark">Aquecendo pro jogo...</h3>
+                
+                <!-- Regra para não dar spoiler se for Trajetória -->
+                {% if partida.categoria.tipo == 'trajetoria' %}
+                    <p class="text-muted fs-5"><i class="fa-solid fa-shoe-prints text-warning"></i> Desafio: <strong>Carreira Misteriosa 🤫</strong></p>
+                {% else %}
+                    <p class="text-muted fs-5"><i class="fa-solid fa-users text-primary"></i> Desafio: <strong>{{ partida.categoria.titulo }}</strong></p>
+                {% endif %}
             </div>
 
             <div class="p-4 bg-light rounded-3 border mb-4">
-                <label class="form-label fw-bold text-muted small text-uppercase">Copie e envie para seu amigo:</label>
+                <label class="form-label fw-bold text-muted small text-uppercase"><i class="fa-solid fa-share-nodes"></i> Manda o convite pro adversário:</label>
                 <div class="input-group input-group-lg shadow-sm">
-                    <input type="text" id="linkConvite" class="form-control bg-white text-primary fw-bold" value="{{ link_convite }}" readonly>
+                    <input type="text" id="linkConvite" class="form-control bg-white text-primary fw-bold fs-6" value="{{ link_convite }}" readonly>
                     <button class="btn btn-outline-primary" type="button" onclick="copiarLink()">
                         <i class="fa-regular fa-copy"></i> Copiar
                     </button>
@@ -27,19 +34,21 @@
 
             <div class="d-flex justify-content-center align-items-center gap-4 mt-2">
                 <div class="text-center">
-                    <i class="fa-solid fa-user-circle fs-1 text-success mb-2"></i>
-                    <h6 class="fw-bold mb-0">Você</h6>
+                    <i class="fa-solid fa-shirt fs-1 text-success mb-2"></i>
+                    <h6 class="fw-bold mb-0">Mandante (Você)</h6>
                 </div>
-                <div class="fs-3 text-muted fw-bold">VS</div>
+                <div class="fs-2 text-muted fw-bold">
+                    <i class="fa-solid fa-bolt text-warning"></i>
+                </div>
                 <div class="text-center" style="opacity: 0.5;">
-                    <i class="fa-solid fa-user-circle fs-1 text-secondary mb-2"></i>
-                    <h6 class="fw-bold mb-0">???</h6>
+                    <i class="fa-solid fa-shirt fs-1 text-secondary mb-2"></i>
+                    <h6 class="fw-bold mb-0">Visitante...</h6>
                 </div>
             </div>
             
             <div class="mt-4 pt-3 border-top">
                 <a href="{% url 'duelos:listar_desafios' %}" class="text-danger text-decoration-none small fw-bold">
-                    <i class="fa-solid fa-xmark"></i> Cancelar Sala
+                    <i class="fa-solid fa-door-open"></i> Sair do vestiário (Cancelar partida)
                 </a>
             </div>
 
@@ -57,7 +66,7 @@
         // Dá um feedback visual no botão
         let btn = copyText.nextElementSibling;
         let iconOriginal = btn.innerHTML;
-        btn.innerHTML = '<i class="fa-solid fa-check"></i> Copiado!';
+        btn.innerHTML = '<i class="fa-solid fa-check-double"></i> Tá na mão!';
         btn.classList.replace('btn-outline-primary', 'btn-success');
         btn.classList.add('text-white');
         
@@ -78,11 +87,11 @@
             .then(data => {
                 // Se a API avisar que a partida começou (status == andamento)
                 if (data.comecou) {
-                    // Redireciona imediatamente o criador para a tela do jogo!
+                    // Redireciona imediatamente o criador para o gramado!
                     window.location.href = `/duelos/jogo/${partidaId}/`;
                 }
             })
-            .catch(error => console.error('Erro ao checar status:', error));
+            .catch(error => console.error('Erro ao checar status do VAR:', error));
     }
 
     // Inicia o "relógio" que bate no servidor a cada 2000 milissegundos (2 segundos)

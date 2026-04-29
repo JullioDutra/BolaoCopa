@@ -1,7 +1,7 @@
 # ==========================================
         # ELENCOS - LOTE 4
         # ==========================================
-        elencos_lote_4 = [
+        elencos = [
             {
                 "titulo": "São Paulo 2005 (Mundial de Clubes)",
                 "jogadores": [
@@ -87,7 +87,7 @@
         # ==========================================
         # TRAJETÓRIAS - LOTE 4
         # ==========================================
-        trajetorias_lote_4 = [
+        trajetorias = [
             {
                 "titulo": "O Maestro Holandês",
                 "resposta_oculta": "seedorf",

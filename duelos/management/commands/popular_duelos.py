@@ -8,7 +8,7 @@ class Command(BaseCommand):
 # ==========================================
         # 1. DADOS DOS ELENCOS (Campinho)
         # ==========================================
-        elencos_lote_2 = [
+        elencos = [
             {
                 "titulo": "Real Madrid 2002/03 (Os Galácticos)",
                 "jogadores": [

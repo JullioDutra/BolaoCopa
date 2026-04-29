@@ -25,4 +25,5 @@ urlpatterns = [
     path('campeonatos/<int:campeonato_id>/chaves/', views.ver_chaveamento, name='ver_chaveamento'),
     path('campeonatos/confronto/<int:confronto_id>/jogar/', views.iniciar_jogo_campeonato, name='iniciar_jogo_campeonato'),
     path('campeonatos/<int:campeonato_id>/', views.painel_campeonato, name='painel_campeonato'),
+    path('campeonatos/<int:campeonato_id>/resetar/', views.resetar_campeonato, name='resetar_campeonato'),
 ]

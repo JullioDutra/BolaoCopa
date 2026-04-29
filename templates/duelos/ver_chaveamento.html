@@ -66,9 +66,9 @@
             <i class="fa-solid fa-arrow-left"></i> Voltar à Arena
         </a>
         
-        <!-- Botão oculto para o Admin resetar caso esteja em andamento -->
+        <!-- Botão oculto para o Admin voltar e poder resetar caso esteja em andamento -->
         {% if campeonato.admin == request.user and campeonato.status == 'andamento' %}
-            <a href="{% url 'duelos:painel_campeonato' campeonato.id %}" class="btn btn-danger btn-sm rounded-pill mt-2 ms-2">
+            <a href="{% url 'duelos:painel_campeonato' campeonato.id %}" class="btn btn-danger btn-sm rounded-pill mt-2 ms-2 shadow-sm">
                 <i class="fa-solid fa-gears"></i> Painel VAR
             </a>
         {% endif %}
@@ -117,7 +117,8 @@
                     {% include 'duelos/includes/match_card.html' with confronto=confronto %}
                 {% endfor %}
                 
-                {% if campeonato.status == 'finalizado' %}
+                <!-- Troféu do Campeão (Blindado para só aparecer se houver vencedor) -->
+                {% if campeonato.status == 'finalizado' and fases.final.0.vencedor %}
                     <div class="text-center mt-4">
                         <i class="fa-solid fa-star text-warning fs-1 mb-2"></i>
                         <h4 class="text-success fw-bold">CAMPEÃO!</h4>

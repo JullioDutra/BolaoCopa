@@ -16,19 +16,19 @@ from .models import (
     JogadorBanco, 
     Campeonato, 
     InscricaoCampeonato, 
-    ConfrontoCampeonato,
-    PartidaDesafio
+    ConfrontoCampeonato
 )
 
 
 @login_required
 def listar_desafios(request):
     """Tela inicial para escolha do modo de jogo."""
-    salas_abertas = PartidaDesafio.objects.filter(status='aguardando').order_by('-criado_em')
+    # Trocado de PartidaDesafio para PartidaDuelo aqui:
+    salas_abertas = PartidaDuelo.objects.filter(status='aguardando').order_by('-criado_em')
     context = {
         'salas_abertas': salas_abertas,
     }
-    return render(request, 'duelos/listar_desafios.html')
+    return render(request, 'duelos/listar_desafios.html', context)
 
 @login_required
 def criar_duelo(request, tipo_jogo):

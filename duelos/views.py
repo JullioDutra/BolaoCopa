@@ -332,3 +332,46 @@ def gerar_chaveamento(request, campeonato_id):
 
     messages.success(request, "Sorteio realizado com sucesso! O chaveamento está pronto.")
     return redirect('dashboard') # Redirecionaremos pra tela da tabela depois
+
+# ==========================================
+# 3. CRIAR O CAMPEONATO E PAINEL DO ADMIN
+# ==========================================
+@login_required
+def criar_campeonato(request):
+    if request.method == 'POST':
+        nome = request.POST.get('nome')
+        dias_abertos = int(request.POST.get('dias', 1))
+        
+        # Calcula a data limite somando os dias escolhidos
+        data_limite = timezone.now() + timezone.timedelta(days=dias_abertos)
+        
+        campeonato = Campeonato.objects.create(
+            nome=nome,
+            admin=request.user,
+            data_limite_inscricao=data_limite
+        )
+        
+        # Inscreve o próprio criador automaticamente pra já ter 1 na lista
+        InscricaoCampeonato.objects.create(campeonato=campeonato, jogador=request.user)
+        
+        messages.success(request, f"Taça {nome} criada! Espalhe o link para a galera.")
+        return redirect('duelos:painel_campeonato', campeonato_id=campeonato.id)
+        
+    return render(request, 'duelos/criar_campeonato.html')
+
+@login_required
+def painel_campeonato(request, campeonato_id):
+    campeonato = get_object_or_404(Campeonato, id=campeonato_id)
+    inscritos = campeonato.inscritos.select_related('jogador').all()
+    
+    # Gera o link completo (com http:// ou https://) para facilitar o copia e cola
+    link_convite = request.build_absolute_uri(f"/duelos/campeonato/entrar/{campeonato.codigo_convite}/")
+    
+    context = {
+        'campeonato': campeonato,
+        'inscritos': inscritos,
+        'link_convite': link_convite,
+        'is_admin': campeonato.admin == request.user,
+        'faltam_jogadores': inscritos.count() < 3
+    }
+    return render(request, 'duelos/painel_campeonato.html', context)

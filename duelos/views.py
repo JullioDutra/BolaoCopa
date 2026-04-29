@@ -375,3 +375,29 @@ def painel_campeonato(request, campeonato_id):
         'faltam_jogadores': inscritos.count() < 3
     }
     return render(request, 'duelos/painel_campeonato.html', context)
+
+# ==========================================
+# 4. A GRANDE TABELA (VISUALIZAR CHAVEAMENTO)
+# ==========================================
+@login_required
+def ver_chaveamento(request, campeonato_id):
+    campeonato = get_object_or_404(Campeonato, id=campeonato_id)
+    
+    # Se ainda tá em inscrições, não tem chave pra mostrar
+    if campeonato.status == 'inscricoes':
+        return redirect('duelos:painel_campeonato', campeonato_id=campeonato.id)
+        
+    confrontos = campeonato.confrontos.all().order_by('ordem_chave')
+    
+    # Separando os jogos por fase
+    fases = {
+        'quartas': confrontos.filter(fase='quartas'),
+        'semi': confrontos.filter(fase='semi'),
+        'final': confrontos.filter(fase='final')
+    }
+    
+    context = {
+        'campeonato': campeonato,
+        'fases': fases,
+    }
+    return render(request, 'duelos/chaveamento.html', context)

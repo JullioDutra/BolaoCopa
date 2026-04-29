@@ -149,7 +149,7 @@ class ConfrontoCampeonato(models.Model):
     desafio_sorteado = models.ForeignKey('CategoriaDesafio', on_delete=models.SET_NULL, null=True, blank=True)
     
     # A partida em si (ligando com a lógica de duelos que você já tem)
-    partida_vinculada = models.OneToOneField('PartidaDesafio', on_delete=models.SET_NULL, null=True, blank=True)
+    partida_vinculada = models.OneToOneField('PartidaDuelo', on_delete=models.SET_NULL, null=True, blank=True)
     
     status = models.CharField(max_length=20, choices=STATUS_CONFRONTO, default='aguardando')
     ordem_chave = models.IntegerField(default=0, help_text="Para organizar o desenho do chaveamento no front-end")

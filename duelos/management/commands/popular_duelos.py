@@ -8,133 +8,101 @@ class Command(BaseCommand):
 # ==========================================
         # 1. DADOS DOS ELENCOS (Campinho)
         # ==========================================
-        elencos = [
+        elencos_lote_2 = [
             {
-                "titulo": "Palmeiras 1999 (Libertadores)",
+                "titulo": "Real Madrid 2002/03 (Os Galácticos)",
                 "jogadores": [
-                    {"nome": "Marcos", "posicao": "Goleiro"},
-                    {"nome": "Arce", "posicao": "Lateral Direito"},
-                    {"nome": "Júnior Baiano", "posicao": "Zagueiro"},
-                    {"nome": "Roque Júnior", "posicao": "Zagueiro"},
-                    {"nome": "Júnior", "posicao": "Lateral Esquerdo"},
-                    {"nome": "César Sampaio", "posicao": "Volante"},
-                    {"nome": "Rogério", "posicao": "Volante"},
-                    {"nome": "Zinho", "posicao": "Meia"},
-                    {"nome": "Alex", "posicao": "Meia-Atacante"},
-                    {"nome": "Paulo Nunes", "posicao": "Atacante"},
-                    {"nome": "Oséas", "posicao": "Centroavante"},
+                    {"nome": "Casillas", "posicao": "Goleiro"},
+                    {"nome": "Michel Salgado", "posicao": "Lateral Direito"},
+                    {"nome": "Fernando Hierro", "posicao": "Zagueiro"},
+                    {"nome": "Iván Helguera", "posicao": "Zagueiro"},
+                    {"nome": "Roberto Carlos", "posicao": "Lateral Esquerdo"},
+                    {"nome": "Claude Makélélé", "posicao": "Volante"},
+                    {"nome": "Luís Figo", "posicao": "Meia Direita"},
+                    {"nome": "Zinedine Zidane", "posicao": "Meia Central"},
+                    {"nome": "Guti", "posicao": "Meia Esquerda"},
+                    {"nome": "Raúl", "posicao": "Segundo Atacante"},
+                    {"nome": "Ronaldo", "posicao": "Centroavante"},
                 ]
             },
             {
-                "titulo": "Vasco 2000 (Mercosul/Brasileirão)",
+                "titulo": "Fluminense 2012 (Tetra Brasileiro)",
                 "jogadores": [
-                    {"nome": "Hélton", "posicao": "Goleiro"},
-                    {"nome": "Clébson", "posicao": "Lateral Direito"},
-                    {"nome": "Odvan", "posicao": "Zagueiro"},
-                    {"nome": "Júnior Baiano", "posicao": "Zagueiro"},
-                    {"nome": "Jorginho Paulista", "posicao": "Lateral Esquerdo"},
-                    {"nome": "Jorginho", "posicao": "Volante"},
-                    {"nome": "Juninho Pernambucano", "posicao": "Meia"},
-                    {"nome": "Juninho Paulista", "posicao": "Meia-Atacante"},
-                    {"nome": "Euller", "posicao": "Atacante"},
-                    {"nome": "Romário", "posicao": "Centroavante"},
-                    {"nome": "Edmundo", "posicao": "Atacante"},
+                    {"nome": "Diego Cavalieri", "posicao": "Goleiro"},
+                    {"nome": "Bruno", "posicao": "Lateral Direito"},
+                    {"nome": "Gum", "posicao": "Zagueiro"},
+                    {"nome": "Leandro Euzébio", "posicao": "Zagueiro"},
+                    {"nome": "Carlinhos", "posicao": "Lateral Esquerdo"},
+                    {"nome": "Edinho", "posicao": "Volante"},
+                    {"nome": "Jean", "posicao": "Volante"},
+                    {"nome": "Deco", "posicao": "Meia"},
+                    {"nome": "Thiago Neves", "posicao": "Meia-Atacante"},
+                    {"nome": "Wellington Nem", "posicao": "Atacante"},
+                    {"nome": "Fred", "posicao": "Centroavante"},
                 ]
             },
             {
-                "titulo": "Cruzeiro 2003 (Tríplice Coroa)",
+                "titulo": "Grêmio 2017 (Tri da Libertadores)",
                 "jogadores": [
-                    {"nome": "Gomes", "posicao": "Goleiro"},
-                    {"nome": "Maurinho", "posicao": "Lateral Direito"},
-                    {"nome": "Cris", "posicao": "Zagueiro"},
-                    {"nome": "Edu Dracena", "posicao": "Zagueiro"},
-                    {"nome": "Leandro", "posicao": "Lateral Esquerdo"},
-                    {"nome": "Augusto Recife", "posicao": "Volante"},
-                    {"nome": "Maldonado", "posicao": "Volante"},
-                    {"nome": "Wendell", "posicao": "Meia"},
-                    {"nome": "Alex", "posicao": "Meia-Atacante"},
-                    {"nome": "Aristizábal", "posicao": "Atacante"},
-                    {"nome": "Deivid", "posicao": "Centroavante"},
+                    {"nome": "Marcelo Grohe", "posicao": "Goleiro"},
+                    {"nome": "Edílson", "posicao": "Lateral Direito"},
+                    {"nome": "Pedro Geromel", "posicao": "Zagueiro"},
+                    {"nome": "Walter Kannemann", "posicao": "Zagueiro"},
+                    {"nome": "Bruno Cortez", "posicao": "Lateral Esquerdo"},
+                    {"nome": "Michel", "posicao": "Volante"},
+                    {"nome": "Arthur", "posicao": "Volante"},
+                    {"nome": "Ramiro", "posicao": "Meia Direita"},
+                    {"nome": "Luan", "posicao": "Meia-Atacante"},
+                    {"nome": "Fernandinho", "posicao": "Ponta Esquerda"},
+                    {"nome": "Lucas Barrios", "posicao": "Centroavante"},
                 ]
             },
             {
-                "titulo": "São Paulo 1992 (Mundial)",
+                "titulo": "Barcelona 2010/11 (Era Guardiola)",
                 "jogadores": [
-                    {"nome": "Zetti", "posicao": "Goleiro"},
-                    {"nome": "Cafu", "posicao": "Lateral Direito"},
-                    {"nome": "Antônio Carlos", "posicao": "Zagueiro"},
-                    {"nome": "Ronaldão", "posicao": "Zagueiro"},
-                    {"nome": "Ronaldo Luís", "posicao": "Lateral Esquerdo"},
-                    {"nome": "Pintado", "posicao": "Volante"},
-                    {"nome": "Toninho Cerezo", "posicao": "Volante"},
-                    {"nome": "Raí", "posicao": "Meia-Atacante"},
-                    {"nome": "Müller", "posicao": "Atacante"},
-                    {"nome": "Palhinha", "posicao": "Segundo Atacante"},
-                    {"nome": "Macedo", "posicao": "Atacante"},
+                    {"nome": "Víctor Valdés", "posicao": "Goleiro"},
+                    {"nome": "Daniel Alves", "posicao": "Lateral Direito"},
+                    {"nome": "Gerard Piqué", "posicao": "Zagueiro"},
+                    {"nome": "Carles Puyol", "posicao": "Zagueiro"},
+                    {"nome": "Éric Abidal", "posicao": "Lateral Esquerdo"},
+                    {"nome": "Sergio Busquets", "posicao": "Volante"},
+                    {"nome": "Xavi Hernández", "posicao": "Meia Central"},
+                    {"nome": "Andrés Iniesta", "posicao": "Meia Central"},
+                    {"nome": "Pedro", "posicao": "Ponta Direita"},
+                    {"nome": "Lionel Messi", "posicao": "Falso 9"},
+                    {"nome": "David Villa", "posicao": "Ponta Esquerda"},
                 ]
             },
             {
-                "titulo": "Santos 2011 (Libertadores)",
+                "titulo": "Boca Juniors 2007 (Libertadores)",
                 "jogadores": [
-                    {"nome": "Rafael Cabral", "posicao": "Goleiro"},
-                    {"nome": "Danilo", "posicao": "Lateral Direito"},
-                    {"nome": "Edu Dracena", "posicao": "Zagueiro"},
-                    {"nome": "Durval", "posicao": "Zagueiro"},
-                    {"nome": "Léo", "posicao": "Lateral Esquerdo"},
-                    {"nome": "Arouca", "posicao": "Volante"},
-                    {"nome": "Adriano", "posicao": "Volante"},
-                    {"nome": "Elano", "posicao": "Meia"},
-                    {"nome": "Ganso", "posicao": "Meia-Atacante"},
-                    {"nome": "Neymar", "posicao": "Ponta Esquerda"},
-                    {"nome": "Borges", "posicao": "Centroavante"},
+                    {"nome": "Mauricio Caranta", "posicao": "Goleiro"},
+                    {"nome": "Hugo Ibarra", "posicao": "Lateral Direito"},
+                    {"nome": "Cata Díaz", "posicao": "Zagueiro"},
+                    {"nome": "Claudio Morel", "posicao": "Zagueiro"},
+                    {"nome": "Clemente Rodríguez", "posicao": "Lateral Esquerdo"},
+                    {"nome": "Pablo Ledesma", "posicao": "Volante"},
+                    {"nome": "Éver Banega", "posicao": "Volante"},
+                    {"nome": "Neri Cardozo", "posicao": "Meia"},
+                    {"nome": "Juan Román Riquelme", "posicao": "Meia-Atacante"},
+                    {"nome": "Rodrigo Palacio", "posicao": "Atacante"},
+                    {"nome": "Martín Palermo", "posicao": "Centroavante"},
                 ]
             },
             {
-                "titulo": "Milan 2005 (A Lenda Europeia)",
+                "titulo": "Flamengo 2019 (A Máquina de Jesus)",
                 "jogadores": [
-                    {"nome": "Dida", "posicao": "Goleiro"},
-                    {"nome": "Cafu", "posicao": "Lateral Direito"},
-                    {"nome": "Stam", "posicao": "Zagueiro"},
-                    {"nome": "Nesta", "posicao": "Zagueiro"},
-                    {"nome": "Maldini", "posicao": "Lateral Esquerdo"},
-                    {"nome": "Pirlo", "posicao": "Volante"},
-                    {"nome": "Gattuso", "posicao": "Meia Central"},
-                    {"nome": "Seedorf", "posicao": "Meia Esquerda"},
-                    {"nome": "Kaká", "posicao": "Meia-Atacante"},
-                    {"nome": "Shevchenko", "posicao": "Atacante"},
-                    {"nome": "Crespo", "posicao": "Centroavante"},
-                ]
-            },
-            {
-                "titulo": "Internazionale 2010 (Tríplice Coroa)",
-                "jogadores": [
-                    {"nome": "Júlio César", "posicao": "Goleiro"},
-                    {"nome": "Maicon", "posicao": "Lateral Direito"},
-                    {"nome": "Lúcio", "posicao": "Zagueiro"},
-                    {"nome": "Samuel", "posicao": "Zagueiro"},
-                    {"nome": "Zanetti", "posicao": "Lateral Esquerdo"},
-                    {"nome": "Cambiasso", "posicao": "Volante"},
-                    {"nome": "Thiago Motta", "posicao": "Meia Central"},
-                    {"nome": "Sneijder", "posicao": "Meia-Atacante"},
-                    {"nome": "Eto'o", "posicao": "Ponta Direita"},
-                    {"nome": "Pandev", "posicao": "Ponta Esquerda"},
-                    {"nome": "Milito", "posicao": "Centroavante"},
-                ]
-            },
-            {
-                "titulo": "Itália 2006 (Copa do Mundo)",
-                "jogadores": [
-                    {"nome": "Buffon", "posicao": "Goleiro"},
-                    {"nome": "Zambrotta", "posicao": "Lateral Direito"},
-                    {"nome": "Cannavaro", "posicao": "Zagueiro"},
-                    {"nome": "Materazzi", "posicao": "Zagueiro"},
-                    {"nome": "Grosso", "posicao": "Lateral Esquerdo"},
-                    {"nome": "Gattuso", "posicao": "Volante"},
-                    {"nome": "Pirlo", "posicao": "Volante"},
-                    {"nome": "Camoranesi", "posicao": "Meia Direita"},
-                    {"nome": "Perrotta", "posicao": "Meia Esquerda"},
-                    {"nome": "Totti", "posicao": "Meia-Atacante"},
-                    {"nome": "Luca Toni", "posicao": "Centroavante"},
+                    {"nome": "Diego Alves", "posicao": "Goleiro"},
+                    {"nome": "Rafinha", "posicao": "Lateral Direito"},
+                    {"nome": "Rodrigo Caio", "posicao": "Zagueiro"},
+                    {"nome": "Pablo Marí", "posicao": "Zagueiro"},
+                    {"nome": "Filipe Luís", "posicao": "Lateral Esquerdo"},
+                    {"nome": "Willian Arão", "posicao": "Volante"},
+                    {"nome": "Gerson", "posicao": "Meia"},
+                    {"nome": "Éverton Ribeiro", "posicao": "Meia Direita"},
+                    {"nome": "De Arrascaeta", "posicao": "Meia Esquerda"},
+                    {"nome": "Bruno Henrique", "posicao": "Atacante"},
+                    {"nome": "Gabriel Barbosa", "posicao": "Centroavante"},
                 ]
             }
         ]
@@ -142,84 +110,58 @@ class Command(BaseCommand):
         # ==========================================
         # 2. DADOS DAS TRAJETÓRIAS (Escudos)
         # ==========================================
-        trajetorias = [
+        trajetorias_lote_2 = [
             {
-                "titulo": "Gênio Indomável",
-                "resposta_oculta": "romario",
-                "clubes": ["Vasco", "PSV", "Barcelona", "Flamengo", "Valencia", "Fluminense", "Al-Sadd", "Miami FC", "América-RJ"]
+                "titulo": "O Maior Peregrino",
+                "resposta_oculta": "loco abreu",
+                "clubes": ["Defensor Sporting", "San Lorenzo", "Deportivo La Coruña", "Nacional", "Cruz Azul", "Monterrey", "Botafogo", "Rosario Central", "Bangu"]
             },
             {
-                "titulo": "O Canhão Imparável",
-                "resposta_oculta": "roberto carlos",
-                "clubes": ["União São João", "Palmeiras", "Inter de Milão", "Real Madrid", "Fenerbahçe", "Corinthians", "Anzhi", "Delhi Dynamos"]
+                "titulo": "Canhota Mágica do Penta",
+                "resposta_oculta": "rivaldo",
+                "clubes": ["Santa Cruz", "Mogi Mirim", "Corinthians", "Palmeiras", "Deportivo La Coruña", "Barcelona", "Milan", "Cruzeiro", "Olympiacos", "São Paulo"]
             },
             {
-                "titulo": "Maestro de Istambul",
-                "resposta_oculta": "alex",
-                "clubes": ["Coritiba", "Palmeiras", "Flamengo", "Cruzeiro", "Parma", "Fenerbahçe"]
+                "titulo": "Cachorro Louco Romeno",
+                "resposta_oculta": "edgar davids",
+                "clubes": ["Ajax", "Milan", "Juventus", "Barcelona", "Inter de Milão", "Tottenham", "Crystal Palace"]
             },
             {
-                "titulo": "Zagueiro Monstro",
-                "resposta_oculta": "thiago silva",
-                "clubes": ["RS Futebol", "Juventude", "Porto", "Dynamo Moscow", "Fluminense", "Milan", "PSG", "Chelsea"]
+                "titulo": "El Cabezón",
+                "resposta_oculta": "d'alessandro",
+                "clubes": ["River Plate", "Wolfsburg", "Portsmouth", "Zaragoza", "San Lorenzo", "Internacional", "Nacional"]
             },
             {
-                "titulo": "Rei do Pistoleiro",
-                "resposta_oculta": "luis suarez",
-                "clubes": ["Nacional", "Groningen", "Ajax", "Liverpool", "Barcelona", "Atlético de Madrid", "Grêmio", "Inter Miami"]
+                "titulo": "Super Mario",
+                "resposta_oculta": "mario balotelli",
+                "clubes": ["Lumezzane", "Inter de Milão", "Manchester City", "Milan", "Liverpool", "Nice", "Olympique de Marseille", "Brescia"]
             },
             {
-                "titulo": "O Gigante Sueco",
-                "resposta_oculta": "ibrahimovic",
-                "clubes": ["Malmö", "Ajax", "Juventus", "Inter de Milão", "Barcelona", "Milan", "PSG", "Manchester United", "LA Galaxy"]
+                "titulo": "Leão Indomável",
+                "resposta_oculta": "samuel eto'o",
+                "clubes": ["Real Madrid", "Mallorca", "Barcelona", "Inter de Milão", "Anzhi", "Chelsea", "Everton", "Sampdoria"]
             },
             {
-                "titulo": "Muralha de Gelo",
-                "resposta_oculta": "dida",
-                "clubes": ["Vitória", "Cruzeiro", "Lugano", "Corinthians", "Milan", "Portuguesa", "Grêmio", "Internacional"]
+                "titulo": "O Pirata",
+                "resposta_oculta": "hernan barcos",
+                "clubes": ["Racing", "Guaraní", "LDU", "Palmeiras", "Grêmio", "Sporting", "Vélez Sarsfield", "Cruzeiro", "Alianza Lima"]
             },
             {
-                "titulo": "Velho Vamp",
-                "resposta_oculta": "vampeta",
-                "clubes": ["Vitória", "PSV", "VVV-Venlo", "Fluminense", "Corinthians", "Inter de Milão", "PSG", "Flamengo", "Brasiliense"]
+                "titulo": "Cabeludo e Guerreiro",
+                "resposta_oculta": "juan pablo sorin",
+                "clubes": ["Argentinos Juniors", "Juventus", "River Plate", "Cruzeiro", "Lazio", "Barcelona", "PSG", "Villarreal"]
             },
             {
-                "titulo": "Capita do Penta",
-                "resposta_oculta": "cafu",
-                "clubes": ["São Paulo", "Real Zaragoza", "Juventude", "Palmeiras", "Roma", "Milan"]
+                "titulo": "Artilheiro da Copa de 2010",
+                "resposta_oculta": "diego forlan",
+                "clubes": ["Independiente", "Manchester United", "Villarreal", "Atlético de Madrid", "Inter de Milão", "Internacional", "Cerezo Osaka", "Peñarol"]
             },
             {
-                "titulo": "O Fideo",
-                "resposta_oculta": "di maria",
-                "clubes": ["Rosario Central", "Benfica", "Real Madrid", "Manchester United", "PSG", "Juventus"]
-            },
-            {
-                "titulo": "Rei do Egito",
-                "resposta_oculta": "salah",
-                "clubes": ["Al Mokawloon", "Basel", "Chelsea", "Fiorentina", "Roma", "Liverpool"]
-            },
-            {
-                "titulo": "Pequeno Mágico",
-                "resposta_oculta": "philippe coutinho",
-                "clubes": ["Vasco", "Inter de Milão", "Espanyol", "Liverpool", "Barcelona", "Bayern de Munique", "Aston Villa", "Al-Duhail"]
-            },
-            {
-                "titulo": "O Rei Arturo",
-                "resposta_oculta": "vidal",
-                "clubes": ["Colo-Colo", "Bayer Leverkusen", "Juventus", "Bayern de Munique", "Barcelona", "Inter de Milão", "Flamengo", "Athletico Paranaense"]
-            },
-            {
-                "titulo": "O Bruxo",
-                "resposta_oculta": "ronaldinho",
-                "clubes": ["Grêmio", "PSG", "Barcelona", "Milan", "Flamengo", "Atlético Mineiro", "Querétaro", "Fluminense"]
-            },
-            {
-                "titulo": "Fenômeno",
-                "resposta_oculta": "ronaldo",
-                "clubes": ["Cruzeiro", "PSV", "Barcelona", "Inter de Milão", "Real Madrid", "Milan", "Corinthians"]
+                "titulo": "Mil Gols (Segundo Ele Mesmo)",
+                "resposta_oculta": "tulio maravilha",
+                "clubes": ["Goiás", "Botafogo", "Corinthians", "Vitória", "Fluminense", "Cruzeiro", "São Caetano", "Vila Nova"]
             }
         ]
-
         self.stdout.write("Iniciando Povoamento Inteligente...\n")
 
         # 1. PROCESSAR ELENCOS E ALIMENTAR BANCO DE JOGADORES

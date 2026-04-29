@@ -15,18 +15,18 @@ from .models import (
     JogadorBanco, 
     Campeonato, 
     InscricaoCampeonato, 
-    ConfrontoCampeonato,
-    Campeonato,
-    InscricaoCampeonato
+    ConfrontoCampeonato
 )
 
-
+# ==========================================
+# ARENA X1 E LOBBY PRINCIPAL
+# ==========================================
 def listar_desafios(request):
-    # Busca apenas os Campeonatos que estão com status de 'inscricoes' abertas
-    campeonatos_abertos = Campeonato.objects.filter(status='inscricoes').order_by('-criado_em')
+    # Busca todos os campeonatos para que o Radar mostre tanto os de Inscrição quanto os em Andamento (Ver Chaves)
+    campeonatos = Campeonato.objects.all().order_by('-criado_em')
     
     context = {
-        'campeonatos_abertos': campeonatos_abertos,
+        'campeonatos_abertos': campeonatos, # Mantido este nome para não quebrar o seu HTML
     }
     return render(request, 'duelos/listar_desafios.html', context)
 
@@ -145,9 +145,6 @@ def status_partida_api(request, partida_id):
         'revelados_ids': list(partida.itens_revelados.values_list('id', flat=True))
     })
 
-
-
-
 @login_required
 def enviar_palpite_api(request, partida_id):
     """Valida o palpite e processa a lógica de pontuação e encerramento."""
@@ -261,12 +258,12 @@ def historico_duelos(request):
     return render(request, 'duelos/historico.html', {'partidas': partidas})
 
 
-
 # ==========================================
-# 1. ENTRAR NO CAMPEONATO (Link de Inscrição)
+# MODO CAMPEONATO - INSCRIÇÃO E GESTÃO
 # ==========================================
 @login_required
 def entrar_campeonato(request, codigo_convite):
+    """Link público para jogadores se inscreverem no campeonato."""
     campeonato = get_object_or_404(Campeonato, codigo_convite=codigo_convite)
 
     # O VAR checa se a janela de transferências fechou
@@ -285,14 +282,64 @@ def entrar_campeonato(request, codigo_convite):
     else:
         messages.info(request, "Você já está inscrito neste campeonato, craque. Só aguardar!")
 
-    # Pode redirecionar para uma tela de "Lobby do Torneio" (vamos fazer depois)
-    return redirect('dashboard')
+    return redirect('duelos:listar_desafios')
+
+@login_required
+def criar_campeonato(request):
+    """Página para o Admin criar um novo Campeonato."""
+    if request.method == 'POST':
+        nome = request.POST.get('nome')
+        dias_abertos = int(request.POST.get('dias', 1))
+        
+        # Calcula a data limite somando os dias escolhidos
+        data_limite = timezone.now() + timezone.timedelta(days=dias_abertos)
+        
+        campeonato = Campeonato.objects.create(
+            nome=nome,
+            admin=request.user,
+            data_limite_inscricao=data_limite
+        )
+        
+        # Inscreve o próprio criador automaticamente pra já ter 1 na lista
+        InscricaoCampeonato.objects.create(campeonato=campeonato, jogador=request.user)
+        
+        messages.success(request, f"Taça {nome} criada! Espalhe o link para a galera.")
+        return redirect('duelos:painel_campeonato', campeonato_id=campeonato.id)
+        
+    return render(request, 'duelos/criar_campeonato.html')
+
+@login_required
+def painel_campeonato(request, campeonato_id):
+    """Painel Exclusivo do Admin do Torneio (Mesclado e Otimizado)."""
+    # Garante que apenas o criador (admin) acessa este painel
+    campeonato = get_object_or_404(Campeonato, id=campeonato_id, admin=request.user)
+    
+    # Lista de inscritos
+    inscritos = InscricaoCampeonato.objects.filter(campeonato=campeonato).select_related('jogador').order_by('data_inscricao')
+    total_inscritos = inscritos.count()
+    
+    # Gerar o link de convite absoluto
+    link_convite = request.build_absolute_uri(
+        reverse('duelos:entrar_campeonato', kwargs={'codigo_convite': campeonato.codigo_convite})
+    )
+    
+    context = {
+        'campeonato': campeonato,
+        'inscritos': inscritos,
+        'link_convite': link_convite,
+        'total_inscritos': total_inscritos,
+        'is_admin': True,
+        'faltam_jogadores': total_inscritos < 3
+    }
+    return render(request, 'duelos/painel_campeonato.html', context)
+
 
 # ==========================================
-# 2. O SORTEIO DAS CHAVES (Painel do Admin)
+# MODO CAMPEONATO - CHAVEAMENTO E JOGABILIDADE
 # ==========================================
 @login_required
 def gerar_chaveamento(request, campeonato_id):
+    """Sorteia e cria a tabela de chaves de mata-mata."""
     campeonato = get_object_or_404(Campeonato, id=campeonato_id, admin=request.user)
 
     if campeonato.status != 'inscricoes':
@@ -307,7 +354,7 @@ def gerar_chaveamento(request, campeonato_id):
 
     if num_jogadores < 3:
         messages.error(request, "Falta quórum! Precisa de pelo menos 3 jogadores para dar jogo.")
-        return redirect('dashboard')
+        return redirect('duelos:painel_campeonato', campeonato_id=campeonato.id)
 
     # Lógica de chaves (4 ou 8 vagas). Se tiver 5 a 8 pessoas, usamos a chave de Quartas de Final (8 vagas).
     if num_jogadores <= 4:
@@ -360,62 +407,20 @@ def gerar_chaveamento(request, campeonato_id):
     campeonato.save()
 
     messages.success(request, "Sorteio realizado com sucesso! O chaveamento está pronto.")
-    return redirect('dashboard') # Redirecionaremos pra tela da tabela depois
+    return redirect('duelos:ver_chaveamento', campeonato_id=campeonato.id)
 
-# ==========================================
-# 3. CRIAR O CAMPEONATO E PAINEL DO ADMIN
-# ==========================================
-@login_required
-def criar_campeonato(request):
-    if request.method == 'POST':
-        nome = request.POST.get('nome')
-        dias_abertos = int(request.POST.get('dias', 1))
-        
-        # Calcula a data limite somando os dias escolhidos
-        data_limite = timezone.now() + timezone.timedelta(days=dias_abertos)
-        
-        campeonato = Campeonato.objects.create(
-            nome=nome,
-            admin=request.user,
-            data_limite_inscricao=data_limite
-        )
-        
-        # Inscreve o próprio criador automaticamente pra já ter 1 na lista
-        InscricaoCampeonato.objects.create(campeonato=campeonato, jogador=request.user)
-        
-        messages.success(request, f"Taça {nome} criada! Espalhe o link para a galera.")
-        return redirect('duelos:painel_campeonato', campeonato_id=campeonato.id)
-        
-    return render(request, 'duelos/criar_campeonato.html')
-
-@login_required
-def painel_campeonato(request, campeonato_id):
-    campeonato = get_object_or_404(Campeonato, id=campeonato_id)
-    inscritos = campeonato.inscritos.select_related('jogador').all()
-    
-    link_convite = request.build_absolute_uri(
-        reverse('duelos:entrar_campeonato', kwargs={'codigo_convite': campeonato.codigo_convite})
-    )
-    
-    context = {
-        'campeonato': campeonato,
-        'inscritos': inscritos,
-        'link_convite': link_convite,
-        'is_admin': campeonato.admin == request.user,
-        'faltam_jogadores': inscritos.count() < 3
-    }
-    return render(request, 'duelos/painel_campeonato.html', context)
-
-# ==========================================
-# 4. A GRANDE TABELA (VISUALIZAR CHAVEAMENTO)
-# ==========================================
 @login_required
 def ver_chaveamento(request, campeonato_id):
+    """Página pública para os jogadores verem a tabela de jogos."""
     campeonato = get_object_or_404(Campeonato, id=campeonato_id)
     
     # Se ainda tá em inscrições, não tem chave pra mostrar
     if campeonato.status == 'inscricoes':
-        return redirect('duelos:painel_campeonato', campeonato_id=campeonato.id)
+        if campeonato.admin == request.user:
+            return redirect('duelos:painel_campeonato', campeonato_id=campeonato.id)
+        else:
+            messages.info(request, "As chaves ainda não foram geradas pelo administrador.")
+            return redirect('duelos:listar_desafios')
         
     confrontos = campeonato.confrontos.all().order_by('ordem_chave')
     
@@ -428,15 +433,14 @@ def ver_chaveamento(request, campeonato_id):
     
     context = {
         'campeonato': campeonato,
+        'confrontos': confrontos, # Enviando também todos caso queira iterar de forma simples no HTML
         'fases': fases,
     }
-    return render(request, 'duelos/chaveamento.html', context)
+    return render(request, 'duelos/ver_chaveamento.html', context)
 
-# ==========================================
-# 5. INICIAR JOGO E AVANÇAR DE FASE
-# ==========================================
 @login_required
 def iniciar_jogo_campeonato(request, confronto_id):
+    """Entrada da sala de jogo específica de uma chave do campeonato."""
     confronto = get_object_or_404(ConfrontoCampeonato, id=confronto_id)
     
     # Bloqueia se o jogo já acabou ou foi W.O.
@@ -450,22 +454,23 @@ def iniciar_jogo_campeonato(request, confronto_id):
             categoria=confronto.desafio_sorteado,
             jogador_criador=confronto.jogador1,
             jogador_convidado=confronto.jogador2,
-            # Se o seu model de Partida tiver um campo de status, defina como 'andamento'
+            turno_de=confronto.jogador1, # Começa sempre pelo jogador 1 da chave
+            status='andamento',
+            turno_iniciado_em=timezone.now()
         )
         confronto.partida_vinculada = partida
+        confronto.status = 'andamento'
         confronto.save()
     else:
         partida = confronto.partida_vinculada
 
-    # Redireciona para a URL do seu jogo principal (ajuste 'jogar_partida' para o nome correto da sua url)
     # Redireciona para a URL do seu jogo principal
     return redirect('duelos:tela_jogo', partida_id=partida.id)
 
-
 def processar_avanco_fase(confronto, vencedor):
     """
-    Função interna (não é uma view) para subir o vencedor de chave.
-    Você deve chamar essa função dentro da lógica que encerra a sua partida atual.
+    Função Helper: Sobe o vencedor na árvore do campeonato.
+    Chamada automaticamente na API de enviar palpite ou desistir.
     """
     confronto.vencedor = vencedor
     confronto.status = 'finalizado'
@@ -498,23 +503,3 @@ def processar_avanco_fase(confronto, vencedor):
         prox_confronto.jogador2 = vencedor
         
     prox_confronto.save()
-
-def painel_campeonato(request, campeonato_id):
-    # Garante que apenas o criador (admin) acede a este painel
-    campeonato = get_object_or_404(Campeonato, id=campeonato_id, admin=request.user)
-    
-    # Lista de inscritos
-    inscritos = InscricaoCampeonato.objects.filter(campeonato=campeonato).order_by('data_inscricao')
-    
-    # Gerar o link de convite absoluto
-    link_convite = request.build_absolute_uri(
-        reverse('duelos:entrar_campeonato', kwargs={'codigo_convite': campeonato.codigo_convite})
-    )
-    
-    context = {
-        'campeonato': campeonato,
-        'inscritos': inscritos,
-        'link_convite': link_convite,
-        'total_inscritos': inscritos.count(),
-    }
-    return render(request, 'duelos/painel_campeonato.html', context)

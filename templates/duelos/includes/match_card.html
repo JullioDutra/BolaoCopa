@@ -1,0 +1,33 @@
+<div class="match-card">
+    <!-- Jogador 1 -->
+    <div class="match-player {% if confronto.vencedor == confronto.jogador1 %}player-winner{% elif confronto.vencedor and confronto.jogador1 %}player-loser{% endif %}">
+        <span>{{ confronto.jogador1.first_name|default:confronto.jogador1.username|default:"A Definir..." }}</span>
+        {% if confronto.vencedor == confronto.jogador1 %}<i class="fa-solid fa-check text-success"></i>{% endif %}
+    </div>
+
+    <!-- Jogador 2 -->
+    <div class="match-player {% if confronto.vencedor == confronto.jogador2 %}player-winner{% elif confronto.vencedor and confronto.jogador2 %}player-loser{% endif %}">
+        <span>{{ confronto.jogador2.first_name|default:confronto.jogador2.username|default:"A Definir..." }}</span>
+        {% if confronto.vencedor == confronto.jogador2 %}<i class="fa-solid fa-check text-success"></i>{% endif %}
+    </div>
+
+    <!-- Botões de Ação -->
+    <div class="match-action">
+        {% if confronto.status == 'wo' %}
+            <span class="badge bg-success w-100 py-2"><i class="fa-solid fa-forward-step"></i> Avançou por W.O.</span>
+        {% elif confronto.status == 'finalizado' %}
+            <span class="text-muted small fw-bold">Partida Finalizada</span>
+        {% elif not confronto.jogador1 or not confronto.jogador2 %}
+            <span class="text-muted small fst-italic">Aguardando classificação...</span>
+        {% else %}
+            <!-- O Jogo tá pronto! Mostra o botão pros envolvidos -->
+            {% if request.user == confronto.jogador1 or request.user == confronto.jogador2 %}
+                <a href="{% url 'duelos:iniciar_jogo_campeonato' confronto.id %}" class="btn btn-warning btn-sm fw-bold w-100 rounded-pill shadow-sm">
+                    <i class="fa-solid fa-play"></i> IR PARA O JOGO
+                </a>
+            {% else %}
+                <span class="badge bg-secondary w-100 py-2"><i class="fa-solid fa-clock"></i> Aguardando partida</span>
+            {% endif %}
+        {% endif %}
+    </div>
+</div>

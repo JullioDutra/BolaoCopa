@@ -98,7 +98,7 @@ class Command(BaseCommand):
                     falhas += 1
                     
             except Exception as e:
-                self.stdout.write(self.style.ERROR(f'[X] Erro de rede ao baixar {clube.nome}'))
+                self.stdout.write(self.style.ERROR(f'[X] Erro de rede ao baixar {clube.nome}: {e}'))
                 falhas += 1
 
         self.stdout.write(self.style.WARNING(f"\nResumo: {sucessos} PNGs adicionados com sucesso | {falhas} falharam."))

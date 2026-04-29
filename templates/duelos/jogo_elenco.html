@@ -1,50 +1,101 @@
 {% extends 'base.html' %}
 
-{% block title %}Duelo: Elencos clássicos{% endblock %}
+{% block title %}Prancheta do Professor - Cartolândia{% endblock %}
 
 {% block content %}
 <style>
     body { padding-bottom: 90px; } 
 
+    /* O Gramado Tático */
     .campinho-bg {
-        background: linear-gradient(180deg, #2e7d32 0%, #388e3c 100%);
-        border: 3px solid white;
-        border-radius: 12px;
+        background: #2e7d32;
+        /* Textura de grama cortada */
+        background-image: 
+            linear-gradient(rgba(255,255,255,.1) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,.1) 1px, transparent 1px);
+        background-size: 20px 20px;
+        border: 4px solid white;
+        border-radius: 8px;
         position: relative;
-        padding: 15px;
-        box-shadow: inset 0 0 20px rgba(0,0,0,0.3);
+        padding: 20px 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        box-shadow: inset 0 0 30px rgba(0,0,0,0.4);
+        overflow: hidden;
     }
     
-    .pitch-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
+    /* Linha de meio campo */
+    .campinho-bg::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: rgba(255, 255, 255, 0.4);
+    }
+    
+    /* Círculo central */
+    .campinho-bg::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 80px;
+        height: 80px;
+        border: 2px solid rgba(255, 255, 255, 0.4);
+        border-radius: 50%;
+    }
+
+    .pitch-row {
+        display: flex;
+        justify-content: center;
         gap: 8px;
-        justify-items: center;
+        width: 100%;
+        z-index: 1; /* Fica acima das linhas do campo */
     }
 
     .jogador-slot {
-        background: rgba(255, 255, 255, 0.95);
-        border: 2px dashed #a5d6a7;
+        background: rgba(255, 255, 255, 0.9);
+        border: 2px solid #a5d6a7;
         border-radius: 8px;
-        padding: 8px 4px;
+        padding: 6px 2px;
         text-align: center;
         font-weight: bold;
-        width: 100%;
-        font-size: 0.8rem;
+        flex: 1;
+        min-width: 0; /* Ajuda a não quebrar no mobile */
+        max-width: 23%; /* Garante que caibam 4 na defesa */
+        font-size: 0.75rem;
         transition: all 0.3s ease;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.3);
     }
 
     .jogador-revelado {
         background: #ffffff !important;
-        border-style: solid;
-        border-color: var(--verde-escuro);
+        border-color: #ffd700;
         color: var(--verde-escuro);
         transform: scale(1.05);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        box-shadow: 0 0 12px rgba(255, 215, 0, 0.8);
+    }
+
+    .posicao-badge {
+        font-size: 0.45rem;
+        text-transform: uppercase;
+        background: var(--bs-gray-300);
+        border-radius: 4px;
+        padding: 2px 4px;
+        margin-bottom: 4px;
+        color: #333;
+        width: 90%;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
     
     .status-vez-badge {
@@ -66,9 +117,9 @@
             z-index: 1050;
             border-top: 2px solid var(--verde-escuro);
         }
-        .jogador-slot i { font-size: 1.2rem !important; }
-        .jogador-slot span { font-size: 0.7rem; }
-        .campinho-bg { min-height: auto; }
+        .jogador-slot i { font-size: 1.1rem !important; margin-bottom: 2px !important; }
+        .jogador-slot span.nome-real { font-size: 0.65rem; }
+        .jogador-slot span.nome-oculto { font-size: 0.7rem; }
     }
 </style>
 
@@ -80,57 +131,105 @@
 
 <div class="row mt-3">
     
+    <!-- LADO ESQUERDO: O GRAMADO -->
     <div class="col-md-8 order-1 order-md-2 mb-4">
         <div class="card card-clean shadow-sm p-2 border-0">
             <div class="text-center mb-3">
-                <h5 class="fw-bold text-success mb-1"><i class="fa-solid fa-users"></i> {{ partida.categoria.titulo }}</h5>
-                <p class="text-muted small lh-sm mb-0">Selecione e chute os jogadores que fizeram parte desta equipe histórica.</p>
+                <h5 class="fw-bold text-success mb-1"><i class="fa-solid fa-clipboard-list"></i> {{ partida.categoria.titulo }}</h5>
+                <p class="text-muted small lh-sm mb-0">Preencha a prancheta com os titulares desse esquadrão!</p>
             </div>
             
             <div class="campinho-bg">
-                <div class="pitch-grid">
+                <!-- LINHA 4: ATAQUE (Itens 9, 10, 11) -->
+                <div class="pitch-row">
                     {% for item in partida.categoria.itens.all %}
-                    <div class="jogador-slot" id="slot-{{ item.id }}">
-                        <i class="fa-solid fa-shirt fs-4 mb-1 d-block text-muted"></i>
-                        <span class="nome-oculto">????</span>
-                        <span class="nome-real d-none text-uppercase text-truncate w-100 px-1">{{ item.get_nome }}</span>
-                    </div>
+                        {% if forloop.counter > 8 %}
+                        <div class="jogador-slot" id="slot-{{ item.id }}">
+                            <span class="posicao-badge">{{ item.posicao_tatica }}</span>
+                            <i class="fa-solid fa-shirt fs-3 mb-1 text-muted"></i>
+                            <span class="nome-oculto">????</span>
+                            <span class="nome-real d-none text-uppercase text-truncate w-100 px-1">{{ item.get_nome }}</span>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+
+                <!-- LINHA 3: MEIO-CAMPO (Itens 6, 7, 8) -->
+                <div class="pitch-row" style="margin-top: 10px;">
+                    {% for item in partida.categoria.itens.all %}
+                        {% if forloop.counter > 5 and forloop.counter <= 8 %}
+                        <div class="jogador-slot" id="slot-{{ item.id }}">
+                            <span class="posicao-badge">{{ item.posicao_tatica }}</span>
+                            <i class="fa-solid fa-shirt fs-3 mb-1 text-muted"></i>
+                            <span class="nome-oculto">????</span>
+                            <span class="nome-real d-none text-uppercase text-truncate w-100 px-1">{{ item.get_nome }}</span>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+
+                <!-- LINHA 2: DEFESA (Itens 2, 3, 4, 5) -->
+                <div class="pitch-row" style="margin-top: 10px;">
+                    {% for item in partida.categoria.itens.all %}
+                        {% if forloop.counter > 1 and forloop.counter <= 5 %}
+                        <div class="jogador-slot" id="slot-{{ item.id }}">
+                            <span class="posicao-badge">{{ item.posicao_tatica }}</span>
+                            <i class="fa-solid fa-shirt fs-3 mb-1 text-muted"></i>
+                            <span class="nome-oculto">????</span>
+                            <span class="nome-real d-none text-uppercase text-truncate w-100 px-1">{{ item.get_nome }}</span>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+
+                <!-- LINHA 1: GOLEIRO (Item 1) -->
+                <div class="pitch-row" style="margin-top: 10px;">
+                    {% for item in partida.categoria.itens.all %}
+                        {% if forloop.counter == 1 %}
+                        <div class="jogador-slot" id="slot-{{ item.id }}" style="max-width: 30%; border-color: #ff9800;">
+                            <span class="posicao-badge bg-warning text-dark">{{ item.posicao_tatica }}</span>
+                            <i class="fa-solid fa-hands-bubbles fs-3 mb-1 text-muted"></i>
+                            <span class="nome-oculto">????</span>
+                            <span class="nome-real d-none text-uppercase text-truncate w-100 px-1">{{ item.get_nome }}</span>
+                        </div>
+                        {% endif %}
                     {% endfor %}
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- LADO DIREITO: PLACAR E CHUTES -->
     <div class="col-md-4 order-2 order-md-1 mb-4">
         <div class="card card-clean p-3 text-center shadow-sm h-100 border-0">
             
             <div class="d-flex justify-content-center align-items-center gap-4 mb-3 mt-md-4">
                 <div>
                     <h1 class="display-4 fw-bold text-danger mb-0 lh-1" id="timer">30</h1>
-                    <small class="text-muted fw-bold text-uppercase" style="font-size: 0.7rem;">Segundos</small>
+                    <small class="text-muted fw-bold text-uppercase" style="font-size: 0.7rem;"><i class="fa-regular fa-clock"></i> Segundos</small>
                 </div>
-                <div id="status-vez" class="status-vez-badge bg-light text-muted">Conectando...</div>
+                <div id="status-vez" class="status-vez-badge bg-light text-muted">No Vestiário...</div>
             </div>
             
             <div class="d-flex justify-content-between mb-3 bg-light p-2 rounded-3 border">
                 <div class="text-center w-50 border-end">
-                    <small class="d-block text-muted text-uppercase" style="font-size: 0.65rem;">Criador</small>
+                    <small class="d-block text-muted text-uppercase" style="font-size: 0.65rem;">Mandante</small>
                     <span class="fw-bold text-success text-truncate d-block px-1">{{ partida.jogador_criador.first_name|default:partida.jogador_criador.username }}</span>
-                    <h3 class="fw-bold mb-0" id="pts-j1">0</h3>
+                    <h3 class="fw-bold mb-0" id="pts-j1">0 <i class="fa-solid fa-futbol text-muted fs-6"></i></h3>
                 </div>
                 <div class="text-center w-50">
-                    <small class="d-block text-muted text-uppercase" style="font-size: 0.65rem;">Convidado</small>
+                    <small class="d-block text-muted text-uppercase" style="font-size: 0.65rem;">Visitante</small>
                     <span class="fw-bold text-primary text-truncate d-block px-1">{{ partida.jogador_convidado.first_name|default:partida.jogador_convidado.username }}</span>
-                    <h3 class="fw-bold mb-0" id="pts-j2">0</h3>
+                    <h3 class="fw-bold mb-0" id="pts-j2">0 <i class="fa-solid fa-futbol text-muted fs-6"></i></h3>
                 </div>
             </div>
 
             <div class="form-chute-container">
                 <form id="form-chute" onsubmit="enviarPalpite(event)">
                     <div class="input-group input-group-lg shadow-sm">
-                        <span class="input-group-text bg-white border-end-0 text-success"><i class="fa-solid fa-keyboard"></i></span>
-                        <input type="text" id="palpite" list="lista-jogadores" class="form-control border-start-0 ps-0 fw-bold" placeholder="Digite o jogador..." disabled autocomplete="off">
-                        <button class="btn btn-success fw-bold px-4" type="submit" id="btn-chute" disabled>OK</button>
+                        <span class="input-group-text bg-white border-end-0 text-success"><i class="fa-solid fa-shoe-prints"></i></span>
+                        <input type="text" id="palpite" list="lista-jogadores" class="form-control border-start-0 ps-0 fw-bold" placeholder="Puxa na memória..." disabled autocomplete="off">
+                        <button class="btn btn-success fw-bold px-4" type="submit" id="btn-chute" disabled>CHUTAR</button>
                     </div>
                 </form>
                 <div id="feedback-msg" class="mt-2 fw-bold text-center" style="min-height: 24px; font-size: 0.9rem;"></div>
@@ -138,23 +237,25 @@
 
             <div class="mt-auto pt-3">
                 <button class="btn btn-outline-danger btn-sm fw-bold w-100" onclick="desistirJogo()">
-                    <i class="fa-solid fa-flag-checkered"></i> Desistir
+                    <i class="fa-solid fa-ban"></i> Pedir Substituição (Desistir)
                 </button>
             </div>
         </div>
     </div>
 </div>
 
+<!-- MODAL FIM DE JOGO -->
 <div class="modal fade" id="modalFimJogo" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg rounded-4 text-center">
             <div class="modal-body p-5">
-                <i class="fa-solid fa-trophy text-warning mb-3" style="font-size: 4rem;"></i>
-                <h2 class="fw-bold text-dark mb-2">Fim de Jogo!</h2>
+                <i class="fa-solid fa-whistle text-dark mb-3" style="font-size: 4rem;"></i>
+                <h2 class="fw-bold text-dark mb-2">Fim de Papo!</h2>
+                <p class="text-muted">Apita o árbitro!</p>
                 <h4 class="text-primary fw-bold mb-4" id="modal-vencedor">...</h4>
                 
                 <a href="{% url 'duelos:listar_desafios' %}" class="btn btn-success btn-lg w-100 fw-bold rounded-pill shadow-sm">
-                    Voltar para a Arena
+                    <i class="fa-solid fa-arrow-right-to-bracket"></i> Voltar pro Vestiário
                 </a>
             </div>
         </div>
@@ -190,17 +291,17 @@
             if (data.status === 'finalizado') { 
                 clearInterval(pollInterval);
                 
-                let vencedor = "O Jogo terminou empatado!";
-                if (data.pontos_j1 > data.pontos_j2) vencedor = "🏆 Vitória de {{ partida.jogador_criador.first_name|default:partida.jogador_criador.username|escapejs }}!";
-                if (data.pontos_j2 > data.pontos_j1) vencedor = "🏆 Vitória de {{ partida.jogador_convidado.first_name|default:partida.jogador_convidado.username|escapejs }}!";
+                let vencedor = "Tudo igual! Jogo empatado.";
+                if (data.pontos_j1 > data.pontos_j2) vencedor = "🏆 Taça na mão de {{ partida.jogador_criador.first_name|default:partida.jogador_criador.username|escapejs }}!";
+                if (data.pontos_j2 > data.pontos_j1) vencedor = "🏆 Taça na mão de {{ partida.jogador_convidado.first_name|default:partida.jogador_convidado.username|escapejs }}!";
                 
                 document.getElementById('modal-vencedor').innerText = vencedor;
                 new bootstrap.Modal(document.getElementById('modalFimJogo')).show();
                 return; 
             }
 
-            document.getElementById('pts-j1').innerText = data.pontos_j1;
-            document.getElementById('pts-j2').innerText = data.pontos_j2;
+            document.getElementById('pts-j1').innerHTML = `${data.pontos_j1} <i class="fa-solid fa-futbol text-success fs-6"></i>`;
+            document.getElementById('pts-j2').innerHTML = `${data.pontos_j2} <i class="fa-solid fa-futbol text-primary fs-6"></i>`;
             document.getElementById('timer').innerText = data.tempo_restante;
 
             let input = document.getElementById('palpite');
@@ -209,12 +310,12 @@
 
             if (data.turno_atual_id === meuUsuarioId) {
                 if (!meuTurno) { input.disabled = false; btn.disabled = false; input.focus(); }
-                statusBadge.innerText = "Sua Vez!";
+                statusBadge.innerText = "Sua vez de bater!";
                 statusBadge.className = "status-vez-badge bg-success text-white shadow-sm";
                 meuTurno = true;
             } else {
                 input.disabled = true; btn.disabled = true;
-                statusBadge.innerText = "Adversário...";
+                statusBadge.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Rival na bola...';
                 statusBadge.className = "status-vez-badge bg-light text-muted";
                 meuTurno = false;
             }
@@ -246,15 +347,15 @@
         }).then(res => res.json()).then(data => {
             let msg = document.getElementById('feedback-msg');
             msg.innerHTML = data.acertou ? 
-                '<span class="text-success fs-6"><i class="fa-solid fa-check-circle"></i> Acertou!</span>' : 
-                '<span class="text-danger fs-6"><i class="fa-solid fa-times-circle"></i> Errou!</span>';
+                '<span class="text-success fs-5"><i class="fa-solid fa-futbol"></i> Golaço! Mandou bem!</span>' : 
+                '<span class="text-danger fs-5"><i class="fa-solid fa-plane-up"></i> Isolou! Passou longe...</span>';
             atualizarPartida();
             setTimeout(() => msg.innerHTML = '', 2000);
         });
     }
 
     function desistirJogo() {
-        if (confirm("Tem certeza que deseja desistir?")) {
+        if (confirm("Vai jogar a toalha mesmo? O adversário leva os 3 pontos.")) {
             fetch(desistirUrl, { method: 'POST', headers: { 'X-CSRFToken': getCookie('csrftoken') } })
             .then(() => atualizarPartida());
         }

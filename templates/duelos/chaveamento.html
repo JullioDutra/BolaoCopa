@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+{% block title %}Chaveamento: {{ campeonato.nome }} - Cartolândia{% endblock %}
+
+{% block content %}
+<style>
+    .bracket-wrapper {
+        background: url('https://www.transparenttextures.com/patterns/stardust.png'), linear-gradient(135deg, #1b5e20 0%, #2e7d32 100%);
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+    }
+    .bracket-container {
+        display: flex;
+        flex-direction: row;
+        overflow-x: auto;
+        gap: 50px;
+        align-items: center;
+        padding-bottom: 20px;
+        min-height: 400px;
+    }
+    .bracket-column {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-around;
+        height: 100%;
+        gap: 30px;
+        min-width: 240px;
+    }
+    .matchup {
+        background: white;
+        border: 3px solid #e0e0e0;
+        border-radius: 8px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        overflow: hidden;
+        position: relative;
+    }
+    .matchup.active { border-color: #ffc107; box-shadow: 0 0 15px rgba(255, 193, 7, 0.5); }
+    .matchup-player {
+        padding: 10px 15px;
+        border-bottom: 1px solid #eee;
+        font-weight: bold;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .matchup-player:last-child { border-bottom: none; }
+    .winner { background-color: #d4edda; color: #155724; }
+    .loser { background-color: #f8d7da; color: #721c24; text-decoration: line-through; opacity: 0.6; }
+    .bye { font-style: italic; color: #aaa; font-weight: normal; }
+    
+    .btn-play {
+        display: block;
+        width: 100%;
+        text-align: center;
+        background: #ffc107;
+        color: #000;
+        font-weight: bold;
+        padding: 8px 0;
+        text-decoration: none;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+    }
+    .btn-play:hover { background: #e0a800; color: black; }
+    .wo-badge { background: #e9ecef; color: #6c757d; font-size: 0.75rem; text-align: center; padding: 5px; font-weight: bold; }
+</style>
+
+<div class="row mt-4 mb-3">
+    <div class="col-12 text-center">
+        <h2 class="fw-bold text-dark"><i class="fa-solid fa-sitemap text-success"></i> Chaveamento Oficial</h2>
+        <h5 class="text-muted">{{ campeonato.nome }}</h5>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="bracket-wrapper">
+            <div class="bracket-container">
+                
+                <!-- COLUNA QUARTAS DE FINAL -->
+                {% if fases.quartas %}
+                <div class="bracket-column">
+                    <h5 class="text-center text-white fw-bold mb-4">Quartas de Final</h5>
+                    {% for c in fases.quartas %}
+                        {% include "duelos/includes/match_card.html" with c=c %}
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <!-- COLUNA SEMIFINAL -->
+                {% if fases.semi %}
+                <div class="bracket-column">
+                    <h5 class="text-center text-white fw-bold mb-4">Semifinal</h5>
+                    {% for c in fases.semi %}
+                        {% include "duelos/includes/match_card.html" with c=c %}
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <!-- COLUNA GRANDE FINAL -->
+                {% if fases.final %}
+                <div class="bracket-column">
+                    <h5 class="text-center text-warning fw-bold mb-4"><i class="fa-solid fa-trophy"></i> Grande Final</h5>
+                    {% for c in fases.final %}
+                        {% include "duelos/includes/match_card.html" with c=c %}
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

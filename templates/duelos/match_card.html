@@ -3,23 +3,24 @@
     <!-- Jogador 1 -->
     <div class="matchup-player {% if c.vencedor == c.jogador1 %}winner{% elif c.vencedor and c.vencedor != c.jogador1 %}loser{% endif %}">
         <span>{{ c.jogador1.username|default:"Aguardando..." }}</span>
-        {% if c.vencedor == c.jogador1 %}<i class="fa-solid fa-check-circle"></i>{% endif %}
+        {% if c.vencedor == c.jogador1 %}<i class="fa-solid fa-check-circle text-success"></i>{% endif %}
     </div>
 
     <!-- Jogador 2 -->
     <div class="matchup-player {% if c.vencedor == c.jogador2 %}winner{% elif c.vencedor and c.vencedor != c.jogador2 %}loser{% endif %}">
         {% if not c.jogador2 and c.status == 'wo' %}
-            <span class="bye">Bye (Sorte nela!)</span>
+            <span class="bye">Bye (Avançou Direto)</span>
         {% else %}
             <span>{{ c.jogador2.username|default:"Aguardando..." }}</span>
         {% endif %}
-        {% if c.vencedor == c.jogador2 %}<i class="fa-solid fa-check-circle"></i>{% endif %}
+        {% if c.vencedor == c.jogador2 %}<i class="fa-solid fa-check-circle text-success"></i>{% endif %}
     </div>
 
     <!-- Ação do Jogo -->
-    {% if c.status == 'andamento' %}
+    {% if c.status == 'andamento' or c.status == 'aguardando' %}
         {% if request.user == c.jogador1 or request.user == c.jogador2 %}
-            <a href="#" class="btn-play"><i class="fa-solid fa-futbol"></i> Ir pro Jogo</a>
+            <!-- Botão que leva o jogador para a partida -->
+            <a href="{% url 'duelos:iniciar_jogo_campeonato' c.id %}" class="btn-play"><i class="fa-solid fa-futbol"></i> Ir pro Jogo</a>
         {% else %}
             <div class="wo-badge"><i class="fa-solid fa-spinner fa-spin"></i> Em Disputa...</div>
         {% endif %}

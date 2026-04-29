@@ -15,18 +15,20 @@ from .models import (
     JogadorBanco, 
     Campeonato, 
     InscricaoCampeonato, 
-    ConfrontoCampeonato
+    ConfrontoCampeonato,
+    Campeonato
 )
 
-@login_required
+
 def listar_desafios(request):
-    # Busca todas as partidas que estão aguardando um oponente, ordenando pela data_criacao
-    salas_abertas = PartidaDuelo.objects.filter(status='aguardando').order_by('-data_criacao')
+    # Busca apenas os Campeonatos que estão com status de 'inscricoes' abertas
+    campeonatos_abertos = Campeonato.objects.filter(status='inscricoes').order_by('-criado_em')
     
     context = {
-        'salas_abertas': salas_abertas,
+        'campeonatos_abertos': campeonatos_abertos,
     }
     return render(request, 'duelos/listar_desafios.html', context)
+
 
 @login_required
 def criar_duelo(request, tipo_jogo):

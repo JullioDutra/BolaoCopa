@@ -525,6 +525,17 @@ def iniciar_jogo_campeonato(request, confronto_id):
 
     # 1. Se a partida ainda NÃO EXISTE, o PRIMEIRO jogador a clicar cria a sala e fica aguardando
     if not confronto.partida_vinculada:
+        
+        # O VAR AVISA: Se essa chave (ex: Quartas, Semi) ainda não teve o desafio sorteado, sorteia agora!
+        if not confronto.desafio_sorteado:
+            categorias = list(CategoriaDesafio.objects.all())
+            if categorias:
+                confronto.desafio_sorteado = random.choice(categorias)
+                confronto.save()
+            else:
+                messages.error(request, "Nenhum desafio cadastrado no sistema!")
+                return redirect('duelos:ver_chaveamento', campeonato_id=confronto.campeonato.id)
+
         # Quem clicou vira o "criador" (host) da sala
         j_criador = request.user
         j_convidado = confronto.jogador2 if request.user == confronto.jogador1 else confronto.jogador1

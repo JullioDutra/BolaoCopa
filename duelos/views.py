@@ -401,3 +401,69 @@ def ver_chaveamento(request, campeonato_id):
         'fases': fases,
     }
     return render(request, 'duelos/chaveamento.html', context)
+
+# ==========================================
+# 5. INICIAR JOGO E AVANÇAR DE FASE
+# ==========================================
+@login_required
+def iniciar_jogo_campeonato(request, confronto_id):
+    confronto = get_object_or_404(ConfrontoCampeonato, id=confronto_id)
+    
+    # Bloqueia se o jogo já acabou ou foi W.O.
+    if confronto.status in ['finalizado', 'wo']:
+        messages.warning(request, "Este confronto já está decidido!")
+        return redirect('duelos:ver_chaveamento', campeonato_id=confronto.campeonato.id)
+
+    # Se a partida ainda não existe no banco, o sistema cria
+    if not confronto.partida_vinculada:
+        partida = PartidaDuelo.objects.create(
+            categoria=confronto.desafio_sorteado,
+            jogador_criador=confronto.jogador1,
+            jogador_convidado=confronto.jogador2,
+            # Se o seu model de Partida tiver um campo de status, defina como 'andamento'
+        )
+        confronto.partida_vinculada = partida
+        confronto.save()
+    else:
+        partida = confronto.partida_vinculada
+
+    # Redireciona para a URL do seu jogo principal (ajuste 'jogar_partida' para o nome correto da sua url)
+    return redirect('duelos:jogar_partida', partida_id=partida.id)
+
+
+def processar_avanco_fase(confronto, vencedor):
+    """
+    Função interna (não é uma view) para subir o vencedor de chave.
+    Você deve chamar essa função dentro da lógica que encerra a sua partida atual.
+    """
+    confronto.vencedor = vencedor
+    confronto.status = 'finalizado'
+    confronto.save()
+
+    # Se for a final, acaba o campeonato e entrega a taça!
+    if confronto.fase == 'final':
+        campeonato = confronto.campeonato
+        campeonato.status = 'finalizado'
+        campeonato.save()
+        return
+
+    # Matemática do chaveamento cruzado
+    # Jogo 1 e Jogo 2 vão para o Jogo 1 da próxima fase. Jogo 3 e 4 vão para o Jogo 2.
+    mapa_fases = {'quartas': 'semi', 'semi': 'final'}
+    proxima_fase = mapa_fases.get(confronto.fase)
+    proxima_ordem = ((confronto.ordem_chave - 1) // 2) + 1
+
+    # Busca ou cria o confronto da próxima fase
+    prox_confronto, created = ConfrontoCampeonato.objects.get_or_create(
+        campeonato=confronto.campeonato,
+        fase=proxima_fase,
+        ordem_chave=proxima_ordem
+    )
+
+    # Se a ordem do confronto atual for ímpar, ele entra como jogador 1. Se for par, jogador 2.
+    if confronto.ordem_chave % 2 != 0:
+        prox_confronto.jogador1 = vencedor
+    else:
+        prox_confronto.jogador2 = vencedor
+        
+    prox_confronto.save()

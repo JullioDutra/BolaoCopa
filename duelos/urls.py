@@ -23,4 +23,5 @@ urlpatterns = [
     path('campeonatos/entrar/<uuid:codigo_convite>/', views.entrar_campeonato, name='entrar_campeonato'),
     path('campeonatos/<int:campeonato_id>/gerar-chaves/', views.gerar_chaveamento, name='gerar_chaveamento'),
     path('campeonatos/<int:campeonato_id>/chaves/', views.ver_chaveamento, name='ver_chaveamento'),
+    path('campeonatos/confronto/<int:confronto_id>/jogar/', views.iniciar_jogo_campeonato, name='iniciar_jogo_campeonato'),
 ]

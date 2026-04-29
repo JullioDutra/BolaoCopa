@@ -4,8 +4,7 @@
 
 {% block content %}
 <style>
-    /* Otimização para Mobile e Teclado */
-    body { padding-bottom: 90px; } /* Espaço para o input fixo no mobile */
+    body { padding-bottom: 90px; } 
 
     .campinho-bg {
         background: linear-gradient(180deg, #2e7d32 0%, #388e3c 100%);
@@ -16,7 +15,6 @@
         box-shadow: inset 0 0 20px rgba(0,0,0,0.3);
     }
     
-    /* Layout tático flexível para caber no telemóvel */
     .pitch-grid {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
@@ -56,7 +54,6 @@
         display: inline-block;
     }
 
-    /* O Formulário Fixo no Rodapé apenas em Ecrãs Pequenos */
     @media (max-width: 767px) {
         .form-chute-container {
             position: fixed;
@@ -75,11 +72,20 @@
     }
 </style>
 
+<datalist id="lista-jogadores">
+    {% for jogador in banco_jogadores %}
+        <option value="{{ jogador.nome }}">
+    {% endfor %}
+</datalist>
+
 <div class="row mt-3">
     
     <div class="col-md-8 order-1 order-md-2 mb-4">
         <div class="card card-clean shadow-sm p-2 border-0">
-            <h6 class="text-center fw-bold text-success mb-2 d-md-none"><i class="fa-solid fa-users"></i> Elenco Misterioso</h6>
+            <div class="text-center mb-3">
+                <h5 class="fw-bold text-success mb-1"><i class="fa-solid fa-users"></i> {{ partida.categoria.titulo }}</h5>
+                <p class="text-muted small lh-sm mb-0">Selecione e chute os jogadores que fizeram parte desta equipe histórica.</p>
+            </div>
             
             <div class="campinho-bg">
                 <div class="pitch-grid">
@@ -87,7 +93,7 @@
                     <div class="jogador-slot" id="slot-{{ item.id }}">
                         <i class="fa-solid fa-shirt fs-4 mb-1 d-block text-muted"></i>
                         <span class="nome-oculto">????</span>
-                        <span class="nome-real d-none text-uppercase text-truncate w-100 px-1">{{ item.nome }}</span>
+                        <span class="nome-real d-none text-uppercase text-truncate w-100 px-1">{{ item.get_nome }}</span>
                     </div>
                     {% endfor %}
                 </div>
@@ -97,9 +103,8 @@
 
     <div class="col-md-4 order-2 order-md-1 mb-4">
         <div class="card card-clean p-3 text-center shadow-sm h-100 border-0">
-            <h5 class="fw-bold text-success mb-3 d-none d-md-block"><i class="fa-solid fa-users"></i> Elencos Clássicos</h5>
             
-            <div class="d-flex justify-content-center align-items-center gap-4 mb-3">
+            <div class="d-flex justify-content-center align-items-center gap-4 mb-3 mt-md-4">
                 <div>
                     <h1 class="display-4 fw-bold text-danger mb-0 lh-1" id="timer">30</h1>
                     <small class="text-muted fw-bold text-uppercase" style="font-size: 0.7rem;">Segundos</small>
@@ -110,12 +115,12 @@
             <div class="d-flex justify-content-between mb-3 bg-light p-2 rounded-3 border">
                 <div class="text-center w-50 border-end">
                     <small class="d-block text-muted text-uppercase" style="font-size: 0.65rem;">Criador</small>
-                    <span class="fw-bold text-success text-truncate d-block px-1">{{ partida.jogador_criador.username }}</span>
+                    <span class="fw-bold text-success text-truncate d-block px-1">{{ partida.jogador_criador.first_name|default:partida.jogador_criador.username }}</span>
                     <h3 class="fw-bold mb-0" id="pts-j1">0</h3>
                 </div>
                 <div class="text-center w-50">
                     <small class="d-block text-muted text-uppercase" style="font-size: 0.65rem;">Convidado</small>
-                    <span class="fw-bold text-primary text-truncate d-block px-1">{{ partida.jogador_convidado.username }}</span>
+                    <span class="fw-bold text-primary text-truncate d-block px-1">{{ partida.jogador_convidado.first_name|default:partida.jogador_convidado.username }}</span>
                     <h3 class="fw-bold mb-0" id="pts-j2">0</h3>
                 </div>
             </div>
@@ -124,7 +129,7 @@
                 <form id="form-chute" onsubmit="enviarPalpite(event)">
                     <div class="input-group input-group-lg shadow-sm">
                         <span class="input-group-text bg-white border-end-0 text-success"><i class="fa-solid fa-keyboard"></i></span>
-                        <input type="text" id="palpite" class="form-control border-start-0 ps-0 fw-bold" placeholder="Digite o jogador..." disabled autocomplete="off">
+                        <input type="text" id="palpite" list="lista-jogadores" class="form-control border-start-0 ps-0 fw-bold" placeholder="Digite o jogador..." disabled autocomplete="off">
                         <button class="btn btn-success fw-bold px-4" type="submit" id="btn-chute" disabled>OK</button>
                     </div>
                 </form>
@@ -133,7 +138,7 @@
 
             <div class="mt-auto pt-3">
                 <button class="btn btn-outline-danger btn-sm fw-bold w-100" onclick="desistirJogo()">
-                    <i class="fa-solid fa-flag-checkered"></i> Desistir da Partida
+                    <i class="fa-solid fa-flag-checkered"></i> Desistir
                 </button>
             </div>
         </div>
@@ -186,8 +191,8 @@
                 clearInterval(pollInterval);
                 
                 let vencedor = "O Jogo terminou empatado!";
-                if (data.pontos_j1 > data.pontos_j2) vencedor = "🏆 Vitória de {{ partida.jogador_criador.username|escapejs }}!";
-                if (data.pontos_j2 > data.pontos_j1) vencedor = "🏆 Vitória de {{ partida.jogador_convidado.username|escapejs }}!";
+                if (data.pontos_j1 > data.pontos_j2) vencedor = "🏆 Vitória de {{ partida.jogador_criador.first_name|default:partida.jogador_criador.username|escapejs }}!";
+                if (data.pontos_j2 > data.pontos_j1) vencedor = "🏆 Vitória de {{ partida.jogador_convidado.first_name|default:partida.jogador_convidado.username|escapejs }}!";
                 
                 document.getElementById('modal-vencedor').innerText = vencedor;
                 new bootstrap.Modal(document.getElementById('modalFimJogo')).show();
@@ -257,4 +262,4 @@
 
     atualizarPartida();
 </script>
-{% endblock %}s
+{% endblock %}

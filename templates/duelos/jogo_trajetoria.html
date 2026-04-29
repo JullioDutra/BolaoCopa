@@ -4,7 +4,7 @@
 
 {% block content %}
 <style>
-    body { padding-bottom: 90px; } /* Espaço para input mobile */
+    body { padding-bottom: 90px; } 
     
     .escudo-item {
         transition: all 0.5s ease;
@@ -18,7 +18,6 @@
         transition: all 0.3s ease;
     }
 
-    /* Formulário fixo no rodapé para Mobile */
     @media (max-width: 767px) {
         .form-chute-container {
             position: fixed;
@@ -35,6 +34,12 @@
         .escudo-card { width: 80px !important; height: 80px !important; }
     }
 </style>
+
+<datalist id="lista-jogadores">
+    {% for jogador in banco_jogadores %}
+        <option value="{{ jogador.nome }}">
+    {% endfor %}
+</datalist>
 
 <div class="row justify-content-center mt-3">
     <div class="col-md-10">
@@ -53,11 +58,11 @@
 
                 <div class="d-flex text-center gap-3 px-2">
                     <div class="border-end pe-3">
-                        <small class="d-block text-muted text-uppercase" style="font-size: 0.6rem;">{{ partida.jogador_criador.username }}</small>
+                        <small class="d-block text-muted text-uppercase" style="font-size: 0.6rem;">{{ partida.jogador_criador.first_name|default:partida.jogador_criador.username }}</small>
                         <h4 class="fw-bold text-success mb-0" id="pts-j1">0</h4>
                     </div>
                     <div>
-                        <small class="d-block text-muted text-uppercase" style="font-size: 0.6rem;">{{ partida.jogador_convidado.username }}</small>
+                        <small class="d-block text-muted text-uppercase" style="font-size: 0.6rem;">{{ partida.jogador_convidado.first_name|default:partida.jogador_convidado.username }}</small>
                         <h4 class="fw-bold text-primary mb-0" id="pts-j2">0</h4>
                     </div>
                 </div>
@@ -67,10 +72,10 @@
                 {% for item in partida.categoria.itens.all %}
                 <div class="escudo-item" id="escudo-{{ forloop.counter0 }}" style="display: none;">
                     <div class="card shadow-sm border-0 rounded-circle p-2 bg-light mx-auto escudo-card" style="width: 100px; height: 100px;">
-                        {% if item.imagem %}
-                            <img src="{{ item.imagem.url }}" class="img-fluid rounded-circle h-100 object-fit-contain">
+                        {% if item.get_imagem_url %}
+                            <img src="{{ item.get_imagem_url }}" class="img-fluid rounded-circle h-100 object-fit-contain">
                         {% else %}
-                            <div class="h-100 d-flex align-items-center justify-content-center fw-bold text-dark text-truncate" style="font-size: 0.75rem;">{{ item.nome }}</div>
+                            <div class="h-100 d-flex align-items-center justify-content-center fw-bold text-dark text-truncate" style="font-size: 0.75rem;">{{ item.get_nome }}</div>
                         {% endif %}
                     </div>
                     <small class="d-block mt-2 fw-bold text-muted text-uppercase" style="font-size: 0.7rem;">{{ forloop.counter }}º Clube</small>
@@ -82,7 +87,7 @@
                 <form onsubmit="enviarPalpite(event)" class="w-100 mx-auto" style="max-width: 600px;">
                     <div class="input-group input-group-lg shadow-sm">
                         <span class="input-group-text bg-light border-end-0 text-primary"><i class="fa-solid fa-user-secret"></i></span>
-                        <input type="text" id="palpite" class="form-control border-start-0 ps-0 fw-bold bg-light" placeholder="Chute o nome..." disabled autocomplete="off">
+                        <input type="text" id="palpite" list="lista-jogadores" class="form-control border-start-0 ps-0 fw-bold bg-light" placeholder="Chute o nome..." disabled autocomplete="off">
                         <button class="btn btn-primary px-3 px-md-4 fw-bold" type="submit" id="btn-chute" disabled>ENVIAR</button>
                     </div>
                 </form>
@@ -150,8 +155,8 @@
                 clearInterval(pollInterval); 
                 
                 let vencedor = "O Jogo terminou empatado!";
-                if (data.pontos_j1 > data.pontos_j2) vencedor = "🏆 Vitória de {{ partida.jogador_criador.username|escapejs }}!";
-                if (data.pontos_j2 > data.pontos_j1) vencedor = "🏆 Vitória de {{ partida.jogador_convidado.username|escapejs }}!";
+                if (data.pontos_j1 > data.pontos_j2) vencedor = "🏆 Vitória de {{ partida.jogador_criador.first_name|default:partida.jogador_criador.username|escapejs }}!";
+                if (data.pontos_j2 > data.pontos_j1) vencedor = "🏆 Vitória de {{ partida.jogador_convidado.first_name|default:partida.jogador_convidado.username|escapejs }}!";
                 
                 document.getElementById('modal-vencedor').innerText = vencedor;
                 new bootstrap.Modal(document.getElementById('modalFimJogo')).show();

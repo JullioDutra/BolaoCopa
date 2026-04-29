@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
-from .models import CategoriaDesafio, PartidaDuelo, ItemDesafio
+from .models import CategoriaDesafio, PartidaDuelo, ItemDesafio, JogadorBanco
 import json
 import random
 from django.utils import timezone
@@ -88,9 +88,13 @@ def tela_jogo(request, partida_id):
     if request.user not in [partida.jogador_criador, partida.jogador_convidado]:
         return redirect('dashboard')
 
+    # Busca todos os jogadores do banco para o AUTOCOMPLETE HTML5
+    banco_jogadores = JogadorBanco.objects.all().order_by('nome')
+
     # Seleção de template baseada no tipo de jogo
     template = 'duelos/jogo_elenco.html' if partida.categoria.tipo == 'elenco' else 'duelos/jogo_trajetoria.html'
-    return render(request, template, {'partida': partida})
+    return render(request, template, {'partida': partida, 'banco_jogadores': banco_jogadores})
+
 
 def status_partida_api(request, partida_id):
     """Heartbeat do jogo: gere o tempo e os turnos (agora com 30 segundos)."""
@@ -123,6 +127,8 @@ def status_partida_api(request, partida_id):
         'revelados_ids': list(partida.itens_revelados.values_list('id', flat=True))
     })
 
+
+
 @login_required
 def enviar_palpite_api(request, partida_id):
     """Valida o palpite e processa a lógica de pontuação e encerramento."""
@@ -140,7 +146,8 @@ def enviar_palpite_api(request, partida_id):
         if partida.categoria.tipo == 'elenco':
             itens_restantes = partida.categoria.itens.exclude(id__in=partida.itens_revelados.all())
             for item in itens_restantes:
-                if chute == item.nome.strip().lower():
+                # USA A INTELIGÊNCIA NOVA PARA PEGAR O NOME (Banco ou Manual)
+                if chute == item.get_nome().strip().lower():
                     acertou = True
                     partida.itens_revelados.add(item)
                     if request.user == partida.jogador_criador:
@@ -148,14 +155,12 @@ def enviar_palpite_api(request, partida_id):
                     else:
                         partida.pontos_convidado += 1
                     
-                    # Verifica se o jogo acabou (todos os itens descobertos)
                     if not partida.categoria.itens.exclude(id__in=partida.itens_revelados.all()).exists():
                         partida.status = 'finalizado'
                     break
         
         # --- Lógica Modo Trajetória ---
         elif partida.categoria.tipo == 'trajetoria':
-            # Compara com a resposta oculta da categoria
             if chute == partida.categoria.resposta_oculta.strip().lower():
                 acertou = True
                 partida.status = 'finalizado'
@@ -167,12 +172,10 @@ def enviar_palpite_api(request, partida_id):
         if not acertou:
             partida.erros_acumulados += 1
             
-        # Se o jogo continua, troca o turno e reseta o tempo
         if partida.status == 'andamento':
             partida.turno_de = partida.jogador_convidado if partida.turno_de == partida.jogador_criador else partida.jogador_criador
             partida.turno_iniciado_em = timezone.now()
         else:
-            # Define o vencedor ao finalizar
             if partida.pontos_criador > partida.pontos_convidado:
                 partida.vencedor = partida.jogador_criador
             elif partida.pontos_convidado > partida.pontos_criador:

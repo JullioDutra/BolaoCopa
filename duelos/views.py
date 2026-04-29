@@ -580,10 +580,7 @@ def resetar_campeonato(request, campeonato_id):
     return redirect('duelos:painel_campeonato', campeonato_id=campeonato.id)
 
 def processar_avanco_fase(confronto, vencedor):
-    """
-    Função Helper: Sobe o vencedor na árvore do campeonato.
-    Chamada automaticamente na API de enviar palpite ou desistir.
-    """
+    """Sobe o vencedor na árvore do campeonato."""
     confronto.vencedor = vencedor
     confronto.status = 'finalizado'
     confronto.save()
@@ -596,9 +593,19 @@ def processar_avanco_fase(confronto, vencedor):
         return
 
     # Matemática do chaveamento cruzado
-    # Jogo 1 e Jogo 2 vão para o Jogo 1 da próxima fase. Jogo 3 e 4 vão para o Jogo 2.
-    mapa_fases = {'quartas': 'semi', 'semi': 'final'}
+    # AQUI ESTAVA O ERRO: Precisamos garantir que as 'oitavas' apontam para as 'quartas'
+    mapa_fases = {
+        'oitavas': 'quartas', 
+        'quartas': 'semi', 
+        'semi': 'final'
+    }
+    
     proxima_fase = mapa_fases.get(confronto.fase)
+    
+    # Trava do VAR: Se a fase não existir no mapa, aborta pra não quebrar o banco
+    if not proxima_fase:
+        return
+
     proxima_ordem = ((confronto.ordem_chave - 1) // 2) + 1
 
     # Busca ou cria o confronto da próxima fase

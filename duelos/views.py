@@ -6,6 +6,7 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.utils import timezone
 from django.db.models import Q
+from django.urls import reverse
 
 # Importação dos Models limpa (sem a vírgula no final)
 from .models import (
@@ -391,8 +392,9 @@ def painel_campeonato(request, campeonato_id):
     campeonato = get_object_or_404(Campeonato, id=campeonato_id)
     inscritos = campeonato.inscritos.select_related('jogador').all()
     
-    # Gera o link completo (com http:// ou https://) para facilitar o copia e cola
-    link_convite = request.build_absolute_uri(f"/duelos/campeonato/entrar/{campeonato.codigo_convite}/")
+    link_convite = request.build_absolute_uri(
+        reverse('duelos:entrar_campeonato', kwargs={'codigo_convite': campeonato.codigo_convite})
+    )
     
     context = {
         'campeonato': campeonato,
@@ -455,7 +457,8 @@ def iniciar_jogo_campeonato(request, confronto_id):
         partida = confronto.partida_vinculada
 
     # Redireciona para a URL do seu jogo principal (ajuste 'jogar_partida' para o nome correto da sua url)
-    return redirect('duelos:jogar_partida', partida_id=partida.id)
+    # Redireciona para a URL do seu jogo principal
+    return redirect('duelos:tela_jogo', partida_id=partida.id)
 
 
 def processar_avanco_fase(confronto, vencedor):

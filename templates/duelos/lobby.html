@@ -16,7 +16,7 @@
                 
                 <!-- Regra para não dar spoiler se for Trajetória -->
                 {% if partida.categoria.tipo == 'trajetoria' %}
-                    <p class="text-muted fs-5"><i class="fa-solid fa-shoe-prints text-warning"></i> Desafio: <strong>Carreira Misteriosa 🤫</strong></p>
+                    <p class="text-muted fs-5"> Desafio: <strong>Carreira Misteriosa</strong></p>
                 {% else %}
                     <p class="text-muted fs-5"><i class="fa-solid fa-users text-primary"></i> Desafio: <strong>{{ partida.categoria.titulo }}</strong></p>
                 {% endif %}

@@ -1,213 +1,144 @@
 import requests
-import unicodedata
+from bs4 import BeautifulSoup
 from django.core.management.base import BaseCommand
 from django.core.files.base import ContentFile
 from duelos.models import Clube
 
-
 class Command(BaseCommand):
-    help = 'Download FINAL de escudos (100% PNG válidos e confiáveis)'
-
-    def normalizar_nome(self, nome):
-        nome = nome.lower()
-        nome = unicodedata.normalize('NFD', nome)
-        nome = ''.join(c for c in nome if unicodedata.category(c) != 'Mn')
-        nome = nome.replace(' ', '-')
-        nome = nome.replace('fc', '').replace('clube', '').replace('--', '-')
-        return nome.strip('-')
+    help = 'Robô Scout: Busca, valida e baixa escudos dos clubes automaticamente via Wikipedia'
 
     def handle(self, *args, **kwargs):
+        # Filtra apenas os clubes que ainda estão sem escudo
+        clubes_sem_escudo = Clube.objects.filter(escudo='') | Clube.objects.filter(escudo__isnull=True)
+        total = clubes_sem_escudo.count()
 
-        urls_corrigidas = {
-            "Vasco": "https://logodetimes.com/times/vasco-da-gama/logo-vasco-da-gama-256.png",
-            "PSV": "https://logodetimes.com/times/psv-eindhoven/logo-psv-eindhoven-256.png",
-            "Inter de Milão": "https://logodetimes.com/times/inter-de-milao/logo-inter-de-milao-256.png",
-            "Fenerbahçe": "https://logodetimes.com/times/fenerbahce/logo-fenerbahce-256.png",
-            "Espanyol": "https://logodetimes.com/times/espanyol/logo-espanyol-256.png",
-            "Bayern de Munique": "https://logodetimes.com/times/bayern-de-munique/logo-bayern-de-munique-256.png",
-            "Aston Villa": "https://logodetimes.com/times/aston-villa/logo-aston-villa-256.png",
-            "Deportivo La Coruña": "https://logodetimes.com/times/deportivo-la-coruna/logo-deportivo-la-coruna-256.png",
-            "Nacional": "https://logodetimes.com/times/nacional/logo-nacional-256.png",
-            "Cruz Azul": "https://logodetimes.com/times/cruz-azul/logo-cruz-azul-256.png",
-            "Monterrey": "https://logodetimes.com/times/monterrey/logo-monterrey-256.png",
-            "Ajax": "https://logodetimes.com/times/ajax/logo-ajax-256.png",
-            "Crystal Palace": "https://logodetimes.com/times/crystal-palace/logo-crystal-palace-256.png",
-            "Independiente": "https://logodetimes.com/times/independiente/logo-independiente-256.png",
-            "Atlético de Madrid": "https://logodetimes.com/times/atletico-de-madrid/logo-atletico-de-madrid-256.png",
-            "Sporting": "https://logodetimes.com/times/sporting/logo-sporting-256.png",
-            "Besiktas": "https://logodetimes.com/times/besiktas/logo-besiktas-256.png",
-            "Goiás": "https://logodetimes.com/times/goias/logo-goias-256.png",
-            "Wolfsburg": "https://logodetimes.com/times/wolfsburg/logo-wolfsburg-256.png",
-            "Athletico Paranaense": "https://logodetimes.com/times/athletico-paranaense/logo-athletico-paranaense-256.png",
-            "Sampdoria": "https://logodetimes.com/times/sampdoria/logo-sampdoria-256.png",
-            "Fiorentina": "https://logodetimes.com/times/fiorentina/logo-fiorentina-256.png",
-            "LA Galaxy": "https://logodetimes.com/times/la-galaxy/logo-la-galaxy-256.png",
-            "Udinese": "https://logodetimes.com/times/udinese/logo-udinese-256.png",
-            "Newell's Old Boys": "https://logodetimes.com/times/newells-old-boys/logo-newells-old-boys-256.png",
-            "River Plate": "https://logodetimes.com/times/river-plate/logo-river-plate-256.png",
-            "Boca Juniors": "https://logodetimes.com/times/boca-juniors/logo-boca-juniors-256.png",
-            "West Ham": "https://logodetimes.com/times/west-ham/logo-west-ham-256.png",
-            "Estudiantes": "https://logodetimes.com/times/estudiantes/logo-estudiantes-256.png",
-            "Colo-Colo": "https://logodetimes.com/times/colo-colo/logo-colo-colo-256.png",
-            "Necaxa": "https://logodetimes.com/times/necaxa/logo-necaxa-256.png",
-            "Nice": "https://logodetimes.com/times/nice/logo-nice-256.png",
-            "Marseille": "https://logodetimes.com/times/olympique-de-marseille/logo-olympique-de-marseille-256.png",
-            "Brescia": "https://logodetimes.com/times/brescia/logo-brescia-256.png",
-            "Monza": "https://logodetimes.com/times/monza/logo-monza-256.png",
-            "Bayer Leverkusen": "https://logodetimes.com/times/bayer-leverkusen/logo-bayer-leverkusen-256.png",
-            "Hertha Berlin": "https://logodetimes.com/times/hertha-berlin/logo-hertha-berlin-256.png",
-            "Portsmouth": "https://logodetimes.com/times/portsmouth/logo-portsmouth-256.png",
-            "Genoa": "https://logodetimes.com/times/genoa/logo-genoa-256.png",
-            "Schalke 04": "https://logodetimes.com/times/schalke-04/logo-schalke-04-256.png",
-            "Las Palmas": "https://logodetimes.com/times/las-palmas/logo-las-palmas-256.png",
-            "Sassuolo": "https://logodetimes.com/times/sassuolo/logo-sassuolo-256.png",
-            "Zenit": "https://logodetimes.com/times/zenit/logo-zenit-256.png",
-            "Estrela Vermelha": "https://logodetimes.com/times/estrela-vermelha/logo-estrela-vermelha-256.png",
-            "Racing": "https://logodetimes.com/times/racing-club/logo-racing-club-256.png",
-            "Olympiacos": "https://logodetimes.com/times/olympiacos/logo-olympiacos-256.png",
-            "AEK": "https://logodetimes.com/times/aek-atenas/logo-aek-atenas-256.png",
-            "Benfica": "https://logodetimes.com/times/benfica/logo-benfica-256.png",
+        if total == 0:
+            self.stdout.write(self.style.SUCCESS("Todos os clubes já possuem escudo! O vestiário tá completo."))
+            return
+
+        self.stdout.write(self.style.WARNING(f"Iniciando a caçada por {total} escudos... O Robô Scout entrou em campo!"))
+
+        # ==========================================
+        # A GRANDE PESQUISA (Dicionário Mestre)
+        # Corrige nomes curtos/ambíguos para o nome exato da Wikipedia
+        # ==========================================
+        termos_exatos = {
+            "Monaco": "AS Monaco FC",
+            "Milan": "Associazione Calcio Milan",
+            "Roma": "Associazione Sportiva Roma",
+            "Lazio": "Società Sportiva Lazio",
+            "Everton": "Everton Football Club",
+            "Arsenal": "Arsenal Football Club",
+            "Chelsea": "Chelsea Football Club",
+            "Liverpool": "Liverpool F.C.",
+            "Porto": "Futebol Clube do Porto",
+            "Benfica": "Sport Lisboa e Benfica",
+            "Sporting": "Sporting Clube de Portugal",
+            "Vasco": "Club de Regatas Vasco da Gama",
+            "Botafogo": "Botafogo de Futebol e Regatas",
+            "Cruzeiro": "Cruzeiro Esporte Clube",
+            "Grêmio": "Grêmio Foot-Ball Porto Alegrense",
+            "Internacional": "Sport Club Internacional",
+            "Corinthians": "Sport Club Corinthians Paulista",
+            "São Paulo": "São Paulo Futebol Clube",
+            "Flamengo": "Clube de Regatas do Flamengo",
+            "Fluminense": "Fluminense Football Club",
+            "River Plate": "Club Atlético River Plate",
+            "Boca Juniors": "Club Atlético Boca Juniors",
+            "Independiente": "Club Atlético Independiente",
+            "Racing": "Racing Club",
+            "San Lorenzo": "Club Atlético San Lorenzo de Almagro",
+            "Peñarol": "Club Atlético Peñarol",
+            "Nacional": "Club Nacional de Football",
+            "Juventus": "Juventus Football Club",
+            "Fiorentina": "ACF Fiorentina",
+            "Napoli": "Società Sportiva Calcio Napoli",
+            "Bayern de Munique": "FC Bayern München",
+            "Borussia Dortmund": "Borussia Dortmund",
+            "Schalke 04": "FC Schalke 04",
+            "Bayer Leverkusen": "Bayer 04 Leverkusen",
+            "Ajax": "AFC Ajax",
+            "PSV": "PSV Eindhoven",
+            "Feyenoord": "Feyenoord Rotterdam",
+            "Galatasaray": "Galatasaray SK",
+            "Fenerbahçe": "Fenerbahçe SK",
+            "Besiktas": "Beşiktaş JK",
+            "Kairat": "FC Kairat",
+            "Suduva": "FK Sūduva",
+            "Neftchi Baku": "Neftçi PFK",
+            "Al-Nassr": "Al-Nassr Football Club",
+            "Al-Hilal": "Al-Hilal Saudi Football Club",
+            "Guadalajara": "Club Deportivo Guadalajara",
+            "Como": "Como 1907",
+            "Sion": "FC Sion",
+            "Brescia": "Brescia Calcio",
+            "Venezia": "Venezia FC",
+            "QPR": "Queens Park Rangers Football Club",
+            "Saint-Étienne": "Association Sportive de Saint-Étienne Loire",
+            "PSG": "Paris Saint-Germain Football Club",
+            "LA Galaxy": "Los Angeles Galaxy",
+            "Los Angeles FC": "Los Angeles Football Club",
+            "CSKA Moscou": "PFC CSKA Moscovo"
         }
 
-        clubes = Clube.objects.all()
-        faltantes = [c for c in clubes if not c.escudo]
-
-        self.stdout.write(self.style.WARNING(f"\nResgatando {len(faltantes)} clubes..."))
-
-        sucessos = 0
-        falhas = 0
-
-        for clube in faltantes:
-
-            if clube.nome in urls_corrigidas:
-                url = urls_corrigidas[clube.nome]
-            else:
-                slug = self.normalizar_nome(clube.nome)
-                url = f"https://logodetimes.com/times/{slug}/logo-{slug}-256.png"
-
-            try:
-                headers = {'User-Agent': 'Mozilla/5.0'}
-                resposta = requests.get(url, timeout=10, headers=headers)
-
-                if resposta.status_code == 200 and "image" in resposta.headers.get("Content-Type", ""):
-
-                    nome_arquivo = f"{self.normalizar_nome(clube.nome)}.png"
-                    clube.escudo.save(nome_arquivo, ContentFile(resposta.content), save=True)
-
-                    self.stdout.write(self.style.SUCCESS(f'[+] {clube.nome} OK'))
-                    sucessos += 1
-                else:
-                    self.stdout.write(self.style.ERROR(f'[X] {clube.nome} falhou'))
-                    falhas += 1
-
-            except:
-                self.stdout.write(self.style.ERROR(f'[X] erro rede: {clube.nome}'))
-                falhas += 1
-
-        self.stdout.write(self.style.WARNING(f"\nFINAL: {sucessos} OK | {falhas} falhas"))import requests
-import unicodedata
-from django.core.management.base import BaseCommand
-from django.core.files.base import ContentFile
-from duelos.models import Clube
-
-
-class Command(BaseCommand):
-    help = 'Download FINAL de escudos (100% PNG válidos e confiáveis)'
-
-    def normalizar_nome(self, nome):
-        nome = nome.lower()
-        nome = unicodedata.normalize('NFD', nome)
-        nome = ''.join(c for c in nome if unicodedata.category(c) != 'Mn')
-        nome = nome.replace(' ', '-')
-        nome = nome.replace('fc', '').replace('clube', '').replace('--', '-')
-        return nome.strip('-')
-
-    def handle(self, *args, **kwargs):
-
-        urls_corrigidas = {
-            "Vasco": "https://logodetimes.com/times/vasco-da-gama/logo-vasco-da-gama-256.png",
-            "PSV": "https://logodetimes.com/times/psv-eindhoven/logo-psv-eindhoven-256.png",
-            "Inter de Milão": "https://logodetimes.com/times/inter-de-milao/logo-inter-de-milao-256.png",
-            "Fenerbahçe": "https://logodetimes.com/times/fenerbahce/logo-fenerbahce-256.png",
-            "Espanyol": "https://logodetimes.com/times/espanyol/logo-espanyol-256.png",
-            "Bayern de Munique": "https://logodetimes.com/times/bayern-de-munique/logo-bayern-de-munique-256.png",
-            "Aston Villa": "https://logodetimes.com/times/aston-villa/logo-aston-villa-256.png",
-            "Deportivo La Coruña": "https://logodetimes.com/times/deportivo-la-coruna/logo-deportivo-la-coruna-256.png",
-            "Nacional": "https://logodetimes.com/times/nacional/logo-nacional-256.png",
-            "Cruz Azul": "https://logodetimes.com/times/cruz-azul/logo-cruz-azul-256.png",
-            "Monterrey": "https://logodetimes.com/times/monterrey/logo-monterrey-256.png",
-            "Ajax": "https://logodetimes.com/times/ajax/logo-ajax-256.png",
-            "Crystal Palace": "https://logodetimes.com/times/crystal-palace/logo-crystal-palace-256.png",
-            "Independiente": "https://logodetimes.com/times/independiente/logo-independiente-256.png",
-            "Atlético de Madrid": "https://logodetimes.com/times/atletico-de-madrid/logo-atletico-de-madrid-256.png",
-            "Sporting": "https://logodetimes.com/times/sporting/logo-sporting-256.png",
-            "Besiktas": "https://logodetimes.com/times/besiktas/logo-besiktas-256.png",
-            "Goiás": "https://logodetimes.com/times/goias/logo-goias-256.png",
-            "Wolfsburg": "https://logodetimes.com/times/wolfsburg/logo-wolfsburg-256.png",
-            "Athletico Paranaense": "https://logodetimes.com/times/athletico-paranaense/logo-athletico-paranaense-256.png",
-            "Sampdoria": "https://logodetimes.com/times/sampdoria/logo-sampdoria-256.png",
-            "Fiorentina": "https://logodetimes.com/times/fiorentina/logo-fiorentina-256.png",
-            "LA Galaxy": "https://logodetimes.com/times/la-galaxy/logo-la-galaxy-256.png",
-            "Udinese": "https://logodetimes.com/times/udinese/logo-udinese-256.png",
-            "Newell's Old Boys": "https://logodetimes.com/times/newells-old-boys/logo-newells-old-boys-256.png",
-            "River Plate": "https://logodetimes.com/times/river-plate/logo-river-plate-256.png",
-            "Boca Juniors": "https://logodetimes.com/times/boca-juniors/logo-boca-juniors-256.png",
-            "West Ham": "https://logodetimes.com/times/west-ham/logo-west-ham-256.png",
-            "Estudiantes": "https://logodetimes.com/times/estudiantes/logo-estudiantes-256.png",
-            "Colo-Colo": "https://logodetimes.com/times/colo-colo/logo-colo-colo-256.png",
-            "Necaxa": "https://logodetimes.com/times/necaxa/logo-necaxa-256.png",
-            "Nice": "https://logodetimes.com/times/nice/logo-nice-256.png",
-            "Marseille": "https://logodetimes.com/times/olympique-de-marseille/logo-olympique-de-marseille-256.png",
-            "Brescia": "https://logodetimes.com/times/brescia/logo-brescia-256.png",
-            "Monza": "https://logodetimes.com/times/monza/logo-monza-256.png",
-            "Bayer Leverkusen": "https://logodetimes.com/times/bayer-leverkusen/logo-bayer-leverkusen-256.png",
-            "Hertha Berlin": "https://logodetimes.com/times/hertha-berlin/logo-hertha-berlin-256.png",
-            "Portsmouth": "https://logodetimes.com/times/portsmouth/logo-portsmouth-256.png",
-            "Genoa": "https://logodetimes.com/times/genoa/logo-genoa-256.png",
-            "Schalke 04": "https://logodetimes.com/times/schalke-04/logo-schalke-04-256.png",
-            "Las Palmas": "https://logodetimes.com/times/las-palmas/logo-las-palmas-256.png",
-            "Sassuolo": "https://logodetimes.com/times/sassuolo/logo-sassuolo-256.png",
-            "Zenit": "https://logodetimes.com/times/zenit/logo-zenit-256.png",
-            "Estrela Vermelha": "https://logodetimes.com/times/estrela-vermelha/logo-estrela-vermelha-256.png",
-            "Racing": "https://logodetimes.com/times/racing-club/logo-racing-club-256.png",
-            "Olympiacos": "https://logodetimes.com/times/olympiacos/logo-olympiacos-256.png",
-            "AEK": "https://logodetimes.com/times/aek-atenas/logo-aek-atenas-256.png",
-            "Benfica": "https://logodetimes.com/times/benfica/logo-benfica-256.png",
+        # Simula ser um navegador real para não ser bloqueado
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
         }
 
-        clubes = Clube.objects.all()
-        faltantes = [c for c in clubes if not c.escudo]
-
-        self.stdout.write(self.style.WARNING(f"\nResgatando {len(faltantes)} clubes..."))
-
-        sucessos = 0
-        falhas = 0
-
-        for clube in faltantes:
-
-            if clube.nome in urls_corrigidas:
-                url = urls_corrigidas[clube.nome]
-            else:
-                slug = self.normalizar_nome(clube.nome)
-                url = f"https://logodetimes.com/times/{slug}/logo-{slug}-256.png"
-
+        for clube in clubes_sem_escudo:
+            # Se não estiver no dicionário mestre, ele adiciona "futebol" pra ajudar a Wikipedia a entender
+            termo_busca = termos_exatos.get(clube.nome, f"{clube.nome} futebol")
+            
+            self.stdout.write(f"Buscando: {clube.nome}...")
+            
+            # 1. Pesquisa na API da Wikipedia para achar o link da página do clube
+            url_search = f"https://pt.wikipedia.org/w/api.php?action=opensearch&search={termo_busca}&limit=1&format=json"
+            
             try:
-                headers = {'User-Agent': 'Mozilla/5.0'}
-                resposta = requests.get(url, timeout=10, headers=headers)
+                res_search = requests.get(url_search, headers=headers).json()
+                
+                # Se não achou na Wikipedia em Português, tenta na em Inglês
+                if len(res_search[3]) == 0:
+                    url_search_en = f"https://en.wikipedia.org/w/api.php?action=opensearch&search={termo_busca}&limit=1&format=json"
+                    res_search = requests.get(url_search_en, headers=headers).json()
 
-                if resposta.status_code == 200 and "image" in resposta.headers.get("Content-Type", ""):
-
-                    nome_arquivo = f"{self.normalizar_nome(clube.nome)}.png"
-                    clube.escudo.save(nome_arquivo, ContentFile(resposta.content), save=True)
-
-                    self.stdout.write(self.style.SUCCESS(f'[+] {clube.nome} OK'))
-                    sucessos += 1
+                if len(res_search[3]) > 0:
+                    page_url = res_search[3][0]
+                    
+                    # 2. Entra na página do clube e raspa o HTML
+                    html = requests.get(page_url, headers=headers).text
+                    soup = BeautifulSoup(html, 'html.parser')
+                    
+                    # 3. Procura a imagem que fica dentro da ficha técnica (infobox)
+                    img_tag = soup.select_one('table.infobox img')
+                    
+                    if img_tag and img_tag.has_attr('src'):
+                        img_url = "https:" + img_tag['src']
+                        
+                        # 4. VALIDAÇÃO: Testa se a imagem realmente existe no servidor
+                        img_response = requests.get(img_url, headers=headers)
+                        
+                        # Se o código for 200 (OK) e for um arquivo de imagem real
+                        if img_response.status_code == 200 and 'image' in img_response.headers.get('Content-Type', ''):
+                            # Pega a extensão da imagem (png, svg, jpg)
+                            ext = img_url.split('.')[-1].lower()
+                            if ext not in ['png', 'jpg', 'jpeg', 'webp', 'svg', 'gif']:
+                                ext = 'png'
+                                
+                            nome_arquivo = f"{clube.nome.replace(' ', '_').lower()}.{ext}"
+                            
+                            # Salva a imagem física no banco de dados
+                            clube.escudo.save(nome_arquivo, ContentFile(img_response.content), save=True)
+                            self.stdout.write(self.style.SUCCESS(f"  [+] Golaço! Escudo garantido: {clube.nome}"))
+                        else:
+                            self.stdout.write(self.style.ERROR(f"  [-] Imagem corrompida ou inacessível para: {clube.nome}"))
+                    else:
+                        self.stdout.write(self.style.WARNING(f"  [-] Escudo não encontrado na página para: {clube.nome}"))
                 else:
-                    self.stdout.write(self.style.ERROR(f'[X] {clube.nome} falhou'))
-                    falhas += 1
+                    self.stdout.write(self.style.WARNING(f"  [-] Clube não encontrado na Wikipedia: {clube.nome}"))
+                    
+            except Exception as e:
+                self.stdout.write(self.style.ERROR(f"  [!] O VAR marcou falta! Erro ao buscar {clube.nome}: {e}"))
 
-            except:
-                self.stdout.write(self.style.ERROR(f'[X] erro rede: {clube.nome}'))
-                falhas += 1
-
-        self.stdout.write(self.style.WARNING(f"\nFINAL: {sucessos} OK | {falhas} falhas"))
+        self.stdout.write(self.style.SUCCESS("\nApita o árbitro! Varredura finalizada. Os escudos estão no vestiário! 🏆"))

@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
+import uuid
 
 class Clube(models.Model):
     """Banco centralizado de Escudos de Clubes"""
@@ -85,3 +86,75 @@ class PartidaDuelo(models.Model):
     def __str__(self):
         j2_nome = self.jogador_convidado.first_name if self.jogador_convidado else "???"
         return f"{self.jogador_criador.first_name} vs {j2_nome} ({self.categoria.titulo})"
+
+# ==========================================
+# MODO CAMPEONATO (MATA-MATA)
+# ==========================================
+
+class Campeonato(models.Model):
+    STATUS_CHOICES = (
+        ('inscricoes', 'Inscrições Abertas'),
+        ('andamento', 'Em Andamento'),
+        ('finalizado', 'Finalizado'),
+    )
+
+    nome = models.CharField(max_length=100)
+    admin = models.ForeignKey(User, on_delete=models.CASCADE, related_name='campeonatos_criados')
+    data_limite_inscricao = models.DateTimeField(help_text="Data e hora que as inscrições se encerram.")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='inscricoes')
+    codigo_convite = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    criado_em = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.nome} - {self.get_status_display()}"
+
+    def inscricoes_abertas(self):
+        return self.status == 'inscricoes' and timezone.now() < self.data_limite_inscricao
+
+class InscricaoCampeonato(models.Model):
+    campeonato = models.ForeignKey(Campeonato, on_delete=models.CASCADE, related_name='inscritos')
+    jogador = models.ForeignKey(User, on_delete=models.CASCADE)
+    data_inscricao = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('campeonato', 'jogador') # Evita que o cara se inscreva duas vezes
+
+    def __str__(self):
+        return f"{self.jogador.username} em {self.campeonato.nome}"
+
+class ConfrontoCampeonato(models.Model):
+    FASES_CHOICES = (
+        ('oitavas', 'Oitavas de Final'),
+        ('quartas', 'Quartas de Final'),
+        ('semi', 'Semifinal'),
+        ('final', 'Grande Final'),
+    )
+
+    STATUS_CONFRONTO = (
+        ('aguardando', 'Aguardando Adversário/Jogadores'),
+        ('andamento', 'Bola Rolando'),
+        ('finalizado', 'Finalizado'),
+        ('wo', 'Vencedor por W.O.'),
+    )
+
+    campeonato = models.ForeignKey(Campeonato, on_delete=models.CASCADE, related_name='confrontos')
+    fase = models.CharField(max_length=20, choices=FASES_CHOICES)
+    
+    # Jogadores da chave
+    jogador1 = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='confrontos_como_j1')
+    jogador2 = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='confrontos_como_j2')
+    vencedor = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='confrontos_vencidos')
+    
+    # O jogo sorteado para este confronto
+    desafio_sorteado = models.ForeignKey('CategoriaDesafio', on_delete=models.SET_NULL, null=True, blank=True)
+    
+    # A partida em si (ligando com a lógica de duelos que você já tem)
+    partida_vinculada = models.OneToOneField('PartidaDesafio', on_delete=models.SET_NULL, null=True, blank=True)
+    
+    status = models.CharField(max_length=20, choices=STATUS_CONFRONTO, default='aguardando')
+    ordem_chave = models.IntegerField(default=0, help_text="Para organizar o desenho do chaveamento no front-end")
+
+    def __str__(self):
+        j1 = self.jogador1.username if self.jogador1 else 'TBD'
+        j2 = self.jogador2.username if self.jogador2 else 'TBD'
+        return f"{self.campeonato.nome} [{self.get_fase_display()}]: {j1} x {j2}"

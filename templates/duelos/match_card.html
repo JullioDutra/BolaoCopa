@@ -1,0 +1,31 @@
+<div class="matchup {% if c.status == 'andamento' %}active{% endif %}">
+    
+    <!-- Jogador 1 -->
+    <div class="matchup-player {% if c.vencedor == c.jogador1 %}winner{% elif c.vencedor and c.vencedor != c.jogador1 %}loser{% endif %}">
+        <span>{{ c.jogador1.username|default:"Aguardando..." }}</span>
+        {% if c.vencedor == c.jogador1 %}<i class="fa-solid fa-check-circle"></i>{% endif %}
+    </div>
+
+    <!-- Jogador 2 -->
+    <div class="matchup-player {% if c.vencedor == c.jogador2 %}winner{% elif c.vencedor and c.vencedor != c.jogador2 %}loser{% endif %}">
+        {% if not c.jogador2 and c.status == 'wo' %}
+            <span class="bye">Bye (Sorte nela!)</span>
+        {% else %}
+            <span>{{ c.jogador2.username|default:"Aguardando..." }}</span>
+        {% endif %}
+        {% if c.vencedor == c.jogador2 %}<i class="fa-solid fa-check-circle"></i>{% endif %}
+    </div>
+
+    <!-- Ação do Jogo -->
+    {% if c.status == 'andamento' %}
+        {% if request.user == c.jogador1 or request.user == c.jogador2 %}
+            <a href="#" class="btn-play"><i class="fa-solid fa-futbol"></i> Ir pro Jogo</a>
+        {% else %}
+            <div class="wo-badge"><i class="fa-solid fa-spinner fa-spin"></i> Em Disputa...</div>
+        {% endif %}
+    {% elif c.status == 'wo' %}
+        <div class="wo-badge">Avanço Automático (W.O.)</div>
+    {% elif c.status == 'finalizado' %}
+        <div class="wo-badge bg-success text-white">Finalizado</div>
+    {% endif %}
+</div>

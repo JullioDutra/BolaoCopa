@@ -1,12 +1,23 @@
+import json
+import random
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
-from .models import CategoriaDesafio, PartidaDuelo, ItemDesafio, JogadorBanco
-import json
-import random
 from django.utils import timezone
 from django.db.models import Q
+
+# Importação dos Models limpa (sem a vírgula no final)
+from .models import (
+    CategoriaDesafio, 
+    PartidaDuelo, 
+    ItemDesafio, 
+    JogadorBanco, 
+    Campeonato, 
+    InscricaoCampeonato, 
+    ConfrontoCampeonato
+)
+
 
 @login_required
 def listar_desafios(request):
@@ -219,3 +230,105 @@ def historico_duelos(request):
     ).order_by('-data_criacao') # Mais recentes primeiro
     
     return render(request, 'duelos/historico.html', {'partidas': partidas})
+
+
+
+# ==========================================
+# 1. ENTRAR NO CAMPEONATO (Link de Inscrição)
+# ==========================================
+@login_required
+def entrar_campeonato(request, codigo_convite):
+    campeonato = get_object_or_404(Campeonato, codigo_convite=codigo_convite)
+
+    # O VAR checa se a janela de transferências fechou
+    if not campeonato.inscricoes_abertas():
+        messages.error(request, "As inscrições para este campeonato já estão encerradas!")
+        return redirect('dashboard')
+
+    # Confirma a inscrição do jogador
+    inscricao, created = InscricaoCampeonato.objects.get_or_create(
+        campeonato=campeonato,
+        jogador=request.user
+    )
+
+    if created:
+        messages.success(request, f"Você está inscrito no {campeonato.nome}! Aguarde o sorteio das chaves.")
+    else:
+        messages.info(request, "Você já está inscrito neste campeonato, craque. Só aguardar!")
+
+    # Pode redirecionar para uma tela de "Lobby do Torneio" (vamos fazer depois)
+    return redirect('dashboard')
+
+# ==========================================
+# 2. O SORTEIO DAS CHAVES (Painel do Admin)
+# ==========================================
+@login_required
+def gerar_chaveamento(request, campeonato_id):
+    campeonato = get_object_or_404(Campeonato, id=campeonato_id, admin=request.user)
+
+    if campeonato.status != 'inscricoes':
+        messages.error(request, "As chaves já foram geradas ou o torneio já acabou.")
+        return redirect('dashboard')
+
+    # Pega todo mundo que assinou a súmula e embaralha (Sorteio cego)
+    inscricoes = list(campeonato.inscritos.all())
+    random.shuffle(inscricoes)
+    jogadores = [inscricao.jogador for inscricao in inscricoes]
+    num_jogadores = len(jogadores)
+
+    if num_jogadores < 3:
+        messages.error(request, "Falta quórum! Precisa de pelo menos 3 jogadores para dar jogo.")
+        return redirect('dashboard')
+
+    # Lógica de chaves (4 ou 8 vagas). Se tiver 5 a 8 pessoas, usamos a chave de Quartas de Final (8 vagas).
+    if num_jogadores <= 4:
+        fase_inicial = 'semi'
+        vagas = 4
+    else:
+        fase_inicial = 'quartas'
+        vagas = 8
+
+    # Se tivermos um número "quebrado" (ex: 7 jogadores pra 8 vagas), o algoritmo preenche com "None"
+    # Quem cair contra "None" avança de fase de graça (W.O. automático / Bye)
+    while len(jogadores) < vagas:
+        jogadores.append(None)
+
+    # Pegamos todos os desafios para sortear
+    categorias_disponiveis = list(CategoriaDesafio.objects.all())
+
+    # Monta os confrontos de 2 em 2
+    ordem = 1
+    for i in range(0, vagas, 2):
+        j1 = jogadores[i]
+        j2 = jogadores[i+1]
+
+        # Sorteia se vai ser Elenco ou Trajetória, e qual específico
+        desafio = random.choice(categorias_disponiveis) if categorias_disponiveis else None
+
+        confronto = ConfrontoCampeonato.objects.create(
+            campeonato=campeonato,
+            fase=fase_inicial,
+            jogador1=j1,
+            jogador2=j2,
+            desafio_sorteado=desafio,
+            ordem_chave=ordem
+        )
+
+        # Regra do W.O. (se um jogador foi sorteado contra "Ninguém", ele avança)
+        if j1 and not j2:
+            confronto.status = 'wo'
+            confronto.vencedor = j1
+            confronto.save()
+        elif j2 and not j1:
+            confronto.status = 'wo'
+            confronto.vencedor = j2
+            confronto.save()
+
+        ordem += 1
+
+    # Atualiza o status do campeonato
+    campeonato.status = 'andamento'
+    campeonato.save()
+
+    messages.success(request, "Sorteio realizado com sucesso! O chaveamento está pronto.")
+    return redirect('dashboard') # Redirecionaremos pra tela da tabela depois

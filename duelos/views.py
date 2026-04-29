@@ -22,9 +22,9 @@ from .models import (
 
 @login_required
 def listar_desafios(request):
-    """Tela inicial para escolha do modo de jogo."""
-    # Trocado de PartidaDesafio para PartidaDuelo aqui:
-    salas_abertas = PartidaDuelo.objects.filter(status='aguardando').order_by('-criado_em')
+    # Busca todas as partidas que estão aguardando um oponente, ordenando pela data_criacao
+    salas_abertas = PartidaDesafio.objects.filter(status='aguardando').order_by('-data_criacao')
+    
     context = {
         'salas_abertas': salas_abertas,
     }

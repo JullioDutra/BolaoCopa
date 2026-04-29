@@ -1,100 +1,93 @@
 {% extends 'base.html' %}
 
-{% block title %}Lobby - Cartolândia{% endblock %}
+{% block title %}Lobby de Espera - Cartolândia{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center mt-5">
-    <div class="col-md-6">
-        <div class="card card-clean p-4 shadow text-center rounded-4 border-0">
+    <div class="col-md-6 text-center">
+        <div class="card card-clean border-0 shadow-lg rounded-4 p-5 text-center" style="border-top: 5px solid var(--verde-escuro) !important;">
             
             <div class="mb-4">
-                <!-- Bola rolando como "loading" -->
-                <div class="mb-3">
-                    <i class="fa-solid fa-futbol fa-spin text-success" style="font-size: 3.5rem;"></i>
-                </div>
-                <h3 class="fw-bold text-dark">Aquecendo pro jogo...</h3>
-                
-                <!-- Regra para não dar spoiler se for Trajetória -->
-                {% if partida.categoria.tipo == 'trajetoria' %}
-                    <p class="text-muted fs-5"> Desafio: <strong>Carreira Misteriosa</strong></p>
-                {% else %}
-                    <p class="text-muted fs-5"><i class="fa-solid fa-users text-primary"></i> Desafio: <strong>{{ partida.categoria.titulo }}</strong></p>
-                {% endif %}
-            </div>
-
-            <div class="p-4 bg-light rounded-3 border mb-4">
-                <label class="form-label fw-bold text-muted small text-uppercase"><i class="fa-solid fa-share-nodes"></i> Manda o convite pro adversário:</label>
-                <div class="input-group input-group-lg shadow-sm">
-                    <input type="text" id="linkConvite" class="form-control bg-white text-primary fw-bold fs-6" value="{{ link_convite }}" readonly>
-                    <button class="btn btn-outline-primary" type="button" onclick="copiarLink()">
-                        <i class="fa-regular fa-copy"></i> Copiar
-                    </button>
-                </div>
-            </div>
-
-            <div class="d-flex justify-content-center align-items-center gap-4 mt-2">
-                <div class="text-center">
-                    <i class="fa-solid fa-shirt fs-1 text-success mb-2"></i>
-                    <h6 class="fw-bold mb-0">Mandante (Você)</h6>
-                </div>
-                <div class="fs-2 text-muted fw-bold">
-                    <i class="fa-solid fa-bolt text-warning"></i>
-                </div>
-                <div class="text-center" style="opacity: 0.5;">
-                    <i class="fa-solid fa-shirt fs-1 text-secondary mb-2"></i>
-                    <h6 class="fw-bold mb-0">Visitante...</h6>
-                </div>
+                <i class="fa-solid fa-stopwatch fa-flip text-success" style="font-size: 5rem; --fa-animation-duration: 3s;"></i>
             </div>
             
+            {% if eh_campeonato %}
+                <!-- MODO CAMPEONATO -->
+                <h3 class="fw-bold text-dark mt-2">Vestiário do Torneio</h3>
+                <p class="text-muted fs-5 mt-3">
+                    Aguardando o seu adversário entrar na sala pelo painel de chaves. 
+                    Aquece aí que a bola já vai rolar!
+                </p>
+                
+                <div class="d-flex justify-content-center align-items-center mt-4 mb-2 gap-3">
+                    <div class="spinner-grow text-success" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <div class="spinner-grow text-success" role="status" style="animation-delay: 0.2s;">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <div class="spinner-grow text-success" role="status" style="animation-delay: 0.4s;">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            {% else %}
+                <!-- MODO X1 RAIZ -->
+                <h3 class="fw-bold text-dark mt-2">Sala Criada!</h3>
+                <p class="text-muted fs-5 mt-2">Envie o link abaixo para o seu desafiante.</p>
+                
+                <div class="input-group input-group-lg mt-4 mb-3">
+                    <input type="text" id="linkConvite" class="form-control bg-light border-0 fw-bold text-muted" value="{{ link_convite }}" readonly>
+                    <button class="btn btn-success px-4" type="button" onclick="copiarLink()" id="btnCopiar">
+                        <i class="fa-solid fa-copy"></i> Copiar
+                    </button>
+                </div>
+                
+                <div class="spinner-border text-success mt-3" role="status">
+                    <span class="visually-hidden">Aguardando...</span>
+                </div>
+                <p class="text-muted mt-2 small">Aguardando o adversário entrar...</p>
+            {% endif %}
+
             <div class="mt-4 pt-3 border-top">
-                <a href="{% url 'duelos:listar_desafios' %}" class="text-danger text-decoration-none small fw-bold">
-                    <i class="fa-solid fa-door-open"></i> Sair do vestiário (Cancelar partida)
+                <a href="{% url 'duelos:listar_desafios' %}" class="btn btn-outline-danger fw-bold rounded-pill shadow-sm">
+                    <i class="fa-solid fa-xmark"></i> Cancelar e Sair
                 </a>
             </div>
-
         </div>
     </div>
 </div>
 
 <script>
+    // Função de copiar o link (Usada apenas no X1 Raiz)
     function copiarLink() {
         var copyText = document.getElementById("linkConvite");
-        copyText.select();
-        copyText.setSelectionRange(0, 99999); // Para mobile
-        navigator.clipboard.writeText(copyText.value);
-        
-        // Dá um feedback visual no botão
-        let btn = copyText.nextElementSibling;
-        let iconOriginal = btn.innerHTML;
-        btn.innerHTML = '<i class="fa-solid fa-check-double"></i> Tá na mão!';
-        btn.classList.replace('btn-outline-primary', 'btn-success');
-        btn.classList.add('text-white');
-        
-        setTimeout(() => {
-            btn.innerHTML = iconOriginal;
-            btn.classList.replace('btn-success', 'btn-outline-primary');
-            btn.classList.remove('text-white');
-        }, 2000);
+        if(copyText) {
+            copyText.select();
+            copyText.setSelectionRange(0, 99999);
+            navigator.clipboard.writeText(copyText.value);
+            
+            var btn = document.getElementById("btnCopiar");
+            var originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-check"></i> Copiado!';
+            btn.classList.replace('btn-success', 'btn-dark');
+            
+            setTimeout(function() {
+                btn.innerHTML = originalHtml;
+                btn.classList.replace('btn-dark', 'btn-success');
+            }, 2000);
+        }
     }
 
-    // A MÁGICA DO POLLING (A cada 2 segundos)
-    const partidaId = "{{ partida.id }}";
-    const checkUrl = "{% url 'duelos:checar_oponente_api' partida.id %}";
-
-    function verificarOponente() {
-        fetch(checkUrl)
-            .then(response => response.json())
-            .then(data => {
-                // Se a API avisar que a partida começou (status == andamento)
-                if (data.comecou) {
-                    // Redireciona imediatamente o criador para o gramado!
-                    window.location.href = `/duelos/jogo/${partidaId}/`;
-                }
-            })
-            .catch(error => console.error('Erro ao checar status do VAR:', error));
-    }
-
-    // Inicia o "relógio" que bate no servidor a cada 2000 milissegundos (2 segundos)
-    setInterval(verificarOponente, 2000);
+    // O Olheiro: Fica monitorando se o adversário já pisou no gramado
+    setInterval(function() {
+        fetch("{% url 'duelos:checar_oponente_api' partida.id %}")
+        .then(response => response.json())
+        .then(data => {
+            if (data.comecou) {
+                // O adversário chegou! Redireciona os dois para a partida na hora
+                window.location.href = "{% url 'duelos:tela_jogo' partida.id %}";
+            }
+        });
+    }, 2000); // Checa a cada 2 segundos
 </script>
 {% endblock %}

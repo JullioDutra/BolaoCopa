@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+
+{% block title %}Gestão: {{ campeonato.nome }}{% endblock %}
+
+{% block content %}
+<div class="row mt-4">
+    <div class="col-md-10 mx-auto">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="fw-bold text-dark"><i class="fa-solid fa-gears text-secondary"></i> Painel do Organizador</h2>
+            <a href="{% url 'duelos:listar_desafios' %}" class="btn btn-outline-secondary btn-sm rounded-pill">
+                <i class="fa-solid fa-arrow-left"></i> Voltar à Arena
+            </a>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-4">
+                <div class="card card-clean shadow-sm p-4 border-0 h-100 rounded-4">
+                    <h5 class="fw-bold mb-3">Detalhes do Torneio</h5>
+                    <p class="mb-1 text-muted">Nome:</p>
+                    <h4 class="fw-bold text-success mb-3">{{ campeonato.nome }}</h4>
+                    
+                    <p class="mb-1 text-muted">Status:</p>
+                    <span class="badge bg-info mb-3">{{ campeonato.get_status_display }}</span>
+
+                    <hr>
+
+                    <h6 class="fw-bold mb-2"><i class="fa-solid fa-link"></i> Link de Convite:</h6>
+                    <div class="input-group mb-3">
+                        <input type="text" id="linkConvite" class="form-control bg-light border-0 small" value="{{ link_convite }}" readonly>
+                        <button class="btn btn-success" onclick="copiarLink()">
+                            <i class="fa-solid fa-copy"></i>
+                        </button>
+                    </div>
+                    <small class="text-muted italic">Partilha este link para os jogadores se inscreverem.</small>
+                    
+                    <div class="mt-4">
+                        <a href="#" class="btn btn-primary w-100 fw-bold rounded-pill shadow-sm">
+                            <i class="fa-solid fa-pen-to-square"></i> Editar Configurações
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6 mb-4">
+                <div class="card card-clean shadow-sm p-4 border-0 h-100 rounded-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold mb-0">Jogadores Inscritos</h5>
+                        <span class="badge bg-dark rounded-pill">{{ total_inscritos }}</span>
+                    </div>
+
+                    <div class="list-group list-group-flush overflow-auto" style="max-height: 300px;">
+                        {% for item in inscritos %}
+                            <div class="list-group-item border-0 px-0 d-flex justify-content-between align-items-center">
+                                <div>
+                                    <i class="fa-solid fa-user text-muted me-2"></i>
+                                    <span class="fw-bold text-dark">{{ item.jogador.first_name|default:item.jogador.username }}</span>
+                                </div>
+                                <small class="text-muted">{{ item.data_inscricao|date:"d/m H:i" }}</small>
+                            </div>
+                        {% empty %}
+                            <div class="text-center py-4">
+                                <i class="fa-solid fa-users-slash fs-1 text-light mb-2 d-block"></i>
+                                <p class="text-muted">Ainda ninguém se inscreveu.</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    {% if total_inscritos >= 2 and campeonato.status == 'inscricoes' %}
+                    <div class="mt-auto pt-4">
+                        <form method="POST" action="{% url 'duelos:gerar_chaveamento' campeonato.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger w-100 fw-bold rounded-pill shadow-lg py-2">
+                                <i class="fa-solid fa-shuffle"></i> ENCERRAR E GERAR CHAVES
+                            </button>
+                        </form>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function copiarLink() {
+        var copyText = document.getElementById("linkConvite");
+        copyText.select();
+        copyText.setSelectionRange(0, 99999);
+        navigator.clipboard.writeText(copyText.value);
+        
+        const btn = event.currentTarget;
+        const icon = btn.innerHTML;
+        btn.innerHTML = '<i class="fa-solid fa-check"></i>';
+        btn.classList.replace('btn-success', 'btn-dark');
+        
+        setTimeout(() => {
+            btn.innerHTML = icon;
+            btn.classList.replace('btn-dark', 'btn-success');
+        }, 2000);
+    }
+</script>
+{% endblock %}
+

@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% block title %}Lobby do Torneio - Cartolândia{% endblock %}
+
+{% block content %}
+<div class="row mt-4">
+    <div class="col-12 text-center">
+        <span class="badge bg-{{ campeonato.status|yesno:'success,primary,secondary' }} mb-2 px-3 py-2 fs-6 rounded-pill">
+            {% if campeonato.status == 'inscricoes' %}Inscrições Abertas{% elif campeonato.status == 'andamento' %}Em Andamento{% else %}Finalizado{% endif %}
+        </span>
+        <h2 class="fw-bold text-dark mb-1"><i class="fa-solid fa-trophy text-warning"></i> {{ campeonato.nome }}</h2>
+        <p class="text-muted">Organizado por: <strong>{{ campeonato.admin.username }}</strong></p>
+    </div>
+</div>
+
+<div class="row mt-4 justify-content-center">
+    <div class="col-md-6 mb-4">
+        <!-- ÁREA DO CONVITE -->
+        {% if campeonato.status == 'inscricoes' %}
+        <div class="card card-clean shadow-sm p-4 text-center border-0 rounded-4 bg-white mb-4">
+            <h5 class="fw-bold text-primary"><i class="fa-solid fa-link"></i> Link de Inscrição</h5>
+            <p class="text-muted small">Mande este link no grupo para a galera assinar a súmula.</p>
+            <div class="input-group">
+                <input type="text" class="form-control bg-light text-center fw-bold" id="linkConvite" value="{{ link_convite }}" readonly>
+                <button class="btn btn-primary fw-bold" onclick="copiarLink()"><i class="fa-regular fa-copy"></i> Copiar</button>
+            </div>
+            
+            {% if is_admin %}
+                <hr class="my-4">
+                <h5 class="fw-bold text-danger">Área do Juiz</h5>
+                {% if faltam_jogadores %}
+                    <div class="alert alert-warning small py-2 fw-bold"><i class="fa-solid fa-triangle-exclamation"></i> Faltam jogadores (Mín: 3)</div>
+                    <button class="btn btn-outline-secondary w-100 fw-bold" disabled>Sorteio Bloqueado</button>
+                {% else %}
+                    <a href="{% url 'duelos:gerar_chaveamento' campeonato.id %}" class="btn btn-danger btn-lg w-100 fw-bold shadow-sm rounded-pill" onclick="return confirm('Após sortear as chaves, ninguém mais entra. Confirmar?');">
+                        <i class="fa-solid fa-shuffle"></i> Sortear Chaves (Iniciar)
+                    </a>
+                {% endif %}
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- LISTA DE INSCRITOS -->
+        <div class="card card-clean shadow-sm p-4 border-0 rounded-4">
+            <h5 class="fw-bold text-dark border-bottom pb-2 mb-3"><i class="fa-solid fa-users text-success"></i> Plantel de Inscritos ({{ inscritos.count }})</h5>
+            <ul class="list-group list-group-flush">
+                {% for inscricao in inscritos %}
+                <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent px-0 border-dashed">
+                    <span class="fw-bold text-secondary"><i class="fa-solid fa-shirt text-muted me-2"></i> {{ inscricao.jogador.username }}</span>
+                    {% if inscricao.jogador == campeonato.admin %}<span class="badge bg-warning text-dark"><i class="fa-solid fa-crown"></i> Admin</span>{% endif %}
+                </li>
+                {% empty %}
+                <li class="list-group-item text-center text-muted bg-transparent border-0">Nenhum perna de pau inscrito ainda.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+
+<script>
+    function copiarLink() {
+        var copyText = document.getElementById("linkConvite");
+        copyText.select();
+        copyText.setSelectionRange(0, 99999);
+        navigator.clipboard.writeText(copyText.value).then(() => {
+            alert("Link copiado pro clipboard! Joga lá no grupo!");
+        });
+    }
+</script>
+{% endblock %}

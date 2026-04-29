@@ -14,21 +14,21 @@
         <h2 class="fw-bold mt-3" style="color: var(--verde-escuro);">
             <i class="fa-solid fa-trophy text-warning"></i> Arena do X1
         </h2>
-        <p class="text-muted fs-5">Escolha a sua tática. O juiz vai sortear um desafio surpresa pro duelo!</p>
+        <p class="text-muted fs-5">Escolha o seu desafio ou organize um torneio para a galera!</p>
     </div>
 </div>
 
 <div class="row justify-content-center">
     <!-- Card Elencos -->
-    <div class="col-md-5 mb-4">
-        <div class="card card-clean h-100 text-center p-5 shadow border-0 border-top border-5 border-success rounded-4">
+    <div class="col-lg-4 col-md-6 mb-4">
+        <div class="card card-clean h-100 text-center p-4 shadow border-0 border-top border-5 border-success rounded-4">
             <div class="mb-3">
-                <i class="fa-solid fa-clipboard-list text-success" style="font-size: 4rem;"></i>
+                <i class="fa-solid fa-clipboard-list text-success" style="font-size: 3.5rem;"></i>
             </div>
             <h3 class="fw-bold">Prancheta do Professor</h3>
             <p class="text-muted">
                 Lembra de cor a escalação daquele esquadrão inesquecível? 
-                Cada titular que você cravar é caixa. Quem tiver a melhor memória tática, leva os três pontos!
+                Cada titular cravado é caixa. Melhore sua memória tática e leve os 3 pontos!
             </p>
             
             <div class="mt-auto pt-4">
@@ -43,15 +43,15 @@
     </div>
 
     <!-- Card Trajetória -->
-    <div class="col-md-5 mb-4">
-        <div class="card card-clean h-100 text-center p-5 shadow border-0 border-top border-5 border-primary rounded-4">
+    <div class="col-lg-4 col-md-6 mb-4">
+        <div class="card card-clean h-100 text-center p-4 shadow border-0 border-top border-5 border-primary rounded-4">
             <div class="mb-3">
-                <i class="fa-solid fa-shoe-prints text-primary" style="font-size: 4rem;"></i>
+                <i class="fa-solid fa-shoe-prints text-primary" style="font-size: 3.5rem;"></i>
             </div>
             <h3 class="fw-bold">Carreira Misteriosa</h3>
             <p class="text-muted">
-                Onde esse bagre (ou craque) desfilou seu futebol? 
-                Os escudos vão aparecendo no telão a cada chute na trave. O primeiro a cravar o nome, ganha!
+                Onde esse craque (ou bagre) desfilou seu futebol? 
+                Os escudos vão aparecendo. O primeiro a adivinhar o nome, ganha a rodada!
             </p>
             
             <div class="mt-auto pt-4">
@@ -64,13 +64,32 @@
             </div>
         </div>
     </div>
+
+    <!-- Card Modo Campeonato (NOVO) -->
+    <div class="col-lg-4 col-md-6 mb-4">
+        <div class="card card-clean h-100 text-center p-4 shadow border-0 border-top border-5 border-warning rounded-4" style="background: linear-gradient(180deg, #fff 0%, #fffcf0 100%);">
+            <div class="mb-3">
+                <i class="fa-solid fa-sitemap text-warning" style="font-size: 3.5rem;"></i>
+            </div>
+            <h3 class="fw-bold text-dark">Modo Campeonato</h3>
+            <p class="text-muted">
+                Junte a galera para um mata-mata épico! Crie o seu torneio, mande o link pro grupo e veja quem levanta a taça na grande final.
+            </p>
+            
+            <div class="mt-auto pt-4">
+                <a href="{% url 'duelos:criar_campeonato' %}" class="btn btn-warning btn-lg w-100 fw-bold shadow-sm rounded-pill text-dark">
+                    <i class="fa-solid fa-trophy"></i> Criar Torneio
+                </a>
+            </div>
+        </div>
+    </div>
 </div>
 
 <div class="row mt-4">
     <div class="col-12 text-center">
         <p class="small text-muted fst-italic">
             <i class="fa-solid fa-bullhorn"></i> 
-            Fica esperto: Ao confirmar a tática, você vai pegar o link do convite pra mandar pro seu rival e iniciar a resenha.
+            Fica esperto: Ao iniciar um X1 ou Torneio, você receberá um link de convite exclusivo para mandar pro seu rival e iniciar a resenha.
         </p>
     </div>
 </div>

@@ -14,11 +14,12 @@
         <h2 class="fw-bold mt-3" style="color: var(--verde-escuro);">
             <i class="fa-solid fa-trophy text-warning"></i> Arena do X1
         </h2>
-        <p class="text-muted fs-5">Crie uma sala privada para desafiar um amigo ou inscreva-se nos campeonatos abertos!</p>
+        <p class="text-muted fs-5">Crie uma sala privada para desafiar um amigo ou inscreva-se nos campeonatos!</p>
     </div>
 </div>
 
 <div class="row justify-content-center">
+    <!-- Card Elencos -->
     <div class="col-md-5 mb-4">
         <div class="card card-clean h-100 text-center p-5 shadow border-0 border-top border-5 border-success rounded-4">
             <div class="mb-3">
@@ -41,6 +42,7 @@
         </div>
     </div>
 
+    <!-- Card Trajetória -->
     <div class="col-md-5 mb-4">
         <div class="card card-clean h-100 text-center p-5 shadow border-0 border-top border-5 border-primary rounded-4">
             <div class="mb-3">
@@ -75,10 +77,11 @@
 
 <hr class="text-muted my-5">
 
+<!-- RADAR DE CAMPEONATOS -->
 <div class="row mb-5">
     <div class="col-12 text-center mb-4">
-        <h3 class="fw-bold text-dark"><i class="fa-solid fa-medal text-warning"></i> Inscrições Abertas</h3>
-        <p class="text-muted small">Participe dos torneios de mata-mata oficiais da Cartolândia!</p>
+        <h3 class="fw-bold text-dark"><i class="fa-solid fa-medal text-warning"></i> Radar de Torneios</h3>
+        <p class="text-muted small">Copas organizadas pela comunidade da Cartolândia!</p>
     </div>
 
     <div class="col-12">
@@ -88,19 +91,42 @@
                     <div class="col-md-5 col-lg-4 mb-4">
                         <div class="card card-clean shadow-sm border-0 h-100 rounded-4 text-center p-4" style="border-top: 5px solid var(--dourado) !important;">
                             <div class="mb-3 mt-2">
-                                <i class="fa-solid fa-crown fs-1 text-warning"></i>
+                                {% if camp.status == 'inscricoes' %}
+                                    <i class="fa-solid fa-door-open fs-1 text-success"></i>
+                                {% elif camp.status == 'andamento' %}
+                                    <i class="fa-solid fa-fire fs-1 text-warning"></i>
+                                {% else %}
+                                    <i class="fa-solid fa-trophy fs-1 text-secondary"></i>
+                                {% endif %}
                             </div>
                             <h4 class="fw-bold text-dark text-truncate">{{ camp.nome }}</h4>
                             
                             <p class="text-muted small mb-4">
-                                <i class="fa-regular fa-calendar-xmark text-danger"></i> Fecha em:<br>
-                                <strong>{{ camp.data_limite_inscricao|date:"d/m/Y às H:i" }}</strong>
+                                Status: <strong class="text-uppercase">{{ camp.get_status_display }}</strong>
                             </p>
 
-                            <div class="mt-auto">
-                                <a href="{% url 'duelos:entrar_campeonato' camp.codigo_convite %}" class="btn btn-warning btn-lg w-100 fw-bold rounded-pill text-dark shadow-sm">
-                                    <i class="fa-solid fa-pen-to-square"></i> Inscrever-se
-                                </a>
+                            <div class="mt-auto d-flex flex-column gap-2">
+                                <!-- SE O USUÁRIO FOR O ADMIN DO CAMPEONATO -->
+                                {% if camp.admin == request.user %}
+                                    <a href="{% url 'duelos:painel_campeonato' camp.id %}" class="btn btn-dark w-100 fw-bold rounded-pill shadow-sm">
+                                        <i class="fa-solid fa-gears"></i> Gerenciar Torneio
+                                    </a>
+                                {% endif %}
+
+                                <!-- BOTÕES DE AÇÃO DEPENDENDO DO STATUS -->
+                                {% if camp.status == 'inscricoes' %}
+                                    <a href="{% url 'duelos:entrar_campeonato' camp.codigo_convite %}" class="btn btn-warning w-100 fw-bold rounded-pill text-dark shadow-sm">
+                                        <i class="fa-solid fa-pen-to-square"></i> Inscrever-se
+                                    </a>
+                                {% elif camp.status == 'andamento' %}
+                                    <a href="{% url 'duelos:ver_chaveamento' camp.id %}" class="btn btn-primary w-100 fw-bold rounded-pill shadow-sm">
+                                        <i class="fa-solid fa-sitemap"></i> Ver Chaves e Jogar
+                                    </a>
+                                {% else %}
+                                    <a href="{% url 'duelos:ver_chaveamento' camp.id %}" class="btn btn-outline-secondary w-100 fw-bold rounded-pill shadow-sm">
+                                        <i class="fa-solid fa-list-ol"></i> Ver Resultado Final
+                                    </a>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
@@ -109,8 +135,8 @@
         {% else %}
             <div class="alert alert-light border border-secondary border-dashed text-center p-5 rounded-4 text-muted mx-auto" style="max-width: 600px;">
                 <i class="fa-solid fa-calendar-minus fs-1 mb-3 opacity-50"></i>
-                <h5 class="fw-bold">Nenhuma copa agendada</h5>
-                <p class="mb-0">Fique de olho! Em breve a diretoria vai anunciar um novo campeonato.</p>
+                <h5 class="fw-bold">Nenhuma copa na agenda</h5>
+                <p class="mb-0">Aguarde a criação de um novo campeonato.</p>
             </div>
         {% endif %}
     </div>

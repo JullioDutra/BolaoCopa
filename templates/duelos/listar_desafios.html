@@ -14,83 +14,105 @@
         <h2 class="fw-bold mt-3" style="color: var(--verde-escuro);">
             <i class="fa-solid fa-trophy text-warning"></i> Arena do X1
         </h2>
-        <p class="text-muted fs-5">Escolha o seu desafio ou organize um torneio para a galera!</p>
+        <p class="text-muted fs-5">Escolha a sua tática ou entre em uma sala que já está com a bola rolando!</p>
     </div>
 </div>
 
 <div class="row justify-content-center">
-    <!-- Card Elencos -->
-    <div class="col-lg-4 col-md-6 mb-4">
-        <div class="card card-clean h-100 text-center p-4 shadow border-0 border-top border-5 border-success rounded-4">
+    <div class="col-md-5 mb-4">
+        <div class="card card-clean h-100 text-center p-5 shadow border-0 border-top border-5 border-success rounded-4">
             <div class="mb-3">
-                <i class="fa-solid fa-clipboard-list text-success" style="font-size: 3.5rem;"></i>
+                <i class="fa-solid fa-clipboard-list text-success" style="font-size: 4rem;"></i>
             </div>
             <h3 class="fw-bold">Prancheta do Professor</h3>
             <p class="text-muted">
                 Lembra de cor a escalação daquele esquadrão inesquecível? 
-                Cada titular cravado é caixa. Melhore sua memória tática e leve os 3 pontos!
+                Cada titular que você cravar é caixa.
             </p>
             
             <div class="mt-auto pt-4">
                 <form method="POST" action="{% url 'duelos:criar_duelo' 'elenco' %}">
                     {% csrf_token %}
                     <button type="submit" class="btn btn-success btn-lg w-100 fw-bold shadow-sm rounded-pill">
-                        <i class="fa-solid fa-futbol"></i> Escalar o Time
+                        <i class="fa-solid fa-plus-circle"></i> Criar Sala
                     </button>
                 </form>
             </div>
         </div>
     </div>
 
-    <!-- Card Trajetória -->
-    <div class="col-lg-4 col-md-6 mb-4">
-        <div class="card card-clean h-100 text-center p-4 shadow border-0 border-top border-5 border-primary rounded-4">
+    <div class="col-md-5 mb-4">
+        <div class="card card-clean h-100 text-center p-5 shadow border-0 border-top border-5 border-primary rounded-4">
             <div class="mb-3">
-                <i class="fa-solid fa-shoe-prints text-primary" style="font-size: 3.5rem;"></i>
+                <i class="fa-solid fa-shoe-prints text-primary" style="font-size: 4rem;"></i>
             </div>
             <h3 class="fw-bold">Carreira Misteriosa</h3>
             <p class="text-muted">
-                Onde esse craque (ou bagre) desfilou seu futebol? 
-                Os escudos vão aparecendo. O primeiro a adivinhar o nome, ganha a rodada!
+                Onde esse bagre (ou craque) desfilou seu futebol? 
+                Os escudos vão aparecendo no telão.
             </p>
             
             <div class="mt-auto pt-4">
                 <form method="POST" action="{% url 'duelos:criar_duelo' 'trajetoria' %}">
                     {% csrf_token %}
                     <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold shadow-sm rounded-pill">
-                        <i class="fa-solid fa-earth-americas"></i> Descobrir o Craque
+                        <i class="fa-solid fa-plus-circle"></i> Criar Sala
                     </button>
                 </form>
             </div>
         </div>
     </div>
-
-    <!-- Card Modo Campeonato (NOVO) -->
-    <div class="col-lg-4 col-md-6 mb-4">
-        <div class="card card-clean h-100 text-center p-4 shadow border-0 border-top border-5 border-warning rounded-4" style="background: linear-gradient(180deg, #fff 0%, #fffcf0 100%);">
-            <div class="mb-3">
-                <i class="fa-solid fa-sitemap text-warning" style="font-size: 3.5rem;"></i>
-            </div>
-            <h3 class="fw-bold text-dark">Modo Campeonato</h3>
-            <p class="text-muted">
-                Junte a galera para um mata-mata épico! Crie o seu torneio, mande o link pro grupo e veja quem levanta a taça na grande final.
-            </p>
-            
-            <div class="mt-auto pt-4">
-                <a href="{% url 'duelos:criar_campeonato' %}" class="btn btn-warning btn-lg w-100 fw-bold shadow-sm rounded-pill text-dark">
-                    <i class="fa-solid fa-trophy"></i> Criar Torneio
-                </a>
-            </div>
-        </div>
-    </div>
 </div>
 
-<div class="row mt-4">
-    <div class="col-12 text-center">
-        <p class="small text-muted fst-italic">
-            <i class="fa-solid fa-bullhorn"></i> 
-            Fica esperto: Ao iniciar um X1 ou Torneio, você receberá um link de convite exclusivo para mandar pro seu rival e iniciar a resenha.
-        </p>
+<hr class="text-muted my-5">
+
+<div class="row mb-5">
+    <div class="col-12 text-center mb-4">
+        <h3 class="fw-bold text-dark"><i class="fa-solid fa-satellite-dish text-danger"></i> Radar de Desafios</h3>
+        <p class="text-muted small">Partidas criadas esperando por um desafiante</p>
+    </div>
+
+    <div class="col-12">
+        {% if salas_abertas %}
+            <div class="row justify-content-center">
+                {% for sala in salas_abertas %}
+                    <div class="col-md-4 col-lg-3 mb-4">
+                        <div class="card card-clean shadow-sm border-0 h-100 rounded-4 text-center p-3">
+                            <div class="mb-2 mt-2">
+                                <i class="fa-solid fa-user-ninja fs-1 text-secondary"></i>
+                            </div>
+                            <h5 class="fw-bold text-dark text-truncate">{{ sala.jogador_criador.first_name|default:sala.jogador_criador.username }}</h5>
+                            
+                            <div class="mb-3 mt-2">
+                                {% if sala.categoria.tipo == 'trajetoria' %}
+                                    <span class="badge bg-primary text-wrap lh-base w-100"><i class="fa-solid fa-shoe-prints"></i> Carreira Misteriosa</span>
+                                {% else %}
+                                    <span class="badge bg-success text-wrap lh-base w-100"><i class="fa-solid fa-clipboard-list"></i> Elenco Clássico</span>
+                                {% endif %}
+                            </div>
+
+                            <div class="mt-auto">
+                                {% if sala.jogador_criador == request.user %}
+                                    <a href="{% url 'duelos:lobby_espera' sala.id %}" class="btn btn-outline-secondary btn-sm w-100 fw-bold rounded-pill">
+                                        <i class="fa-solid fa-clock"></i> No Vestiário (Sua Sala)
+                                    </a>
+                                {% else %}
+                                    <a href="{% url 'duelos:entrar_duelo_link' sala.id %}" class="btn btn-warning btn-sm w-100 fw-bold rounded-pill text-dark shadow-sm">
+                                        <i class="fa-solid fa-handshake"></i> Aceitar Desafio
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="alert alert-light border border-secondary border-dashed text-center p-5 rounded-4 text-muted mx-auto" style="max-width: 600px;">
+                <i class="fa-solid fa-spider fs-1 mb-3 opacity-50"></i>
+                <h5 class="fw-bold">O campo tá vazio...</h5>
+                <p class="mb-0">Não há salas abertas no momento. Crie a sua nos botões acima e chame a responsabilidade!</p>
+            </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

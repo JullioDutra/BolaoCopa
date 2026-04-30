@@ -1,58 +1,96 @@
 {% extends 'base.html' %}
 
-{% block title %}Lobby de Espera - Cartolândia{% endblock %}
+{% block title %}Vestiário - Cartolândia{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center mt-5">
-    <div class="col-md-6 text-center">
-        <div class="card card-clean border-0 shadow-lg rounded-4 p-5 text-center" style="border-top: 5px solid var(--verde-escuro) !important;">
+<div class="row justify-content-center mt-5 mb-5">
+    <div class="col-md-8 col-lg-7">
+        <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
             
-            <div class="mb-4">
-                <i class="fa-solid fa-stopwatch fa-flip text-success" style="font-size: 5rem; --fa-animation-duration: 3s;"></i>
+            <!-- HEADER DA SALA -->
+            <div class="card-header bg-dark text-white text-center py-4 border-0" style="border-bottom: 5px solid var(--verde-escuro) !important;">
+                <h3 class="fw-bold mb-0">
+                    <i class="fa-solid fa-door-closed text-success"></i> Vestiário da Partida
+                </h3>
+                <p class="text-white-50 mb-0 mt-1 small">Aqueça as canelas, o jogo já vai começar!</p>
+            </div>
+
+            <div class="card-body p-5 bg-white">
+                
+                <!-- PAINEL MANDANTE X VISITANTE -->
+                <div class="row align-items-center text-center mb-5">
+                    
+                    <!-- Mandante (Criador da Sala) -->
+                    <div class="col-5">
+                        <div class="position-relative d-inline-block mb-3">
+                            <i class="fa-solid fa-shield-halved fa-5x text-success"></i>
+                            <i class="fa-solid fa-check-circle text-white position-absolute bottom-0 end-0 fs-3 bg-success rounded-circle"></i>
+                        </div>
+                        <h4 class="fw-bold text-dark text-truncate">{{ partida.jogador_criador.first_name|default:partida.jogador_criador.username }}</h4>
+                        <span class="badge bg-success rounded-pill px-3 py-2 shadow-sm">Mandante</span>
+                    </div>
+
+                    <!-- VS / Bola Girando -->
+                    <div class="col-2">
+                        <div class="d-flex flex-column align-items-center justify-content-center">
+                            <h2 class="fw-bold text-muted mb-2">X</h2>
+                            <i class="fa-solid fa-futbol fa-spin fa-3x text-dark" style="--fa-animation-duration: 2.5s;"></i>
+                        </div>
+                    </div>
+
+                    <!-- Visitante (Adversário Aguardando) -->
+                    <div class="col-5">
+                        <div class="position-relative d-inline-block mb-3">
+                            <i class="fa-solid fa-user-astronaut fa-5x text-secondary opacity-50"></i>
+                            <div class="spinner-grow text-warning position-absolute bottom-0 end-0" style="width: 1.5rem; height: 1.5rem;" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                        <h4 class="fw-bold text-muted fst-italic text-truncate">Aguardando...</h4>
+                        <span class="badge bg-secondary rounded-pill px-3 py-2 shadow-sm opacity-75">Visitante</span>
+                    </div>
+                </div>
+
+                <hr class="text-muted opacity-25 my-4">
+
+                <!-- ÁREA DE LÓGICA (CAMPEONATO OU X1 RAIZ) -->
+                <div class="text-center">
+                    {% if eh_campeonato %}
+                        <!-- MODO CAMPEONATO -->
+                        <div class="bg-light rounded-4 p-4 border border-warning border-2 border-dashed">
+                            <i class="fa-solid fa-trophy text-warning fs-1 mb-3"></i>
+                            <h4 class="fw-bold text-dark">Jogo de Campeonato!</h4>
+                            <p class="text-muted fs-5 mb-0">
+                                Seu adversário vai entrar direto pelo painel de chaves. 
+                                Fique na espera que a bola rola automaticamente.
+                            </p>
+                        </div>
+                    {% else %}
+                        <!-- MODO X1 RAIZ -->
+                        <div class="bg-light rounded-4 p-4">
+                            <i class="fa-solid fa-link text-primary fs-2 mb-3"></i>
+                            <h4 class="fw-bold text-dark">Convide o Desafiante</h4>
+                            <p class="text-muted mb-3">Copie o link abaixo e mande no WhatsApp do seu adversário.</p>
+                            
+                            <div class="input-group input-group-lg mx-auto" style="max-width: 500px;">
+                                <input type="text" id="linkConvite" class="form-control bg-white border-secondary text-muted" value="{{ link_convite }}" readonly>
+                                <button class="btn btn-success px-4 fw-bold shadow-sm" type="button" onclick="copiarLink()" id="btnCopiar">
+                                    <i class="fa-solid fa-copy"></i> Copiar
+                                </button>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+
             </div>
             
-            {% if eh_campeonato %}
-                <!-- MODO CAMPEONATO -->
-                <h3 class="fw-bold text-dark mt-2">Vestiário do Torneio</h3>
-                <p class="text-muted fs-5 mt-3">
-                    Aguardando o seu adversário entrar na sala pelo painel de chaves. 
-                    Aquece aí que a bola já vai rolar!
-                </p>
-                
-                <div class="d-flex justify-content-center align-items-center mt-4 mb-2 gap-3">
-                    <div class="spinner-grow text-success" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                    <div class="spinner-grow text-success" role="status" style="animation-delay: 0.2s;">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                    <div class="spinner-grow text-success" role="status" style="animation-delay: 0.4s;">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                </div>
-            {% else %}
-                <!-- MODO X1 RAIZ -->
-                <h3 class="fw-bold text-dark mt-2">Sala Criada!</h3>
-                <p class="text-muted fs-5 mt-2">Envie o link abaixo para o seu desafiante.</p>
-                
-                <div class="input-group input-group-lg mt-4 mb-3">
-                    <input type="text" id="linkConvite" class="form-control bg-light border-0 fw-bold text-muted" value="{{ link_convite }}" readonly>
-                    <button class="btn btn-success px-4" type="button" onclick="copiarLink()" id="btnCopiar">
-                        <i class="fa-solid fa-copy"></i> Copiar
-                    </button>
-                </div>
-                
-                <div class="spinner-border text-success mt-3" role="status">
-                    <span class="visually-hidden">Aguardando...</span>
-                </div>
-                <p class="text-muted mt-2 small">Aguardando o adversário entrar...</p>
-            {% endif %}
-
-            <div class="mt-4 pt-3 border-top">
-                <a href="{% url 'duelos:listar_desafios' %}" class="btn btn-outline-danger fw-bold rounded-pill shadow-sm">
-                    <i class="fa-solid fa-xmark"></i> Cancelar e Sair
+            <!-- FOOTER COM BOTÃO DE CANCELAR -->
+            <div class="card-footer bg-light text-center py-4 border-top">
+                <a href="{% url 'duelos:listar_desafios' %}" class="btn btn-outline-danger fw-bold rounded-pill shadow-sm px-4 py-2">
+                    <i class="fa-solid fa-door-open"></i> Sair do Vestiário
                 </a>
             </div>
+            
         </div>
     </div>
 </div>

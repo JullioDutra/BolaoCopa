@@ -26,4 +26,14 @@ urlpatterns = [
     path('campeonatos/confronto/<int:confronto_id>/jogar/', views.iniciar_jogo_campeonato, name='iniciar_jogo_campeonato'),
     path('campeonatos/<int:campeonato_id>/', views.painel_campeonato, name='painel_campeonato'),
     path('campeonatos/<int:campeonato_id>/resetar/', views.resetar_campeonato, name='resetar_campeonato'),
+    # ==========================================
+    # ROTAS DO MINI FANÁTICOS (2v2)
+    # ==========================================
+    path('mini/criar/', views.criar_mini_fanaticos, name='criar_mini_fanaticos'),
+    path('mini/entrar/<int:partida_id>/', views.entrar_mini_fanaticos, name='entrar_mini_fanaticos'),
+    path('mini/lobby/<int:partida_id>/', views.lobby_mini, name='lobby_mini'),
+    path('api/mini/status/<int:partida_id>/', views.status_lobby_mini_api, name='status_lobby_mini_api'),
+    path('mini/jogar/<int:partida_id>/', views.tela_jogo_mini, name='tela_jogo_mini'),
+    path('api/mini/submeter/<int:partida_id>/', views.submeter_respostas_mini, name='submeter_respostas_mini'),
+    path('mini/resultado/<int:partida_id>/', views.resultado_mini, name='resultado_mini'),
 ]

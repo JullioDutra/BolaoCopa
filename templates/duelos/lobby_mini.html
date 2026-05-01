@@ -1,0 +1,182 @@
+{% extends 'base.html' %}
+
+{% block title %}Vestiário 2v2 - Mini Fanáticos{% endblock %}
+
+{% block content %}
+<div class="row mt-4 mb-3">
+    <div class="col-12 text-center">
+        <h2 class="fw-bold text-dark"><i class="fa-solid fa-people-group text-primary"></i> Vestiário Mini Fanáticos</h2>
+        <p class="text-muted fs-5 mb-2">Convoque os craques e definam os times do coração!</p>
+        
+        <!-- Link de Convite -->
+        <div class="input-group input-group-lg mx-auto mt-3 shadow-sm" style="max-width: 600px;">
+            <span class="input-group-text bg-white border-secondary"><i class="fa-solid fa-link text-primary"></i></span>
+            <input type="text" id="linkConvite" class="form-control bg-light border-secondary text-muted fs-6" value="{{ link_convite }}" readonly>
+            <button class="btn btn-success px-4 fw-bold" type="button" onclick="copiarLink()" id="btnCopiar">
+                Copiar Convite
+            </button>
+        </div>
+        <small class="text-muted fst-italic mt-1 d-block">Envie este link para os outros 3 jogadores entrarem na sala.</small>
+    </div>
+</div>
+
+<div class="row justify-content-center mt-4">
+    
+    <!-- VESTIÁRIO DA DUPLA A -->
+    <div class="col-md-5 mb-4">
+        <div class="card card-clean border-0 shadow-lg rounded-4 h-100" style="border-top: 5px solid var(--bs-success) !important;">
+            <div class="card-header bg-white text-center py-3 border-0">
+                <h3 class="fw-bold text-success mb-0"><i class="fa-solid fa-shirt"></i> Dupla A</h3>
+            </div>
+            
+            <div class="card-body px-4 pb-4 text-center">
+                <!-- Lista de Jogadores A -->
+                <div class="d-flex flex-column gap-2 mb-4">
+                    {% for p in jogadores_a %}
+                        <div class="p-3 bg-light rounded-3 fw-bold border border-success border-opacity-25">
+                            <i class="fa-solid fa-user-check text-success me-2"></i> {{ p.jogador.first_name|default:p.jogador.username }}
+                            {% if p.jogador == request.user %}<span class="badge bg-success ms-2">Você</span>{% endif %}
+                        </div>
+                    {% endfor %}
+                    <!-- Vagas Vazias -->
+                    {% if jogadores_a.count < 1 %}<div class="p-3 bg-light rounded-3 text-muted fst-italic border border-dashed"><i class="fa-solid fa-chair me-2"></i> Aguardando Jogador 1...</div>{% endif %}
+                    {% if jogadores_a.count < 2 %}<div class="p-3 bg-light rounded-3 text-muted fst-italic border border-dashed"><i class="fa-solid fa-chair me-2"></i> Aguardando Jogador 2...</div>{% endif %}
+                </div>
+
+                <hr class="text-muted opacity-25">
+
+                <!-- Escolha do Time do Coração A -->
+                <h5 class="fw-bold text-dark mt-3">Time do Coração</h5>
+                
+                {% if partida.clube_dupla_a %}
+                    <div class="alert alert-success mt-2 fw-bold fs-5 shadow-sm border-0">
+                        <i class="fa-solid fa-shield-halved"></i> {{ partida.clube_dupla_a.nome }}
+                    </div>
+                {% else %}
+                    {% if meu_jogador.dupla == 'A' %}
+                        <form method="POST" class="mt-2">
+                            {% csrf_token %}
+                            <select name="clube_id" class="form-select form-select-lg mb-2" required>
+                                <option value="" disabled selected>Selecione o clube da sua dupla...</option>
+                                {% for clube in clubes %}
+                                    <option value="{{ clube.id }}">{{ clube.nome }}</option>
+                                {% endfor %}
+                            </select>
+                            <button type="submit" class="btn btn-success w-100 fw-bold rounded-pill shadow-sm"><i class="fa-solid fa-check"></i> Confirmar Clube</button>
+                        </form>
+                    {% else %}
+                        <div class="alert alert-secondary mt-2 fst-italic">Aguardando a Dupla A escolher...</div>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- O "VS" NO MEIO DA TELA -->
+    <div class="col-md-2 d-flex flex-column align-items-center justify-content-center mb-4">
+        <h1 class="fw-bold text-muted mb-3" style="font-size: 3rem;">X</h1>
+        <div class="text-center" id="statusPreparacao">
+            <i class="fa-solid fa-futbol fa-spin fa-3x text-secondary" style="--fa-animation-duration: 3s;"></i>
+            <p class="text-muted mt-3 fw-bold small">Aguardando a sala encher...</p>
+        </div>
+    </div>
+
+    <!-- VESTIÁRIO DA DUPLA B -->
+    <div class="col-md-5 mb-4">
+        <div class="card card-clean border-0 shadow-lg rounded-4 h-100" style="border-top: 5px solid var(--bs-danger) !important;">
+            <div class="card-header bg-white text-center py-3 border-0">
+                <h3 class="fw-bold text-danger mb-0"><i class="fa-solid fa-shirt"></i> Dupla B</h3>
+            </div>
+            
+            <div class="card-body px-4 pb-4 text-center">
+                <!-- Lista de Jogadores B -->
+                <div class="d-flex flex-column gap-2 mb-4">
+                    {% for p in jogadores_b %}
+                        <div class="p-3 bg-light rounded-3 fw-bold border border-danger border-opacity-25">
+                            <i class="fa-solid fa-user-check text-danger me-2"></i> {{ p.jogador.first_name|default:p.jogador.username }}
+                            {% if p.jogador == request.user %}<span class="badge bg-danger ms-2">Você</span>{% endif %}
+                        </div>
+                    {% endfor %}
+                    <!-- Vagas Vazias -->
+                    {% if jogadores_b.count < 1 %}<div class="p-3 bg-light rounded-3 text-muted fst-italic border border-dashed"><i class="fa-solid fa-chair me-2"></i> Aguardando Jogador 1...</div>{% endif %}
+                    {% if jogadores_b.count < 2 %}<div class="p-3 bg-light rounded-3 text-muted fst-italic border border-dashed"><i class="fa-solid fa-chair me-2"></i> Aguardando Jogador 2...</div>{% endif %}
+                </div>
+
+                <hr class="text-muted opacity-25">
+
+                <!-- Escolha do Time do Coração B -->
+                <h5 class="fw-bold text-dark mt-3">Time do Coração</h5>
+                
+                {% if partida.clube_dupla_b %}
+                    <div class="alert alert-danger mt-2 fw-bold fs-5 shadow-sm border-0">
+                        <i class="fa-solid fa-shield-halved"></i> {{ partida.clube_dupla_b.nome }}
+                    </div>
+                {% else %}
+                    {% if meu_jogador.dupla == 'B' %}
+                        <form method="POST" class="mt-2">
+                            {% csrf_token %}
+                            <select name="clube_id" class="form-select form-select-lg mb-2" required>
+                                <option value="" disabled selected>Selecione o clube da sua dupla...</option>
+                                {% for clube in clubes %}
+                                    <option value="{{ clube.id }}">{{ clube.nome }}</option>
+                                {% endfor %}
+                            </select>
+                            <button type="submit" class="btn btn-danger w-100 fw-bold rounded-pill shadow-sm"><i class="fa-solid fa-check"></i> Confirmar Clube</button>
+                        </form>
+                    {% else %}
+                        <div class="alert alert-secondary mt-2 fst-italic">Aguardando a Dupla B escolher...</div>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // Copiar Link
+    function copiarLink() {
+        var copyText = document.getElementById("linkConvite");
+        copyText.select();
+        copyText.setSelectionRange(0, 99999);
+        navigator.clipboard.writeText(copyText.value);
+        
+        var btn = document.getElementById("btnCopiar");
+        var originalHtml = btn.innerHTML;
+        btn.innerHTML = '<i class="fa-solid fa-check"></i> Copiado!';
+        btn.classList.replace('btn-success', 'btn-dark');
+        
+        setTimeout(function() {
+            btn.innerHTML = originalHtml;
+            btn.classList.replace('btn-dark', 'btn-success');
+        }, 2000);
+    }
+
+    // O VAR / OLHEIRO DO LOBBY: Verifica se já deu quórum e times estão escolhidos
+    let ultimaQtdJogadores = {{ partida.jogadores.count }};
+
+    setInterval(function() {
+        fetch("{% url 'duelos:status_lobby_mini_api' partida.id %}")
+        .then(response => response.json())
+        .then(data => {
+            
+            // Se entrou alguém novo na sala, recarrega a página pra atualizar a lista visualmente
+            if (data.total_jogadores > ultimaQtdJogadores) {
+                window.location.reload();
+            }
+
+            // Se as duas duplas já escolheram os times e tem 4 na sala, APITA O INÍCIO!
+            if (data.pronto) {
+                document.getElementById('statusPreparacao').innerHTML = `
+                    <h3 class="text-success fw-bold fa-fade">Tudo Pronto!</h3>
+                    <p class="text-dark fw-bold">Redirecionando para o gramado...</p>
+                `;
+                // Vai pra página oficial do jogo (vamos criar no próximo passo)
+                setTimeout(() => {
+                    window.location.href = "/duelos/mini/jogar/{{ partida.id }}/";
+                }, 1500);
+            }
+        });
+    }, 2000);
+</script>
+{% endblock %}

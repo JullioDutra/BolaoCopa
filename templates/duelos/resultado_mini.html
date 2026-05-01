@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+
+{% block title %}Placar Final - Mini Fanáticos{% endblock %}
+
+{% block content %}
+<div class="row mt-5 mb-4 text-center">
+    <div class="col-12">
+        <h1 class="fw-bold text-dark text-uppercase mb-1"><i class="fa-solid fa-flag-checkered text-dark"></i> Fim de Jogo!</h1>
+        <p class="text-muted fs-4">Confira o resultado do Mini Fanáticos 2v2</p>
+
+        <!-- Anúncio do Campeão -->
+        <div class="mt-4 mb-5">
+            {% if vencedor == 'Empate' %}
+                <div class="alert alert-secondary display-6 fw-bold border-0 shadow-sm mx-auto" style="max-width: 600px;">
+                    <i class="fa-solid fa-handshake"></i> Empate Absoluto!
+                </div>
+            {% else %}
+                <div class="alert {% if vencedor == 'A' %}alert-success{% else %}alert-danger{% endif %} border-0 shadow py-4 mx-auto" style="max-width: 600px;">
+                    <i class="fa-solid fa-trophy fa-bounce text-warning mb-2" style="font-size: 4rem;"></i>
+                    <h2 class="fw-bold text-uppercase mb-0">Vitória da Dupla {{ vencedor }}!</h2>
+                    <p class="mb-0 fs-5 mt-2 fw-bold opacity-75">{{ motivo }}</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <!-- RESULTADO DUPLA A -->
+    <div class="col-md-5 mb-4">
+        <div class="card card-clean border-0 shadow-lg rounded-4 h-100 {% if vencedor == 'A' %}border border-success border-4{% endif %}" style="border-top: 5px solid var(--bs-success) !important;">
+            <div class="card-header bg-white text-center py-3 border-0">
+                <h3 class="fw-bold text-success mb-0">Dupla A</h3>
+                <span class="badge bg-secondary mt-1">{{ partida.clube_dupla_a.nome }}</span>
+            </div>
+            
+            <div class="card-body px-4 pb-4 text-center">
+                <div class="row text-center mb-4">
+                    <div class="col-6 border-end">
+                        <p class="text-muted mb-0 small text-uppercase">Pontos</p>
+                        <h2 class="fw-bold text-dark mb-0">{{ pontos_a }}</h2>
+                    </div>
+                    <div class="col-6">
+                        <p class="text-muted mb-0 small text-uppercase">Tempo Total</p>
+                        <h3 class="fw-bold text-danger mb-0">{{ tempo_a|floatformat:2 }}s</h3>
+                    </div>
+                </div>
+
+                <hr class="text-muted opacity-25">
+                <h6 class="text-muted text-start mb-3 fw-bold text-uppercase small">Desempenho Individual</h6>
+                
+                <div class="d-flex flex-column gap-2 text-start">
+                    {% for p in jogadores_a %}
+                        <div class="bg-light rounded-3 p-3 border border-success border-opacity-25 d-flex justify-content-between align-items-center">
+                            <span class="fw-bold"><i class="fa-solid fa-user text-success"></i> {{ p.jogador.first_name|default:p.jogador.username }}</span>
+                            <div class="text-end">
+                                <span class="badge bg-dark">{{ p.pontos }} pts</span>
+                                <span class="badge bg-danger"><i class="fa-solid fa-stopwatch"></i> {{ p.tempo_gasto_segundos|floatformat:1 }}s</span>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- O "VS" NO MEIO -->
+    <div class="col-md-2 d-flex align-items-center justify-content-center mb-4">
+        <h1 class="fw-bold text-muted opacity-25 display-1">X</h1>
+    </div>
+
+    <!-- RESULTADO DUPLA B -->
+    <div class="col-md-5 mb-4">
+        <div class="card card-clean border-0 shadow-lg rounded-4 h-100 {% if vencedor == 'B' %}border border-danger border-4{% endif %}" style="border-top: 5px solid var(--bs-danger) !important;">
+            <div class="card-header bg-white text-center py-3 border-0">
+                <h3 class="fw-bold text-danger mb-0">Dupla B</h3>
+                <span class="badge bg-secondary mt-1">{{ partida.clube_dupla_b.nome }}</span>
+            </div>
+            
+            <div class="card-body px-4 pb-4 text-center">
+                <div class="row text-center mb-4">
+                    <div class="col-6 border-end">
+                        <p class="text-muted mb-0 small text-uppercase">Pontos</p>
+                        <h2 class="fw-bold text-dark mb-0">{{ pontos_b }}</h2>
+                    </div>
+                    <div class="col-6">
+                        <p class="text-muted mb-0 small text-uppercase">Tempo Total</p>
+                        <h3 class="fw-bold text-danger mb-0">{{ tempo_b|floatformat:2 }}s</h3>
+                    </div>
+                </div>
+
+                <hr class="text-muted opacity-25">
+                <h6 class="text-muted text-start mb-3 fw-bold text-uppercase small">Desempenho Individual</h6>
+                
+                <div class="d-flex flex-column gap-2 text-start">
+                    {% for p in jogadores_b %}
+                        <div class="bg-light rounded-3 p-3 border border-danger border-opacity-25 d-flex justify-content-between align-items-center">
+                            <span class="fw-bold"><i class="fa-solid fa-user text-danger"></i> {{ p.jogador.first_name|default:p.jogador.username }}</span>
+                            <div class="text-end">
+                                <span class="badge bg-dark">{{ p.pontos }} pts</span>
+                                <span class="badge bg-danger"><i class="fa-solid fa-stopwatch"></i> {{ p.tempo_gasto_segundos|floatformat:1 }}s</span>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4 mb-5">
+    <div class="col-12 text-center">
+        <a href="{% url 'duelos:listar_desafios' %}" class="btn btn-primary btn-lg fw-bold rounded-pill shadow px-5">
+            <i class="fa-solid fa-house"></i> Voltar para a Arena
+        </a>
+    </div>
+</div>
+{% endblock %}

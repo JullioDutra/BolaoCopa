@@ -2,6 +2,8 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
 import uuid
+import random
+import json
 
 class Clube(models.Model):
     """Banco centralizado de Escudos de Clubes"""
@@ -158,3 +160,176 @@ class ConfrontoCampeonato(models.Model):
         j1 = self.jogador1.username if self.jogador1 else 'TBD'
         j2 = self.jogador2.username if self.jogador2 else 'TBD'
         return f"{self.campeonato.nome} [{self.get_fase_display()}]: {j1} x {j2}"
+
+
+
+# ==========================================
+# MODO MINI FANÁTICOS (2v2)
+# ==========================================
+
+class ClubeFutebol(models.Model):
+    """Tabela com os times para a dupla escolher como 'Time do Coração'."""
+    nome = models.CharField(max_length=100, unique=True)
+    
+    def __str__(self):
+        return self.nome
+
+class PerguntaClube(models.Model):
+    """O banco de questões de cada time (Múltipla Escolha ou Aberta)."""
+    TIPOS_PERGUNTA = (
+        ('multipla', 'Múltipla Escolha'),
+        ('aberta', 'Resposta Aberta (Texto)'),
+    )
+    
+    clube = models.ForeignKey(ClubeFutebol, on_delete=models.CASCADE, related_name='perguntas')
+    tipo = models.CharField(max_length=20, choices=TIPOS_PERGUNTA, default='multipla')
+    texto_pergunta = models.TextField(help_text="Ex: Qual jogador foi artilheiro em 2013?")
+    
+    # Campos para Múltipla Escolha (Se for 'aberta', ficam vazios)
+    opcao_a = models.CharField(max_length=255, blank=True, null=True)
+    opcao_b = models.CharField(max_length=255, blank=True, null=True)
+    opcao_c = models.CharField(max_length=255, blank=True, null=True)
+    opcao_d = models.CharField(max_length=255, blank=True, null=True)
+    
+    # A resposta correta. Se for múltipla, guarde 'A', 'B', 'C' ou 'D'. 
+    # Se for aberta, guarde o nome exato (ex: 'Ronaldinho', 'Reinaldo').
+    resposta_correta = models.CharField(max_length=255)
+
+    def __str__(self):
+        return f"[{self.clube.nome}] {self.texto_pergunta[:40]}..."
+
+class PartidaMiniFanaticos(models.Model):
+    """A mesa da partida 2v2."""
+    criador = models.ForeignKey(User, on_delete=models.CASCADE, related_name='mini_criadas')
+    status = models.CharField(max_length=20, default='aguardando') # aguardando, andamento, finalizado
+    
+    # Os times escolhidos por cada dupla na sala de espera
+    clube_dupla_a = models.ForeignKey(ClubeFutebol, on_delete=models.SET_NULL, null=True, blank=True, related_name='partidas_a')
+    clube_dupla_b = models.ForeignKey(ClubeFutebol, on_delete=models.SET_NULL, null=True, blank=True, related_name='partidas_b')
+    
+    criado_em = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Mini Fanáticos #{self.id} - Status: {self.status}"
+
+class JogadorMiniFanaticos(models.Model):
+    """Representa cada um dos 4 jogadores dentro da sala."""
+    partida = models.ForeignKey(PartidaMiniFanaticos, on_delete=models.CASCADE, related_name='jogadores')
+    jogador = models.ForeignKey(User, on_delete=models.CASCADE)
+    dupla = models.CharField(max_length=1, choices=(('A', 'Dupla A'), ('B', 'Dupla B')))
+    
+    # O Placar e o Desempate
+    pontos = models.IntegerField(default=0)
+    tempo_gasto_segundos = models.FloatField(default=0.0)
+    
+    # Controle para saber quando o jogador terminou de responder tudo
+    finalizou = models.BooleanField(default=False)
+
+    class Meta:
+        # Garante que o mesmo jogador não entre duas vezes na mesma partida
+        unique_together = ('partida', 'jogador')
+
+    def __str__(self):
+        return f"{self.jogador.username} - Dupla {self.dupla}"
+    
+
+import random
+import json
+
+# ==========================================
+# MODO MINI FANÁTICOS (2v2) - O JOGO
+# ==========================================
+@login_required
+def tela_jogo_mini(request, partida_id):
+    """Carrega o campo de jogo com as 10 perguntas."""
+    partida = get_object_or_404(PartidaMiniFanaticos, id=partida_id)
+    meu_jogador = get_object_or_404(JogadorMiniFanaticos, partida=partida, jogador=request.user)
+
+    # Se o craque já acabou a prova, manda direto pro vestiário de resultados
+    if meu_jogador.finalizou:
+        return redirect('duelos:resultado_mini', partida_id=partida.id)
+
+    # TÁTICA AVANÇADA: Usa o ID da partida como 'semente' para o random.
+    # Isso garante que o sorteio seja aleatório, mas idêntico para os 4 jogadores!
+    rng = random.Random(partida.id)
+    
+    perguntas_a = list(partida.clube_dupla_a.perguntas.all())
+    perguntas_b = list(partida.clube_dupla_b.perguntas.all())
+    
+    # Sorteia 5 de cada (ou o máximo que tiver, caso o banco esteja vazio)
+    selecionadas_a = rng.sample(perguntas_a, min(5, len(perguntas_a)))
+    selecionadas_b = rng.sample(perguntas_b, min(5, len(perguntas_b)))
+    
+    todas_perguntas = selecionadas_a + selecionadas_b
+    rng.shuffle(todas_perguntas) # Mistura as 10 perguntas
+
+    # Prepara o pacote para o JavaScript (SEM O GABARITO, pro hacker não roubar!)
+    perguntas_json = []
+    for p in todas_perguntas:
+        perguntas_json.append({
+            'id': p.id,
+            'clube': p.clube.nome,
+            'tipo': p.tipo,
+            'texto': p.texto_pergunta,
+            'opcao_a': p.opcao_a,
+            'opcao_b': p.opcao_b,
+            'opcao_c': p.opcao_c,
+            'opcao_d': p.opcao_d,
+        })
+
+    return render(request, 'duelos/jogo_mini.html', {
+        'partida': partida,
+        'perguntas_json': json.dumps(perguntas_json)
+    })
+
+@login_required
+def submeter_respostas_mini(request, partida_id):
+    """O VAR corrige a prova, soma os pontos e trava o relógio do jogador."""
+    if request.method == 'POST':
+        partida = get_object_or_404(PartidaMiniFanaticos, id=partida_id)
+        meu_jogador = get_object_or_404(JogadorMiniFanaticos, partida=partida, jogador=request.user)
+        
+        if meu_jogador.finalizou:
+            return JsonResponse({'sucesso': False, 'erro': 'Você já entregou a prova!'})
+
+        data = json.loads(request.body)
+        respostas = data.get('respostas', [])
+        tempo_total = data.get('tempo_total', 0.0)
+
+        pontos = 0
+        for item in respostas:
+            p_id = item.get('id')
+            chute = str(item.get('resposta', '')).strip().lower()
+            
+            try:
+                pergunta = PerguntaClube.objects.get(id=p_id)
+                gabarito = str(pergunta.resposta_correta).strip().lower()
+                
+                # Se for múltipla escolha, o JS manda 'a', 'b', 'c' ou 'd'
+                # Se for aberta, manda o texto digitado
+                if chute == gabarito:
+                    pontos += 10
+            except PerguntaClube.DoesNotExist:
+                pass
+
+        # Salva a súmula do jogador
+        meu_jogador.pontos = pontos
+        meu_jogador.tempo_gasto_segundos = tempo_total
+        meu_jogador.finalizou = True
+        meu_jogador.save()
+
+        # Checa se todos os 4 já terminaram para decretar o fim do jogo
+        if not partida.jogadores.filter(finalizou=False).exists():
+            partida.status = 'finalizado'
+            partida.save()
+
+        return JsonResponse({'sucesso': True})
+
+@login_required
+def resultado_mini(request, partida_id):
+    """A tela de placar final com a soma da dupla e o desempate pelo tempo."""
+    partida = get_object_or_404(PartidaMiniFanaticos, id=partida_id)
+    jogadores = partida.jogadores.all()
+    
+    # Vamos criar essa tela no próximo e último passo!
+    return render(request, 'duelos/resultado_mini.html', {'partida': partida, 'jogadores': jogadores})

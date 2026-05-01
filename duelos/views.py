@@ -15,7 +15,11 @@ from .models import (
     JogadorBanco, 
     Campeonato, 
     InscricaoCampeonato, 
-    ConfrontoCampeonato
+    ConfrontoCampeonato,
+    ClubeFutebol, 
+    PerguntaClube, 
+    PartidaMiniFanaticos, 
+    JogadorMiniFanaticos
 )
 
 # ==========================================
@@ -633,3 +637,251 @@ def processar_avanco_fase(confronto, vencedor):
         prox_confronto.jogador2 = vencedor
         
     prox_confronto.save()
+
+
+# ==========================================
+# MODO MINI FANÁTICOS (2v2) - LOBBY E PREPARAÇÃO
+# ==========================================
+@login_required
+def criar_mini_fanaticos(request):
+    """Cria a mesa do 2v2 e já senta o criador na Dupla A."""
+    partida = PartidaMiniFanaticos.objects.create(criador=request.user)
+    JogadorMiniFanaticos.objects.create(partida=partida, jogador=request.user, dupla='A')
+    
+    return redirect('duelos:lobby_mini', partida_id=partida.id)
+
+@login_required
+def entrar_mini_fanaticos(request, partida_id):
+    """Tela onde o convidado escolhe se vai jogar na Dupla A ou B."""
+    partida = get_object_or_404(PartidaMiniFanaticos, id=partida_id)
+    
+    if partida.status != 'aguardando':
+        messages.error(request, 'Esta partida já começou ou foi encerrada!')
+        return redirect('dashboard')
+
+    # Se o jogador já está na mesa, manda ele pro lobby direto
+    if JogadorMiniFanaticos.objects.filter(partida=partida, jogador=request.user).exists():
+        return redirect('duelos:lobby_mini', partida_id=partida.id)
+
+    # Processa a escolha da dupla
+    if request.method == 'POST':
+        dupla_escolhida = request.POST.get('dupla')
+        if dupla_escolhida in ['A', 'B']:
+            # Verifica se a dupla ainda tem vaga (máximo 2 por dupla)
+            if JogadorMiniFanaticos.objects.filter(partida=partida, dupla=dupla_escolhida).count() < 2:
+                JogadorMiniFanaticos.objects.create(partida=partida, jogador=request.user, dupla=dupla_escolhida)
+                return redirect('duelos:lobby_mini', partida_id=partida.id)
+            else:
+                messages.error(request, f'A Dupla {dupla_escolhida} já está lotada! Craque não tem lugar no banco.')
+
+    vagas_a = 2 - JogadorMiniFanaticos.objects.filter(partida=partida, dupla='A').count()
+    vagas_b = 2 - JogadorMiniFanaticos.objects.filter(partida=partida, dupla='B').count()
+
+    return render(request, 'duelos/entrar_mini.html', {
+        'partida': partida, 
+        'vagas_a': vagas_a, 
+        'vagas_b': vagas_b
+    })
+
+@login_required
+def lobby_mini(request, partida_id):
+    """O Vestiário onde a galera conversa e escolhe o Time do Coração."""
+    partida = get_object_or_404(PartidaMiniFanaticos, id=partida_id)
+    
+    jogadores_a = partida.jogadores.filter(dupla='A')
+    jogadores_b = partida.jogadores.filter(dupla='B')
+    clubes = ClubeFutebol.objects.all().order_by('nome')
+    
+    meu_jogador = partida.jogadores.filter(jogador=request.user).first()
+    
+    # Se o jogador tentar acessar sem ter entrado na dupla antes
+    if not meu_jogador:
+        return redirect('duelos:entrar_mini_fanaticos', partida_id=partida.id)
+
+    # Salva a escolha do time do coração da dupla
+    if request.method == 'POST':
+        clube_id = request.POST.get('clube_id')
+        if clube_id:
+            clube = get_object_or_404(ClubeFutebol, id=clube_id)
+            if meu_jogador.dupla == 'A':
+                partida.clube_dupla_a = clube
+            else:
+                partida.clube_dupla_b = clube
+            partida.save()
+            messages.success(request, f"Time da Dupla {meu_jogador.dupla} definido para {clube.nome}!")
+            return redirect('duelos:lobby_mini', partida_id=partida.id)
+
+    link_convite = request.build_absolute_uri(reverse('duelos:entrar_mini_fanaticos', args=[partida.id]))
+
+    return render(request, 'duelos/lobby_mini.html', {
+        'partida': partida,
+        'jogadores_a': jogadores_a,
+        'jogadores_b': jogadores_b,
+        'clubes': clubes,
+        'link_convite': link_convite,
+        'meu_jogador': meu_jogador,
+    })
+
+def status_lobby_mini_api(request, partida_id):
+    """O Olheiro do Ajax: Checa se já tem 4 na sala e 2 times definidos."""
+    partida = get_object_or_404(PartidaMiniFanaticos, id=partida_id)
+    
+    total_jogadores = partida.jogadores.count()
+    times_definidos = partida.clube_dupla_a is not None and partida.clube_dupla_b is not None
+    pronto_para_iniciar = (total_jogadores == 4 and times_definidos)
+
+    # Se bateu a meta, apita o início do jogo automaticamente
+    if pronto_para_iniciar and partida.status == 'aguardando':
+        partida.status = 'andamento'
+        partida.save()
+
+    return JsonResponse({
+        'status': partida.status,
+        'pronto': pronto_para_iniciar,
+        'total_jogadores': total_jogadores,
+        'time_a_definido': partida.clube_dupla_a.nome if partida.clube_dupla_a else False,
+        'time_b_definido': partida.clube_dupla_b.nome if partida.clube_dupla_b else False,
+    })
+
+
+
+
+# ==========================================
+# MODO MINI FANÁTICOS (2v2) - O JOGO
+# ==========================================
+@login_required
+def tela_jogo_mini(request, partida_id):
+    """Carrega o campo de jogo com as 10 perguntas."""
+    partida = get_object_or_404(PartidaMiniFanaticos, id=partida_id)
+    meu_jogador = get_object_or_404(JogadorMiniFanaticos, partida=partida, jogador=request.user)
+
+    # Se o craque já acabou a prova, manda direto pro vestiário de resultados
+    if meu_jogador.finalizou:
+        return redirect('duelos:resultado_mini', partida_id=partida.id)
+
+    # TÁTICA AVANÇADA: Usa o ID da partida como 'semente' para o random.
+    # Isso garante que o sorteio seja aleatório, mas idêntico para os 4 jogadores!
+    rng = random.Random(partida.id)
+    
+    perguntas_a = list(partida.clube_dupla_a.perguntas.all())
+    perguntas_b = list(partida.clube_dupla_b.perguntas.all())
+    
+    # Sorteia 5 de cada (ou o máximo que tiver, caso o banco esteja vazio)
+    selecionadas_a = rng.sample(perguntas_a, min(5, len(perguntas_a)))
+    selecionadas_b = rng.sample(perguntas_b, min(5, len(perguntas_b)))
+    
+    todas_perguntas = selecionadas_a + selecionadas_b
+    rng.shuffle(todas_perguntas) # Mistura as 10 perguntas
+
+    # Prepara o pacote para o JavaScript (SEM O GABARITO, pro hacker não roubar!)
+    perguntas_json = []
+    for p in todas_perguntas:
+        perguntas_json.append({
+            'id': p.id,
+            'clube': p.clube.nome,
+            'tipo': p.tipo,
+            'texto': p.texto_pergunta,
+            'opcao_a': p.opcao_a,
+            'opcao_b': p.opcao_b,
+            'opcao_c': p.opcao_c,
+            'opcao_d': p.opcao_d,
+        })
+
+    return render(request, 'duelos/jogo_mini.html', {
+        'partida': partida,
+        'perguntas_json': json.dumps(perguntas_json)
+    })
+
+@login_required
+def submeter_respostas_mini(request, partida_id):
+    """O VAR corrige a prova, soma os pontos e trava o relógio do jogador."""
+    if request.method == 'POST':
+        partida = get_object_or_404(PartidaMiniFanaticos, id=partida_id)
+        meu_jogador = get_object_or_404(JogadorMiniFanaticos, partida=partida, jogador=request.user)
+        
+        if meu_jogador.finalizou:
+            return JsonResponse({'sucesso': False, 'erro': 'Você já entregou a prova!'})
+
+        data = json.loads(request.body)
+        respostas = data.get('respostas', [])
+        tempo_total = data.get('tempo_total', 0.0)
+
+        pontos = 0
+        for item in respostas:
+            p_id = item.get('id')
+            chute = str(item.get('resposta', '')).strip().lower()
+            
+            try:
+                pergunta = PerguntaClube.objects.get(id=p_id)
+                gabarito = str(pergunta.resposta_correta).strip().lower()
+                
+                # Se for múltipla escolha, o JS manda 'a', 'b', 'c' ou 'd'
+                # Se for aberta, manda o texto digitado
+                if chute == gabarito:
+                    pontos += 10
+            except PerguntaClube.DoesNotExist:
+                pass
+
+        # Salva a súmula do jogador
+        meu_jogador.pontos = pontos
+        meu_jogador.tempo_gasto_segundos = tempo_total
+        meu_jogador.finalizou = True
+        meu_jogador.save()
+
+        # Checa se todos os 4 já terminaram para decretar o fim do jogo
+        if not partida.jogadores.filter(finalizou=False).exists():
+            partida.status = 'finalizado'
+            partida.save()
+
+        return JsonResponse({'sucesso': True})
+
+@login_required
+def resultado_mini(request, partida_id):
+    """A tela de placar final com a soma da dupla e o desempate pelo tempo."""
+    partida = get_object_or_404(PartidaMiniFanaticos, id=partida_id)
+    
+    jogadores_a = partida.jogadores.filter(dupla='A')
+    jogadores_b = partida.jogadores.filter(dupla='B')
+
+    # Cálculos da Dupla A
+    pontos_a = sum(j.pontos for j in jogadores_a)
+    tempo_a = sum(j.tempo_gasto_segundos for j in jogadores_a)
+
+    # Cálculos da Dupla B
+    pontos_b = sum(j.pontos for j in jogadores_b)
+    tempo_b = sum(j.tempo_gasto_segundos for j in jogadores_b)
+
+    # O VAR do Desempate
+    vencedor = None
+    motivo = ""
+    
+    if pontos_a > pontos_b:
+        vencedor = 'A'
+        motivo = "Por pontos"
+    elif pontos_b > pontos_a:
+        vencedor = 'B'
+        motivo = "Por pontos"
+    else:
+        # Empate em pontos? O relógio decide! (Ganha quem gastou MENOS tempo)
+        if tempo_a < tempo_b:
+            vencedor = 'A'
+            motivo = "No tempo de desempate!"
+        elif tempo_b < tempo_a:
+            vencedor = 'B'
+            motivo = "No tempo de desempate!"
+        else:
+            vencedor = 'Empate'
+            motivo = "Empate absoluto!"
+
+    context = {
+        'partida': partida,
+        'jogadores_a': jogadores_a,
+        'jogadores_b': jogadores_b,
+        'pontos_a': pontos_a,
+        'tempo_a': tempo_a,
+        'pontos_b': pontos_b,
+        'tempo_b': tempo_b,
+        'vencedor': vencedor,
+        'motivo': motivo,
+    }
+    return render(request, 'duelos/resultado_mini.html', context)

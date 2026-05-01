@@ -1,58 +1,58 @@
-from django.contrib import admin
-from .models import CategoriaDesafio, ItemDesafio, PartidaDuelo, Clube, JogadorBanco, Campeonato, InscricaoCampeonato, ConfrontoCampeonato
+#from django.contrib import admin
+#f3rom .models import CategoriaDesafio, ItemDesafio, PartidaDuelo, Clube, JogadorBanco, Campeonato, InscricaoCampeonato, ConfrontoCampeonato
 
 # --- NOVOS BANCOS CENTRALIZADOS ---
-@admin.register(Clube)
-class ClubeAdmin(admin.ModelAdmin):
-    list_display = ('nome', 'tem_escudo')
-    search_fields = ('nome',)
+#@admin.register(Clube)
+#class ClubeAdmin(admin.ModelAdmin):
+ #   list_display = ('nome', 'tem_escudo')
+ #   search_fields = ('nome',)
     
-    def tem_escudo(self, obj):
+  #  def tem_escudo(self, obj):
         return bool(obj.escudo)
-    tem_escudo.short_description = 'Escudo Inserido?'
-    tem_escudo.boolean = True
+   # tem_escudo.short_description = 'Escudo Inserido?'
+    #tem_escudo.boolean = True
 
-@admin.register(JogadorBanco)
-class JogadorBancoAdmin(admin.ModelAdmin):
-    list_display = ('nome',)
-    search_fields = ('nome',)
+#@admin.register(JogadorBanco)
+#class JogadorBancoAdmin(admin.ModelAdmin):
+  #  list_display = ('nome',)
+ #   search_fields = ('nome',)
 
 # --- DESAFIOS E PARTIDAS ---
-class ItemDesafioInline(admin.TabularInline):
-    model = ItemDesafio
-    extra = 1
-    # Adicionamos os novos campos de busca nativos do Django Admin para facilitar a sua vida!
-    autocomplete_fields = ['clube_vinculado', 'jogador_vinculado'] 
+#class ItemDesafioInline(admin.TabularInline):
+ #   model = ItemDesafio
+  #  extra = 1
+   # # Adicionamos os novos campos de busca nativos do Django Admin para facilitar a sua vida!
+    #autocomplete_fields = ['clube_vinculado', 'jogador_vinculado'] 
 
-@admin.register(CategoriaDesafio)
-class CategoriaDesafioAdmin(admin.ModelAdmin):
-    list_display = ('titulo', 'tipo', 'resposta_oculta')
-    list_filter = ('tipo',)
-    search_fields = ('titulo',)
-    inlines = [ItemDesafioInline]
+#@admin.register(CategoriaDesafio)
+#class CategoriaDesafioAdmin(admin.ModelAdmin):
+ ##   list_display = ('titulo', 'tipo', 'resposta_oculta')
+   # list_filter = ('tipo',)
+    #search_fields = ('titulo',)
+    #inlines = [ItemDesafioInline]
 
-@admin.register(PartidaDuelo)
-class PartidaDueloAdmin(admin.ModelAdmin):
-    list_display = ('jogador_criador', 'jogador_convidado', 'categoria', 'status', 'vencedor')
-    list_filter = ('status',)
+#@admin.register(PartidaDuelo)
+#class PartidaDueloAdmin(admin.ModelAdmin):
+ #   list_display = ('jogador_criador', 'jogador_convidado', 'categoria', 'status', 'vencedor')
+ #   list_filter = ('status',)
 
-@admin.register(Campeonato)
-class CampeonatoAdmin(admin.ModelAdmin):
-    list_display = ('nome', 'admin', 'status', 'data_limite_inscricao', 'criado_em')
-    list_filter = ('status', 'criado_em')
-    search_fields = ('nome', 'admin__username', 'admin__first_name')
-    readonly_fields = ('codigo_convite', 'criado_em')
-    list_editable = ('status',) # Permite mudar o status direto na listagem
+#@admin.register(Campeonato)
+#class CampeonatoAdmin(admin.ModelAdmin):
+ #   list_display = ('nome', 'admin', 'status', 'data_limite_inscricao', 'criado_em')
+  #  list_filter = ('status', 'criado_em')
+   # search_fields = ('nome', 'admin__username', 'admin__first_name')
+    #readonly_fields = ('codigo_convite', 'criado_em')
+    #list_editable = ('status',) # Permite mudar o status direto na listagem
 
-@admin.register(InscricaoCampeonato)
-class InscricaoCampeonatoAdmin(admin.ModelAdmin):
-    list_display = ('jogador', 'campeonato', 'data_inscricao')
-    list_filter = ('campeonato', 'data_inscricao')
-    search_fields = ('jogador__username', 'jogador__first_name', 'campeonato__nome')
+#@admin.register(InscricaoCampeonato)
+#class InscricaoCampeonatoAdmin(admin.ModelAdmin):
+ #   list_display = ('jogador', 'campeonato', 'data_inscricao')
+  #  list_filter = ('campeonato', 'data_inscricao')
+   # search_fields = ('jogador__username', 'jogador__first_name', 'campeonato__nome')
 
-@admin.register(ConfrontoCampeonato)
-class ConfrontoCampeonatoAdmin(admin.ModelAdmin):
-    list_display = ('campeonato', 'fase', 'ordem_chave', 'jogador1', 'jogador2', 'status', 'vencedor')
-    list_filter = ('campeonato', 'fase', 'status')
-    search_fields = ('jogador1__username', 'jogador2__username', 'campeonato__nome')
-    autocomplete_fields = ('jogador1', 'jogador2', 'vencedor', 'desafio_sorteado', 'partida_vinculada')
+#@admin.register(ConfrontoCampeonato)
+#class ConfrontoCampeonatoAdmin(admin.ModelAdmin):
+ #   list_display = ('campeonato', 'fase', 'ordem_chave', 'jogador1', 'jogador2', 'status', 'vencedor')
+  #  list_filter = ('campeonato', 'fase', 'status')
+   # search_fields = ('jogador1__username', 'jogador2__username', 'campeonato__nome')
+    #autocomplete_fields = ('jogador1', 'jogador2', 'vencedor', 'desafio_sorteado', 'partida_vinculada')

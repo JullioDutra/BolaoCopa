@@ -1,0 +1,186 @@
+{% extends 'base.html' %}
+
+{% block title %}Jogando - Mini Fanáticos{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-4">
+    <div class="col-md-8">
+        
+        <!-- CABEÇALHO DO JOGO: PERGUNTA ATUAL E CRONÔMETRO -->
+        <div class="d-flex justify-content-between align-items-center mb-4 bg-dark text-white p-3 rounded-pill shadow-sm">
+            <div class="fw-bold fs-5 ms-3">
+                <i class="fa-solid fa-list-ol text-warning"></i> Pergunta <span id="contador-pergunta">1</span>/10
+            </div>
+            <div class="fw-bold fs-4 me-3 text-danger" style="font-family: monospace;">
+                <i class="fa-solid fa-stopwatch"></i> <span id="cronometro">00.00</span>s
+            </div>
+        </div>
+
+        <!-- CARD DA PERGUNTA -->
+        <div class="card card-clean shadow-lg border-0 rounded-4 p-4 p-md-5 text-center">
+            
+            <span class="badge bg-secondary mb-3 mx-auto fs-6" id="clube-alvo"><i class="fa-solid fa-shield-halved"></i> Clube</span>
+            
+            <h3 class="fw-bold text-dark mb-5" id="texto-pergunta">Carregando pergunta...</h3>
+
+            <!-- ÁREA DE RESPOSTA (Dinâmica) -->
+            <div id="area-resposta" class="mb-5">
+                <!-- O JavaScript vai injetar os botões A,B,C,D ou o input de texto aqui -->
+            </div>
+
+            <hr class="text-muted opacity-25">
+
+            <!-- BOTÃO PULAR -->
+            <div class="text-end">
+                <button class="btn btn-outline-danger fw-bold rounded-pill px-4 shadow-sm" onclick="responder('PULAR')">
+                    Pular Pergunta <i class="fa-solid fa-forward-step"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- TELA DE LOADING (Aparece ao terminar) -->
+        <div id="tela-loading" class="text-center mt-5 d-none">
+            <h3 class="fw-bold text-dark">Prova Entregue!</h3>
+            <p class="text-muted fs-5">Aguardando o VAR corrigir e os outros jogadores terminarem...</p>
+            <div class="spinner-border text-success mt-3" style="width: 3rem; height: 3rem;" role="status"></div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    // Carrega os dados enviados pelo Python
+    const perguntas = JSON.parse('{{ perguntas_json|safe }}');
+    let indiceAtual = 0;
+    let respostasDadas = [];
+    
+    // Controle de Tempo
+    let tempoInicio = Date.now();
+    let timerInterval;
+
+    // Inicia o cronômetro visual
+    function iniciarCronometro() {
+        timerInterval = setInterval(() => {
+            let tempoAtual = (Date.now() - tempoInicio) / 1000;
+            document.getElementById('cronometro').innerText = tempoAtual.toFixed(2);
+        }, 50);
+    }
+
+    // Renderiza a pergunta na tela
+    function carregarPergunta() {
+        if (indiceAtual >= perguntas.length) {
+            finalizarProva();
+            return;
+        }
+
+        const p = perguntas[indiceAtual];
+        document.getElementById('contador-pergunta').innerText = indiceAtual + 1;
+        document.getElementById('clube-alvo').innerHTML = `<i class="fa-solid fa-shield-halved"></i> Sobre: ${p.clube}`;
+        document.getElementById('texto-pergunta').innerText = p.texto;
+
+        const area = document.getElementById('area-resposta');
+        area.innerHTML = '';
+
+        if (p.tipo === 'multipla') {
+            // Cria os botões A, B, C e D
+            const alternativas = [
+                { id: 'a', texto: p.opcao_a },
+                { id: 'b', texto: p.opcao_b },
+                { id: 'c', texto: p.opcao_c },
+                { id: 'd', texto: p.opcao_d }
+            ];
+
+            let htmlBotoes = '<div class="row g-3">';
+            alternativas.forEach(alt => {
+                if (alt.texto) {
+                    htmlBotoes += `
+                        <div class="col-md-6">
+                            <button class="btn btn-outline-primary w-100 py-3 fw-bold fs-5 rounded-4 shadow-sm" onclick="responder('${alt.id}')">
+                                ${alt.texto}
+                            </button>
+                        </div>
+                    `;
+                }
+            });
+            htmlBotoes += '</div>';
+            area.innerHTML = htmlBotoes;
+
+        } else if (p.tipo === 'aberta') {
+            // Cria o input de texto
+            area.innerHTML = `
+                <div class="input-group input-group-lg mx-auto" style="max-width: 500px;">
+                    <input type="text" id="input-aberta" class="form-control border-success border-2 shadow-sm" placeholder="Digite sua resposta aqui...">
+                    <button class="btn btn-success fw-bold px-4 shadow-sm" onclick="responderAberta()">Confirmar</button>
+                </div>
+            `;
+            // Permite dar Enter para responder
+            document.getElementById('input-aberta').addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') responderAberta();
+            });
+        }
+    }
+
+    // Auxiliar para a pergunta aberta
+    function responderAberta() {
+        const valor = document.getElementById('input-aberta').value;
+        if (valor.trim() === '') return;
+        responder(valor);
+    }
+
+    // Salva a resposta e avança
+    function responder(valorDigitadoClicado) {
+        respostasDadas.push({
+            id: perguntas[indiceAtual].id,
+            resposta: valorDigitadoClicado === 'PULAR' ? '' : valorDigitadoClicado
+        });
+        
+        indiceAtual++;
+        carregarPergunta();
+    }
+
+    // Envia tudo pro servidor
+    function finalizarProva() {
+        clearInterval(timerInterval); // Trava o relógio
+        let tempoFinal = (Date.now() - tempoInicio) / 1000;
+
+        // Esconde o card e mostra o loading
+        document.querySelector('.card').classList.add('d-none');
+        document.getElementById('tela-loading').classList.remove('d-none');
+
+        fetch("{% url 'duelos:submeter_respostas_mini' partida.id %}", {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                respostas: respostasDadas,
+                tempo_total: tempoFinal
+            })
+        }).then(res => res.json()).then(data => {
+            if(data.sucesso) {
+                // Fica checando até a partida acabar (todo mundo entregar)
+                checarFimDeJogo();
+            }
+        });
+    }
+
+    function checarFimDeJogo() {
+        setInterval(() => {
+            fetch("{% url 'duelos:status_lobby_mini_api' partida.id %}")
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === 'finalizado') {
+                    window.location.href = "{% url 'duelos:resultado_mini' partida.id %}";
+                }
+            });
+        }, 2000);
+    }
+
+    // Dá o pontapé inicial assim que a tela abre
+    window.onload = () => {
+        carregarPergunta();
+        iniciarCronometro();
+    };
+</script>
+{% endblock %}

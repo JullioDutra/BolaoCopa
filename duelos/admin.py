@@ -87,7 +87,7 @@ class ConfrontoCampeonatoAdmin(admin.ModelAdmin):
 # ==========================================
 
 
-"""""
+'''
 @admin.register(ClubeFutebol)
 class ClubeFutebolAdmin(admin.ModelAdmin):
     list_display = ('nome',)
@@ -109,4 +109,4 @@ class JogadorMiniFanaticosAdmin(admin.ModelAdmin):
     list_display = ('jogador', 'partida', 'dupla', 'pontos', 'tempo_gasto_segundos', 'finalizou')
     list_filter = ('dupla', 'finalizou')
     search_fields = ('jogador__username', 'jogador__first_name')
-""""
+'''

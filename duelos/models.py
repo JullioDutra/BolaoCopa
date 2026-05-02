@@ -166,7 +166,7 @@ class ConfrontoCampeonato(models.Model):
 # ==========================================
 # MODO MINI FANÁTICOS (2v2)
 # ==========================================
-""""
+''''
 class ClubeFutebol(models.Model):
     """Tabela com os times para a dupla escolher como 'Time do Coração'."""
     nome = models.CharField(max_length=100, unique=True)
@@ -233,4 +233,4 @@ class JogadorMiniFanaticos(models.Model):
         return f"{self.jogador.username} - Dupla {self.dupla}"
     
 
-"""
+'''

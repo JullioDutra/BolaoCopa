@@ -777,7 +777,7 @@ def tela_jogo_mini(request, partida_id):
     todas_perguntas = selecionadas_a + selecionadas_b
     rng.shuffle(todas_perguntas) # Mistura as 10 perguntas
 
-    # Prepara o pacote para o JavaScript (SEM O GABARITO, pro hacker não roubar!)
+    # Prepara o pacote para o JavaScript (AGORA COM GABARITO PARA OS MINIGAMES)
     perguntas_json = []
     for p in todas_perguntas:
         perguntas_json.append({
@@ -789,13 +789,15 @@ def tela_jogo_mini(request, partida_id):
             'opcao_b': p.opcao_b,
             'opcao_c': p.opcao_c,
             'opcao_d': p.opcao_d,
+            'resposta_correta': p.resposta_correta, # Necessário para a trava e anagrama!
+            # Pega a URL do escudo se existir no seu model (se não tiver, manda vazio)
+            'escudo_url': p.clube.escudo.url if hasattr(p.clube, 'escudo') and p.clube.escudo else ''
         })
 
     return render(request, 'duelos/jogo_mini.html', {
         'partida': partida,
         'perguntas_json': json.dumps(perguntas_json)
     })
-
 @login_required
 def submeter_respostas_mini(request, partida_id):
     """O VAR corrige a prova, soma os pontos e trava o relógio do jogador."""

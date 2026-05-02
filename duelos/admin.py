@@ -7,14 +7,8 @@ from .models import (
     JogadorBanco, 
     Campeonato, 
     InscricaoCampeonato, 
-    ConfrontoCampeonato,
-   '''
-    # Nossos modelos novos do Mini Fanáticos:
-    ClubeFutebol, 
-    PerguntaClube, 
-    PartidaMiniFanaticos, 
-    JogadorMiniFanaticos
-    '''
+    ConfrontoCampeonato
+
 )
 
 # ==========================================

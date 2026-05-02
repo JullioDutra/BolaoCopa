@@ -1,37 +1,68 @@
 {% extends 'base.html' %}
 
-{% block title %}Escolha sua Dupla - Mini Fanáticos{% endblock %}
-
 {% block content %}
-<div class="row justify-content-center mt-5 mb-5">
-    <div class="col-md-6 text-center">
-        <h2 class="fw-bold text-dark"><i class="fa-solid fa-users text-primary"></i> Mini Fanáticos 2v2</h2>
-        <p class="text-muted fs-5">Você foi convidado! Escolha o seu lado do campo.</p>
+<div class="row justify-content-center mt-5">
+    <div class="col-12 text-center mb-4">
+        <h2 class="fw-bold"><i class="fa-solid fa-users"></i> Escolha sua Dupla</h2>
+        <p class="text-muted">A mesa de 2v2 está aberta. Onde você vai jogar?</p>
+    </div>
 
-        <form method="POST" class="mt-4">
-            {% csrf_token %}
-            <div class="row gap-3 justify-content-center">
-                
-                <!-- DUPLA A -->
-                <div class="col-md-5">
-                    <button type="submit" name="dupla" value="A" class="btn btn-outline-success w-100 p-4 rounded-4 shadow-sm" {% if vagas_a == 0 %}disabled{% endif %}>
-                        <i class="fa-solid fa-shirt fs-1 mb-2"></i>
-                        <h4 class="fw-bold">Dupla A</h4>
-                        <span class="badge bg-success">{{ vagas_a }} vaga(s) restante(s)</span>
-                    </button>
-                </div>
+    <!-- DUPLA A -->
+    <div class="col-md-5 mb-4">
+        <div class="card p-4 text-center shadow border-0 border-top border-5 border-primary h-100">
+            <h3 class="fw-bold text-primary mb-3">Dupla A</h3>
+            
+            <!-- Lista de Jogadores -->
+            <ul class="list-unstyled text-start bg-light p-3 rounded-3 mb-4">
+                {% for j in jogadores_a %}
+                    <li class="mb-2 fs-5"><i class="fa-solid fa-user-check text-success me-2"></i> <strong>{{ j.jogador.username }}</strong></li>
+                {% endfor %}
+                {% if vagas_a > 0 %}
+                    <li class="mb-2 fs-5 text-muted fst-italic"><i class="fa-solid fa-user-plus me-2"></i> Aguardando parceiro...</li>
+                {% endif %}
+            </ul>
 
-                <!-- DUPLA B -->
-                <div class="col-md-5">
-                    <button type="submit" name="dupla" value="B" class="btn btn-outline-danger w-100 p-4 rounded-4 shadow-sm" {% if vagas_b == 0 %}disabled{% endif %}>
-                        <i class="fa-solid fa-shirt fs-1 mb-2"></i>
-                        <h4 class="fw-bold">Dupla B</h4>
-                        <span class="badge bg-danger">{{ vagas_b }} vaga(s) restante(s)</span>
-                    </button>
-                </div>
-
+            <div class="mt-auto">
+                {% if vagas_a > 0 %}
+                    <form method="POST">
+                        {% csrf_token %}
+                        <input type="hidden" name="dupla" value="A">
+                        <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold rounded-pill">Entrar na Dupla A</button>
+                    </form>
+                {% else %}
+                    <button class="btn btn-secondary btn-lg w-100 fw-bold rounded-pill" disabled>Lotado</button>
+                {% endif %}
             </div>
-        </form>
+        </div>
+    </div>
+
+    <!-- DUPLA B -->
+    <div class="col-md-5 mb-4">
+        <div class="card p-4 text-center shadow border-0 border-top border-5 border-danger h-100">
+            <h3 class="fw-bold text-danger mb-3">Dupla B</h3>
+            
+            <!-- Lista de Jogadores -->
+            <ul class="list-unstyled text-start bg-light p-3 rounded-3 mb-4">
+                {% for j in jogadores_b %}
+                    <li class="mb-2 fs-5"><i class="fa-solid fa-user-check text-success me-2"></i> <strong>{{ j.jogador.username }}</strong></li>
+                {% endfor %}
+                {% if vagas_b > 0 %}
+                    <li class="mb-2 fs-5 text-muted fst-italic"><i class="fa-solid fa-user-plus me-2"></i> Aguardando adversário...</li>
+                {% endif %}
+            </ul>
+
+            <div class="mt-auto">
+                {% if vagas_b > 0 %}
+                    <form method="POST">
+                        {% csrf_token %}
+                        <input type="hidden" name="dupla" value="B">
+                        <button type="submit" class="btn btn-danger btn-lg w-100 fw-bold rounded-pill">Entrar na Dupla B</button>
+                    </form>
+                {% else %}
+                    <button class="btn btn-secondary btn-lg w-100 fw-bold rounded-pill" disabled>Lotado</button>
+                {% endif %}
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}

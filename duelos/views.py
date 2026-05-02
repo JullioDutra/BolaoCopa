@@ -660,26 +660,29 @@ def entrar_mini_fanaticos(request, partida_id):
         messages.error(request, 'Esta partida já começou ou foi encerrada!')
         return redirect('dashboard')
 
-    # Se o jogador já está na mesa, manda ele pro lobby direto
     if JogadorMiniFanaticos.objects.filter(partida=partida, jogador=request.user).exists():
         return redirect('duelos:lobby_mini', partida_id=partida.id)
 
-    # Processa a escolha da dupla
     if request.method == 'POST':
         dupla_escolhida = request.POST.get('dupla')
         if dupla_escolhida in ['A', 'B']:
-            # Verifica se a dupla ainda tem vaga (máximo 2 por dupla)
             if JogadorMiniFanaticos.objects.filter(partida=partida, dupla=dupla_escolhida).count() < 2:
                 JogadorMiniFanaticos.objects.create(partida=partida, jogador=request.user, dupla=dupla_escolhida)
                 return redirect('duelos:lobby_mini', partida_id=partida.id)
             else:
-                messages.error(request, f'A Dupla {dupla_escolhida} já está lotada! Craque não tem lugar no banco.')
+                messages.error(request, f'A Dupla {dupla_escolhida} já está lotada!')
 
-    vagas_a = 2 - JogadorMiniFanaticos.objects.filter(partida=partida, dupla='A').count()
-    vagas_b = 2 - JogadorMiniFanaticos.objects.filter(partida=partida, dupla='B').count()
+    # Pega quem já está nas duplas para mostrar na tela
+    jogadores_a = JogadorMiniFanaticos.objects.filter(partida=partida, dupla='A')
+    jogadores_b = JogadorMiniFanaticos.objects.filter(partida=partida, dupla='B')
+    
+    vagas_a = 2 - jogadores_a.count()
+    vagas_b = 2 - jogadores_b.count()
 
     return render(request, 'duelos/entrar_mini.html', {
         'partida': partida, 
+        'jogadores_a': jogadores_a,  # <--- NOVA LINHA
+        'jogadores_b': jogadores_b,  # <--- NOVA LINHA
         'vagas_a': vagas_a, 
         'vagas_b': vagas_b
     })

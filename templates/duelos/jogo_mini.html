@@ -49,8 +49,8 @@
 </div>
 
 <script>
-    // Carrega os dados enviados pelo Python
-    const perguntas = JSON.parse('{{ perguntas_json|safe }}');
+    // O 'escapejs' é fundamental aqui para não quebrar o código com aspas simples (ex: D'Alessandro)
+    const perguntas = JSON.parse('{{ perguntas_json|escapejs }}');
     let indiceAtual = 0;
     let respostasDadas = [];
     
@@ -117,6 +117,8 @@
             document.getElementById('input-aberta').addEventListener('keypress', function (e) {
                 if (e.key === 'Enter') responderAberta();
             });
+            // Foca automaticamente no campo para digitar rápido
+            setTimeout(() => document.getElementById('input-aberta').focus(), 100);
         }
     }
 
@@ -161,6 +163,8 @@
             if(data.sucesso) {
                 // Fica checando até a partida acabar (todo mundo entregar)
                 checarFimDeJogo();
+            } else {
+                alert("Erro: " + data.erro);
             }
         });
     }

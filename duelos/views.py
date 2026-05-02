@@ -16,10 +16,7 @@ from .models import (
     Campeonato, 
     InscricaoCampeonato, 
     ConfrontoCampeonato,
-    ClubeFutebol, 
-    PerguntaClube, 
-    PartidaMiniFanaticos, 
-    JogadorMiniFanaticos
+
 )
 
 # ==========================================

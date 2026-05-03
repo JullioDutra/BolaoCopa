@@ -4,33 +4,39 @@
 
 {% block content %}
 <style>
+    /* VARIÁVEL DE ESCALA: Define o tamanho padrão no PC (1) e encolhe no Mobile (0.48) */
+    :root {
+        --card-scale: 1;
+    }
+
     .arena-trunfo { background-color: #1a1a1a; border-radius: 20px; padding: 40px 20px; box-shadow: inset 0 0 50px rgba(0,0,0,0.9); min-height: 500px; }
     
-    /* Efeito 3D da Carta */
-    .fut-card-container { perspective: 1000px; width: 260px; height: 380px; margin: 0 auto; }
+    /* Efeito 3D da Carta - Todas as medidas agora usam calc() baseado na escala */
+    .fut-card-container { perspective: 1000px; width: calc(260px * var(--card-scale)); height: calc(380px * var(--card-scale)); margin: 0 auto; }
     .fut-card-inner { width: 100%; height: 100%; transition: transform 0.8s; transform-style: preserve-3d; position: relative; }
-    .fut-card-front, .fut-card-back { width: 100%; height: 100%; position: absolute; backface-visibility: hidden; border-radius: 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
+    .fut-card-front, .fut-card-back { width: 100%; height: 100%; position: absolute; backface-visibility: hidden; border-radius: calc(15px * var(--card-scale)); box-shadow: 0 calc(10px * var(--card-scale)) calc(20px * var(--card-scale)) rgba(0,0,0,0.5); }
     
     /* Frente da Carta (Dourada) */
-    .fut-card-front { background: linear-gradient(135deg, #d4af37, #aa7c11, #f9e596, #aa7c11); padding: 15px; color: #333; border: 2px solid #fff; }
+    .fut-card-front { background: linear-gradient(135deg, #d4af37, #aa7c11, #f9e596, #aa7c11); padding: calc(15px * var(--card-scale)); color: #333; border: calc(2px * var(--card-scale)) solid #fff; }
     
     /* Verso da Carta (Oculta) */
-    .fut-card-back { background: repeating-linear-gradient(45deg, #111, #111 10px, #222 10px, #222 20px); border: 2px solid #d4af37; transform: rotateY(180deg); display: flex; align-items: center; justify-content: center; }
-    .fut-card-back::after { content: "CARTOLÂNDIA"; color: #d4af37; font-size: 1.8rem; font-weight: 900; transform: rotate(-45deg); }
+    .fut-card-back { background: repeating-linear-gradient(45deg, #111, #111 10px, #222 10px, #222 20px); border: calc(2px * var(--card-scale)) solid #d4af37; transform: rotateY(180deg); display: flex; align-items: center; justify-content: center; }
+    .fut-card-back::after { content: "CARTOLÂNDIA"; color: #d4af37; font-size: calc(1.8rem * var(--card-scale)); font-weight: 900; transform: rotate(-45deg); }
 
-    /* Classe ativada via JS para girar a carta do adversário */
+    /* Classe ativada via JS para girar a carta */
     .virada .fut-card-inner { transform: rotateY(180deg); }
 
     /* Elementos Internos da Carta */
-    .card-top-left { position: absolute; top: 15px; left: 15px; text-align: center; font-weight: bold; }
-    .card-overall { font-size: 2.2rem; line-height: 1; }
-    .card-pos { font-size: 1rem; border-bottom: 2px solid #333; padding-bottom: 2px; }
+    .card-top-left { position: absolute; top: calc(15px * var(--card-scale)); left: calc(15px * var(--card-scale)); text-align: center; font-weight: bold; }
+    .card-overall { font-size: calc(2.2rem * var(--card-scale)); line-height: 1; }
+    .card-pos { font-size: calc(1rem * var(--card-scale)); border-bottom: calc(2px * var(--card-scale)) solid #333; padding-bottom: calc(2px * var(--card-scale)); }
     
-    .jogador-img { width: 150px; height: 150px; object-fit: cover; border-radius: 50%; margin: 0 auto; display: block; border: 3px solid #fff; background: rgba(255,255,255,0.4); }
-    .jogador-nome { text-align: center; font-size: 1.3rem; font-weight: 900; text-transform: uppercase; margin-top: 10px; border-bottom: 2px solid rgba(0,0,0,0.2); padding-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+    .jogador-img { width: calc(150px * var(--card-scale)); height: calc(150px * var(--card-scale)); object-fit: cover; border-radius: 50%; margin: 0 auto; display: block; border: calc(3px * var(--card-scale)) solid #fff; background: rgba(255,255,255,0.4); }
+    .jogador-nome { text-align: center; font-size: calc(1.3rem * var(--card-scale)); font-weight: 900; text-transform: uppercase; margin-top: calc(10px * var(--card-scale)); border-bottom: calc(2px * var(--card-scale)) solid rgba(0,0,0,0.2); padding-bottom: calc(5px * var(--card-scale)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
     
-    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 10px; }
-    .stat-btn { background: rgba(255,255,255,0.3); border: none; border-radius: 5px; padding: 5px 10px; font-weight: bold; display: flex; justify-content: space-between; transition: 0.2s; color: #000; text-decoration: none;}
+    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: calc(5px * var(--card-scale)); margin-top: calc(10px * var(--card-scale)); }
+    .stat-btn { background: rgba(255,255,255,0.3); border: none; border-radius: calc(5px * var(--card-scale)); padding: calc(5px * var(--card-scale)) calc(10px * var(--card-scale)); font-weight: bold; display: flex; justify-content: space-between; align-items: center; transition: 0.2s; color: #000; text-decoration: none; font-size: calc(0.9rem * var(--card-scale));}
+    .stat-val { font-size: calc(1.2rem * var(--card-scale)); }
     
     /* Efeitos de Turno */
     .minha-vez .stat-btn { cursor: pointer; }
@@ -39,9 +45,35 @@
     
     .placar-box { background: #000; border: 2px solid #d4af37; border-radius: 10px; }
     .turno-badge { font-size: 1.2rem; text-transform: uppercase; letter-spacing: 2px; }
+
+    /* =========================================================
+       MAGIA DO MOBILE: Ajustes para caber 2 cartas na mesma linha
+       ========================================================= */
+    @media (max-width: 768px) {
+        :root { 
+            --card-scale: 0.48; /* Reduz a carta pela metade */
+        }
+        .arena-trunfo {
+            padding: 15px 5px;
+            gap: 2px !important;
+            flex-wrap: nowrap !important; /* Força ficar na mesma linha */
+            justify-content: space-between !important;
+            min-height: 250px;
+        }
+        .col-carta { width: 45%; }
+        .titulo-carta { font-size: 0.85rem; margin-bottom: 10px !important; }
+        
+        .area-vs { min-width: 50px !important; padding: 0 !important; }
+        .area-vs img { width: 35px !important; margin-bottom: 5px !important; }
+        #msg-batalha { font-size: 0.65rem !important; padding: 5px !important; }
+        
+        .placar-box h4 { font-size: 1rem; }
+        .placar-box span { font-size: 1.2rem !important; margin: 0 5px !important; }
+        .turno-badge { font-size: 0.9rem; padding: 5px 15px !important; }
+    }
 </style>
 
-<!-- MODAL DE REGRAS (Aparece ao carregar a página) -->
+<!-- MODAL DE REGRAS -->
 <div class="modal fade" id="modalRegrasTrunfo" tabindex="-1" aria-labelledby="modalRegrasLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content bg-dark text-white" style="border: 3px solid #d4af37; border-radius: 15px;">
@@ -52,10 +84,10 @@
             <div class="modal-body fs-5 text-start px-4">
                 <p>Bem-vindo ao <strong>Super Trunfo Cartolândia</strong>!</p>
                 <ul class="mb-4" style="line-height: 1.8;">
-                    <li>A cada rodada, você recebe uma carta de um craque aleatório.</li>
-                    <li>Quando for a <strong>sua vez</strong>, escolha o atributo mais forte do seu jogador clicando nele.</li>
-                    <li>A carta do rival será revelada e os números serão comparados.</li>
-                    <li>Quem tiver o maior número vence a rodada e pontua!</li>
+                    <li>Cada jogador começa com <strong>5 cartas</strong>.</li>
+                    <li>Quando for a sua vez, escolha o atributo mais forte do seu jogador.</li>
+                    <li>Se você vencer, você <strong>rouba</strong> a carta do adversário!</li>
+                    <li>O jogo acaba quando alguém conquistar as 10 cartas e zerar o rival.</li>
                 </ul>
                 <p class="text-center text-warning fw-bold fs-4 mb-0"><i class="fa-solid fa-trophy"></i> Que vença o melhor!</p>
             </div>
@@ -77,9 +109,9 @@
         <!-- Tela Principal do Jogo -->
         <div id="tela-jogo" class="d-none">
             
-            <!-- Placar -->
+            <!-- Placar Atualizado -->
             <div class="placar-box p-3 mb-3 d-inline-block text-white px-5 shadow-lg">
-                <h4 class="mb-0">VOCÊ <span id="placar-meu" class="text-warning fs-2 mx-3">0</span> x <span id="placar-adv" class="text-danger fs-2 mx-3">0</span> ADVERSÁRIO</h4>
+                <h4 class="mb-0">SUAS CARTAS <span id="placar-meu" class="text-warning fs-2 mx-3">5</span> x <span id="placar-adv" class="text-danger fs-2 mx-3">5</span> RIVAL</h4>
             </div>
 
             <!-- Indicador de Turno -->
@@ -90,8 +122,8 @@
             <div class="arena-trunfo d-flex justify-content-around align-items-center flex-wrap gap-4 position-relative">
                 
                 <!-- MINHA CARTA -->
-                <div style="z-index: 2;">
-                    <h5 class="text-white fw-bold mb-3"><i class="fa-solid fa-hand-sparkles text-warning"></i> Sua Carta</h5>
+                <div style="z-index: 2;" class="col-carta">
+                    <h5 class="text-white fw-bold mb-3 titulo-carta"><i class="fa-solid fa-hand-sparkles text-warning"></i> Sua Carta</h5>
                     <div class="fut-card-container" id="container-minha-carta">
                         <div class="fut-card-inner">
                             <div class="fut-card-front" id="minha-carta-frente">
@@ -103,7 +135,7 @@
                 </div>
 
                 <!-- ÁREA CENTRAL (VS e Mensagens) -->
-                <div class="text-center" style="min-width: 200px; z-index: 1;">
+                <div class="text-center area-vs" style="min-width: 200px; z-index: 1;">
                     <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/ad/VS_icon.svg/1024px-VS_icon.svg.png" width="80" alt="VS" class="mb-3">
                     <div id="msg-batalha" class="fw-bold fs-5 text-white bg-dark p-2 rounded shadow-lg opacity-0 transition-opacity" style="opacity: 0; transition: 0.5s;">
                         Preparando embate...
@@ -111,13 +143,13 @@
                 </div>
 
                 <!-- CARTA DO ADVERSÁRIO -->
-                <div style="z-index: 2;">
-                    <h5 class="text-white fw-bold mb-3"><i class="fa-solid fa-user-ninja text-danger"></i> Adversário</h5>
+                <div style="z-index: 2;" class="col-carta">
+                    <h5 class="text-white fw-bold mb-3 titulo-carta"><i class="fa-solid fa-user-ninja text-danger"></i> Adversário</h5>
                     <!-- O contêiner já começa com a classe 'virada' para mostrar o verso -->
                     <div class="fut-card-container virada" id="container-carta-adv">
                         <div class="fut-card-inner">
                             <div class="fut-card-front" id="carta-adv-frente">
-                                <!-- Preenchido via JS, mas fica escondido nas costas do 3D -->
+                                <!-- Preenchido via JS -->
                             </div>
                             <div class="fut-card-back"></div>
                         </div>
@@ -143,9 +175,9 @@
         let botoesStats = '';
         for (const [key, label] of Object.entries(labels)) {
             let valor = carta.stats[key];
-            // Se for minha carta e minha vez, o botão chama a função de duelar
             let onclick = isMinhaVez ? `onclick="iniciarBatalha('${key}')"` : '';
-            botoesStats += `<button class="stat-btn w-100" ${onclick}><span>${label.substring(0,3)}</span> <span class="fs-5">${valor}</span></button>`;
+            // Trocamos o fs-5 pela classe customizada stat-val para escalar perfeito no mobile
+            botoesStats += `<button class="stat-btn w-100" ${onclick}><span>${label.substring(0,3)}</span> <span class="stat-val">${valor}</span></button>`;
         }
 
         return `
@@ -162,13 +194,19 @@
     }
 
     function atualizarInterface(data) {
+        // Redireciona imediatamente se a partida acabou
+        if (data.status === 'finalizado') {
+            window.location.href = "{% url 'duelos:resultado_trunfo' partida.id %}";
+            return;
+        }
+
         document.getElementById('tela-loading').classList.add('d-none');
         document.getElementById('tela-jogo').classList.remove('d-none');
 
-        // Se a partida não começou (adversário não entrou)
+        // Aguardando adversário
         if (data.status === 'aguardando') {
             document.getElementById('badge-turno').className = "badge bg-warning text-dark p-2 px-4 turno-badge shadow";
-            document.getElementById('badge-turno').innerHTML = '<i class="fa-solid fa-hourglass-half fa-spin"></i> Aguardando oponente entrar...';
+            document.getElementById('badge-turno').innerHTML = '<i class="fa-solid fa-hourglass-half fa-spin"></i> Aguardando oponente...';
             document.getElementById('container-minha-carta').classList.add('bloqueado');
             return;
         }
@@ -177,16 +215,14 @@
         document.getElementById('placar-meu').innerText = data.pontos_meus;
         document.getElementById('placar-adv').innerText = data.pontos_adv;
 
-        // Se a rodada mudou (cartas novas foram sacadas)
+        // Se a rodada mudou
         if (data.rodada !== rodadaAtual) {
             rodadaAtual = data.rodada;
             dadosCartaAdv = data.carta_adv_info;
 
-            // Esconde a carta do adversário (Gira de volta pro verso)
             document.getElementById('container-carta-adv').classList.add('virada');
             document.getElementById('msg-batalha').style.opacity = "0";
 
-            // Renderiza as novas cartas
             document.getElementById('minha-carta-frente').innerHTML = montarHtmlCarta(data.minha_carta, data.minha_vez);
             document.getElementById('carta-adv-frente').innerHTML = montarHtmlCarta(data.carta_adv_info, false);
         }
@@ -211,12 +247,10 @@
 
     function iniciarBatalha(atributoKey) {
         if (!minhaVez || animandoBatalha) return;
-        animandoBatalha = true; // Trava o jogo para fazer a animação
+        animandoBatalha = true; 
 
-        // 1. Revela a carta do adversário visualmente (Efeito 3D)
         document.getElementById('container-carta-adv').classList.remove('virada');
 
-        // 2. Manda a jogada pro Backend
         fetch("{% url 'duelos:batalhar_trunfo_api' partida.id %}", {
             method: 'POST',
             headers: {
@@ -228,7 +262,6 @@
         .then(res => res.json())
         .then(respostaData => {
             if (respostaData.sucesso) {
-                // 3. Mostra o resultado da rodada na tela
                 let msgDiv = document.getElementById('msg-batalha');
                 let valMeu = respostaData.valor_j1;
                 let valAdv = respostaData.valor_j2;
@@ -236,41 +269,32 @@
                 msgDiv.style.opacity = "1";
                 
                 if (valMeu > valAdv) {
-                    msgDiv.innerHTML = `<span class="text-success"><i class="fa-solid fa-check"></i> VENCEU!</span><br><small>${labels[atributoKey]}: ${valMeu} x ${valAdv}</small>`;
+                    msgDiv.innerHTML = `<span class="text-success"><i class="fa-solid fa-check"></i> ROUBOU A CARTA!</span><br><small>${labels[atributoKey]}: ${valMeu} x ${valAdv}</small>`;
                 } else if (valAdv > valMeu) {
-                    msgDiv.innerHTML = `<span class="text-danger"><i class="fa-solid fa-xmark"></i> PERDEU!</span><br><small>${labels[atributoKey]}: ${valMeu} x ${valAdv}</small>`;
+                    msgDiv.innerHTML = `<span class="text-danger"><i class="fa-solid fa-xmark"></i> PERDEU A CARTA!</span><br><small>${labels[atributoKey]}: ${valMeu} x ${valAdv}</small>`;
                 } else {
                     msgDiv.innerHTML = `<span class="text-warning"><i class="fa-solid fa-equals"></i> EMPATE!</span><br><small>${labels[atributoKey]}: ${valMeu} x ${valAdv}</small>`;
                 }
 
-                // 4. Espera 4 segundos para a galera ver a carta revelada, e então libera o Ajax pra puxar a próxima rodada
                 setTimeout(() => {
                     animandoBatalha = false;
-                    checarStatus(true); // Força uma checagem imediata
+                    checarStatus(true); 
                 }, 4000);
             }
         });
     }
 
-    // O "Olheiro" do Ajax (Polling)
     function checarStatus(forcar = false) {
-        // Se estiver rolando animação de batalha, não atualiza a tela para não cortar o suspense
         if (animandoBatalha && !forcar) return;
-
         fetch("{% url 'duelos:status_trunfo_api' partida.id %}")
         .then(res => res.json())
-        .then(data => {
-            atualizarInterface(data);
-        });
+        .then(data => atualizarInterface(data));
     }
 
-    // Inicia o jogo rodando a checagem a cada 2 segundos e abre as regras
     window.onload = () => {
-        // Dispara o pop-up de regras usando o Bootstrap
         var regrasModal = new bootstrap.Modal(document.getElementById('modalRegrasTrunfo'));
         regrasModal.show();
 
-        // Inicia a comunicação com o servidor
         checarStatus();
         setInterval(checarStatus, 2000);
     };

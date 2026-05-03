@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block title %}Fim de Jogo - Super Trunfo{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-6 text-center">
+        <div class="card p-5 shadow border-0 rounded-4 {% if eh_campeao %}border-success bg-success text-white{% else %}border-danger bg-danger text-white{% endif %}" style="border-width: 5px !important;">
+            
+            {% if eh_campeao %}
+                <i class="fa-solid fa-trophy mb-3 text-warning" style="font-size: 5rem;"></i>
+                <h1 class="fw-bold text-warning">VITÓRIA!</h1>
+                <p class="fs-4">Você roubou todas as cartas e aniquilou seu adversário!</p>
+            {% else %}
+                <i class="fa-solid fa-skull-crossbones mb-3" style="font-size: 5rem;"></i>
+                <h1 class="fw-bold">DERROTA...</h1>
+                <p class="fs-4">Você ficou sem cartas. O {{ campeao.username }} passou o trator!</p>
+            {% endif %}
+
+            <hr class="my-4 text-white opacity-50">
+            
+            <a href="{% url 'duelos:listar_desafios' %}" class="btn btn-light btn-lg fw-bold rounded-pill text-dark px-5">
+                <i class="fa-solid fa-rotate-left"></i> Voltar para a Arena
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

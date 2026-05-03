@@ -920,7 +920,11 @@ def entrar_trunfo(request, partida_id):
         partida.convidado = request.user
         partida.status = 'andamento'
         
-        # Sorteia as duas primeiras cartas do banco de dados
+        # MODO ROUBA MONTE: Cada um começa com 5 cartas!
+        partida.pontos_criador = 5
+        partida.pontos_convidado = 5
+        
+        # Sorteia as duas primeiras cartas
         cartas = list(CartaTrunfo.objects.all())
         if len(cartas) >= 2:
             sorteadas = random.sample(cartas, 2)
@@ -981,7 +985,7 @@ def status_trunfo_api(request, partida_id):
 
 @login_required
 def batalhar_trunfo_api(request, partida_id):
-    """A mágica do combate! Compara os atributos e define quem vence a rodada."""
+    """A mágica do combate e do ROUBA MONTE!"""
     if request.method == 'POST':
         partida = get_object_or_404(PartidaTrunfo, id=partida_id)
         
@@ -989,26 +993,27 @@ def batalhar_trunfo_api(request, partida_id):
             return JsonResponse({'erro': 'Não é a sua vez!'})
             
         data = json.loads(request.body)
-        atributo = data.get('atributo') # ex: 'rit', 'fin', 'pas'
+        atributo = data.get('atributo') 
         
-        # Mapeia o nome do atributo JSON para o campo real do Model
         mapa_atributos = {
             'rit': 'ritmo', 'fin': 'finalizacao', 'pas': 'passe',
             'dri': 'drible', 'def': 'defesa', 'fis': 'fisico'
         }
-        
         campo_real = mapa_atributos.get(atributo)
         
-        # Pega o valor na carta do criador e do convidado
         valor_criador = getattr(partida.carta_criador, campo_real)
         valor_convidado = getattr(partida.carta_convidado, campo_real)
         
         vencedor_rodada = None
+        
+        # LÓGICA DO ROUBO DE CARTAS
         if valor_criador > valor_convidado:
             partida.pontos_criador += 1
+            partida.pontos_convidado -= 1
             vencedor_rodada = partida.criador
         elif valor_convidado > valor_criador:
             partida.pontos_convidado += 1
+            partida.pontos_criador -= 1
             vencedor_rodada = partida.convidado
             
         # Passa o turno para o perdedor da rodada (ou mantém se empatou)
@@ -1017,18 +1022,44 @@ def batalhar_trunfo_api(request, partida_id):
             
         partida.rodada_atual += 1
         
-        # Sorteia novas cartas para a próxima rodada
-        cartas = list(CartaTrunfo.objects.all())
-        if len(cartas) >= 2:
-            sorteadas = random.sample(cartas, 2)
-            partida.carta_criador = sorteadas[0]
-            partida.carta_convidado = sorteadas[1]
+        # VERIFICA SE ALGUÉM ZEROU AS CARTAS (FIM DE JOGO)
+        if partida.pontos_criador <= 0 or partida.pontos_convidado <= 0:
+            partida.status = 'finalizado'
+        else:
+            # Só sorteia novas cartas se o jogo for continuar
+            cartas = list(CartaTrunfo.objects.all())
+            if len(cartas) >= 2:
+                sorteadas = random.sample(cartas, 2)
+                partida.carta_criador = sorteadas[0]
+                partida.carta_convidado = sorteadas[1]
             
         partida.save()
         
         return JsonResponse({
             'sucesso': True,
             'vencedor_id': vencedor_rodada.id if vencedor_rodada else None,
-            'valor_j1': getattr(partida.carta_criador, campo_real), # Manda o valor do novo pra evitar bug
-            'valor_j2': getattr(partida.carta_convidado, campo_real)
+            'valor_j1': valor_criador,
+            'valor_j2': valor_convidado
         })
+
+
+@login_required
+def resultado_trunfo(request, partida_id):
+    """Vestiário final: Exibe quem ganhou o duelo."""
+    partida = get_object_or_404(PartidaTrunfo, id=partida_id)
+    
+    # Descobre quem é o dono das 10 cartas
+    if partida.pontos_criador == 0:
+        campeao = partida.convidado
+    elif partida.pontos_convidado == 0:
+        campeao = partida.criador
+    else:
+        campeao = None # Caso de erro ou empate forçado
+        
+    eh_campeao = request.user == campeao
+        
+    return render(request, 'duelos/resultado_trunfo.html', {
+        'partida': partida,
+        'campeao': campeao,
+        'eh_campeao': eh_campeao
+    })

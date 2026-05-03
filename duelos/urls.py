@@ -42,4 +42,5 @@ urlpatterns = [
     path('trunfo/jogar/<int:partida_id>/', views.tela_jogo_trunfo, name='tela_jogo_trunfo'),
     path('api/trunfo/status/<int:partida_id>/', views.status_trunfo_api, name='status_trunfo_api'),
     path('api/trunfo/batalhar/<int:partida_id>/', views.batalhar_trunfo_api, name='batalhar_trunfo_api'),
+    path('trunfo/resultado/<int:partida_id>/', views.resultado_trunfo, name='resultado_trunfo'), # <-- ADICIONE ESTA LINHA
 ]

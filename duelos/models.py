@@ -233,3 +233,41 @@ class JogadorMiniFanaticos(models.Model):
         return f"{self.jogador.username} - Dupla {self.dupla}"
     
 
+class CartaTrunfo(models.Model):
+    nome = models.CharField(max_length=100)
+    posicao = models.CharField(max_length=5, help_text="Ex: ATA, MEI, ZAG, GOL")
+    overall = models.IntegerField(default=50, help_text="Nota geral da carta")
+    
+    # Imagem do jogador com fundo transparente de preferência
+    foto = models.ImageField(upload_to='cartas/', null=True, blank=True)
+    clube = models.ForeignKey(ClubeFutebol, on_delete=models.CASCADE)
+    
+    # Atributos do Super Trunfo (0 a 100)
+    ritmo = models.IntegerField(default=50)
+    finalizacao = models.IntegerField(default=50)
+    passe = models.IntegerField(default=50)
+    drible = models.IntegerField(default=50)
+    defesa = models.IntegerField(default=50)
+    fisico = models.IntegerField(default=50)
+
+    def __str__(self):
+        return f"{self.nome} ({self.overall})"
+
+
+class PartidaTrunfo(models.Model):
+    criador = models.ForeignKey(User, related_name='trunfos_criados', on_delete=models.CASCADE)
+    convidado = models.ForeignKey(User, related_name='trunfos_convidados', null=True, blank=True, on_delete=models.CASCADE)
+    
+    status = models.CharField(max_length=20, default='aguardando') # aguardando, andamento, finalizado
+    turno_de = models.ForeignKey(User, related_name='trunfos_turnos', null=True, blank=True, on_delete=models.CASCADE)
+    
+    pontos_criador = models.IntegerField(default=0)
+    pontos_convidado = models.IntegerField(default=0)
+    rodada_atual = models.IntegerField(default=1)
+    
+    # Cartas atuais na mão dos jogadores
+    carta_criador = models.ForeignKey(CartaTrunfo, related_name='+', null=True, blank=True, on_delete=models.SET_NULL)
+    carta_convidado = models.ForeignKey(CartaTrunfo, related_name='+', null=True, blank=True, on_delete=models.SET_NULL)
+
+    def __str__(self):
+        return f"Trunfo: {self.criador.username} x {self.convidado.username if self.convidado else 'Aguardando'}"

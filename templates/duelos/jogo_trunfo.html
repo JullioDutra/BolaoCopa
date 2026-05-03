@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+
+{% block title %}Super Trunfo - Cartolândia{% endblock %}
+
+{% block content %}
+<style>
+    /* Estilos da Carta Estilo FIFA */
+    .arena-trunfo { background-color: #1a1a1a; border-radius: 20px; padding: 30px; box-shadow: inset 0 0 50px rgba(0,0,0,0.8); }
+    
+    .fut-card {
+        width: 260px; height: 380px;
+        background: linear-gradient(135deg, #d4af37, #aa7c11, #f9e596, #aa7c11);
+        border-radius: 15px; padding: 15px;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+        position: relative; color: #333;
+        transition: transform 0.6s;
+        transform-style: preserve-3d;
+    }
+    
+    /* Efeito de Carta Virada (Oculta) */
+    .fut-card.oculta { background: repeating-linear-gradient(45deg, #111, #111 10px, #222 10px, #222 20px); border: 2px solid #d4af37; }
+    .fut-card.oculta * { display: none; }
+    .fut-card.oculta::after {
+        content: "CARTOLÂNDIA"; color: #d4af37; font-size: 1.5rem; font-weight: bold;
+        position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); display: block;
+    }
+
+    .card-top-left { position: absolute; top: 15px; left: 15px; text-align: center; font-weight: bold; }
+    .card-overall { font-size: 2.2rem; line-height: 1; }
+    .card-pos { font-size: 1rem; border-bottom: 2px solid #333; padding-bottom: 2px; }
+    
+    .jogador-img { width: 160px; height: 160px; object-fit: cover; border-radius: 50%; margin: 0 auto; display: block; border: 3px solid #fff; background: rgba(255,255,255,0.2); }
+    .jogador-nome { text-align: center; font-size: 1.4rem; font-weight: 900; text-transform: uppercase; margin-top: 10px; border-bottom: 2px solid rgba(0,0,0,0.2); padding-bottom: 5px; }
+    
+    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 10px; }
+    .stat-btn {
+        background: rgba(255,255,255,0.3); border: none; border-radius: 5px; padding: 5px 10px;
+        font-weight: bold; display: flex; justify-content: space-between; cursor: pointer; transition: 0.2s;
+    }
+    .stat-btn:hover { background: rgba(0,0,0,0.8); color: #d4af37; }
+    
+    .placar-box { background: #000; border: 2px solid #d4af37; border-radius: 10px; }
+</style>
+
+<div class="row justify-content-center mt-4">
+    <div class="col-md-10 text-center">
+        <h2 class="fw-bold text-dark mb-4"><i class="fa-solid fa-bolt text-warning"></i> Batalha de Atributos</h2>
+        
+        <!-- Placar -->
+        <div class="placar-box p-3 mb-4 d-inline-block text-white px-5 shadow-lg">
+            <h4 class="mb-0">VOCÊ <span id="placar-j1" class="text-warning fs-2 mx-3">0</span> x <span id="placar-j2" class="text-danger fs-2 mx-3">0</span> ADVERSÁRIO</h4>
+        </div>
+
+        <div class="arena-trunfo d-flex justify-content-around align-items-center flex-wrap gap-4">
+            
+            <!-- CARTA DO JOGADOR -->
+            <div>
+                <h5 class="text-white mb-3">Sua Carta</h5>
+                <div id="minha-carta" class="fut-card">
+                    <!-- Preenchido via JS -->
+                </div>
+            </div>
+
+            <!-- VS BADGE -->
+            <div class="vs-badge">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/ad/VS_icon.svg/1024px-VS_icon.svg.png" width="80" alt="VS">
+                <p id="msg-duelo" class="text-warning fw-bold mt-3 bg-dark px-3 py-1 rounded">Escolha um atributo!</p>
+            </div>
+
+            <!-- CARTA DO ADVERSÁRIO -->
+            <div>
+                <h5 class="text-white mb-3">Adversário</h5>
+                <div id="carta-adversario" class="fut-card oculta">
+                    <!-- Preenchido via JS, inicia oculta -->
+                </div>
+            </div>
+
+        </div>
+
+        <button id="btn-proxima" class="btn btn-warning btn-lg fw-bold rounded-pill mt-4 px-5 d-none" onclick="novaRodada()">Próxima Rodada <i class="fa-solid fa-arrow-right"></i></button>
+    </div>
+</div>
+
+<script>
+    // DADOS MOCKADOS PARA VOCÊ TESTAR O VISUAL AGORA MESMO
+    const baralho = [
+        { nome: "Pelé", pos: "ATA", ovr: 99, img: "https://i.pravatar.cc/150?u=pele", stats: { rit: 95, fin: 98, pas: 90, dri: 95, def: 40, fis: 80 } },
+        { nome: "Maldini", pos: "ZAG", ovr: 94, img: "https://i.pravatar.cc/150?u=mald", stats: { rit: 80, fin: 40, pas: 75, dri: 65, def: 98, fis: 85 } },
+        { nome: "Zidane", pos: "MEI", ovr: 96, img: "https://i.pravatar.cc/150?u=zizou", stats: { rit: 75, fin: 85, pas: 98, dri: 95, def: 60, fis: 85 } },
+        { nome: "R. Carlos", pos: "LAT", ovr: 91, img: "https://i.pravatar.cc/150?u=rc3", stats: { rit: 92, fin: 85, pas: 80, dri: 82, def: 85, fis: 90 } }
+    ];
+
+    let cartaAtualJ1 = null;
+    let cartaAtualJ2 = null;
+    let placar = { j1: 0, j2: 0 };
+    let atributoSelecionado = null;
+
+    function renderizarCarta(carta, containerId, isAdversario = false) {
+        const container = document.getElementById(containerId);
+        
+        let botoesStats = '';
+        const labels = { rit: 'RIT', fin: 'FIN', pas: 'PAS', dri: 'DRI', def: 'DEF', fis: 'FÍS' };
+        
+        for (const [key, value] of Object.entries(carta.stats)) {
+            // Se for a carta do jogador, ele pode clicar. Se for do adversário, é só visual.
+            const clickEvent = isAdversario ? '' : `onclick="duelar('${key}', '${labels[key]}')"`;
+            botoesStats += `<button class="stat-btn" ${clickEvent}><span>${labels[key]}</span> <span>${value}</span></button>`;
+        }
+
+        container.innerHTML = `
+            <div class="card-top-left">
+                <div class="card-overall">${carta.ovr}</div>
+                <div class="card-pos">${carta.pos}</div>
+            </div>
+            <img src="${carta.img}" class="jogador-img mt-3">
+            <div class="jogador-nome">${carta.nome}</div>
+            <div class="stats-grid">
+                ${botoesStats}
+            </div>
+        `;
+    }
+
+    function novaRodada() {
+        document.getElementById('carta-adversario').classList.add('oculta');
+        document.getElementById('btn-proxima').classList.add('d-none');
+        document.getElementById('msg-duelo').innerText = "Escolha um atributo!";
+        document.getElementById('msg-duelo').className = "text-warning fw-bold mt-3 bg-dark px-3 py-1 rounded";
+
+        // Sorteia duas cartas aleatórias do banco de testes
+        cartaAtualJ1 = baralho[Math.floor(Math.random() * baralho.length)];
+        cartaAtualJ2 = baralho[Math.floor(Math.random() * baralho.length)];
+
+        renderizarCarta(cartaAtualJ1, 'minha-carta', false);
+        renderizarCarta(cartaAtualJ2, 'carta-adversario', true);
+    }
+
+    function duelar(atributoKey, label) {
+        atributoSelecionado = atributoKey;
+        
+        // Revela a carta do adversário tirando a classe 'oculta'
+        const cartaAdvDiv = document.getElementById('carta-adversario');
+        cartaAdvDiv.classList.remove('oculta');
+
+        const valorJ1 = cartaAtualJ1.stats[atributoKey];
+        const valorJ2 = cartaAtualJ2.stats[atributoKey];
+        const msgDiv = document.getElementById('msg-duelo');
+
+        if (valorJ1 > valorJ2) {
+            placar.j1++;
+            msgDiv.innerText = `Você VENCEU no ${label}! (${valorJ1} x ${valorJ2})`;
+            msgDiv.className = "text-success fw-bold mt-3 bg-dark px-3 py-1 rounded";
+        } else if (valorJ2 > valorJ1) {
+            placar.j2++;
+            msgDiv.innerText = `Você PERDEU no ${label}! (${valorJ1} x ${valorJ2})`;
+            msgDiv.className = "text-danger fw-bold mt-3 bg-dark px-3 py-1 rounded";
+        } else {
+            msgDiv.innerText = `EMPATE no ${label}! (${valorJ1} x ${valorJ2})`;
+            msgDiv.className = "text-warning fw-bold mt-3 bg-dark px-3 py-1 rounded";
+        }
+
+        document.getElementById('placar-j1').innerText = placar.j1;
+        document.getElementById('placar-j2').innerText = placar.j2;
+        
+        // Exibe o botão de próxima rodada
+        document.getElementById('btn-proxima').classList.remove('d-none');
+        
+        // Desativa cliques na carta atual para não bugar
+        document.querySelectorAll('#minha-carta .stat-btn').forEach(btn => {
+            btn.onclick = null;
+            btn.style.cursor = 'default';
+        });
+    }
+
+    // Inicia a primeira rodada
+    window.onload = novaRodada;
+</script>
+{% endblock %}

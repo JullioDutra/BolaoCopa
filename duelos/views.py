@@ -19,7 +19,9 @@ from .models import (
     ClubeFutebol, 
     PerguntaClube, 
     PartidaMiniFanaticos, 
-    JogadorMiniFanaticos
+    JogadorMiniFanaticos,
+    CartaTrunfo,
+    PartidaTrunfo
 
 )
 
@@ -891,3 +893,142 @@ def resultado_mini(request, partida_id):
         'motivo': motivo,
     }
     return render(request, 'duelos/resultado_mini.html', context)
+
+
+# ==========================================
+# VIEWS DO SUPER TRUNFO
+# ==========================================
+@login_required
+def criar_trunfo(request):
+    """Cria a mesa de Trunfo e define que o criador começa jogando."""
+    partida = PartidaTrunfo.objects.create(
+        criador=request.user,
+        turno_de=request.user, # O dono da bola começa
+        status='aguardando'
+    )
+    return redirect('duelos:lobby_trunfo', partida_id=partida.id)
+
+@login_required
+def entrar_trunfo(request, partida_id):
+    """O convidado entra na mesa através do link."""
+    partida = get_object_or_404(PartidaTrunfo, id=partida_id)
+    
+    if request.user == partida.criador:
+        return redirect('duelos:lobby_trunfo', partida_id=partida.id)
+        
+    if partida.status == 'aguardando' and not partida.convidado:
+        partida.convidado = request.user
+        partida.status = 'andamento'
+        
+        # Sorteia as duas primeiras cartas do banco de dados
+        cartas = list(CartaTrunfo.objects.all())
+        if len(cartas) >= 2:
+            sorteadas = random.sample(cartas, 2)
+            partida.carta_criador = sorteadas[0]
+            partida.carta_convidado = sorteadas[1]
+            
+        partida.save()
+        return redirect('duelos:tela_jogo_trunfo', partida_id=partida.id)
+        
+    return redirect('dashboard')
+
+@login_required
+def lobby_trunfo(request, partida_id):
+    partida = get_object_or_404(PartidaTrunfo, id=partida_id)
+    link_convite = request.build_absolute_uri(reverse('duelos:entrar_trunfo', args=[partida.id]))
+    
+    return render(request, 'duelos/lobby.html', {
+        'partida': partida,
+        'link_convite': link_convite,
+        'eh_trunfo': True # Para podermos mudar o texto no HTML do lobby se quisermos
+    })
+
+@login_required
+def tela_jogo_trunfo(request, partida_id):
+    partida = get_object_or_404(PartidaTrunfo, id=partida_id)
+    return render(request, 'duelos/jogo_trunfo.html', {'partida': partida})
+
+@login_required
+def status_trunfo_api(request, partida_id):
+    """O Frontend fica chamando essa API para atualizar a tela."""
+    partida = get_object_or_404(PartidaTrunfo, id=partida_id)
+    
+    # Identifica quem está pedindo o status para mandar a carta certa
+    minha_carta = partida.carta_criador if request.user == partida.criador else partida.carta_convidado
+    carta_adv = partida.carta_convidado if request.user == partida.criador else partida.carta_criador
+
+    # Formata a carta para o JSON
+    def formatar_carta(c):
+        if not c: return None
+        return {
+            'nome': c.nome, 'pos': c.posicao, 'ovr': c.overall,
+            'img': c.foto.url if c.foto else 'https://i.pravatar.cc/150', # Foto genérica se estiver sem
+            'stats': {
+                'rit': c.ritmo, 'fin': c.finalizacao, 'pas': c.passe, 
+                'dri': c.drible, 'def': c.defesa, 'fis': c.fisico
+            }
+        }
+
+    return JsonResponse({
+        'status': partida.status,
+        'rodada': partida.rodada_atual,
+        'minha_vez': partida.turno_de == request.user,
+        'pontos_meus': partida.pontos_criador if request.user == partida.criador else partida.pontos_convidado,
+        'pontos_adv': partida.pontos_convidado if request.user == partida.criador else partida.pontos_criador,
+        'minha_carta': formatar_carta(minha_carta),
+        'carta_adv_info': formatar_carta(carta_adv) # Enviamos oculta pro JS só revelar na hora H
+    })
+
+@login_required
+def batalhar_trunfo_api(request, partida_id):
+    """A mágica do combate! Compara os atributos e define quem vence a rodada."""
+    if request.method == 'POST':
+        partida = get_object_or_404(PartidaTrunfo, id=partida_id)
+        
+        if partida.turno_de != request.user:
+            return JsonResponse({'erro': 'Não é a sua vez!'})
+            
+        data = json.loads(request.body)
+        atributo = data.get('atributo') # ex: 'rit', 'fin', 'pas'
+        
+        # Mapeia o nome do atributo JSON para o campo real do Model
+        mapa_atributos = {
+            'rit': 'ritmo', 'fin': 'finalizacao', 'pas': 'passe',
+            'dri': 'drible', 'def': 'defesa', 'fis': 'fisico'
+        }
+        
+        campo_real = mapa_atributos.get(atributo)
+        
+        # Pega o valor na carta do criador e do convidado
+        valor_criador = getattr(partida.carta_criador, campo_real)
+        valor_convidado = getattr(partida.carta_convidado, campo_real)
+        
+        vencedor_rodada = None
+        if valor_criador > valor_convidado:
+            partida.pontos_criador += 1
+            vencedor_rodada = partida.criador
+        elif valor_convidado > valor_criador:
+            partida.pontos_convidado += 1
+            vencedor_rodada = partida.convidado
+            
+        # Passa o turno para o perdedor da rodada (ou mantém se empatou)
+        if vencedor_rodada and vencedor_rodada != partida.turno_de:
+            partida.turno_de = vencedor_rodada
+            
+        partida.rodada_atual += 1
+        
+        # Sorteia novas cartas para a próxima rodada
+        cartas = list(CartaTrunfo.objects.all())
+        if len(cartas) >= 2:
+            sorteadas = random.sample(cartas, 2)
+            partida.carta_criador = sorteadas[0]
+            partida.carta_convidado = sorteadas[1]
+            
+        partida.save()
+        
+        return JsonResponse({
+            'sucesso': True,
+            'vencedor_id': vencedor_rodada.id if vencedor_rodada else None,
+            'valor_j1': getattr(partida.carta_criador, campo_real), # Manda o valor do novo pra evitar bug
+            'valor_j2': getattr(partida.carta_convidado, campo_real)
+        })

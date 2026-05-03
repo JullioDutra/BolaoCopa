@@ -36,4 +36,10 @@ urlpatterns = [
     path('mini/jogar/<int:partida_id>/', views.tela_jogo_mini, name='tela_jogo_mini'),
     path('api/mini/submeter/<int:partida_id>/', views.submeter_respostas_mini, name='submeter_respostas_mini'),
     path('mini/resultado/<int:partida_id>/', views.resultado_mini, name='resultado_mini'),
+    path('trunfo/criar/', views.criar_trunfo, name='criar_trunfo'),
+    path('trunfo/entrar/<int:partida_id>/', views.entrar_trunfo, name='entrar_trunfo'),
+    path('trunfo/lobby/<int:partida_id>/', views.lobby_trunfo, name='lobby_trunfo'),
+    path('trunfo/jogar/<int:partida_id>/', views.tela_jogo_trunfo, name='tela_jogo_trunfo'),
+    path('api/trunfo/status/<int:partida_id>/', views.status_trunfo_api, name='status_trunfo_api'),
+    path('api/trunfo/batalhar/<int:partida_id>/', views.batalhar_trunfo_api, name='batalhar_trunfo_api'),
 ]

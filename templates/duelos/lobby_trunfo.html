@@ -5,25 +5,29 @@
 {% block content %}
 <div class="row justify-content-center mt-5">
     <div class="col-md-6 text-center">
-        <div class="card p-5 shadow border-0 border-top border-5 border-warning rounded-4 bg-dark text-white">
-            <i class="fa-solid fa-bolt text-warning mb-3" style="font-size: 4rem;"></i>
-            <h2 class="fw-bold text-warning">Mesa Aberta!</h2>
-            <p class="fs-5 text-light">Aguardando seu adversário puxar a cadeira...</p>
+        <!-- Usando o padrão 'card-clean' com borda superior da cor do jogo -->
+        <div class="card card-clean p-5 shadow border-0 border-top border-5 border-warning rounded-4">
+            
+            <div class="mb-4">
+                <div class="spinner-border text-warning" role="status" style="width: 4rem; height: 4rem;"></div>
+            </div>
+            
+            <h2 class="fw-bold text-dark mb-3">Mesa Aberta!</h2>
+            <p class="text-muted fs-5 mb-4">Aguardando seu adversário puxar a cadeira...</p>
 
-            <div class="bg-secondary p-3 rounded-3 mb-4 mt-3">
-                <p class="small mb-2 text-uppercase fw-bold text-warning">Envie este link para o desafiante:</p>
-                <div class="input-group">
-                    <input type="text" class="form-control form-control-lg text-center fw-bold bg-light" id="link-convite" value="{{ link_convite }}" readonly>
-                    <button class="btn btn-warning fw-bold px-4" onclick="copiarLink()">
+            <div class="bg-light p-4 rounded-4 mb-4 border border-secondary" style="border-style: dashed !important;">
+                <p class="small mb-2 text-uppercase fw-bold text-muted">Envie este link para o desafiante:</p>
+                <div class="input-group input-group-lg shadow-sm">
+                    <input type="text" class="form-control text-center fw-bold bg-white" id="link-convite" value="{{ link_convite }}" readonly>
+                    <button class="btn btn-warning fw-bold px-4 shadow-sm text-dark" onclick="copiarLink()">
                         <i class="fa-solid fa-copy"></i> Copiar
                     </button>
                 </div>
             </div>
 
-            <div class="mt-2">
-                <div class="spinner-border text-warning" role="status" style="width: 3rem; height: 3rem;"></div>
-                <h5 class="mt-3 fw-bold">Aquecendo o baralho...</h5>
-            </div>
+            <p class="small text-muted fst-italic mb-0">
+                <i class="fa-solid fa-circle-info"></i> O embate começará automaticamente assim que ele acessar o link.
+            </p>
         </div>
     </div>
 </div>
@@ -32,12 +36,11 @@
     function copiarLink() {
         var linkInput = document.getElementById("link-convite");
         navigator.clipboard.writeText(linkInput.value).then(function() {
-            alert("Link copiado! Cole no WhatsApp do seu rival.");
+            alert("Link copiado! Mande pro seu rival e prepare as cartas.");
         }, function() {
-            // Fallback caso o navegador bloqueie
             linkInput.select();
             document.execCommand("copy");
-            alert("Link copiado! Cole no WhatsApp do seu rival.");
+            alert("Link copiado! Mande pro seu rival e prepare as cartas.");
         });
     }
 

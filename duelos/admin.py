@@ -11,7 +11,10 @@ from .models import (
     ClubeFutebol, 
     PerguntaClube, 
     PartidaMiniFanaticos, 
-    JogadorMiniFanaticos
+    JogadorMiniFanaticos,
+    CartaTrunfo, 
+    PartidaTrunfo
+    
 
 )
 
@@ -108,3 +111,31 @@ class JogadorMiniFanaticosAdmin(admin.ModelAdmin):
     list_display = ('jogador', 'partida', 'dupla', 'pontos', 'tempo_gasto_segundos', 'finalizou')
     list_filter = ('dupla', 'finalizou')
     search_fields = ('jogador__username', 'jogador__first_name')
+
+
+# ==========================================
+# ADMIN DO SUPER TRUNFO
+# ==========================================
+
+@admin.register(CartaTrunfo)
+class CartaTrunfoAdmin(admin.ModelAdmin):
+    # Mostra essas colunas na listagem
+    list_display = ('nome', 'clube', 'posicao', 'overall', 'tem_foto')
+    
+    # Filtros laterais para facilitar a busca
+    list_filter = ('posicao', 'clube')
+    
+    # Barra de pesquisa
+    search_fields = ('nome', 'clube__nome')
+
+    # Função customizada para mostrar um ícone verde/vermelho se tem foto
+    def tem_foto(self, obj):
+        return bool(obj.foto)
+    
+    tem_foto.boolean = True  # Transforma o True/False em ícone bonitinho
+    tem_foto.short_description = 'Tem Imagem?'
+
+@admin.register(PartidaTrunfo)
+class PartidaTrunfoAdmin(admin.ModelAdmin):
+    list_display = ('id', 'criador', 'convidado', 'status', 'rodada_atual')
+    list_filter = ('status',)

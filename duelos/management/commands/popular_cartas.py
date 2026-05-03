@@ -12,26 +12,32 @@ class Command(BaseCommand):
         # Se não tiver uma boa imagem PNG em link agora, deixe "img_url": ""
         
         jogadores = [
-            # FLAMENGO
-            {"nome": "Zico", "clube": "Flamengo", "pos": "MEI", "ovr": 96, "rit": 82, "fin": 94, "pas": 96, "dri": 93, "def": 45, "fis": 75, "img_url": ""},
-            {"nome": "Gabigol", "clube": "Flamengo", "pos": "ATA", "ovr": 85, "rit": 84, "fin": 88, "pas": 75, "dri": 80, "def": 35, "fis": 82, "img_url": ""},
-            
-            # SANTOS
-            {"nome": "Pelé", "clube": "Santos", "pos": "ATA", "ovr": 99, "rit": 95, "fin": 98, "pas": 93, "dri": 96, "def": 50, "fis": 85, "img_url": ""},
-            {"nome": "Neymar", "clube": "Santos", "pos": "ATA", "ovr": 92, "rit": 94, "fin": 87, "pas": 88, "dri": 96, "def": 30, "fis": 65, "img_url": ""},
-            
-            # SÃO PAULO
-            {"nome": "Rogério Ceni", "clube": "São Paulo", "pos": "GOL", "ovr": 89, "rit": 40, "fin": 85, "pas": 90, "dri": 50, "def": 92, "fis": 80, "img_url": ""},
-            
-            # PALMEIRAS
-            {"nome": "Marcos", "clube": "Palmeiras", "pos": "GOL", "ovr": 88, "rit": 45, "fin": 20, "pas": 60, "dri": 40, "def": 90, "fis": 85, "img_url": ""},
-            
-            # CORINTHIANS
-            {"nome": "Sócrates", "clube": "Corinthians", "pos": "MEI", "ovr": 91, "rit": 75, "fin": 85, "pas": 94, "dri": 88, "def": 60, "fis": 80, "img_url": ""},
-            
-            # VASCO
-            {"nome": "Romário", "clube": "Vasco da Gama", "pos": "ATA", "ovr": 94, "rit": 88, "fin": 98, "pas": 78, "dri": 92, "def": 25, "fis": 70, "img_url": ""},
-        ]
+                    # LENDAS INTERNACIONAIS
+                    {"nome": "Messi", "clube": "Barcelona", "pos": "ATA", "ovr": 98, "rit": 85, "fin": 97, "pas": 98, "dri": 99, "def": 30, "fis": 65, "img_url": ""},
+                    {"nome": "Cristiano Ronaldo", "clube": "Real Madrid", "pos": "ATA", "ovr": 98, "rit": 89, "fin": 99, "pas": 82, "dri": 88, "def": 35, "fis": 85, "img_url": ""},
+                    {"nome": "Ronaldinho", "clube": "Barcelona", "pos": "MEI", "ovr": 94, "rit": 90, "fin": 88, "pas": 92, "dri": 98, "def": 30, "fis": 70, "img_url": ""},
+                    {"nome": "Ronaldo Fenômeno", "clube": "Real Madrid", "pos": "ATA", "ovr": 96, "rit": 94, "fin": 98, "pas": 80, "dri": 95, "def": 30, "fis": 80, "img_url": ""},
+                    {"nome": "Kaká", "clube": "Milan", "pos": "MEI", "ovr": 92, "rit": 92, "fin": 86, "pas": 88, "dri": 90, "def": 40, "fis": 75, "img_url": ""},
+                    {"nome": "Maldini", "clube": "Milan", "pos": "ZAG", "ovr": 94, "rit": 80, "fin": 40, "pas": 75, "dri": 65, "def": 98, "fis": 85, "img_url": ""},
+                    {"nome": "Roberto Carlos", "clube": "Real Madrid", "pos": "LAT", "ovr": 91, "rit": 92, "fin": 85, "pas": 80, "dri": 82, "def": 85, "fis": 90, "img_url": ""},
+                    {"nome": "Zidane", "clube": "Real Madrid", "pos": "MEI", "ovr": 96, "rit": 75, "fin": 85, "pas": 98, "dri": 95, "def": 60, "fis": 85, "img_url": ""},
+                    
+                    # CRAQUES ATUAIS
+                    {"nome": "Vini Jr", "clube": "Real Madrid", "pos": "ATA", "ovr": 90, "rit": 95, "fin": 86, "pas": 82, "dri": 94, "def": 35, "fis": 70, "img_url": ""},
+                    {"nome": "Mbappé", "clube": "Real Madrid", "pos": "ATA", "ovr": 92, "rit": 97, "fin": 90, "pas": 80, "dri": 93, "def": 38, "fis": 78, "img_url": ""},
+                    {"nome": "Haaland", "clube": "Manchester City", "pos": "ATA", "ovr": 91, "rit": 89, "fin": 94, "pas": 65, "dri": 80, "def": 45, "fis": 92, "img_url": ""},
+                    {"nome": "De Bruyne", "clube": "Manchester City", "pos": "MEI", "ovr": 91, "rit": 74, "fin": 85, "pas": 95, "dri": 88, "def": 65, "fis": 78, "img_url": ""},
+                    {"nome": "Alisson", "clube": "Liverpool", "pos": "GOL", "ovr": 89, "rit": 50, "fin": 20, "pas": 85, "dri": 45, "def": 90, "fis": 80, "img_url": ""},
+                    {"nome": "Van Dijk", "clube": "Liverpool", "pos": "ZAG", "ovr": 90, "rit": 78, "fin": 50, "pas": 75, "dri": 70, "def": 92, "fis": 88, "img_url": ""},
+                    
+                    # BRASILEIRÃO (HISTÓRICO E ATUAL)
+                    {"nome": "D'Alessandro", "clube": "Internacional", "pos": "MEI", "ovr": 86, "rit": 70, "fin": 78, "pas": 89, "dri": 85, "def": 45, "fis": 65, "img_url": ""},
+                    {"nome": "Renato Gaúcho", "clube": "Grêmio", "pos": "ATA", "ovr": 88, "rit": 85, "fin": 86, "pas": 80, "dri": 90, "def": 30, "fis": 78, "img_url": ""},
+                    {"nome": "Cássio", "clube": "Corinthians", "pos": "GOL", "ovr": 84, "rit": 40, "fin": 15, "pas": 55, "dri": 40, "def": 86, "fis": 88, "img_url": ""},
+                    {"nome": "Dudu", "clube": "Palmeiras", "pos": "ATA", "ovr": 83, "rit": 86, "fin": 78, "pas": 82, "dri": 88, "def": 40, "fis": 68, "img_url": ""},
+                    {"nome": "Hulk", "clube": "Atlético Mineiro", "pos": "ATA", "ovr": 85, "rit": 80, "fin": 88, "pas": 78, "dri": 82, "def": 45, "fis": 95, "img_url": ""},
+                    {"nome": "Cano", "clube": "Fluminense", "pos": "ATA", "ovr": 84, "rit": 75, "fin": 90, "pas": 65, "dri": 75, "def": 35, "fis": 75, "img_url": ""},
+                ]
 
         cartas_criadas = 0
 

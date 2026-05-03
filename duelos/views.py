@@ -937,10 +937,10 @@ def lobby_trunfo(request, partida_id):
     partida = get_object_or_404(PartidaTrunfo, id=partida_id)
     link_convite = request.build_absolute_uri(reverse('duelos:entrar_trunfo', args=[partida.id]))
     
-    return render(request, 'duelos/lobby.html', {
+    # Mudamos o HTML alvo aqui na linha de baixo:
+    return render(request, 'duelos/lobby_trunfo.html', {
         'partida': partida,
         'link_convite': link_convite,
-        'eh_trunfo': True # Para podermos mudar o texto no HTML do lobby se quisermos
     })
 
 @login_required

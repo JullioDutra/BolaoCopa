@@ -41,6 +41,31 @@
     .turno-badge { font-size: 1.2rem; text-transform: uppercase; letter-spacing: 2px; }
 </style>
 
+<!-- MODAL DE REGRAS (Aparece ao carregar a página) -->
+<div class="modal fade" id="modalRegrasTrunfo" tabindex="-1" aria-labelledby="modalRegrasLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark text-white" style="border: 3px solid #d4af37; border-radius: 15px;">
+            <div class="modal-header border-secondary">
+                <h4 class="modal-title fw-bold text-warning" id="modalRegrasLabel"><i class="fa-solid fa-book-open"></i> Regras da Batalha</h4>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body fs-5 text-start px-4">
+                <p>Bem-vindo ao <strong>Super Trunfo Cartolândia</strong>!</p>
+                <ul class="mb-4" style="line-height: 1.8;">
+                    <li>A cada rodada, você recebe uma carta de um craque aleatório.</li>
+                    <li>Quando for a <strong>sua vez</strong>, escolha o atributo mais forte do seu jogador clicando nele.</li>
+                    <li>A carta do rival será revelada e os números serão comparados.</li>
+                    <li>Quem tiver o maior número vence a rodada e pontua!</li>
+                </ul>
+                <p class="text-center text-warning fw-bold fs-4 mb-0"><i class="fa-solid fa-trophy"></i> Que vença o melhor!</p>
+            </div>
+            <div class="modal-footer border-secondary justify-content-center">
+                <button type="button" class="btn btn-warning btn-lg fw-bold px-5 rounded-pill shadow-sm" data-bs-dismiss="modal">Entendi, vamos pro jogo!</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="row justify-content-center mt-4">
     <div class="col-md-11 text-center">
         
@@ -239,8 +264,13 @@
         });
     }
 
-    // Inicia o jogo rodando a checagem a cada 2 segundos
+    // Inicia o jogo rodando a checagem a cada 2 segundos e abre as regras
     window.onload = () => {
+        // Dispara o pop-up de regras usando o Bootstrap
+        var regrasModal = new bootstrap.Modal(document.getElementById('modalRegrasTrunfo'));
+        regrasModal.show();
+
+        // Inicia a comunicação com o servidor
         checarStatus();
         setInterval(checarStatus, 2000);
     };

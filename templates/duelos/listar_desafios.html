@@ -65,7 +65,7 @@
         </div>
     </div>
 
-    <!-- Card Mini Fanáticos (NOVO!) -->
+    <!-- Card Mini Fanáticos -->
     <div class="col-md-5 mb-4">
         <div class="card card-clean h-100 text-center p-5 shadow border-0 border-top border-5 border-danger rounded-4">
             <div class="mb-3">
@@ -81,6 +81,28 @@
                     {% csrf_token %}
                     <button type="submit" class="btn btn-danger btn-lg w-100 fw-bold shadow-sm rounded-pill">
                         <i class="fa-solid fa-plus-circle"></i> Criar Sala 2v2
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card Super Trunfo (NOVO!) -->
+    <div class="col-md-5 mb-4">
+        <div class="card card-clean h-100 text-center p-5 shadow border-0 border-top border-5 border-warning rounded-4">
+            <div class="mb-3">
+                <i class="fa-solid fa-bolt text-warning" style="font-size: 4rem;"></i>
+            </div>
+            <h3 class="fw-bold">Super Trunfo</h3>
+            <p class="text-muted">
+                Batalha de atributos! Receba sua carta, escolha o melhor status e vença seu adversário.
+            </p>
+            
+            <div class="mt-auto pt-4">
+                <form method="POST" action="{% url 'duelos:criar_trunfo' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-warning text-dark btn-lg w-100 fw-bold shadow-sm rounded-pill">
+                        <i class="fa-solid fa-plus-circle"></i> Criar Sala 1v1
                     </button>
                 </form>
             </div>

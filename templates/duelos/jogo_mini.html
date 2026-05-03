@@ -6,7 +6,6 @@
 <div class="row justify-content-center mt-4">
     <div class="col-md-8">
         
-        <!-- CABEÇALHO DO JOGO -->
         <div class="d-flex justify-content-between align-items-center mb-4 bg-dark text-white p-3 rounded-pill shadow-sm" id="header-jogo">
             <div class="fw-bold fs-5 ms-3">
                 <i class="fa-solid fa-list-ol text-warning"></i> <span id="contador-pergunta">1</span>/10
@@ -16,14 +15,12 @@
             </div>
         </div>
 
-        <!-- TELA 1: APRESENTAÇÃO DO TIME (SPLASH) -->
         <div id="tela-splash" class="card card-clean shadow-lg border-0 rounded-4 p-5 text-center d-none" style="min-height: 400px; display: flex; align-items: center; justify-content: center; flex-direction: column;">
             <img id="splash-escudo" src="" alt="Escudo" style="max-height: 150px; object-fit: contain;" class="mb-4 d-none">
             <h1 class="fw-bold display-4 mb-2" id="splash-time-nome">Nome do Time</h1>
             <p class="fs-4 text-muted fst-italic">Prepare-se...</p>
         </div>
 
-        <!-- TELA 2: CARD DA PERGUNTA -->
         <div id="tela-pergunta" class="card card-clean shadow-lg border-0 rounded-4 p-4 p-md-5 text-center" style="border-top: 8px solid var(--bs-primary) !important;">
             
             <span class="badge mb-3 mx-auto fs-6 text-white" id="badge-clube" style="background-color: #333;">
@@ -32,14 +29,11 @@
             
             <h3 class="fw-bold mb-5" id="texto-pergunta">Carregando pergunta...</h3>
 
-            <!-- ÁREA DE RESPOSTA -->
             <div id="area-resposta" class="mb-5">
-                <!-- O JS injeta o conteúdo aqui (Botões, Input com trava ou Anagrama) -->
-            </div>
+                </div>
 
             <hr class="text-muted opacity-25">
 
-            <!-- BOTÃO PULAR / DESISTIR -->
             <div class="text-end">
                 <button class="btn btn-outline-danger fw-bold rounded-pill px-4 shadow-sm" onclick="responder('PULAR')">
                     Não sei (Pular) <i class="fa-solid fa-forward-step"></i>
@@ -47,7 +41,6 @@
             </div>
         </div>
 
-        <!-- TELA 3: LOADING -->
         <div id="tela-loading" class="card card-clean shadow-lg border-0 rounded-4 p-5 text-center d-none">
             <h3 class="fw-bold text-success"><i class="fa-solid fa-check-double"></i> Prova Entregue!</h3>
             <p class="text-muted fs-5 mt-3">O VAR está processando as respostas da sala...</p>
@@ -61,13 +54,11 @@
     const perguntas = JSON.parse('{{ perguntas_json|escapejs }}');
     let indiceAtual = 0;
     let respostasDadas = [];
-    let timeAtualDaRodada = null; // Para controlar a tela de Splash
+    let timeAtualDaRodada = null; 
     
-    // Controle de Tempo
     let tempoInicio = Date.now();
     let timerInterval;
 
-    // PALETA DE CORES DOS TIMES
     const coresTimes = {
         "Flamengo": "#c10000",
         "Vasco da Gama": "#000000",
@@ -93,7 +84,7 @@
     }
 
     function aplicarTemaTime(clubeNome) {
-        let cor = coresTimes[clubeNome] || "#333333"; // Preto padrão se não achar
+        let cor = coresTimes[clubeNome] || "#333333";
         document.getElementById('tela-pergunta').style.borderTopColor = cor;
         document.getElementById('badge-clube').style.backgroundColor = cor;
     }
@@ -114,7 +105,6 @@
             splashImg.classList.add('d-none');
         }
 
-        // Fica 2.5 segundos na tela de Splash
         setTimeout(() => {
             document.getElementById('tela-splash').classList.add('d-none');
             document.getElementById('tela-pergunta').classList.remove('d-none');
@@ -130,7 +120,6 @@
 
         const p = perguntas[indiceAtual];
 
-        // Se mudou o time, mostra a tela de Splash
         if (p.clube !== timeAtualDaRodada) {
             timeAtualDaRodada = p.clube;
             aplicarTemaTime(p.clube);
@@ -148,7 +137,6 @@
         const area = document.getElementById('area-resposta');
         area.innerHTML = '';
 
-        // JOGO: MÚLTIPLA ESCOLHA
         if (p.tipo === 'multipla') {
             const alternativas = [
                 { id: 'a', texto: p.opcao_a },
@@ -174,50 +162,67 @@
 
         } else if (p.tipo === 'aberta') {
             
-            // SORTEIO: 50% chance de ser Input com Trava, 50% de ser Anagrama
-            const ehAnagrama = Math.random() > 0.5;
+            // FILTRO ANTI-NÚMERO E TAMANHO MINIMO
+            let gabaritoOrig = p.resposta_correta.trim();
+            let respostaLimpa = gabaritoOrig.replace(/[\s\-]+/g, '').toUpperCase();
+            let contemNumero = /\d/.test(gabaritoOrig); // Procura se tem número (ex: 6x2)
+            
+            // Só vira anagrama se não tiver números E a resposta tiver mais que 2 caracteres E cair nos 50% de chance
+            let ehAnagrama = (!contemNumero && respostaLimpa.length > 2) ? (Math.random() > 0.5) : false;
 
             if (ehAnagrama) {
-                // JOGO: ANAGRAMA (Botões embaralhados)
-                let respostaLimpa = p.resposta_correta.replace(/\s+/g, '').toUpperCase();
                 let letrasMisturadas = respostaLimpa.split('').sort(() => Math.random() - 0.5);
                 
+                // Interface com Botão Limpar
                 area.innerHTML = `
                     <p class="text-primary fw-bold mb-2"><i class="fa-solid fa-shuffle"></i> MODO ANAGRAMA! Monte a palavra:</p>
-                    <div id="anagrama-resposta" class="fw-bold fs-2 mb-3 text-success" style="min-height: 40px; letter-spacing: 5px;"></div>
+                    <div class="d-flex justify-content-center align-items-center gap-3 mb-3" style="min-height: 50px;">
+                        <div id="anagrama-resposta" class="fw-bold fs-2 text-success" style="letter-spacing: 5px;"></div>
+                        <button id="btn-limpar-anagrama" class="btn btn-outline-danger d-none"><i class="fa-solid fa-eraser"></i> Limpar</button>
+                    </div>
                     <div id="anagrama-letras" class="d-flex flex-wrap justify-content-center gap-2"></div>
                 `;
 
                 const boxLetras = document.getElementById('anagrama-letras');
                 const boxResposta = document.getElementById('anagrama-resposta');
+                const btnLimpar = document.getElementById('btn-limpar-anagrama');
                 let palavraMontada = "";
 
-                letrasMisturadas.forEach((letra, index) => {
+                // Função de Limpar as letras
+                btnLimpar.onclick = function() {
+                    palavraMontada = "";
+                    boxResposta.innerText = "";
+                    boxResposta.classList.replace('text-danger', 'text-success');
+                    Array.from(boxLetras.children).forEach(b => {
+                        b.disabled = false;
+                        b.classList.replace('btn-secondary', 'btn-primary');
+                    });
+                    btnLimpar.classList.add('d-none');
+                };
+
+                letrasMisturadas.forEach((letra) => {
                     let btn = document.createElement('button');
                     btn.className = 'btn btn-primary fw-bold fs-4 shadow-sm';
                     btn.innerText = letra;
+                    
                     btn.onclick = function() {
                         this.disabled = true;
                         this.classList.replace('btn-primary', 'btn-secondary');
                         palavraMontada += letra;
                         boxResposta.innerText = palavraMontada;
+                        btnLimpar.classList.remove('d-none'); // Mostra o botão limpar
 
-                        // Checa se acertou
                         if (palavraMontada === respostaLimpa) {
                             boxResposta.classList.add('text-success');
+                            btnLimpar.classList.add('d-none');
                             setTimeout(() => responder(p.resposta_correta), 500);
                         } else if (palavraMontada.length === respostaLimpa.length) {
-                            // Errou, reseta o anagrama
+                            // Errou o anagrama: pisca vermelho e depois limpa sozinho
                             boxResposta.classList.replace('text-success', 'text-danger');
+                            btnLimpar.classList.add('d-none');
                             setTimeout(() => {
-                                palavraMontada = "";
-                                boxResposta.innerText = "";
-                                boxResposta.classList.replace('text-danger', 'text-success');
-                                Array.from(boxLetras.children).forEach(b => {
-                                    b.disabled = false;
-                                    b.classList.replace('btn-secondary', 'btn-primary');
-                                });
-                            }, 500);
+                                btnLimpar.onclick();
+                            }, 600);
                         }
                     };
                     boxLetras.appendChild(btn);
@@ -234,8 +239,9 @@
                 
                 let inputEl = document.getElementById('input-aberta');
                 inputEl.addEventListener('input', function(e) {
-                    let valorDigitado = this.value.trim().toLowerCase();
-                    let gabarito = p.resposta_correta.trim().toLowerCase();
+                    // Limpa acentos e espaços de quem digitou e do gabarito para não ser chato na validação
+                    let valorDigitado = this.value.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "");
+                    let gabarito = p.resposta_correta.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "");
                     
                     if (valorDigitado === gabarito) {
                         this.classList.replace('border-dark', 'border-success');
@@ -249,7 +255,6 @@
         }
     }
 
-    // Salva a resposta e avança
     function responder(valorDigitadoClicado) {
         respostasDadas.push({
             id: perguntas[indiceAtual].id,
@@ -296,7 +301,7 @@
 
     window.onload = () => {
         iniciarCronometro();
-        carregarPergunta(); // O Splash vai ser disparado aqui logo de cara
+        carregarPergunta(); 
     };
 </script>
 {% endblock %}

@@ -1247,4 +1247,4 @@ def assistir_escalacao(request, partida_id):
 def assistir_minifanaticos(request, partida_id):
     """Arquibancada do Mini Fanáticos"""
     partida = get_object_or_404(PartidaMiniFanaticos, id=partida_id)
-    return render(request, 'duelos/espectador_minifanaticos.html', {'partida': partida})    return render(request, 'duelos/espectador_minifanaticos.html', {'partida': partida})
+    return render(request, 'duelos/espectador_minifanaticos.html', {'partida': partida})

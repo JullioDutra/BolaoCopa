@@ -1,0 +1,168 @@
+{% extends 'base.html' %}
+
+{% block title %}GRANDE FINAL - Cartolândia{% endblock %}
+
+{% block content %}
+<style>
+    .placar-final {
+        background: linear-gradient(180deg, #111 0%, #000 100%);
+        border-bottom: 4px solid #d4af37;
+        padding: 20px 0;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        color: white;
+    }
+    .nome-finalista { font-size: 1.8rem; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; }
+    .score-numero { font-size: 3.5rem; font-weight: 900; color: #d4af37; line-height: 1; margin: 0 20px; }
+    .cronometro { font-size: 1.2rem; color: #0dcaf0; font-family: monospace; font-weight: bold; }
+    .fase-badge { font-size: 1rem; letter-spacing: 3px; background-color: #d4af37; color: #000; padding: 5px 20px; border-radius: 20px; font-weight: bold; text-transform: uppercase; }
+    
+    /* O Telão onde o jogo vai rodar */
+    .iframe-container {
+        width: 100%;
+        height: 75vh;
+        border: 4px solid #333;
+        border-radius: 15px;
+        background-color: #1a1a1a;
+        box-shadow: inset 0 0 50px rgba(0,0,0,0.8);
+        overflow: hidden;
+        position: relative;
+    }
+    .iframe-container iframe { width: 100%; height: 100%; border: none; }
+</style>
+
+<!-- PLACAR GERAL DA TRANSMISSÃO -->
+<div class="container-fluid placar-final text-center mb-4 rounded-bottom-4">
+    <div class="row align-items-center justify-content-center">
+        <!-- Jogador 1 -->
+        <div class="col-4 text-end">
+            <div class="nome-finalista">{{ final.jogador_1.username }}</div>
+            <div class="cronometro"><i class="fa-solid fa-stopwatch"></i> <span id="tempo-j1">0.0</span>s</div>
+        </div>
+        
+        <!-- Pontuação -->
+        <div class="col-auto d-flex align-items-center">
+            <span class="score-numero" id="placar-j1">0</span>
+            <span class="fs-3 text-muted fw-bold">X</span>
+            <span class="score-numero" id="placar-j2">0</span>
+        </div>
+
+        <!-- Jogador 2 -->
+        <div class="col-4 text-start">
+            <div class="nome-finalista">{{ final.jogador_2.username }}</div>
+            <div class="cronometro"><i class="fa-solid fa-stopwatch"></i> <span id="tempo-j2">0.0</span>s</div>
+        </div>
+    </div>
+    
+    <!-- Fase Atual -->
+    <div class="mt-3">
+        <span class="fase-badge shadow" id="badge-fase">Conectando...</span>
+    </div>
+</div>
+
+<!-- O TELÃO (ARENA) -->
+<div class="container mb-5">
+    {% if not eh_finalista %}
+        <div class="alert alert-info border-0 text-center fw-bold shadow-sm mb-3">
+            <i class="fa-solid fa-tv"></i> Você está na Arquibancada! Acompanhe a transmissão ao vivo.
+        </div>
+    {% else %}
+        <div class="alert alert-warning text-dark border-0 text-center fw-bold shadow-sm mb-3">
+            <i class="fa-solid fa-gamepad"></i> Atenção, Finalista! Concentre-se no telão abaixo.
+        </div>
+    {% endif %}
+
+    <div class="iframe-container shadow-lg">
+        <!-- Tela de Espera Padrão -->
+        <div id="loading-tela" class="d-flex flex-column justify-content-center align-items-center h-100 text-white">
+            <div class="spinner-border text-warning mb-3" style="width: 4rem; height: 4rem;" role="status"></div>
+            <h3 class="fw-bold" id="txt-loading">Aguardando Início...</h3>
+        </div>
+        
+        <!-- O Iframe Mágico (Invisível até ter jogo) -->
+        <iframe id="game-frame" src="" class="d-none"></iframe>
+    </div>
+</div>
+
+<script>
+    let faseAtualNoTelao = '';
+    const isFinalista = "{{ eh_finalista }}" === "True";
+
+    // Dicionários com as URLs base (usamos 999999 como um coringa para substituir depois)
+    const rotasJogar = {
+        'trajetoria': "{% url 'duelos:tela_jogo' 999999 %}".replace('999999', ''), // Ajuste para o nome real da sua url de jogar trajetória
+        'escalacao': "{% url 'duelos:tela_jogo' 999999 %}".replace('999999', ''),  // Ajuste para o nome real da sua url de jogar escalação
+        'trunfo': "{% url 'duelos:tela_jogo_trunfo' 999999 %}".replace('999999', ''),
+        'minifanaticos': "{% url 'duelos:mini_fanaticos_lobby' %}?partida=" // Exemplo, ajuste conforme sua rota
+    };
+
+    const rotasAssistir = {
+        'trajetoria': "{% url 'duelos:assistir_trajetoria' 999999 %}".replace('999999', ''),
+        'escalacao': "{% url 'duelos:assistir_escalacao' 999999 %}".replace('999999', ''),
+        'trunfo': "{% url 'duelos:assistir_trunfo' 999999 %}".replace('999999', ''),
+        'minifanaticos': "{% url 'duelos:assistir_minifanaticos' 999999 %}".replace('999999', '')
+    };
+
+    function atualizarCabineDeTransmissao() {
+        fetch("{% url 'duelos:status_grande_final_api' final.id %}")
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById('placar-j1').innerText = data.placar_j1;
+            document.getElementById('placar-j2').innerText = data.placar_j2;
+            document.getElementById('tempo-j1').innerText = data.tempo_j1;
+            document.getElementById('tempo-j2').innerText = data.tempo_j2;
+
+            if (data.fase_atual !== faseAtualNoTelao) {
+                faseAtualNoTelao = data.fase_atual;
+                mudarCanalTelao(data);
+            }
+        });
+    }
+
+    function mudarCanalTelao(data) {
+        let frame = document.getElementById('game-frame');
+        let loading = document.getElementById('loading-tela');
+        let badge = document.getElementById('badge-fase');
+        
+        const titulos = {
+            'aguardando': 'PREPARATIVOS', 'trajetoria': 'ROUND 1: CARREIRA MISTERIOSA',
+            'escalacao': 'ROUND 2: PRANCHETA', 'trunfo': 'ROUND 3: SUPER TRUNFO',
+            'minifanaticos': 'ROUND 4: MINI FANÁTICOS', 'finalizado': 'FIM DE JOGO - PÓDIO'
+        };
+        badge.innerText = titulos[data.fase_atual] || data.fase_atual;
+
+        frame.classList.add('d-none');
+        loading.classList.remove('d-none');
+        
+        if (data.fase_atual === 'aguardando' || data.fase_atual === 'finalizado') {
+            document.getElementById('txt-loading').innerText = data.fase_atual === 'aguardando' ? "Aquecendo os motores..." : "Calculando o Campeão...";
+            return;
+        }
+
+        // Descobre qual ID usar baseado na fase
+        let idPartidaFase = null;
+        if (data.fase_atual === 'trajetoria') idPartidaFase = data.id_trajetoria;
+        if (data.fase_atual === 'escalacao') idPartidaFase = data.id_escalacao;
+        if (data.fase_atual === 'trunfo') idPartidaFase = data.id_trunfo;
+        if (data.fase_atual === 'minifanaticos') idPartidaFase = data.id_minifanaticos;
+
+        if (idPartidaFase) {
+            let urlDestino = isFinalista ? rotasJogar[data.fase_atual] + idPartidaFase : rotasAssistir[data.fase_atual] + idPartidaFase;
+            
+            document.getElementById('txt-loading').innerText = "Conectando ao sinal da Arena...";
+            
+            // Dá um delay charmoso de 1 segundo para parecer que tá puxando o sinal de satélite
+            setTimeout(() => {
+                frame.src = urlDestino;
+                frame.onload = () => {
+                    loading.classList.add('d-none');
+                    frame.classList.remove('d-none');
+                };
+            }, 1000);
+        }
+    }
+
+    window.onload = () => {
+        atualizarCabineDeTransmissao();
+        setInterval(atualizarCabineDeTransmissao, 2000);
+    };
+</script>

@@ -21,7 +21,10 @@ from .models import (
     PartidaMiniFanaticos, 
     JogadorMiniFanaticos,
     CartaTrunfo,
-    PartidaTrunfo
+    PartidaTrunfo,
+    GrandeFinalCampeonato,
+    Partida_Elenco,
+
 
 )
 
@@ -1063,3 +1066,156 @@ def resultado_trunfo(request, partida_id):
         'campeao': campeao,
         'eh_campeao': eh_campeao
     })
+
+@login_required
+def hub_grande_final(request, camp_id):
+    """O Telão do Estádio (Para os Finalistas e para a Arquibancada)"""
+    # Puxa o campeonato e a final correspondente
+    campeonato = get_object_or_404(Campeonato, id=camp_id)
+    final = get_object_or_404(GrandeFinalCampeonato, campeonato=campeonato)
+    
+    # O sistema identifica se quem abriu o link vai jogar ou só assistir
+    eh_finalista = request.user in [final.jogador_1, final.jogador_2]
+    
+    return render(request, 'duelos/hub_grande_final.html', {
+        'final': final,
+        'campeonato': campeonato,
+        'eh_finalista': eh_finalista
+    })
+
+@login_required
+def status_grande_final_api(request, final_id):
+    """O 'Rádio' da Transmissão: Atualiza as telas de todo mundo a cada 2 segundos"""
+    final = get_object_or_404(GrandeFinalCampeonato, id=final_id)
+    
+    return JsonResponse({
+        'fase_atual': final.fase_atual,
+        'placar_j1': final.placar_j1,
+        'placar_j2': final.placar_j2,
+        'tempo_j1': round(final.tempo_total_j1, 1),
+        'tempo_j2': round(final.tempo_total_j2, 1),
+        'j1_nome': final.jogador_1.username,
+        'j2_nome': final.jogador_2.username,
+        # Adicionamos os IDs aqui embaixo:
+        'id_trajetoria': final.id_partida_trajetoria,
+        'id_escalacao': final.id_partida_escalacao,
+        'id_trunfo': final.id_partida_trunfo,
+        'id_minifanaticos': final.id_partida_minifanaticos,
+    })
+
+@login_required
+def preparar_grande_final(request, camp_id):
+    """Gatilho: Cria a Grande Final e os 4 jogos simultaneamente."""
+    campeonato = get_object_or_404(Campeonato, id=camp_id)
+    
+    # Busca o confronto da final para saber quem são os dois finalistas
+    confronto_final = campeonato.confrontos.filter(fase='final').first()
+    if not confronto_final or not confronto_final.jogador1 or not confronto_final.jogador2:
+        # Se ainda não tiver os 2 finalistas definidos, volta pro painel
+        return redirect('duelos:painel_campeonato', camp_id=campeonato.id)
+
+    j1 = confronto_final.jogador1
+    j2 = confronto_final.jogador2
+    
+    # Cria o Guarda-Chuva da Transmissão
+    final, created = GrandeFinalCampeonato.objects.get_or_create(
+        campeonato=campeonato,
+        defaults={'jogador_1': j1, 'jogador_2': j2}
+    )
+    
+    # Se acabou de criar, gera as 4 partidas no banco de dados e vincula à Final
+    if created or not final.id_partida_trunfo:
+        
+        # 1. Cria Trajetória (Usando PartidaDuelo)
+        cat_traj = CategoriaDesafio.objects.filter(tipo='trajetoria').order_by('?').first()
+        p_traj = PartidaDuelo.objects.create(
+            categoria=cat_traj, jogador_criador=j1, jogador_convidado=j2, status='andamento'
+        )
+        final.id_partida_trajetoria = p_traj.id
+        
+        # 2. Cria Escalação (Usando PartidaDuelo)
+        cat_esc = CategoriaDesafio.objects.filter(tipo='elenco').order_by('?').first()
+        p_esc = PartidaDuelo.objects.create(
+            categoria=cat_esc, jogador_criador=j1, jogador_convidado=j2, status='andamento'
+        )
+        final.id_partida_escalacao = p_esc.id
+        
+        # 3. Cria Trunfo
+        p_trunfo = PartidaTrunfo.objects.create(criador=j1, convidado=j2, status='aguardando')
+        final.id_partida_trunfo = p_trunfo.id
+        
+        # 4. Cria Mini Fanáticos (Adaptado para X1)
+        p_mini = PartidaMiniFanaticos.objects.create(criador=j1, status='aguardando')
+        JogadorMiniFanaticos.objects.create(partida=p_mini, jogador=j1, dupla='A')
+        JogadorMiniFanaticos.objects.create(partida=p_mini, jogador=j2, dupla='B')
+        final.id_partida_minifanaticos = p_mini.id
+        
+        # Seta a fase inicial
+        final.fase_atual = 'trajetoria'
+        final.save()
+        
+    return redirect('duelos:hub_grande_final', camp_id=campeonato.id)
+
+
+@login_required
+def avancar_round_final_api(request, final_id):
+    """O Juiz: Quando um joguinho acaba, o frontend avisa aqui para pular de Round."""
+    if request.method == 'POST':
+        final = get_object_or_404(GrandeFinalCampeonato, id=final_id)
+        data = json.loads(request.body)
+        
+        vencedor_id = data.get('vencedor_id')
+        tempo_gasto = data.get('tempo_gasto', 0) # Segundos que o cara demorou
+        
+        # Atualiza o Placar e o Cronômetro
+        if vencedor_id == final.jogador_1.id:
+            final.placar_j1 += 1
+            final.tempo_total_j1 += tempo_gasto
+        elif vencedor_id == final.jogador_2.id:
+            final.placar_j2 += 1
+            final.tempo_total_j2 += tempo_gasto
+            
+        # Avança a Catraca da Transmissão
+        if final.fase_atual == 'trajetoria':
+            final.fase_atual = 'escalacao'
+        elif final.fase_atual == 'escalacao':
+            final.fase_atual = 'trunfo'
+        elif final.fase_atual == 'trunfo':
+            final.fase_atual = 'minifanaticos'
+        elif final.fase_atual == 'minifanaticos':
+            final.fase_atual = 'finalizado'
+            
+        final.save()
+        return JsonResponse({'sucesso': True, 'nova_fase': final.fase_atual})
+
+
+# ==========================================
+# CÂMERAS DA TRANSMISSÃO (MODO ESPECTADOR)
+# ==========================================
+
+
+@login_required
+def assistir_trunfo(request, partida_id):
+    """Arquibancada do Super Trunfo"""
+    partida = get_object_or_404(PartidaTrunfo, id=partida_id)
+    return render(request, 'duelos/espectador_trunfo.html', {'partida': partida})
+
+@login_required
+def assistir_trajetoria(request, partida_id):
+    """Arquibancada da Trajetória"""
+    # CORREÇÃO AQUI: Usa PartidaDuelo em vez de PartidaTrajetoria
+    partida = get_object_or_404(PartidaDuelo, id=partida_id)
+    return render(request, 'duelos/espectador_trajetoria.html', {'partida': partida})
+
+@login_required
+def assistir_escalacao(request, partida_id):
+    """Arquibancada da Prancheta (Escalação)"""
+    # CORREÇÃO AQUI: Usa PartidaDuelo em vez de PartidaElenco
+    partida = get_object_or_404(PartidaDuelo, id=partida_id)
+    return render(request, 'duelos/espectador_escalacao.html', {'partida': partida})
+
+@login_required
+def assistir_minifanaticos(request, partida_id):
+    """Arquibancada do Mini Fanáticos"""
+    partida = get_object_or_404(PartidaMiniFanaticos, id=partida_id)
+    return render(request, 'duelos/espectador_minifanaticos.html', {'partida': partida})

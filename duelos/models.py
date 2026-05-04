@@ -271,3 +271,41 @@ class PartidaTrunfo(models.Model):
 
     def __str__(self):
         return f"Trunfo: {self.criador.username} x {self.convidado.username if self.convidado else 'Aguardando'}"
+    
+
+class GrandeFinalCampeonato(models.Model):
+    # Relacionamento com o campeonato (cada campeonato tem 1 grande final)
+    campeonato = models.OneToOneField('Campeonato', on_delete=models.CASCADE, related_name='grande_final')
+    
+    # Os dois finalistas
+    jogador_1 = models.ForeignKey(User, related_name='finais_disputadas_j1', on_delete=models.CASCADE)
+    jogador_2 = models.ForeignKey(User, related_name='finais_disputadas_j2', on_delete=models.CASCADE)
+    
+    # Placar de Rounds (Quem chegar a 3 ganha, ou desempata no tempo em caso de 2x2)
+    placar_j1 = models.IntegerField(default=0)
+    placar_j2 = models.IntegerField(default=0)
+    
+    # Cronômetro Acumulado (Em segundos. Quanto MENOR, melhor)
+    tempo_total_j1 = models.FloatField(default=0.0)
+    tempo_total_j2 = models.FloatField(default=0.0)
+    
+    # MÁQUINA DE ESTADOS (O Fluxo da Transmissão)
+    FASES = [
+        ('aguardando', 'Aguardando Finalistas'),
+        ('trajetoria', 'Round 1: Carreira Misteriosa'),
+        ('escalacao', 'Round 2: Prancheta do Professor'),
+        ('trunfo', 'Round 3: Super Trunfo'),
+        ('minifanaticos', 'Round 4: Quiz 1v1'),
+        ('finalizado', 'Pódio e Premiação')
+    ]
+    fase_atual = models.CharField(max_length=20, choices=FASES, default='aguardando')
+    
+    # Os IDs das 4 partidas individuais (O sistema vai criar elas automaticamente)
+    # Usamos IntegerField para ser flexível e não dar conflito de chaves estrangeiras
+    id_partida_trajetoria = models.IntegerField(null=True, blank=True)
+    id_partida_escalacao = models.IntegerField(null=True, blank=True)
+    id_partida_trunfo = models.IntegerField(null=True, blank=True)
+    id_partida_minifanaticos = models.IntegerField(null=True, blank=True)
+
+    def __str__(self):
+        return f"FINAL: {self.jogador_1.username} x {self.jogador_2.username} ({self.campeonato.nome})"

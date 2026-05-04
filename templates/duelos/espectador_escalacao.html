@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Ao Vivo - Escalação</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { background-color: transparent; color: white; overflow: hidden; font-family: sans-serif; }
+        .arena { padding: 20px; text-align: center; }
+        
+        .campo-verde { background: linear-gradient(180deg, #1b5e20 0%, #2e7d32 100%); border: 3px solid #fff; border-radius: 15px; min-height: 280px; padding: 20px; position: relative; box-shadow: inset 0 0 30px rgba(0,0,0,0.5), 0 10px 20px rgba(0,0,0,0.4); }
+        .jogador-revelado { background: rgba(0,0,0,0.85); color: white; padding: 8px 18px; border-radius: 20px; display: inline-block; margin: 8px; font-weight: bold; border: 2px solid #d4af37; box-shadow: 0 4px 8px rgba(0,0,0,0.4); font-size: 1.1rem; }
+        
+        /* Efeito Piscar Ao Vivo */
+        .live-badge { animation: pulse 1.5s infinite; background-color: #dc3545; color: white; padding: 3px 10px; border-radius: 5px; font-weight: bold; font-size: 0.8rem; letter-spacing: 1px;}
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+<!-- Letreiro AO VIVO -->
+<div class="position-absolute top-0 start-0 m-3 z-3">
+    <span class="live-badge"><i class="fa-solid fa-circle"></i> AO VIVO</span>
+    <span class="badge bg-dark ms-2 shadow"><i class="fa-solid fa-eye"></i> <span id="espectadores-count">51</span></span>
+</div>
+
+<div class="container-fluid arena mt-4">
+    <h3 class="text-success fw-bold mb-4 text-uppercase" style="letter-spacing: 2px; text-shadow: 2px 2px 4px rgba(0,0,0,0.8);">
+        <i class="fa-solid fa-clipboard-list"></i> Prancheta do Professor
+    </h3>
+
+    <div class="row justify-content-center">
+        <div class="col-10">
+            <div class="campo-verde">
+                <h5 class="text-white opacity-75 mb-4 fw-bold text-uppercase"><i class="fa-solid fa-futbol"></i> Jogadores Descobertos</h5>
+                <div id="area-jogadores" class="d-flex flex-wrap justify-content-center align-items-center">
+                    <div class="d-flex flex-column align-items-center opacity-50 mt-3">
+                        <div class="spinner-border text-light mb-2" role="status"></div>
+                        <span>Analisando táticas...</span>
+                    </div>
+                </div>
+            </div>
+            <div id="msg-vencedor" class="mt-4 fs-3 fw-bold text-success d-none bg-dark py-2 px-4 rounded-pill d-inline-block shadow border border-success"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    setInterval(() => {
+        let count = parseInt(document.getElementById('espectadores-count').innerText);
+        let variacao = Math.floor(Math.random() * 5) - 2;
+        document.getElementById('espectadores-count').innerText = Math.max(12, count + variacao);
+    }, 5000);
+
+    function atualizarTransmissao() {
+        fetch("{% url 'duelos:status_duelo_api' partida.id %}")
+        .then(res => res.json())
+        .then(data => {
+            let html = '';
+            if (data.itens_revelados && data.itens_revelados.length > 0) {
+                data.itens_revelados.forEach(item => {
+                    html += `<div class="jogador-revelado"><i class="fa-solid fa-check text-success me-1"></i> ${item.nome}</div>`;
+                });
+                document.getElementById('area-jogadores').innerHTML = html;
+            }
+
+            if (data.status === 'finalizado') {
+                let msgDiv = document.getElementById('msg-vencedor');
+                msgDiv.classList.remove('d-none');
+                msgDiv.innerHTML = `<i class="fa-solid fa-trophy"></i> Mestre da Tática: ${data.vencedor_nome}`;
+            }
+        });
+    }
+    setInterval(atualizarTransmissao, 2000);
+</script>
+</body>
+</html>

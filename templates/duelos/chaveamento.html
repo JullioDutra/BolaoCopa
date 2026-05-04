@@ -81,7 +81,7 @@
                 <div class="bracket-column">
                     <h5 class="text-center text-white fw-bold mb-4">Quartas de Final</h5>
                     {% for c in fases.quartas %}
-                        {% include "duelos/includes/match_card.html" with c=c %}
+                        {% include "duelos/includes/match_card.html" with confronto=c %}
                     {% endfor %}
                 </div>
                 {% endif %}
@@ -91,7 +91,7 @@
                 <div class="bracket-column">
                     <h5 class="text-center text-white fw-bold mb-4">Semifinal</h5>
                     {% for c in fases.semi %}
-                        {% include "duelos/includes/match_card.html" with c=c %}
+                        {% include "duelos/includes/match_card.html" with confronto=c %}
                     {% endfor %}
                 </div>
                 {% endif %}
@@ -101,7 +101,7 @@
                 <div class="bracket-column">
                     <h5 class="text-center text-warning fw-bold mb-4"><i class="fa-solid fa-trophy"></i> Grande Final</h5>
                     {% for c in fases.final %}
-                        {% include "duelos/includes/match_card.html" with c=c %}
+                        {% include "duelos/includes/match_card.html" with confronto=c %}
                     {% endfor %}
                 </div>
                 {% endif %}

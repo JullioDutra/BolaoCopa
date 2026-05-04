@@ -913,7 +913,7 @@ def criar_trunfo(request):
 
 @login_required
 def entrar_trunfo(request, partida_id):
-    """O convidado entra na mesa através do link."""
+    """O convidado entra na mesa através do link e o carteador distribui o jogo."""
     partida = get_object_or_404(PartidaTrunfo, id=partida_id)
     
     if request.user == partida.criador:
@@ -923,16 +923,25 @@ def entrar_trunfo(request, partida_id):
         partida.convidado = request.user
         partida.status = 'andamento'
         
-        # MODO ROUBA MONTE: Cada um começa com 5 cartas!
-        partida.pontos_criador = 5
-        partida.pontos_convidado = 5
+        # O CARTEADOR: Pega todos os IDs de cartas disponíveis no banco
+        cartas_ids = list(CartaTrunfo.objects.values_list('id', flat=True))
         
-        # Sorteia as duas primeiras cartas
-        cartas = list(CartaTrunfo.objects.all())
-        if len(cartas) >= 2:
-            sorteadas = random.sample(cartas, 2)
-            partida.carta_criador = sorteadas[0]
-            partida.carta_convidado = sorteadas[1]
+        # Pega 10 cartas aleatórias e divide 5 para cada
+        if len(cartas_ids) >= 10:
+            sorteadas = random.sample(cartas_ids, 10)
+            baralho_c = sorteadas[:5]
+            baralho_v = sorteadas[5:]
+            
+            # Puxa a primeira carta da fila para ir pra mesa (pop remove da lista)
+            partida.carta_criador_id = baralho_c.pop(0)
+            partida.carta_convidado_id = baralho_v.pop(0)
+            
+            # Guarda o resto do monte no banco
+            partida.baralho_criador = baralho_c
+            partida.baralho_convidado = baralho_v
+            
+            partida.pontos_criador = 5
+            partida.pontos_convidado = 5
             
         partida.save()
         return redirect('duelos:tela_jogo_trunfo', partida_id=partida.id)
@@ -988,7 +997,7 @@ def status_trunfo_api(request, partida_id):
 
 @login_required
 def batalhar_trunfo_api(request, partida_id):
-    """A mágica do combate e do ROUBA MONTE!"""
+    """Lógica real do Super Trunfo: Quem ganha leva a carta pro final do monte."""
     if request.method == 'POST':
         partida = get_object_or_404(PartidaTrunfo, id=partida_id)
         
@@ -1009,33 +1018,53 @@ def batalhar_trunfo_api(request, partida_id):
         
         vencedor_rodada = None
         
-        # LÓGICA DO ROUBO DE CARTAS
+        # Puxamos as listas de cartas que estão guardadas no banco
+        baralho_c = partida.baralho_criador
+        baralho_v = partida.baralho_convidado
+        
+        # Pega as cartas que estão atualmente na mesa
+        carta_c_id = partida.carta_criador.id
+        carta_v_id = partida.carta_convidado.id
+        
+        # LÓGICA DO ROUBA-MONTE
         if valor_criador > valor_convidado:
-            partida.pontos_criador += 1
-            partida.pontos_convidado -= 1
+            # Criador venceu: Coloca a carta dele e a do adversário no FIM do seu monte
+            baralho_c.extend([carta_c_id, carta_v_id])
             vencedor_rodada = partida.criador
         elif valor_convidado > valor_criador:
-            partida.pontos_convidado += 1
-            partida.pontos_criador -= 1
+            # Convidado venceu: Faz a mesma coisa
+            baralho_v.extend([carta_v_id, carta_c_id])
             vencedor_rodada = partida.convidado
+        else:
+            # Empate: Cada um pega a sua de volta pro fim da fila
+            baralho_c.append(carta_c_id)
+            baralho_v.append(carta_v_id)
             
-        # Passa o turno para o perdedor da rodada (ou mantém se empatou)
+        # Passa o turno para quem perdeu (ou mantém se empatou)
         if vencedor_rodada and vencedor_rodada != partida.turno_de:
             partida.turno_de = vencedor_rodada
             
         partida.rodada_atual += 1
         
-        # VERIFICA SE ALGUÉM ZEROU AS CARTAS (FIM DE JOGO)
-        if partida.pontos_criador <= 0 or partida.pontos_convidado <= 0:
+        # VERIFICA SE O JOGO ACABOU (Alguém ficou sem monte para puxar a próxima)
+        if len(baralho_c) == 0 or len(baralho_v) == 0:
             partida.status = 'finalizado'
+            partida.carta_criador = None
+            partida.carta_convidado = None
+            # Os pontos finais refletem o tamanho do monte + a carta da mesa
+            partida.pontos_criador = len(baralho_c) + (1 if len(baralho_c) > 0 else 0)
+            partida.pontos_convidado = len(baralho_v) + (1 if len(baralho_v) > 0 else 0)
         else:
-            # Só sorteia novas cartas se o jogo for continuar
-            cartas = list(CartaTrunfo.objects.all())
-            if len(cartas) >= 2:
-                sorteadas = random.sample(cartas, 2)
-                partida.carta_criador = sorteadas[0]
-                partida.carta_convidado = sorteadas[1]
+            # O jogo continua! Puxamos a próxima carta do TOPO do monte (índice 0)
+            partida.carta_criador_id = baralho_c.pop(0)
+            partida.carta_convidado_id = baralho_v.pop(0)
             
+            partida.pontos_criador = len(baralho_c) + 1  # Fila + a carta que tá na mesa
+            partida.pontos_convidado = len(baralho_v) + 1
+            
+        # Salva o novo estado da fila no banco
+        partida.baralho_criador = baralho_c
+        partida.baralho_convidado = baralho_v
         partida.save()
         
         return JsonResponse({
@@ -1044,7 +1073,6 @@ def batalhar_trunfo_api(request, partida_id):
             'valor_j1': valor_criador,
             'valor_j2': valor_convidado
         })
-
 
 @login_required
 def resultado_trunfo(request, partida_id):
@@ -1066,6 +1094,7 @@ def resultado_trunfo(request, partida_id):
         'campeao': campeao,
         'eh_campeao': eh_campeao
     })
+<<<<<<< HEAD
 
 @login_required
 def hub_grande_final(request, camp_id):
@@ -1218,4 +1247,4 @@ def assistir_escalacao(request, partida_id):
 def assistir_minifanaticos(request, partida_id):
     """Arquibancada do Mini Fanáticos"""
     partida = get_object_or_404(PartidaMiniFanaticos, id=partida_id)
-    return render(request, 'duelos/espectador_minifanaticos.html', {'partida': partida})
+    return render(request, 'duelos/espectador_minifanaticos.html', {'partida': partida})    return render(request, 'duelos/espectador_minifanaticos.html', {'partida': partida})

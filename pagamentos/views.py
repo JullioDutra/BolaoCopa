@@ -128,3 +128,4 @@ def relatorio_gerencial(request):
         'ultimas_transacoes': ultimas_transacoes,
     }
     return render(request, 'pagamentos/relatorio_admin.html', context)
+

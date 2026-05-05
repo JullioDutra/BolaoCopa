@@ -8,6 +8,7 @@ from django.utils import timezone
 from django.db.models import Q
 from django.urls import reverse
 from django.core.cache import cache
+import time
 
 from .models import (
     PartidaDuelo, 
@@ -125,29 +126,31 @@ def tela_jogo(request, partida_id):
 
 
 def status_partida_api(request, partida_id):
-    """Heartbeat do jogo: gere o tempo e os turnos (agora com 30 segundos)."""
+    """Heartbeat do jogo: gere o tempo e os turnos com segurança."""
+    from django.utils import timezone
+    from django.db.models import Q
+    from .models import PartidaDuelo, GrandeFinalCampeonato
+    
     partida = get_object_or_404(PartidaDuelo, id=partida_id)
     agora = timezone.now()
     tempo_passado = 0
     
+    # SÓ roda o relógio e a troca de turno se o jogo de fato COMEÇOU
     if partida.status == 'andamento':
-        tempo_passado = (agora - partida.turno_iniciado_em).total_seconds()
+        if partida.turno_iniciado_em:
+            tempo_passado = (agora - partida.turno_iniciado_em).total_seconds()
         
-        # Gestão do tempo esgotado (ALTERADO PARA 30 SEGUNDOS)
         if tempo_passado >= 30:
-            # Troca de turno automática
-            partida.turno_de = partida.jogador_convidado if partida.turno_de == partida.jogador_criador else partida.jogador_criador
+            # Troca de turno automática (Só acontece se o convidado existir)
+            if partida.jogador_convidado:
+                partida.turno_de = partida.jogador_convidado if partida.turno_de == partida.jogador_criador else partida.jogador_criador
             partida.turno_iniciado_em = agora
             partida.erros_acumulados += 1
             partida.save()
             tempo_passado = 0
 
-    # Calcula o tempo restante baseado nos 30 segundos
     tempo_restante = max(0, 30 - int(tempo_passado))
 
-    # =========================================================
-    # 1. MONTAMOS O DICIONÁRIO DE RESPOSTA PRIMEIRO
-    # =========================================================
     dados = {
         'status': partida.status,
         'turno_atual_id': partida.turno_de.id if partida.turno_de else None,
@@ -158,27 +161,16 @@ def status_partida_api(request, partida_id):
         'revelados_ids': list(partida.itens_revelados.values_list('id', flat=True))
     }
 
-    # =========================================================
-    # 2. ADICIONAMOS OS ESPECTADORES E O ROTEADOR DA FINAL
-    # =========================================================
     qtd_viewers = contar_espectadores_reais(request, f"partida_{partida.id}")
-    dados['espectadores_reais'] = max(1, qtd_viewers - 2) # Tira os 2 jogadores da conta
+    dados['espectadores_reais'] = max(1, qtd_viewers - 2)
 
-    from django.db.models import Q
-    from .models import GrandeFinalCampeonato
-    
-    # Busca a final usando a nossa lógica blindada com Q objects
     final = GrandeFinalCampeonato.objects.filter(
         Q(id_partida_trajetoria=partida.id) | Q(id_partida_escalacao=partida.id)
     ).first()
 
-    # Se achar, manda o link da próxima fase para o Javascript
     if final:
         dados['url_proximo_round'] = f"/duelos/campeonato/{final.campeonato.id}/jogar-final/"
 
-    # =========================================================
-    # 3. DEVOLVEMOS TUDO PRONTO PARA O FRONTEND
-    # =========================================================
     return JsonResponse(dados)
 
 @login_required
@@ -1321,20 +1313,25 @@ def assistir_minifanaticos(request, partida_id):
     return render(request, 'duelos/espectador_minifanaticos.html', {'partida': partida})
 
 def contar_espectadores_reais(request, chave_sala):
-    """ Rastreador de Ibope: Conta sessões ativas nos últimos 10 segundos """
-    if not request.session.session_key:
-        request.session.create()
-    viewer_id = request.session.session_key
-    key = f'viewers_{chave_sala}'
-    
-    viewers = cache.get(key, {})
-    agora = time.time()
-    # Limpa quem fechou a aba (ausente há mais de 10 seg)
-    viewers = {k: v for k, v in viewers.items() if agora - v < 10} 
-    viewers[viewer_id] = agora
-    cache.set(key, viewers, timeout=30)
-    
-    return len(viewers)
+    """ Rastreador de Ibope: Blindado contra erros de cache ou sessão """
+    try:
+        if not hasattr(request, 'session'): return 1
+        if not request.session.session_key:
+            request.session.create()
+            
+        viewer_id = request.session.session_key
+        key = f'viewers_{chave_sala}'
+        
+        # O "or {}" salva a vida se o cache retornar None (Evita o Erro 500)
+        viewers = cache.get(key) or {} 
+        agora = time.time()
+        viewers = {k: v for k, v in viewers.items() if agora - v < 10} 
+        viewers[viewer_id] = agora
+        cache.set(key, viewers, timeout=30)
+        
+        return len(viewers)
+    except Exception:
+        return 1
 
 @login_required
 def roteador_jogadores_final(request, campeonato_id):

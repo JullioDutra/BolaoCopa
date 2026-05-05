@@ -288,6 +288,22 @@
 
     function atualizarPartida() {
         fetch(statusUrl).then(res => res.json()).then(data => {
+            
+            // ========================================================
+            // 1. A TRAVA DO APRESSADINHO (Bloqueia até o J2 entrar)
+            // ========================================================
+            if (data.status === 'aguardando') {
+                let statusBadge = document.getElementById('status-vez');
+                statusBadge.innerHTML = '<i class="fa-solid fa-hourglass-half fa-spin"></i> Aguardando Oponente...';
+                statusBadge.className = "status-vez-badge bg-warning text-dark shadow-sm";
+                
+                // Trava o campo de texto e o botão de chutar
+                document.getElementById('palpite').disabled = true;
+                document.getElementById('btn-chute').disabled = true;
+                
+                return; // Impede que o código tente trocar turnos
+            }
+
             if (data.status === 'finalizado') { 
                 clearInterval(pollInterval);
                 

@@ -45,7 +45,7 @@
     <div class="col-md-10">
         <div class="card card-clean shadow-sm border-0 p-3 p-md-5 text-center rounded-4 mb-4">
             
-            <!-- DICA DO JOGO (Alerta dispensável para não poluir o mobile) -->
+            <!-- DICA DO JOGO -->
             <div class="alert alert-light border-start border-4 border-primary text-start small mb-4 shadow-sm alert-dismissible fade show" role="alert">
                 <i class="fa-solid fa-lightbulb text-warning fs-5 me-2 float-start"></i>
                 <strong>Como funciona:</strong> A cada erro (ou tempo esgotado), o próximo clube por onde o jogador passou é revelado. Quem cravar o nome do craque primeiro, leva a vitória!
@@ -159,12 +159,29 @@
 
     function atualizarPartida() {
         fetch(statusUrl).then(res => res.json()).then(data => {
+            
+            // ========================================================
+            // 1. A TRAVA DO APRESSADINHO (Bloqueia até o J2 entrar)
+            // ========================================================
+            if (data.status === 'aguardando') {
+                let statusBadge = document.getElementById('status-vez');
+                statusBadge.innerHTML = '<i class="fa-solid fa-hourglass-half fa-spin"></i> Aguardando Oponente...';
+                statusBadge.className = "status-vez-badge bg-warning text-dark shadow-sm";
+                
+                // Trava o campo de texto e o botão de chutar
+                document.getElementById('palpite').disabled = true;
+                document.getElementById('btn-chute').disabled = true;
+                
+                return; // Impede que o código tente trocar turnos
+            }
+
+            // ========================================================
+            // 2. FIM DE JOGO E AUTO-AVANÇO
+            // ========================================================
             if (data.status === 'finalizado') { 
                 clearInterval(pollInterval); 
                 
-                // ========================================================
                 // MAGIA DO AUTO-AVANÇO DA FINAL
-                // ========================================================
                 if (data.url_proximo_round) {
                     window.location.href = data.url_proximo_round;
                     return;
@@ -179,6 +196,9 @@
                 return; 
             }
 
+            // ========================================================
+            // 3. JOGO ROLANDO (Atualiza Placares e Turnos)
+            // ========================================================
             document.getElementById('pts-j1').innerText = data.pontos_j1;
             document.getElementById('pts-j2').innerText = data.pontos_j2;
             document.getElementById('timer').innerText = data.tempo_restante;
@@ -199,6 +219,9 @@
                 meuTurno = false;
             }
 
+            // ========================================================
+            // 4. ANIMAÇÃO DOS ESCUDOS
+            // ========================================================
             let limite = data.erros_acumulados + 1;
             for (let i = 0; i < limite; i++) {
                 let esc = document.getElementById(`escudo-${i}`);

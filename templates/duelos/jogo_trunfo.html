@@ -246,43 +246,67 @@
     }
 
     function iniciarBatalha(atributoKey) {
-        if (!minhaVez || animandoBatalha) return;
-        animandoBatalha = true; 
+            if (!minhaVez || animandoBatalha) return;
+            animandoBatalha = true; 
 
-        document.getElementById('container-carta-adv').classList.remove('virada');
+            // Vira a carta do adversário para ver o embate
+            document.getElementById('container-carta-adv').classList.remove('virada');
 
-        fetch("{% url 'duelos:batalhar_trunfo_api' partida.id %}", {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': '{{ csrf_token }}'
-            },
-            body: JSON.stringify({ atributo: atributoKey })
-        })
-        .then(res => res.json())
-        .then(respostaData => {
-            if (respostaData.sucesso) {
-                let msgDiv = document.getElementById('msg-batalha');
-                let valMeu = respostaData.valor_j1;
-                let valAdv = respostaData.valor_j2;
-                
-                msgDiv.style.opacity = "1";
-                
-                if (valMeu > valAdv) {
-                    msgDiv.innerHTML = `<span class="text-success"><i class="fa-solid fa-check"></i> ROUBOU A CARTA!</span><br><small>${labels[atributoKey]}: ${valMeu} x ${valAdv}</small>`;
-                } else if (valAdv > valMeu) {
-                    msgDiv.innerHTML = `<span class="text-danger"><i class="fa-solid fa-xmark"></i> PERDEU A CARTA!</span><br><small>${labels[atributoKey]}: ${valMeu} x ${valAdv}</small>`;
-                } else {
-                    msgDiv.innerHTML = `<span class="text-warning"><i class="fa-solid fa-equals"></i> EMPATE!</span><br><small>${labels[atributoKey]}: ${valMeu} x ${valAdv}</small>`;
+            fetch("{% url 'duelos:batalhar_trunfo_api' partida.id %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({ atributo: atributoKey })
+            })
+            .then(res => {
+                // SE O SERVIDOR DER ERRO 500 (TELA AMARELA), O JS PEGA AQUI ANTES DE TRAVAR
+                if (!res.ok) {
+                    throw new Error("Erro " + res.status + " no servidor.");
                 }
+                return res.json();
+            })
+            .then(respostaData => {
+                if (respostaData.sucesso) {
+                    let msgDiv = document.getElementById('msg-batalha');
+                    let valMeu = respostaData.valor_j1;
+                    let valAdv = respostaData.valor_j2;
+                    
+                    msgDiv.style.opacity = "1";
+                    
+                    if (valMeu > valAdv) {
+                        msgDiv.innerHTML = `<span class="text-success"><i class="fa-solid fa-check"></i> ROUBOU A CARTA!</span><br><small>${labels[atributoKey]}: ${valMeu} x ${valAdv}</small>`;
+                    } else if (valAdv > valMeu) {
+                        msgDiv.innerHTML = `<span class="text-danger"><i class="fa-solid fa-xmark"></i> PERDEU A CARTA!</span><br><small>${labels[atributoKey]}: ${valMeu} x ${valAdv}</small>`;
+                    } else {
+                        msgDiv.innerHTML = `<span class="text-warning"><i class="fa-solid fa-equals"></i> EMPATE!</span><br><small>${labels[atributoKey]}: ${valMeu} x ${valAdv}</small>`;
+                    }
 
-                setTimeout(() => {
+                    setTimeout(() => {
+                        animandoBatalha = false;
+                        checarStatus(true); 
+                    }, 4000);
+
+                } else {
+                    // SE O PYTHON BARRAR A JOGADA (Ex: Sem cartas na mesa)
+                    alert("Aviso: " + respostaData.erro);
+                    
+                    // Desfaz a animação para o jogo não ficar travado
+                    document.getElementById('container-carta-adv').classList.add('virada');
                     animandoBatalha = false;
-                    checarStatus(true); 
-                }, 4000);
-            }
-        });
-    }
+                }
+            })
+            .catch(error => {
+                // SE ACONTECER UM ERRO FATAL (QUEDA DE INTERNET OU ERRO 500)
+                console.error(error);
+                alert("Aconteceu um erro de conexão ou a partida está corrompida.");
+                
+                // Desfaz a animação
+                document.getElementById('container-carta-adv').classList.add('virada');
+                animandoBatalha = false;
+            });
+        }
 
     function checarStatus(forcar = false) {
         if (animandoBatalha && !forcar) return;

@@ -22,8 +22,7 @@ from .models import (
     JogadorMiniFanaticos,
     CartaTrunfo,
     PartidaTrunfo,
-    GrandeFinalCampeonato,
-    Partida_Elenco,
+    GrandeFinalCampeonato
 
 
 )

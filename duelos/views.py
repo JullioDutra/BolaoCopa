@@ -1094,7 +1094,6 @@ def resultado_trunfo(request, partida_id):
         'campeao': campeao,
         'eh_campeao': eh_campeao
     })
-<<<<<<< HEAD
 
 @login_required
 def hub_grande_final(request, camp_id):

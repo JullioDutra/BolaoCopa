@@ -251,10 +251,17 @@
             <div class="modal-body p-5">
                 <i class="fa-solid fa-whistle text-dark mb-3" style="font-size: 4rem;"></i>
                 <h2 class="fw-bold text-dark mb-2">Fim de Papo!</h2>
-                <p class="text-muted">Apita o árbitro!</p>
+                
+                <!-- ADICIONADO: MOSTRA O TIME HISTÓRICO -->
+                <p class="text-muted mb-1 mt-3">A prancheta do time histórico era:</p>
+                <div class="alert alert-success fw-bold fs-4 mb-4 shadow-sm text-uppercase">
+                    {{ partida.categoria.titulo }}
+                </div>
+
                 <h4 class="text-primary fw-bold mb-4" id="modal-vencedor">...</h4>
                 
-                <a href="{% url 'duelos:listar_desafios' %}" class="btn btn-success btn-lg w-100 fw-bold rounded-pill shadow-sm">
+                <!-- ID ADICIONADO NO BOTÃO PARA O JS CONSEGUIR MUDAR ELE -->
+                <a href="{% url 'duelos:listar_desafios' %}" id="btn-proximo-round" class="btn btn-success btn-lg w-100 fw-bold rounded-pill shadow-sm">
                     <i class="fa-solid fa-arrow-right-to-bracket"></i> Voltar pro Vestiário
                 </a>
             </div>
@@ -289,37 +296,36 @@
     function atualizarPartida() {
         fetch(statusUrl).then(res => res.json()).then(data => {
             
-            // ========================================================
-            // 1. A TRAVA DO APRESSADINHO (Bloqueia até o J2 entrar)
-            // ========================================================
+            // TRAVA DO APRESSADINHO
             if (data.status === 'aguardando') {
                 let statusBadge = document.getElementById('status-vez');
                 statusBadge.innerHTML = '<i class="fa-solid fa-hourglass-half fa-spin"></i> Aguardando Oponente...';
                 statusBadge.className = "status-vez-badge bg-warning text-dark shadow-sm";
                 
-                // Trava o campo de texto e o botão de chutar
                 document.getElementById('palpite').disabled = true;
                 document.getElementById('btn-chute').disabled = true;
-                
-                return; // Impede que o código tente trocar turnos
+                return; 
             }
 
             if (data.status === 'finalizado') { 
                 clearInterval(pollInterval);
                 
-                // ========================================================
-                // MAGIA DO AUTO-AVANÇO DA FINAL
-                // ========================================================
-                if (data.url_proximo_round) {
-                    window.location.href = data.url_proximo_round;
-                    return;
-                }
-                
                 let vencedor = "Tudo igual! Jogo empatado.";
-                if (data.pontos_j1 > data.pontos_j2) vencedor = "🏆 Taça na mão de {{ partida.jogador_criador.first_name|default:partida.jogador_criador.username|escapejs }}!";
-                if (data.pontos_j2 > data.pontos_j1) vencedor = "🏆 Taça na mão de {{ partida.jogador_convidado.first_name|default:partida.jogador_convidado.username|escapejs }}!";
+                if (data.pontos_j1 > data.pontos_j2) vencedor = "🏆 Vitória de {{ partida.jogador_criador.first_name|default:partida.jogador_criador.username|escapejs }}!";
+                if (data.pontos_j2 > data.pontos_j1) vencedor = "🏆 Vitória de {{ partida.jogador_convidado.first_name|default:partida.jogador_convidado.username|escapejs }}!";
                 
                 document.getElementById('modal-vencedor').innerText = vencedor;
+
+                // ========================================================
+                // MAGIA DO AUTO-AVANÇO DA FINAL (DENTRO DO MODAL!)
+                // ========================================================
+                let btnProx = document.getElementById('btn-proximo-round');
+                if (data.url_proximo_round) {
+                    btnProx.href = data.url_proximo_round;
+                    btnProx.innerHTML = 'Próximo Round <i class="fa-solid fa-forward-step ms-2"></i>';
+                    btnProx.className = 'btn btn-warning btn-lg w-100 fw-bold rounded-pill shadow-sm text-dark text-uppercase';
+                }
+
                 new bootstrap.Modal(document.getElementById('modalFimJogo')).show();
                 return; 
             }

@@ -132,3 +132,6 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 
 LOGIN_URL = 'login'
+
+# Libera o uso de iframes dentro do próprio site (Necessário para o Hub da Grande Final)
+X_FRAME_OPTIONS = 'SAMEORIGIN'

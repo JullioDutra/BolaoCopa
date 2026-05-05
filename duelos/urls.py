@@ -57,6 +57,7 @@ urlpatterns = [
     path('campeonato/<int:camp_id>/gerar-final/', views.preparar_grande_final, name='preparar_grande_final'),
     path('campeonato/final-api/avancar/<int:final_id>/', views.avancar_round_final_api, name='avancar_round_final_api'),
     path('campeonato/final-api/<int:final_id>/', views.status_grande_final_api, name='status_grande_final_api'),
+    path('campeonato/<int:campeonato_id>/jogar-final/', views.roteador_jogadores_final, name='roteador_jogadores_final'),
     
     # Câmeras do Modo Espectador
     path('trunfo/assistir/<int:partida_id>/', views.assistir_trunfo, name='assistir_trunfo'),

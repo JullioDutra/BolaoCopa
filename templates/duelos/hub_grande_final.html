@@ -35,7 +35,6 @@
     @media (max-width: 768px) {
         .placar-final { padding: 12px 0; }
         
-        /* Limita o tamanho do nome para não quebrar a tela */
         .nome-finalista { 
             font-size: 0.95rem; 
             letter-spacing: 1px; 
@@ -49,10 +48,7 @@
         .cronometro { font-size: 0.85rem; margin-top: 2px; }
         .fase-badge { font-size: 0.75rem; letter-spacing: 1px; padding: 4px 12px; }
         
-        /* Ajuste do X no placar */
         .placar-final .fs-3 { font-size: 1.2rem !important; }
-        
-        /* Ajuste na altura do telão para não "vazar" da tela do celular */
         .iframe-container { height: 60vh; border-width: 2px; }
     }
 </style>
@@ -86,22 +82,17 @@
     </div>
 </div>
 
-<!-- O TELÃO (ARENA) -->
+<!-- O TELÃO (ARENA EXCLUSIVA PARA A ARQUIBANCADA) -->
 <div class="container mb-5">
-    {% if not eh_finalista %}
-        <div class="alert alert-info border-0 text-center fw-bold shadow-sm mb-3">
-            <i class="fa-solid fa-tv"></i> Você está na Arquibancada! Acompanhe a transmissão ao vivo.
-        </div>
-    {% else %}
-        <div class="alert alert-warning text-dark border-0 text-center fw-bold shadow-sm mb-3">
-            <i class="fa-solid fa-gamepad"></i> Atenção, Finalista! Concentre-se no telão abaixo.
-        </div>
-    {% endif %}
+    
+    <div class="alert alert-info border-0 text-center fw-bold shadow-sm mb-3">
+        <i class="fa-solid fa-tv"></i> Você está na Transmissão Oficial! Acompanhe a Grande Final ao vivo.
+    </div>
 
     <div class="iframe-container shadow-lg">
         <!-- Tela de Espera Padrão -->
         <div id="loading-tela" class="d-flex flex-column justify-content-center align-items-center h-100 text-white p-3 text-center">
-            <div class="spinner-border text-warning mb-3" style="width: 3rem; height: 3rem;" role="status"></div>
+            <div id="spinner-loading" class="spinner-border text-warning mb-3" style="width: 3rem; height: 3rem;" role="status"></div>
             <h4 class="fw-bold fs-5" id="txt-loading">Aguardando Início...</h4>
         </div>
         
@@ -112,16 +103,8 @@
 
 <script>
     let faseAtualNoTelao = '';
-    const isFinalista = "{{ eh_finalista }}" === "True";
 
-    // Dicionários com as URLs base usando 999999 como coringa para ID
-    const rotasJogar = {
-        'trajetoria': "{% url 'duelos:tela_jogo' 999999 %}".replace('999999', ''),
-        'escalacao': "{% url 'duelos:tela_jogo' 999999 %}".replace('999999', ''),
-        'trunfo': "{% url 'duelos:tela_jogo_trunfo' 999999 %}".replace('999999', ''),
-        'minifanaticos': "{% url 'duelos:lobby_mini' 999999 %}".replace('999999', '')
-    };
-
+    // Dicionário APENAS com as URLs de assistir (espectador)
     const rotasAssistir = {
         'trajetoria': "{% url 'duelos:assistir_trajetoria' 999999 %}".replace('999999', ''),
         'escalacao': "{% url 'duelos:assistir_escalacao' 999999 %}".replace('999999', ''),
@@ -149,6 +132,7 @@
         let frame = document.getElementById('game-frame');
         let loading = document.getElementById('loading-tela');
         let badge = document.getElementById('badge-fase');
+        let spinner = document.getElementById('spinner-loading');
         
         const titulos = {
             'aguardando': 'PREPARATIVOS', 'trajetoria': 'ROUND 1: CARREIRA MISTERIOSA',
@@ -160,8 +144,16 @@
         frame.classList.add('d-none');
         loading.classList.remove('d-none');
         
-        if (data.fase_atual === 'aguardando' || data.fase_atual === 'finalizado') {
-            document.getElementById('txt-loading').innerText = data.fase_atual === 'aguardando' ? "Aquecendo os motores..." : "Calculando o Campeão...";
+        if (data.fase_atual === 'aguardando') {
+            spinner.classList.remove('d-none');
+            document.getElementById('txt-loading').innerHTML = "Aquecendo os motores...";
+            return;
+        }
+
+        if (data.fase_atual === 'finalizado') {
+            spinner.classList.add('d-none');
+            // Telão exibe o Fim de Jogo com destaque!
+            document.getElementById('txt-loading').innerHTML = `<i class="fa-solid fa-trophy text-warning" style="font-size: 4rem;"></i><br><br>🏆 CAMPEÃO DEFINIDO! 🏆<br><span class="fs-6 text-muted">Confira o placar final acima!</span>`;
             return;
         }
 
@@ -173,8 +165,9 @@
         if (data.fase_atual === 'minifanaticos') idPartidaFase = data.id_minifanaticos;
 
         if (idPartidaFase) {
-            let urlDestino = isFinalista ? rotasJogar[data.fase_atual] + idPartidaFase : rotasAssistir[data.fase_atual] + idPartidaFase;
+            let urlDestino = rotasAssistir[data.fase_atual] + idPartidaFase;
             
+            spinner.classList.remove('d-none');
             document.getElementById('txt-loading').innerText = "Conectando ao sinal da Arena...";
             
             // Dá um delay charmoso de 1 segundo para parecer que tá puxando o sinal de satélite

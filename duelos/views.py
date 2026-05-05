@@ -7,6 +7,7 @@ from django.http import JsonResponse
 from django.utils import timezone
 from django.db.models import Q
 from django.urls import reverse
+from django.core.cache import cache
 
 from .models import (
     PartidaDuelo, 
@@ -144,7 +145,10 @@ def status_partida_api(request, partida_id):
     # Calcula o tempo restante baseado nos 30 segundos
     tempo_restante = max(0, 30 - int(tempo_passado))
 
-    return JsonResponse({
+    # =========================================================
+    # 1. MONTAMOS O DICIONÁRIO DE RESPOSTA PRIMEIRO
+    # =========================================================
+    dados = {
         'status': partida.status,
         'turno_atual_id': partida.turno_de.id if partida.turno_de else None,
         'tempo_restante': tempo_restante,
@@ -152,7 +156,30 @@ def status_partida_api(request, partida_id):
         'pontos_j2': partida.pontos_convidado,
         'erros_acumulados': partida.erros_acumulados,
         'revelados_ids': list(partida.itens_revelados.values_list('id', flat=True))
-    })
+    }
+
+    # =========================================================
+    # 2. ADICIONAMOS OS ESPECTADORES E O ROTEADOR DA FINAL
+    # =========================================================
+    qtd_viewers = contar_espectadores_reais(request, f"partida_{partida.id}")
+    dados['espectadores_reais'] = max(1, qtd_viewers - 2) # Tira os 2 jogadores da conta
+
+    from django.db.models import Q
+    from .models import GrandeFinalCampeonato
+    
+    # Busca a final usando a nossa lógica blindada com Q objects
+    final = GrandeFinalCampeonato.objects.filter(
+        Q(id_partida_trajetoria=partida.id) | Q(id_partida_escalacao=partida.id)
+    ).first()
+
+    # Se achar, manda o link da próxima fase para o Javascript
+    if final:
+        dados['url_proximo_round'] = f"/duelos/campeonato/{final.campeonato.id}/jogar-final/"
+
+    # =========================================================
+    # 3. DEVOLVEMOS TUDO PRONTO PARA O FRONTEND
+    # =========================================================
+    return JsonResponse(dados)
 
 @login_required
 def enviar_palpite_api(request, partida_id):
@@ -743,13 +770,36 @@ def status_lobby_mini_api(request, partida_id):
         partida.status = 'andamento'
         partida.save()
 
-    return JsonResponse({
+    # =========================================================
+    # 1. MONTAMOS O DICIONÁRIO DE RESPOSTA PRIMEIRO
+    # =========================================================
+    dados = {
         'status': partida.status,
         'pronto': pronto_para_iniciar,
         'total_jogadores': total_jogadores,
         'time_a_definido': partida.clube_dupla_a.nome if partida.clube_dupla_a else False,
         'time_b_definido': partida.clube_dupla_b.nome if partida.clube_dupla_b else False,
-    })
+    }
+
+    # =========================================================
+    # 2. ADICIONAMOS OS ESPECTADORES E O ROTEADOR DA FINAL
+    # =========================================================
+    qtd_viewers = contar_espectadores_reais(request, f"partida_{partida.id}")
+    dados['espectadores_reais'] = max(1, qtd_viewers - 2) # Tira os 2 jogadores da final da conta
+
+    from .models import GrandeFinalCampeonato
+    
+    # Busca direto no campo reservado para o Mini Fanáticos
+    final = GrandeFinalCampeonato.objects.filter(id_partida_minifanaticos=partida.id).first()
+
+    # Se achar a final, manda a rota do próximo round para o JS avançar sozinho
+    if final:
+        dados['url_proximo_round'] = f"/duelos/campeonato/{final.campeonato.id}/jogar-final/"
+
+    # =========================================================
+    # 3. DEVOLVEMOS TUDO PRONTO PARA O FRONTEND
+    # =========================================================
+    return JsonResponse(dados)
 
 
 
@@ -984,7 +1034,10 @@ def status_trunfo_api(request, partida_id):
             }
         }
 
-    return JsonResponse({
+    # =========================================================
+    # 1. MONTAMOS O DICIONÁRIO DE RESPOSTA PRIMEIRO
+    # =========================================================
+    dados = {
         'status': partida.status,
         'rodada': partida.rodada_atual,
         'minha_vez': partida.turno_de == request.user,
@@ -992,7 +1045,27 @@ def status_trunfo_api(request, partida_id):
         'pontos_adv': partida.pontos_convidado if request.user == partida.criador else partida.pontos_criador,
         'minha_carta': formatar_carta(minha_carta),
         'carta_adv_info': formatar_carta(carta_adv) # Enviamos oculta pro JS só revelar na hora H
-    })
+    }
+
+    # =========================================================
+    # 2. ADICIONAMOS OS ESPECTADORES E O ROTEADOR DA FINAL
+    # =========================================================
+    qtd_viewers = contar_espectadores_reais(request, f"partida_{partida.id}")
+    dados['espectadores_reais'] = max(1, qtd_viewers - 2) # Tira os 2 jogadores da conta
+
+    from .models import GrandeFinalCampeonato
+    
+    # Como já sabemos que é Trunfo, buscamos direto no campo id_partida_trunfo
+    final = GrandeFinalCampeonato.objects.filter(id_partida_trunfo=partida.id).first()
+
+    # Se achar a final, manda a rota do próximo round para o JS avançar sozinho
+    if final:
+        dados['url_proximo_round'] = f"/duelos/campeonato/{final.campeonato.id}/jogar-final/"
+
+    # =========================================================
+    # 3. DEVOLVEMOS TUDO PRONTO PARA O FRONTEND
+    # =========================================================
+    return JsonResponse(dados)
 
 @login_required
 def batalhar_trunfo_api(request, partida_id):
@@ -1246,3 +1319,62 @@ def assistir_minifanaticos(request, partida_id):
     """Arquibancada do Mini Fanáticos"""
     partida = get_object_or_404(PartidaMiniFanaticos, id=partida_id)
     return render(request, 'duelos/espectador_minifanaticos.html', {'partida': partida})
+
+def contar_espectadores_reais(request, chave_sala):
+    """ Rastreador de Ibope: Conta sessões ativas nos últimos 10 segundos """
+    if not request.session.session_key:
+        request.session.create()
+    viewer_id = request.session.session_key
+    key = f'viewers_{chave_sala}'
+    
+    viewers = cache.get(key, {})
+    agora = time.time()
+    # Limpa quem fechou a aba (ausente há mais de 10 seg)
+    viewers = {k: v for k, v in viewers.items() if agora - v < 10} 
+    viewers[viewer_id] = agora
+    cache.set(key, viewers, timeout=30)
+    
+    return len(viewers)
+
+@login_required
+def roteador_jogadores_final(request, campeonato_id):
+    """ Joga os finalistas para a tela certa e avança as fases automaticamente """
+    from .models import GrandeFinal, PartidaDuelo, PartidaTrunfo, PartidaMiniFanaticos
+    final = get_object_or_404(GrandeFinal, campeonato_id=campeonato_id)
+    
+    # 1. MÁQUINA DE ESTADOS: Verifica se o round atual já acabou para avançar
+    if final.fase_atual == 'aguardando':
+        final.fase_atual = 'trajetoria'
+        final.save()
+        
+    elif final.fase_atual == 'trajetoria':
+        if PartidaDuelo.objects.get(id=final.id_trajetoria).status == 'finalizado':
+            final.fase_atual = 'escalacao'
+            final.save()
+            
+    elif final.fase_atual == 'escalacao':
+        if PartidaDuelo.objects.get(id=final.id_escalacao).status == 'finalizado':
+            final.fase_atual = 'trunfo'
+            final.save()
+            
+    elif final.fase_atual == 'trunfo':
+        if PartidaTrunfo.objects.get(id=final.id_trunfo).status == 'finalizado':
+            final.fase_atual = 'minifanaticos'
+            final.save()
+            
+    elif final.fase_atual == 'minifanaticos':
+        if PartidaMiniFanaticos.objects.get(id=final.id_minifanaticos).status == 'finalizado':
+            final.fase_atual = 'finalizado'
+            final.save()
+
+    # 2. REDIRECIONA PARA A TELA DE JOGO NORMAL
+    if final.fase_atual == 'trajetoria':
+        return redirect('duelos:tela_jogo', partida_id=final.id_trajetoria)
+    elif final.fase_atual == 'escalacao':
+        return redirect('duelos:tela_jogo', partida_id=final.id_escalacao)
+    elif final.fase_atual == 'trunfo':
+        return redirect('duelos:tela_jogo_trunfo', partida_id=final.id_trunfo)
+    elif final.fase_atual == 'minifanaticos':
+        return redirect('duelos:lobby_mini', partida_id=final.id_minifanaticos)
+    else:
+        return redirect('duelos:hub_grande_final', camp_id=campeonato_id)

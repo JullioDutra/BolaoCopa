@@ -42,14 +42,20 @@
             {% else %}
                 <!-- Os dois finalistas estão definidos! -->
                 {% if confronto.campeonato.grande_final %}
-                    <!-- A Final já foi gerada. Botão Dourado pra todo mundo! -->
-                    <a href="{% url 'duelos:hub_grande_final' confronto.campeonato.id %}" class="btn btn-warning btn-sm fw-bold w-100 rounded-pill shadow-sm" style="background-color: #d4af37; border-color: #d4af37; color: black;">
-                        {% if request.user == confronto.jogador1 or request.user == confronto.jogador2 %}
+                    
+                    <!-- A Final já foi gerada. Botões separados para finalistas e espectadores! -->
+                    {% if request.user == confronto.jogador1 or request.user == confronto.jogador2 %}
+                        <!-- Rota do JOGADOR: Vai para o roteador automático -->
+                        <a href="{% url 'duelos:roteador_jogadores_final' confronto.campeonato.id %}" class="btn btn-warning btn-sm fw-bold w-100 rounded-pill shadow-sm" style="background-color: #d4af37; border-color: #d4af37; color: black;">
                             <i class="fa-solid fa-gamepad"></i> JOGAR A FINAL
-                        {% else %}
+                        </a>
+                    {% else %}
+                        <!-- Rota do ESPECTADOR: Vai para a arquibancada (Hub) -->
+                        <a href="{% url 'duelos:hub_grande_final' confronto.campeonato.id %}" class="btn btn-warning btn-sm fw-bold w-100 rounded-pill shadow-sm" style="background-color: #d4af37; border-color: #d4af37; color: black;">
                             <i class="fa-solid fa-tv"></i> ASSISTIR AO VIVO
-                        {% endif %}
-                    </a>
+                        </a>
+                    {% endif %}
+
                 {% else %}
                     <!-- A Final ainda NÃO foi gerada -->
                     {% if request.user == confronto.campeonato.admin %}

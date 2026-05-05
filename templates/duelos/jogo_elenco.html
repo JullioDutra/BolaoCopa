@@ -291,6 +291,14 @@
             if (data.status === 'finalizado') { 
                 clearInterval(pollInterval);
                 
+                // ========================================================
+                // MAGIA DO AUTO-AVANÇO DA FINAL
+                // ========================================================
+                if (data.url_proximo_round) {
+                    window.location.href = data.url_proximo_round;
+                    return;
+                }
+                
                 let vencedor = "Tudo igual! Jogo empatado.";
                 if (data.pontos_j1 > data.pontos_j2) vencedor = "🏆 Taça na mão de {{ partida.jogador_criador.first_name|default:partida.jogador_criador.username|escapejs }}!";
                 if (data.pontos_j2 > data.pontos_j1) vencedor = "🏆 Taça na mão de {{ partida.jogador_convidado.first_name|default:partida.jogador_convidado.username|escapejs }}!";

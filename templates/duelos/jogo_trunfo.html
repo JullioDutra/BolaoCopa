@@ -194,9 +194,17 @@
     }
 
     function atualizarInterface(data) {
-        // Redireciona imediatamente se a partida acabou
+        // ========================================================
+        // MAGIA DO AUTO-AVANÇO DA FINAL
+        // ========================================================
         if (data.status === 'finalizado') {
-            window.location.href = "{% url 'duelos:resultado_trunfo' partida.id %}";
+            if (data.url_proximo_round) {
+                // É a Grande Final! Puxa a próxima tela automaticamente
+                window.location.href = data.url_proximo_round;
+            } else {
+                // Partida normal, vai pra tela de resultado
+                window.location.href = "{% url 'duelos:resultado_trunfo' partida.id %}";
+            }
             return;
         }
 

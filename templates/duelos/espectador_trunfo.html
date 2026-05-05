@@ -6,29 +6,45 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* CSS Base do Super Trunfo (Sem os hovers de clicar) */
+        /* VARIÁVEL DE ESCALA: Define o tamanho padrão no PC (1) e encolhe no Mobile (0.55) */
+        :root {
+            --card-scale: 1;
+        }
+
         body { background-color: transparent; color: white; overflow: hidden; font-family: sans-serif;}
         .arena-trunfo { padding: 10px; text-align: center; }
         
-        .fut-card-container { perspective: 1000px; width: 220px; height: 320px; margin: 0 auto; }
+        .fut-card-container { perspective: 1000px; width: calc(220px * var(--card-scale)); height: calc(320px * var(--card-scale)); margin: 0 auto; }
         .fut-card-inner { width: 100%; height: 100%; transition: transform 0.8s; transform-style: preserve-3d; position: relative; }
-        .fut-card-front, .fut-card-back { width: 100%; height: 100%; position: absolute; backface-visibility: hidden; border-radius: 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
-        .fut-card-front { background: linear-gradient(135deg, #d4af37, #aa7c11, #f9e596, #aa7c11); padding: 10px; color: #333; border: 2px solid #fff; }
-        .fut-card-back { background: repeating-linear-gradient(45deg, #111, #111 10px, #222 10px, #222 20px); border: 2px solid #d4af37; transform: rotateY(180deg); display: flex; align-items: center; justify-content: center; }
+        .fut-card-front, .fut-card-back { width: 100%; height: 100%; position: absolute; backface-visibility: hidden; border-radius: calc(15px * var(--card-scale)); box-shadow: 0 calc(10px * var(--card-scale)) calc(20px * var(--card-scale)) rgba(0,0,0,0.5); }
+        .fut-card-front { background: linear-gradient(135deg, #d4af37, #aa7c11, #f9e596, #aa7c11); padding: calc(10px * var(--card-scale)); color: #333; border: calc(2px * var(--card-scale)) solid #fff; }
+        .fut-card-back { background: repeating-linear-gradient(45deg, #111, #111 10px, #222 10px, #222 20px); border: calc(2px * var(--card-scale)) solid #d4af37; transform: rotateY(180deg); display: flex; align-items: center; justify-content: center; }
         .virada .fut-card-inner { transform: rotateY(180deg); }
 
-        .card-top-left { position: absolute; top: 10px; left: 10px; text-align: center; font-weight: bold; }
-        .card-overall { font-size: 1.8rem; line-height: 1; }
-        .jogador-img { width: 120px; height: 120px; object-fit: cover; border-radius: 50%; margin: 0 auto; display: block; border: 3px solid #fff; }
-        .jogador-nome { text-align: center; font-size: 1.1rem; font-weight: 900; text-transform: uppercase; margin-top: 5px; }
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 10px; }
+        .card-top-left { position: absolute; top: calc(10px * var(--card-scale)); left: calc(10px * var(--card-scale)); text-align: center; font-weight: bold; }
+        .card-overall { font-size: calc(1.8rem * var(--card-scale)); line-height: 1; }
+        .jogador-img { width: calc(120px * var(--card-scale)); height: calc(120px * var(--card-scale)); object-fit: cover; border-radius: 50%; margin: 0 auto; display: block; border: calc(3px * var(--card-scale)) solid #fff; }
+        .jogador-nome { text-align: center; font-size: calc(1.1rem * var(--card-scale)); font-weight: 900; text-transform: uppercase; margin-top: calc(5px * var(--card-scale)); }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: calc(4px * var(--card-scale)); margin-top: calc(10px * var(--card-scale)); }
         
         /* Botões cinzas pra arquibancada (somente leitura) */
-        .stat-view { background: rgba(255,255,255,0.4); border-radius: 5px; padding: 2px 8px; font-weight: bold; display: flex; justify-content: space-between; font-size: 0.85rem; color: #000; }
+        .stat-view { background: rgba(255,255,255,0.4); border-radius: calc(5px * var(--card-scale)); padding: calc(2px * var(--card-scale)) calc(8px * var(--card-scale)); font-weight: bold; display: flex; justify-content: space-between; font-size: calc(0.85rem * var(--card-scale)); color: #000; }
         
         /* Efeito Piscar Ao Vivo */
         .live-badge { animation: pulse 1.5s infinite; background-color: #dc3545; color: white; padding: 3px 10px; border-radius: 5px; font-weight: bold; font-size: 0.8rem; letter-spacing: 1px;}
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+
+        /* MAGIA MOBILE PARA A ARQUIBANCADA */
+        @media (max-width: 768px) {
+            :root { --card-scale: 0.55; }
+            .col-5 { width: 45%; padding: 0 5px; }
+            .col-2 { width: 10%; padding: 0; }
+            .arena-trunfo h4 { font-size: 0.9rem; margin-bottom: 5px !important; }
+            .arena-trunfo h5 { font-size: 0.8rem; padding: 5px 15px !important; margin-top: 10px !important; }
+            .area-vs img { width: 35px !important; }
+            #pontos-j1, #pontos-j2 { font-size: 1.1rem !important; }
+            #badge-turno { font-size: 0.65rem; padding: 2px !important; }
+        }
     </style>
 </head>
 <body>
@@ -36,14 +52,14 @@
 <!-- O letreiro estilo Twitch -->
 <div class="position-absolute top-0 start-0 m-3 z-3">
     <span class="live-badge"><i class="fa-solid fa-circle"></i> AO VIVO</span>
-    <span class="badge bg-dark ms-2"><i class="fa-solid fa-eye"></i> <span id="espectadores-count">42</span></span>
+    <span class="badge bg-dark ms-2"><i class="fa-solid fa-eye"></i> <span id="espectadores-count">Carregando...</span></span>
 </div>
 
 <div class="container-fluid arena-trunfo mt-5">
-    <div class="row align-items-center justify-content-center">
+    <div class="row align-items-center justify-content-center m-0">
         <!-- CARTA JOGADOR 1 -->
         <div class="col-5">
-            <h4 class="text-warning mb-2 fw-bold text-uppercase shadow-sm">{{ partida.criador.username }}</h4>
+            <h4 class="text-warning mb-2 fw-bold text-uppercase shadow-sm text-truncate">{{ partida.criador.username }}</h4>
             <div class="fut-card-container" id="container-j1">
                 <div class="fut-card-inner">
                     <div class="fut-card-front" id="carta-j1-frente"></div>
@@ -54,14 +70,14 @@
         </div>
 
         <!-- ÁREA VS -->
-        <div class="col-2 text-center">
+        <div class="col-2 text-center area-vs">
             <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/ad/VS_icon.svg/1024px-VS_icon.svg.png" width="60" alt="VS" class="mb-2" style="filter: drop-shadow(0px 0px 5px rgba(255,255,255,0.3));">
             <div id="badge-turno" class="mt-2 badge bg-secondary p-2 text-white w-100 shadow">Sincronizando...</div>
         </div>
 
         <!-- CARTA JOGADOR 2 -->
         <div class="col-5">
-            <h4 class="text-danger mb-2 fw-bold text-uppercase shadow-sm">{{ partida.convidado.username }}</h4>
+            <h4 class="text-danger mb-2 fw-bold text-uppercase shadow-sm text-truncate">{{ partida.convidado.username }}</h4>
             <div class="fut-card-container virada" id="container-j2">
                 <div class="fut-card-inner">
                     <div class="fut-card-front" id="carta-j2-frente"></div>
@@ -75,20 +91,13 @@
 
 <script>
     let rodadaAtual = 0;
-    
-    // Fake contador de espectadores para dar hype
-    setInterval(() => {
-        let count = parseInt(document.getElementById('espectadores-count').innerText);
-        let variacao = Math.floor(Math.random() * 5) - 2; // Sobe ou desce até 2
-        document.getElementById('espectadores-count').innerText = Math.max(12, count + variacao);
-    }, 5000);
 
     function montarHtmlCarta(carta) {
         if (!carta) return '';
         let botoesStats = '';
         const labels = { rit: 'RITMO', fin: 'FINALIZA', pas: 'PASSE', dri: 'DRIBLE', def: 'DEFESA', fis: 'FÍSICO' };
         for (const [key, label] of Object.entries(labels)) {
-            botoesStats += `<div class="stat-view"><span>${label}</span> <span class="fs-6">${carta.stats[key]}</span></div>`;
+            botoesStats += `<div class="stat-view"><span>${label.substring(0,3)}</span> <span class="fs-6">${carta.stats[key]}</span></div>`;
         }
         return `
             <div class="card-top-left"><div class="card-overall">${carta.ovr}</div></div>
@@ -102,11 +111,21 @@
         fetch("{% url 'duelos:status_trunfo_api' partida.id %}")
         .then(res => res.json())
         .then(data => {
-            document.getElementById('pontos-j1').innerText = data.pontos_meus;
-            document.getElementById('pontos-j2').innerText = data.pontos_adv;
+            
+            // Ibope 100% Real
+            if (data.espectadores_reais !== undefined) {
+                document.getElementById('espectadores-count').innerText = data.espectadores_reais;
+            }
+
+            // CORREÇÃO: Como o espectador não é nenhum dos jogadores, a API considera ele "externo"
+            // Isso significa que o 'pontos_adv' da API é o Jogador 1 (Criador) e 'pontos_meus' é o Jogador 2
+            document.getElementById('pontos-j1').innerText = data.pontos_adv;
+            document.getElementById('pontos-j2').innerText = data.pontos_meus;
 
             let badgeTurno = document.getElementById('badge-turno');
-            if(data.minha_vez) {
+            
+            // Lógica de turnos invertida para o espectador visualizar corretamente
+            if(!data.minha_vez) { // Se não é do J2 (ou seja, é do J1)
                 badgeTurno.className = "mt-2 badge bg-warning text-dark p-2 w-100 shadow";
                 badgeTurno.innerHTML = "<i class='fa-solid fa-hourglass-half fa-spin'></i> Pensando...";
             } else {
@@ -117,8 +136,10 @@
             if (data.rodada !== rodadaAtual) {
                 rodadaAtual = data.rodada;
                 document.getElementById('container-j2').classList.add('virada'); 
-                document.getElementById('carta-j1-frente').innerHTML = montarHtmlCarta(data.minha_carta);
-                document.getElementById('carta-j2-frente').innerHTML = montarHtmlCarta(data.carta_adv_info);
+                
+                // Mapeia a carta_adv_info para o Jogador 1 e a minha_carta para o Jogador 2
+                document.getElementById('carta-j1-frente').innerHTML = montarHtmlCarta(data.carta_adv_info);
+                document.getElementById('carta-j2-frente').innerHTML = montarHtmlCarta(data.minha_carta);
             }
         });
     }

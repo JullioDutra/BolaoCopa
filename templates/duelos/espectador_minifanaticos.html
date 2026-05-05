@@ -6,17 +6,44 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        /* VARIÁVEL DE ESCALA: Define o tamanho padrão (1) e encolhe no Mobile (0.6) */
+        :root {
+            --card-scale: 1;
+        }
+
         body { background-color: transparent; color: white; overflow: hidden; font-family: sans-serif; }
         .arena { padding: 20px; text-align: center; }
         
-        .dupla-box { background: rgba(33, 37, 41, 0.9); border-radius: 15px; padding: 30px 20px; border-top: 6px solid; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        .dupla-box { 
+            background: rgba(33, 37, 41, 0.9); 
+            border-radius: 15px; 
+            padding: calc(30px * var(--card-scale)) calc(20px * var(--card-scale)); 
+            border-top: 6px solid; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5); 
+        }
         .dupla-a { border-color: #0dcaf0; }
         .dupla-b { border-color: #fd7e14; }
-        .pts-gigante { font-size: 5rem; line-height: 1; text-shadow: 2px 2px 0px rgba(0,0,0,0.5); }
+        .pts-gigante { 
+            font-size: calc(5rem * var(--card-scale)); 
+            line-height: 1; 
+            text-shadow: 2px 2px 0px rgba(0,0,0,0.5); 
+        }
         
         /* Efeito Piscar Ao Vivo */
         .live-badge { animation: pulse 1.5s infinite; background-color: #dc3545; color: white; padding: 3px 10px; border-radius: 5px; font-weight: bold; font-size: 0.8rem; letter-spacing: 1px;}
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+
+        /* MAGIA MOBILE DA ARQUIBANCADA */
+        @media (max-width: 768px) {
+            :root { --card-scale: 0.6; }
+            .col-4 { width: 45%; padding: 0 5px; }
+            .gap-5 { gap: 10px !important; }
+            .arena h3 { font-size: 1.2rem; margin-top: 10px; }
+            .arena h4 { font-size: 1rem; margin-bottom: 5px !important; }
+            .arena h5 { font-size: 0.8rem; margin-bottom: 15px !important; }
+            .rodape-msg { padding: 10px 20px !important; }
+            .rodape-msg h5 { font-size: 0.9rem; margin-bottom: 0 !important; }
+        }
     </style>
 </head>
 <body>
@@ -24,7 +51,7 @@
 <!-- Letreiro AO VIVO -->
 <div class="position-absolute top-0 start-0 m-3 z-3">
     <span class="live-badge"><i class="fa-solid fa-circle"></i> AO VIVO</span>
-    <span class="badge bg-dark ms-2 shadow"><i class="fa-solid fa-eye"></i> <span id="espectadores-count">58</span></span>
+    <span class="badge bg-dark ms-2 shadow"><i class="fa-solid fa-eye"></i> <span id="espectadores-count">Carregando...</span></span>
 </div>
 
 <div class="container-fluid arena mt-5">
@@ -32,11 +59,11 @@
         <i class="fa-solid fa-people-group"></i> Mini Fanáticos (Duelo Direto)
     </h3>
 
-    <div class="row justify-content-center gap-5">
+    <div class="row justify-content-center gap-5 m-0">
         <!-- DUPLA A -->
         <div class="col-4 dupla-box dupla-a">
             <h4 class="text-info fw-bold mb-1">DUPLA A</h4>
-            <h5 class="text-muted text-uppercase mb-4">{{ partida.clube_dupla_a.nome|default:"Time A" }}</h5>
+            <h5 class="text-muted text-uppercase mb-4 text-truncate">{{ partida.clube_dupla_a.nome|default:"Time A" }}</h5>
             <h1 class="fw-bold pts-gigante" id="pts-dupla-a">0</h1>
             <p class="text-info small text-uppercase fw-bold mt-2">Pontos</p>
         </div>
@@ -44,35 +71,45 @@
         <!-- DUPLA B -->
         <div class="col-4 dupla-box dupla-b">
             <h4 class="text-warning fw-bold mb-1">DUPLA B</h4>
-            <h5 class="text-muted text-uppercase mb-4">{{ partida.clube_dupla_b.nome|default:"Time B" }}</h5>
+            <h5 class="text-muted text-uppercase mb-4 text-truncate">{{ partida.clube_dupla_b.nome|default:"Time B" }}</h5>
             <h1 class="fw-bold pts-gigante" id="pts-dupla-b">0</h1>
             <p class="text-warning small text-uppercase fw-bold mt-2">Pontos</p>
         </div>
     </div>
 
-    <div class="mt-5 bg-dark p-3 rounded-pill border border-secondary d-inline-block px-5 shadow-sm">
-        <h5 class="mb-0 text-white fw-bold"><i class="fa-solid fa-bolt fa-fade text-warning me-2"></i> Jogadores respondendo...</h5>
+    <div class="mt-5 bg-dark p-3 rounded-pill border border-secondary d-inline-block px-5 shadow-sm rodape-msg">
+        <h5 class="mb-0 text-white fw-bold" id="status-texto"><i class="fa-solid fa-bolt fa-fade text-warning me-2"></i> Jogadores respondendo...</h5>
     </div>
 </div>
 
 <script>
-    setInterval(() => {
-        let count = parseInt(document.getElementById('espectadores-count').innerText);
-        let variacao = Math.floor(Math.random() * 5) - 2;
-        document.getElementById('espectadores-count').innerText = Math.max(12, count + variacao);
-    }, 5000);
-
     function atualizarTransmissao() {
         fetch("{% url 'duelos:status_lobby_mini_api' partida.id %}")
         .then(res => res.json())
         .then(data => {
+            
+            // Ibope 100% Real
+            if (data.espectadores_reais !== undefined) {
+                document.getElementById('espectadores-count').innerText = data.espectadores_reais;
+            }
+
+            // Atualiza os pontos (se a sua API retornar isso)
             if (data.pontos_dupla_a !== undefined) {
                 document.getElementById('pts-dupla-a').innerText = data.pontos_dupla_a;
                 document.getElementById('pts-dupla-b').innerText = data.pontos_dupla_b;
             }
+
+            // Feedback visual quando a partida acaba
+            if (data.status === 'finalizado') {
+                document.getElementById('status-texto').innerHTML = '<i class="fa-solid fa-flag-checkered text-success me-2"></i> Quiz Finalizado!';
+            }
         });
     }
+    
+    // Roda a cada 2 segundos
     setInterval(atualizarTransmissao, 2000);
+    // Chama a primeira vez imediatamente
+    atualizarTransmissao();
 </script>
 </body>
 </html>

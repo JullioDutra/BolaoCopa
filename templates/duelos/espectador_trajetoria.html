@@ -6,13 +6,41 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        /* VARIÁVEL DE ESCALA: Define o tamanho padrão (1) e encolhe no Mobile (0.65) */
+        :root {
+            --card-scale: 1;
+        }
+
         body { background-color: transparent; color: white; overflow: hidden; font-family: sans-serif; }
         .arena { padding: 20px; text-align: center; }
-        .escudo-img { width: 85px; height: 85px; object-fit: contain; margin: 10px; filter: drop-shadow(0px 5px 10px rgba(0,0,0,0.6)); transition: 0.3s; }
+        
+        /* Contêiner de cada escudo para animação */
+        .escudo-wrapper {
+            display: none;
+            transition: all 0.5s ease;
+        }
+
+        .escudo-img { 
+            width: calc(85px * var(--card-scale)); 
+            height: calc(85px * var(--card-scale)); 
+            object-fit: contain; 
+            margin: calc(10px * var(--card-scale)); 
+            filter: drop-shadow(0px 5px 10px rgba(0,0,0,0.6)); 
+        }
         
         /* Efeito Piscar Ao Vivo */
         .live-badge { animation: pulse 1.5s infinite; background-color: #dc3545; color: white; padding: 3px 10px; border-radius: 5px; font-weight: bold; font-size: 0.8rem; letter-spacing: 1px;}
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+
+        /* MAGIA MOBILE DA ARQUIBANCADA */
+        @media (max-width: 768px) {
+            :root { --card-scale: 0.65; }
+            .arena { padding: 10px; }
+            .arena h3 { font-size: 1.2rem; margin-top: 15px; }
+            .arena h5 { font-size: 0.9rem; }
+            #area-escudos { min-height: 120px !important; padding: 15px !important; }
+            #msg-vencedor { font-size: 1.2rem !important; }
+        }
     </style>
 </head>
 <body>
@@ -20,7 +48,7 @@
 <!-- Letreiro AO VIVO -->
 <div class="position-absolute top-0 start-0 m-3 z-3">
     <span class="live-badge"><i class="fa-solid fa-circle"></i> AO VIVO</span>
-    <span class="badge bg-dark ms-2 shadow"><i class="fa-solid fa-eye"></i> <span id="espectadores-count">45</span></span>
+    <span class="badge bg-dark ms-2 shadow"><i class="fa-solid fa-eye"></i> <span id="espectadores-count">Carregando...</span></span>
 </div>
 
 <div class="container-fluid arena mt-5">
@@ -31,11 +59,28 @@
     <div class="row justify-content-center">
         <div class="col-10">
             <h5 class="text-muted text-uppercase fw-bold mb-3">Escudos Revelados</h5>
-            <div id="area-escudos" class="d-flex flex-wrap justify-content-center bg-dark p-4 rounded-4 border border-info shadow-lg" style="min-height: 180px; background: rgba(33, 37, 41, 0.85) !important;">
-                <div class="d-flex flex-column align-items-center justify-content-center w-100 opacity-50">
+            
+            <div id="area-escudos" class="d-flex flex-wrap justify-content-center align-items-center bg-dark p-4 rounded-4 border border-info shadow-lg" style="min-height: 180px; background: rgba(33, 37, 41, 0.85) !important;">
+                
+                <div id="spinner-aguardando" class="d-flex flex-column align-items-center justify-content-center w-100 opacity-50">
                     <div class="spinner-grow text-info mb-2" role="status"></div>
                     <span>Aguardando palpites...</span>
                 </div>
+
+                <!-- O Django já pré-carrega todos os escudos invisíveis. O JS só revela na hora certa! -->
+                {% for item in partida.categoria.itens.all %}
+                    <div class="escudo-wrapper" id="escudo-{{ forloop.counter0 }}">
+                        {% if item.get_imagem_url %}
+                            <img src="{{ item.get_imagem_url }}" class="escudo-img" alt="Escudo">
+                        {% else %}
+                            <!-- Fallback caso não tenha imagem -->
+                            <div class="bg-light text-dark fw-bold rounded-circle d-flex align-items-center justify-content-center mx-2 shadow" style="width: calc(85px * var(--card-scale)); height: calc(85px * var(--card-scale)); font-size: calc(0.7rem * var(--card-scale)); text-align: center;">
+                                {{ item.get_nome }}
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+
             </div>
             <div id="msg-vencedor" class="mt-4 fs-3 fw-bold text-success d-none bg-dark py-2 px-4 rounded-pill d-inline-block shadow border border-success"></div>
         </div>
@@ -43,33 +88,53 @@
 </div>
 
 <script>
-    // Fake contador de espectadores
-    setInterval(() => {
-        let count = parseInt(document.getElementById('espectadores-count').innerText);
-        let variacao = Math.floor(Math.random() * 5) - 2;
-        document.getElementById('espectadores-count').innerText = Math.max(12, count + variacao);
-    }, 5000);
-
     function atualizarTransmissao() {
         fetch("{% url 'duelos:status_partida_api' partida.id %}")
         .then(res => res.json())
         .then(data => {
-            let escudosHtml = '';
-            if (data.itens_revelados && data.itens_revelados.length > 0) {
-                data.itens_revelados.forEach(item => {
-                    escudosHtml += `<img src="${item.imagem_url}" class="escudo-img" alt="Escudo">`;
-                });
-                document.getElementById('area-escudos').innerHTML = escudosHtml;
+            
+            // Ibope 100% Real
+            if (data.espectadores_reais !== undefined) {
+                document.getElementById('espectadores-count').innerText = data.espectadores_reais;
+            }
+
+            // Oculta o spinner se já tiver algum escudo revelado
+            if (data.erros_acumulados >= 0) {
+                document.getElementById('spinner-aguardando').classList.add('d-none');
+            }
+
+            // Revela os escudos com base nos erros acomulados
+            let limite = data.erros_acumulados + 1;
+            for (let i = 0; i < limite; i++) {
+                let esc = document.getElementById(`escudo-${i}`);
+                if (esc && esc.style.display !== 'block') {
+                    esc.style.display = 'block';
+                    // Efeito de "Pop" ao aparecer
+                    esc.animate([{ transform: 'scale(0)' }, { transform: 'scale(1)' }], { duration: 300 });
+                }
             }
 
             if (data.status === 'finalizado') {
                 let msgDiv = document.getElementById('msg-vencedor');
                 msgDiv.classList.remove('d-none');
-                msgDiv.innerHTML = `<i class="fa-solid fa-trophy"></i> Vencedor do Round: ${data.vencedor_nome}`;
+                
+                // Inteligência para descobrir o nome do vencedor pelos pontos
+                let nomeVencedor = "Ninguém acertou!";
+                if (data.pontos_j1 > data.pontos_j2) {
+                    nomeVencedor = "{{ partida.jogador_criador.first_name|default:partida.jogador_criador.username|escapejs }}";
+                } else if (data.pontos_j2 > data.pontos_j1) {
+                    nomeVencedor = "{{ partida.jogador_convidado.first_name|default:partida.jogador_convidado.username|escapejs }}";
+                }
+                
+                msgDiv.innerHTML = `<i class="fa-solid fa-trophy"></i> Vencedor do Round: ${nomeVencedor}`;
             }
         });
     }
+    
+    // Roda a cada 2 segundos
     setInterval(atualizarTransmissao, 2000);
+    // Roda a primeira vez imediatamente
+    atualizarTransmissao(); 
 </script>
 </body>
 </html>

@@ -114,8 +114,17 @@
             .then(res => res.json())
             .then(data => {
                 
+                // ========================================================
+                // MAGIA DO AUTO-AVANÇO DA FINAL
+                // ========================================================
                 if (data.status === 'finalizado') {
-                    window.location.reload(); // Atualiza pra tela de fim de jogo
+                    if (data.url_proximo_round) {
+                        // É a Grande Final! Puxa a próxima tela automaticamente
+                        window.location.href = data.url_proximo_round;
+                    } else {
+                        // Partida normal, apenas recarrega para ver o pódio
+                        window.location.reload();
+                    }
                     return;
                 }
 

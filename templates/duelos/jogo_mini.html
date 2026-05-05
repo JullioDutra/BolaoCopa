@@ -293,7 +293,16 @@
             .then(res => res.json())
             .then(data => {
                 if(data.status === 'finalizado') {
-                    window.location.href = "{% url 'duelos:resultado_mini' partida.id %}";
+                    // ========================================================
+                    // MAGIA DO AUTO-AVANÇO DA FINAL
+                    // ========================================================
+                    if (data.url_proximo_round) {
+                        // Última etapa concluída! Envia para o Pódio!
+                        window.location.href = data.url_proximo_round;
+                    } else {
+                        // Partida normal, vai pra tela de resultado
+                        window.location.href = "{% url 'duelos:resultado_mini' partida.id %}";
+                    }
                 }
             });
         }, 2000);

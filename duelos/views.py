@@ -1339,42 +1339,48 @@ def contar_espectadores_reais(request, chave_sala):
 @login_required
 def roteador_jogadores_final(request, campeonato_id):
     """ Joga os finalistas para a tela certa e avança as fases automaticamente """
-    from .models import GrandeFinal, PartidaDuelo, PartidaTrunfo, PartidaMiniFanaticos
-    final = get_object_or_404(GrandeFinal, campeonato_id=campeonato_id)
+    
+    # CORREÇÃO 1: Nome correto do Model é GrandeFinalCampeonato
+    from .models import GrandeFinalCampeonato, PartidaDuelo, PartidaTrunfo, PartidaMiniFanaticos
+    from django.shortcuts import get_object_or_404, redirect
+    
+    # Busca a final usando o nome correto do Model
+    final = get_object_or_404(GrandeFinalCampeonato, campeonato_id=campeonato_id)
     
     # 1. MÁQUINA DE ESTADOS: Verifica se o round atual já acabou para avançar
+    # CORREÇÃO 2: Usar os nomes corretos dos campos (ex: id_partida_trajetoria)
     if final.fase_atual == 'aguardando':
         final.fase_atual = 'trajetoria'
         final.save()
         
     elif final.fase_atual == 'trajetoria':
-        if PartidaDuelo.objects.get(id=final.id_trajetoria).status == 'finalizado':
+        if PartidaDuelo.objects.get(id=final.id_partida_trajetoria).status == 'finalizado':
             final.fase_atual = 'escalacao'
             final.save()
             
     elif final.fase_atual == 'escalacao':
-        if PartidaDuelo.objects.get(id=final.id_escalacao).status == 'finalizado':
+        if PartidaDuelo.objects.get(id=final.id_partida_escalacao).status == 'finalizado':
             final.fase_atual = 'trunfo'
             final.save()
             
     elif final.fase_atual == 'trunfo':
-        if PartidaTrunfo.objects.get(id=final.id_trunfo).status == 'finalizado':
+        if PartidaTrunfo.objects.get(id=final.id_partida_trunfo).status == 'finalizado':
             final.fase_atual = 'minifanaticos'
             final.save()
             
     elif final.fase_atual == 'minifanaticos':
-        if PartidaMiniFanaticos.objects.get(id=final.id_minifanaticos).status == 'finalizado':
+        if PartidaMiniFanaticos.objects.get(id=final.id_partida_minifanaticos).status == 'finalizado':
             final.fase_atual = 'finalizado'
             final.save()
 
     # 2. REDIRECIONA PARA A TELA DE JOGO NORMAL
     if final.fase_atual == 'trajetoria':
-        return redirect('duelos:tela_jogo', partida_id=final.id_trajetoria)
+        return redirect('duelos:tela_jogo', partida_id=final.id_partida_trajetoria)
     elif final.fase_atual == 'escalacao':
-        return redirect('duelos:tela_jogo', partida_id=final.id_escalacao)
+        return redirect('duelos:tela_jogo', partida_id=final.id_partida_escalacao)
     elif final.fase_atual == 'trunfo':
-        return redirect('duelos:tela_jogo_trunfo', partida_id=final.id_trunfo)
+        return redirect('duelos:tela_jogo_trunfo', partida_id=final.id_partida_trunfo)
     elif final.fase_atual == 'minifanaticos':
-        return redirect('duelos:lobby_mini', partida_id=final.id_minifanaticos)
+        return redirect('duelos:lobby_mini', partida_id=final.id_partida_minifanaticos)
     else:
-        return redirect('duelos:hub_grande_final', camp_id=campeonato_id)
+        return redirect('duelos:hub_grande_final', camp_id=campeonato_id) # Acabou tudo! Pódio!

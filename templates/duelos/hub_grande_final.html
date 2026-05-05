@@ -87,12 +87,12 @@
     let faseAtualNoTelao = '';
     const isFinalista = "{{ eh_finalista }}" === "True";
 
-    // Dicionários com as URLs base (usamos 999999 como um coringa para substituir depois)
+    // Dicionários com as URLs base usando 999999 como coringa para ID
     const rotasJogar = {
-        'trajetoria': "{% url 'duelos:tela_jogo' 999999 %}".replace('999999', ''), // Ajuste para o nome real da sua url de jogar trajetória
-        'escalacao': "{% url 'duelos:tela_jogo' 999999 %}".replace('999999', ''),  // Ajuste para o nome real da sua url de jogar escalação
+        'trajetoria': "{% url 'duelos:tela_jogo' 999999 %}".replace('999999', ''),
+        'escalacao': "{% url 'duelos:tela_jogo' 999999 %}".replace('999999', ''),
         'trunfo': "{% url 'duelos:tela_jogo_trunfo' 999999 %}".replace('999999', ''),
-        'minifanaticos': "{% url 'duelos:mini_fanaticos_lobby' %}?partida=" // Exemplo, ajuste conforme sua rota
+        'minifanaticos': "{% url 'duelos:lobby_mini' 999999 %}".replace('999999', '')
     };
 
     const rotasAssistir = {

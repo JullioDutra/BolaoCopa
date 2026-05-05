@@ -51,7 +51,7 @@
     }, 5000);
 
     function atualizarTransmissao() {
-        fetch("{% url 'duelos:status_duelo_api' partida.id %}")
+        fetch("{% url 'duelos:status_partida_api' partida.id %}")
         .then(res => res.json())
         .then(data => {
             let escudosHtml = '';

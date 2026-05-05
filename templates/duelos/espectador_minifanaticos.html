@@ -63,7 +63,7 @@
     }, 5000);
 
     function atualizarTransmissao() {
-        fetch("{% url 'duelos:status_minifanaticos_api' partida.id %}")
+        fetch("{% url 'duelos:status_lobby_mini_api' partida.id %}")
         .then(res => res.json())
         .then(data => {
             if (data.pontos_dupla_a !== undefined) {

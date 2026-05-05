@@ -12,20 +12,22 @@ urlpatterns = [
     
     # Rotas de API (AJAX Invisível)
     path('api/lobby/<int:partida_id>/', views.checar_oponente_api, name='checar_oponente_api'),
-
     path('jogo/<int:partida_id>/', views.tela_jogo, name='tela_jogo'),
     path('api/status/<int:partida_id>/', views.status_partida_api, name='status_partida_api'),
     path('api/chutar/<int:partida_id>/', views.enviar_palpite_api, name='enviar_palpite_api'),
     path('api/desistir/<int:partida_id>/', views.desistir_partida_api, name='desistir_partida_api'),
+    
     path('historico/', views.historico_duelos, name='historico_duelos'),
+    
+    # Campeonatos
     path('campeonatos/criar/', views.criar_campeonato, name='criar_campeonato'),
     path('campeonatos/<int:campeonato_id>/', views.painel_campeonato, name='painel_campeonato'),
     path('campeonatos/entrar/<uuid:codigo_convite>/', views.entrar_campeonato, name='entrar_campeonato'),
     path('campeonatos/<int:campeonato_id>/gerar-chaves/', views.gerar_chaveamento, name='gerar_chaveamento'),
     path('campeonatos/<int:campeonato_id>/chaves/', views.ver_chaveamento, name='ver_chaveamento'),
     path('campeonatos/confronto/<int:confronto_id>/jogar/', views.iniciar_jogo_campeonato, name='iniciar_jogo_campeonato'),
-    path('campeonatos/<int:campeonato_id>/', views.painel_campeonato, name='painel_campeonato'),
     path('campeonatos/<int:campeonato_id>/resetar/', views.resetar_campeonato, name='resetar_campeonato'),
+    
     # ==========================================
     # ROTAS DO MINI FANÁTICOS (2v2)
     # ==========================================
@@ -36,6 +38,10 @@ urlpatterns = [
     path('mini/jogar/<int:partida_id>/', views.tela_jogo_mini, name='tela_jogo_mini'),
     path('api/mini/submeter/<int:partida_id>/', views.submeter_respostas_mini, name='submeter_respostas_mini'),
     path('mini/resultado/<int:partida_id>/', views.resultado_mini, name='resultado_mini'),
+    
+    # ==========================================
+    # ROTAS DO SUPER TRUNFO
+    # ==========================================
     path('trunfo/criar/', views.criar_trunfo, name='criar_trunfo'),
     path('trunfo/entrar/<int:partida_id>/', views.entrar_trunfo, name='entrar_trunfo'),
     path('trunfo/lobby/<int:partida_id>/', views.lobby_trunfo, name='lobby_trunfo'),
@@ -43,6 +49,18 @@ urlpatterns = [
     path('api/trunfo/status/<int:partida_id>/', views.status_trunfo_api, name='status_trunfo_api'),
     path('api/trunfo/batalhar/<int:partida_id>/', views.batalhar_trunfo_api, name='batalhar_trunfo_api'),
     path('trunfo/resultado/<int:partida_id>/', views.resultado_trunfo, name='resultado_trunfo'), 
+    
+    # ==========================================
+    # MOTOR DA GRANDE FINAL E TRANSMISSÃO
+    # ==========================================
     path('campeonato/<int:camp_id>/grande-final/', views.hub_grande_final, name='hub_grande_final'),
+    path('campeonato/<int:camp_id>/gerar-final/', views.preparar_grande_final, name='preparar_grande_final'),
+    path('campeonato/final-api/avancar/<int:final_id>/', views.avancar_round_final_api, name='avancar_round_final_api'),
     path('campeonato/final-api/<int:final_id>/', views.status_grande_final_api, name='status_grande_final_api'),
+    
+    # Câmeras do Modo Espectador
+    path('trunfo/assistir/<int:partida_id>/', views.assistir_trunfo, name='assistir_trunfo'),
+    path('trajetoria/assistir/<int:partida_id>/', views.assistir_trajetoria, name='assistir_trajetoria'),
+    path('escalacao/assistir/<int:partida_id>/', views.assistir_escalacao, name='assistir_escalacao'),
+    path('minifanaticos/assistir/<int:partida_id>/', views.assistir_minifanaticos, name='assistir_minifanaticos'),
 ]

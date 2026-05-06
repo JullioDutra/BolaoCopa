@@ -11,22 +11,20 @@
 
     .arena-trunfo { background-color: #1a1a1a; border-radius: 20px; padding: 40px 20px; box-shadow: inset 0 0 50px rgba(0,0,0,0.9); min-height: 500px; }
     
-    /* Efeito 3D da Carta - Todas as medidas agora usam calc() baseado na escala */
+    /* Efeito 3D da Carta */
     .fut-card-container { perspective: 1000px; width: calc(260px * var(--card-scale)); height: calc(380px * var(--card-scale)); margin: 0 auto; }
     .fut-card-inner { width: 100%; height: 100%; transition: transform 0.8s; transform-style: preserve-3d; position: relative; }
     .fut-card-front, .fut-card-back { width: 100%; height: 100%; position: absolute; backface-visibility: hidden; border-radius: calc(15px * var(--card-scale)); box-shadow: 0 calc(10px * var(--card-scale)) calc(20px * var(--card-scale)) rgba(0,0,0,0.5); }
     
-    /* Frente da Carta (Dourada) */
+    /* Frente da Carta */
     .fut-card-front { background: linear-gradient(135deg, #d4af37, #aa7c11, #f9e596, #aa7c11); padding: calc(15px * var(--card-scale)); color: #333; border: calc(2px * var(--card-scale)) solid #fff; }
     
-    /* Verso da Carta (Oculta) */
+    /* Verso da Carta */
     .fut-card-back { background: repeating-linear-gradient(45deg, #111, #111 10px, #222 10px, #222 20px); border: calc(2px * var(--card-scale)) solid #d4af37; transform: rotateY(180deg); display: flex; align-items: center; justify-content: center; }
     .fut-card-back::after { content: "CARTOLÂNDIA"; color: #d4af37; font-size: calc(1.8rem * var(--card-scale)); font-weight: 900; transform: rotate(-45deg); }
 
-    /* Classe ativada via JS para girar a carta */
     .virada .fut-card-inner { transform: rotateY(180deg); }
 
-    /* Elementos Internos da Carta */
     .card-top-left { position: absolute; top: calc(15px * var(--card-scale)); left: calc(15px * var(--card-scale)); text-align: center; font-weight: bold; }
     .card-overall { font-size: calc(2.2rem * var(--card-scale)); line-height: 1; }
     .card-pos { font-size: calc(1rem * var(--card-scale)); border-bottom: calc(2px * var(--card-scale)) solid #333; padding-bottom: calc(2px * var(--card-scale)); }
@@ -38,7 +36,6 @@
     .stat-btn { background: rgba(255,255,255,0.3); border: none; border-radius: calc(5px * var(--card-scale)); padding: calc(5px * var(--card-scale)) calc(10px * var(--card-scale)); font-weight: bold; display: flex; justify-content: space-between; align-items: center; transition: 0.2s; color: #000; text-decoration: none; font-size: calc(0.9rem * var(--card-scale));}
     .stat-val { font-size: calc(1.2rem * var(--card-scale)); }
     
-    /* Efeitos de Turno */
     .minha-vez .stat-btn { cursor: pointer; }
     .minha-vez .stat-btn:hover { background: #000; color: #d4af37; transform: scale(1.05); }
     .bloqueado { filter: grayscale(80%) opacity(0.7); pointer-events: none; }
@@ -46,27 +43,14 @@
     .placar-box { background: #000; border: 2px solid #d4af37; border-radius: 10px; }
     .turno-badge { font-size: 1.2rem; text-transform: uppercase; letter-spacing: 2px; }
 
-    /* =========================================================
-       MAGIA DO MOBILE: Ajustes para caber 2 cartas na mesma linha
-       ========================================================= */
     @media (max-width: 768px) {
-        :root { 
-            --card-scale: 0.48; /* Reduz a carta pela metade */
-        }
-        .arena-trunfo {
-            padding: 15px 5px;
-            gap: 2px !important;
-            flex-wrap: nowrap !important; /* Força ficar na mesma linha */
-            justify-content: space-between !important;
-            min-height: 250px;
-        }
+        :root { --card-scale: 0.48; }
+        .arena-trunfo { padding: 15px 5px; gap: 2px !important; flex-wrap: nowrap !important; justify-content: space-between !important; min-height: 250px; }
         .col-carta { width: 45%; }
         .titulo-carta { font-size: 0.85rem; margin-bottom: 10px !important; }
-        
         .area-vs { min-width: 50px !important; padding: 0 !important; }
         .area-vs img { width: 35px !important; margin-bottom: 5px !important; }
         #msg-batalha { font-size: 0.65rem !important; padding: 5px !important; }
-        
         .placar-box h4 { font-size: 1rem; }
         .placar-box span { font-size: 1.2rem !important; margin: 0 5px !important; }
         .turno-badge { font-size: 0.9rem; padding: 5px 15px !important; }
@@ -101,20 +85,16 @@
 <div class="row justify-content-center mt-4">
     <div class="col-md-11 text-center">
         
-        <!-- Tela de Carregamento Inicial -->
         <div id="tela-loading" class="py-5">
             <h3 class="fw-bold text-dark mb-3"><i class="fa-solid fa-spinner fa-spin text-warning"></i> Conectando à mesa...</h3>
         </div>
 
-        <!-- Tela Principal do Jogo -->
         <div id="tela-jogo" class="d-none">
             
-            <!-- Placar Atualizado -->
             <div class="placar-box p-3 mb-3 d-inline-block text-white px-5 shadow-lg">
                 <h4 class="mb-0">SUAS CARTAS <span id="placar-meu" class="text-warning fs-2 mx-3">5</span> x <span id="placar-adv" class="text-danger fs-2 mx-3">5</span> RIVAL</h4>
             </div>
 
-            <!-- Indicador de Turno -->
             <div class="mb-4">
                 <span id="badge-turno" class="badge bg-secondary p-2 px-4 turno-badge shadow">Aguardando...</span>
             </div>
@@ -126,15 +106,13 @@
                     <h5 class="text-white fw-bold mb-3 titulo-carta"><i class="fa-solid fa-hand-sparkles text-warning"></i> Sua Carta</h5>
                     <div class="fut-card-container" id="container-minha-carta">
                         <div class="fut-card-inner">
-                            <div class="fut-card-front" id="minha-carta-frente">
-                                <!-- Preenchido via JS -->
-                            </div>
+                            <div class="fut-card-front" id="minha-carta-frente"></div>
                             <div class="fut-card-back"></div>
                         </div>
                     </div>
                 </div>
 
-                <!-- ÁREA CENTRAL (VS e Mensagens) -->
+                <!-- ÁREA CENTRAL -->
                 <div class="text-center area-vs" style="min-width: 200px; z-index: 1;">
                     <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/ad/VS_icon.svg/1024px-VS_icon.svg.png" width="80" alt="VS" class="mb-3">
                     <div id="msg-batalha" class="fw-bold fs-5 text-white bg-dark p-2 rounded shadow-lg opacity-0 transition-opacity" style="opacity: 0; transition: 0.5s;">
@@ -145,12 +123,9 @@
                 <!-- CARTA DO ADVERSÁRIO -->
                 <div style="z-index: 2;" class="col-carta">
                     <h5 class="text-white fw-bold mb-3 titulo-carta"><i class="fa-solid fa-user-ninja text-danger"></i> Adversário</h5>
-                    <!-- O contêiner já começa com a classe 'virada' para mostrar o verso -->
                     <div class="fut-card-container virada" id="container-carta-adv">
                         <div class="fut-card-inner">
-                            <div class="fut-card-front" id="carta-adv-frente">
-                                <!-- Preenchido via JS -->
-                            </div>
+                            <div class="fut-card-front" id="carta-adv-frente"></div>
                             <div class="fut-card-back"></div>
                         </div>
                     </div>
@@ -170,13 +145,22 @@
     const labels = { rit: 'RITMO', fin: 'FINALIZAÇÃO', pas: 'PASSE', dri: 'DRIBLE', def: 'DEFESA', fis: 'FÍSICO' };
 
     function montarHtmlCarta(carta, isMinhaVez) {
-        if (!carta) return '';
+        // ========================================================
+        // BLINDAGEM CONTRA A NÉVOA DE GUERRA DO BACKEND
+        // ========================================================
+        if (!carta || !carta.stats) {
+            return `
+                <div class="d-flex flex-column align-items-center justify-content-center h-100 text-dark opacity-50">
+                    <i class="fa-solid fa-question-circle mb-3" style="font-size: 4rem;"></i>
+                    <h5 class="fw-bold">CARTA OCULTA</h5>
+                </div>
+            `;
+        }
         
         let botoesStats = '';
         for (const [key, label] of Object.entries(labels)) {
             let valor = carta.stats[key];
             let onclick = isMinhaVez ? `onclick="iniciarBatalha('${key}')"` : '';
-            // Trocamos o fs-5 pela classe customizada stat-val para escalar perfeito no mobile
             botoesStats += `<button class="stat-btn w-100" ${onclick}><span>${label.substring(0,3)}</span> <span class="stat-val">${valor}</span></button>`;
         }
 
@@ -194,15 +178,10 @@
     }
 
     function atualizarInterface(data) {
-        // ========================================================
-        // MAGIA DO AUTO-AVANÇO DA FINAL
-        // ========================================================
         if (data.status === 'finalizado') {
             if (data.url_proximo_round) {
-                // É a Grande Final! Puxa a próxima tela automaticamente
                 window.location.href = data.url_proximo_round;
             } else {
-                // Partida normal, vai pra tela de resultado
                 window.location.href = "{% url 'duelos:resultado_trunfo' partida.id %}";
             }
             return;
@@ -219,11 +198,9 @@
             return;
         }
 
-        // Atualiza Placar
         document.getElementById('placar-meu').innerText = data.pontos_meus;
         document.getElementById('placar-adv').innerText = data.pontos_adv;
 
-        // Se a rodada mudou
         if (data.rodada !== rodadaAtual) {
             rodadaAtual = data.rodada;
             dadosCartaAdv = data.carta_adv_info;
@@ -235,7 +212,6 @@
             document.getElementById('carta-adv-frente').innerHTML = montarHtmlCarta(data.carta_adv_info, false);
         }
 
-        // Atualiza a Vez
         minhaVez = data.minha_vez;
         let containerMinha = document.getElementById('container-minha-carta');
         let badgeTurno = document.getElementById('badge-turno');
@@ -257,7 +233,6 @@
             if (!minhaVez || animandoBatalha) return;
             animandoBatalha = true; 
 
-            // Vira a carta do adversário para ver o embate
             document.getElementById('container-carta-adv').classList.remove('virada');
 
             fetch("{% url 'duelos:batalhar_trunfo_api' partida.id %}", {
@@ -269,14 +244,14 @@
                 body: JSON.stringify({ atributo: atributoKey })
             })
             .then(res => {
-                // SE O SERVIDOR DER ERRO 500 (TELA AMARELA), O JS PEGA AQUI ANTES DE TRAVAR
-                if (!res.ok) {
-                    throw new Error("Erro " + res.status + " no servidor.");
-                }
+                if (!res.ok) throw new Error("Erro " + res.status + " no servidor.");
                 return res.json();
             })
             .then(respostaData => {
                 if (respostaData.sucesso) {
+                    // DESENHA A CARTA DO ADVERSÁRIO AGORA QUE ELA TEM STATS
+                    document.getElementById('carta-adv-frente').innerHTML = montarHtmlCarta(respostaData.carta_adv_info, false);
+                    
                     let msgDiv = document.getElementById('msg-batalha');
                     let valMeu = respostaData.valor_j1;
                     let valAdv = respostaData.valor_j2;
@@ -297,20 +272,14 @@
                     }, 4000);
 
                 } else {
-                    // SE O PYTHON BARRAR A JOGADA (Ex: Sem cartas na mesa)
                     alert("Aviso: " + respostaData.erro);
-                    
-                    // Desfaz a animação para o jogo não ficar travado
                     document.getElementById('container-carta-adv').classList.add('virada');
                     animandoBatalha = false;
                 }
             })
             .catch(error => {
-                // SE ACONTECER UM ERRO FATAL (QUEDA DE INTERNET OU ERRO 500)
                 console.error(error);
                 alert("Aconteceu um erro de conexão ou a partida está corrompida.");
-                
-                // Desfaz a animação
                 document.getElementById('container-carta-adv').classList.add('virada');
                 animandoBatalha = false;
             });

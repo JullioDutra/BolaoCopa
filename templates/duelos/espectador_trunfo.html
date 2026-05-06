@@ -23,18 +23,15 @@
 
         .card-top-left { position: absolute; top: calc(10px * var(--card-scale)); left: calc(10px * var(--card-scale)); text-align: center; font-weight: bold; }
         .card-overall { font-size: calc(1.8rem * var(--card-scale)); line-height: 1; }
-        .jogador-img { width: calc(120px * var(--card-scale)); height: calc(120px * var(--card-scale)); object-fit: cover; border-radius: 50%; margin: 0 auto; display: block; border: calc(3px * var(--card-scale)) solid #fff; }
-        .jogador-nome { text-align: center; font-size: calc(1.1rem * var(--card-scale)); font-weight: 900; text-transform: uppercase; margin-top: calc(5px * var(--card-scale)); }
+        .jogador-img { width: calc(120px * var(--card-scale)); height: calc(120px * var(--card-scale)); object-fit: cover; border-radius: 50%; margin: 0 auto; display: block; border: calc(3px * var(--card-scale)) solid #fff; background: rgba(255,255,255,0.4); }
+        .jogador-nome { text-align: center; font-size: calc(1.1rem * var(--card-scale)); font-weight: 900; text-transform: uppercase; margin-top: calc(5px * var(--card-scale)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: calc(4px * var(--card-scale)); margin-top: calc(10px * var(--card-scale)); }
         
-        /* Botões cinzas pra arquibancada (somente leitura) */
         .stat-view { background: rgba(255,255,255,0.4); border-radius: calc(5px * var(--card-scale)); padding: calc(2px * var(--card-scale)) calc(8px * var(--card-scale)); font-weight: bold; display: flex; justify-content: space-between; font-size: calc(0.85rem * var(--card-scale)); color: #000; }
         
-        /* Efeito Piscar Ao Vivo */
         .live-badge { animation: pulse 1.5s infinite; background-color: #dc3545; color: white; padding: 3px 10px; border-radius: 5px; font-weight: bold; font-size: 0.8rem; letter-spacing: 1px;}
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
 
-        /* MAGIA MOBILE PARA A ARQUIBANCADA */
         @media (max-width: 768px) {
             :root { --card-scale: 0.55; }
             .col-5 { width: 45%; padding: 0 5px; }
@@ -49,7 +46,6 @@
 </head>
 <body>
 
-<!-- O letreiro estilo Twitch -->
 <div class="position-absolute top-0 start-0 m-3 z-3">
     <span class="live-badge"><i class="fa-solid fa-circle"></i> AO VIVO</span>
     <span class="badge bg-dark ms-2"><i class="fa-solid fa-eye"></i> <span id="espectadores-count">Carregando...</span></span>
@@ -57,10 +53,11 @@
 
 <div class="container-fluid arena-trunfo mt-5">
     <div class="row align-items-center justify-content-center m-0">
-        <!-- CARTA JOGADOR 1 -->
+        
+        <!-- CARTA JOGADOR 1 (Começa virada porque o backend esconde os stats do inimigo) -->
         <div class="col-5">
-            <h4 class="text-warning mb-2 fw-bold text-uppercase shadow-sm text-truncate">{{ partida.criador.username }}</h4>
-            <div class="fut-card-container" id="container-j1">
+            <h4 class="text-warning mb-2 fw-bold text-uppercase shadow-sm text-truncate">{{ partida.jogador_criador.username|default:"MANDANTE" }}</h4>
+            <div class="fut-card-container virada" id="container-j1">
                 <div class="fut-card-inner">
                     <div class="fut-card-front" id="carta-j1-frente"></div>
                     <div class="fut-card-back"></div>
@@ -75,9 +72,9 @@
             <div id="badge-turno" class="mt-2 badge bg-secondary p-2 text-white w-100 shadow">Sincronizando...</div>
         </div>
 
-        <!-- CARTA JOGADOR 2 -->
+        <!-- CARTA JOGADOR 2 (Também começa virada por garantia) -->
         <div class="col-5">
-            <h4 class="text-danger mb-2 fw-bold text-uppercase shadow-sm text-truncate">{{ partida.convidado.username }}</h4>
+            <h4 class="text-danger mb-2 fw-bold text-uppercase shadow-sm text-truncate">{{ partida.jogador_convidado.username|default:"VISITANTE" }}</h4>
             <div class="fut-card-container virada" id="container-j2">
                 <div class="fut-card-inner">
                     <div class="fut-card-front" id="carta-j2-frente"></div>
@@ -86,23 +83,35 @@
             </div>
             <h5 class="mt-3 bg-dark d-inline-block px-4 py-2 rounded-pill border border-danger shadow">Cartas: <span id="pontos-j2" class="text-danger fw-bold fs-4">5</span></h5>
         </div>
+
     </div>
 </div>
 
 <script>
-    let rodadaAtual = 0;
+    let rodadaAtual = -1;
 
     function montarHtmlCarta(carta) {
-        if (!carta) return '';
+        // BLINDAGEM: Se a carta vier sem "stats" (oculta pela API), não dá Erro 500 no JS!
+        if (!carta || !carta.stats) {
+            return `
+                <div class="d-flex flex-column align-items-center justify-content-center h-100 text-dark opacity-50">
+                    <i class="fa-solid fa-question-circle mb-3" style="font-size: 4rem;"></i>
+                    <h5 class="fw-bold">CARTA OCULTA</h5>
+                </div>
+            `;
+        }
+
         let botoesStats = '';
         const labels = { rit: 'RITMO', fin: 'FINALIZA', pas: 'PASSE', dri: 'DRIBLE', def: 'DEFESA', fis: 'FÍSICO' };
         for (const [key, label] of Object.entries(labels)) {
-            botoesStats += `<div class="stat-view"><span>${label.substring(0,3)}</span> <span class="fs-6">${carta.stats[key]}</span></div>`;
+            let valor = carta.stats[key] !== undefined ? carta.stats[key] : '?';
+            botoesStats += `<div class="stat-view"><span>${label.substring(0,3)}</span> <span class="fs-6">${valor}</span></div>`;
         }
+        
         return `
-            <div class="card-top-left"><div class="card-overall">${carta.ovr}</div></div>
-            <img src="${carta.img}" class="jogador-img mt-1">
-            <div class="jogador-nome">${carta.nome}</div>
+            <div class="card-top-left"><div class="card-overall">${carta.ovr || '?'}</div></div>
+            <img src="${carta.img || ''}" class="jogador-img mt-1">
+            <div class="jogador-nome">${carta.nome || 'Desconhecido'}</div>
             <div class="stats-grid">${botoesStats}</div>
         `;
     }
@@ -117,34 +126,62 @@
                 document.getElementById('espectadores-count').innerText = data.espectadores_reais;
             }
 
-            // CORREÇÃO: Como o espectador não é nenhum dos jogadores, a API considera ele "externo"
-            // Isso significa que o 'pontos_adv' da API é o Jogador 1 (Criador) e 'pontos_meus' é o Jogador 2
-            document.getElementById('pontos-j1').innerText = data.pontos_adv;
-            document.getElementById('pontos-j2').innerText = data.pontos_meus;
+            if (data.status === 'aguardando') {
+                document.getElementById('badge-turno').innerHTML = "<i class='fa-solid fa-hourglass-half fa-spin'></i> Montando o Baralho...";
+                return;
+            }
+
+            // CORREÇÃO: O espectador vê a perspectiva do convidado (A API inverte)
+            document.getElementById('pontos-j1').innerText = data.pontos_adv !== undefined ? data.pontos_adv : '0';
+            document.getElementById('pontos-j2').innerText = data.pontos_meus !== undefined ? data.pontos_meus : '0';
 
             let badgeTurno = document.getElementById('badge-turno');
             
-            // Lógica de turnos invertida para o espectador visualizar corretamente
-            if(!data.minha_vez) { // Se não é do J2 (ou seja, é do J1)
+            if(!data.minha_vez) { 
                 badgeTurno.className = "mt-2 badge bg-warning text-dark p-2 w-100 shadow";
-                badgeTurno.innerHTML = "<i class='fa-solid fa-hourglass-half fa-spin'></i> Pensando...";
+                badgeTurno.innerHTML = "<i class='fa-solid fa-hourglass-half fa-spin'></i> J1 Pensando...";
             } else {
                 badgeTurno.className = "mt-2 badge bg-danger text-white p-2 w-100 shadow";
-                badgeTurno.innerHTML = "<i class='fa-solid fa-hourglass-half fa-spin'></i> Pensando...";
+                badgeTurno.innerHTML = "<i class='fa-solid fa-hourglass-half fa-spin'></i> J2 Pensando...";
             }
 
-            if (data.rodada !== rodadaAtual) {
+            // Se a rodada mudou ou rolou o embate (carta_adv_info ganhou stats)
+            let advTemStats = data.carta_adv_info && data.carta_adv_info.stats !== undefined;
+
+            if (data.rodada !== rodadaAtual || advTemStats) {
                 rodadaAtual = data.rodada;
-                document.getElementById('container-j2').classList.add('virada'); 
                 
-                // Mapeia a carta_adv_info para o Jogador 1 e a minha_carta para o Jogador 2
+                // Desenha as cartas de forma segura
                 document.getElementById('carta-j1-frente').innerHTML = montarHtmlCarta(data.carta_adv_info);
                 document.getElementById('carta-j2-frente').innerHTML = montarHtmlCarta(data.minha_carta);
+                
+                // Desvira J1 só se rolou o embate e tem stats
+                if (advTemStats) {
+                    document.getElementById('container-j1').classList.remove('virada');
+                } else {
+                    document.getElementById('container-j1').classList.add('virada');
+                }
+
+                // A carta do J2 vaza pela API como "minha_carta", então se tiver stats a arquibancada vê
+                if (data.minha_carta && data.minha_carta.stats !== undefined) {
+                    document.getElementById('container-j2').classList.remove('virada');
+                } else {
+                    document.getElementById('container-j2').classList.add('virada');
+                }
             }
-        });
+
+            if (data.status === 'finalizado') {
+                badgeTurno.className = "mt-2 badge bg-success text-white p-2 w-100 shadow";
+                badgeTurno.innerHTML = "<i class='fa-solid fa-trophy'></i> FIM DE JOGO!";
+            }
+            
+        }).catch(err => console.error("Erro na Transmissão Trunfo:", err));
     }
 
+    // Roda a cada 2 segundos
     setInterval(atualizarTransmissao, 2000);
+    // Chama a primeira vez imediatamente
+    atualizarTransmissao();
 </script>
 </body>
 </html>

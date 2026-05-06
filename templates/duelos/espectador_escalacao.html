@@ -12,30 +12,57 @@
         }
 
         body { background-color: transparent; color: white; overflow: hidden; font-family: sans-serif; }
-        .arena { padding: 20px; text-align: center; }
+        .arena { padding: 10px; text-align: center; }
         
-        .campo-verde { 
-            background: linear-gradient(180deg, #1b5e20 0%, #2e7d32 100%); 
-            border: 3px solid #fff; 
-            border-radius: 15px; 
-            min-height: calc(280px * var(--card-scale)); 
-            padding: calc(20px * var(--card-scale)); 
-            position: relative; 
-            box-shadow: inset 0 0 30px rgba(0,0,0,0.5), 0 10px 20px rgba(0,0,0,0.4); 
+        /* O Gramado Tático para a Arquibancada */
+        .campinho-bg {
+            background: #2e7d32;
+            background-image: 
+                linear-gradient(rgba(255,255,255,.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+            border: 4px solid white;
+            border-radius: 8px;
+            position: relative;
+            padding: calc(20px * var(--card-scale)) calc(10px * var(--card-scale));
+            display: flex;
+            flex-direction: column;
+            gap: calc(15px * var(--card-scale));
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.4);
+            overflow: hidden;
         }
         
-        .jogador-revelado { 
-            background: rgba(0,0,0,0.85); 
-            color: white; 
-            padding: calc(8px * var(--card-scale)) calc(18px * var(--card-scale)); 
-            border-radius: 20px; 
-            display: inline-block; 
-            margin: calc(8px * var(--card-scale)); 
-            font-weight: bold; 
-            border: 2px solid #d4af37; 
-            box-shadow: 0 4px 8px rgba(0,0,0,0.4); 
-            font-size: calc(1.1rem * var(--card-scale)); 
-            transition: all 0.3s ease;
+        .campinho-bg::before {
+            content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 2px; background: rgba(255, 255, 255, 0.4);
+        }
+        
+        .campinho-bg::after {
+            content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: calc(80px * var(--card-scale)); height: calc(80px * var(--card-scale));
+            border: 2px solid rgba(255, 255, 255, 0.4); border-radius: 50%;
+        }
+
+        .pitch-row { display: flex; justify-content: center; gap: calc(8px * var(--card-scale)); width: 100%; z-index: 1; }
+
+        .jogador-slot {
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid #a5d6a7; border-radius: 8px;
+            padding: calc(6px * var(--card-scale)) calc(2px * var(--card-scale));
+            text-align: center; font-weight: bold; flex: 1; min-width: 0; max-width: 23%;
+            font-size: calc(0.75rem * var(--card-scale)); transition: all 0.3s ease;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3); color: #333;
+        }
+
+        .jogador-revelado {
+            background: #ffffff !important; border-color: #ffd700; color: #1b5e20;
+            transform: scale(1.05); box-shadow: 0 0 12px rgba(255, 215, 0, 0.8);
+        }
+
+        .posicao-badge {
+            font-size: calc(0.45rem * var(--card-scale)); text-transform: uppercase;
+            background: #e9ecef; border-radius: 4px; padding: 2px 4px; margin-bottom: 4px; color: #333;
+            width: 90%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
         
         /* Efeito Piscar Ao Vivo */
@@ -45,12 +72,12 @@
         /* MAGIA MOBILE DA ARQUIBANCADA */
         @media (max-width: 768px) {
             :root { --card-scale: 0.7; }
-            .arena { padding: 10px; }
-            .arena h3 { font-size: 1.2rem; margin-top: 15px; }
-            .campo-verde h5 { font-size: 1rem; }
+            .arena { padding: 5px; }
+            .arena h3 { font-size: 1.1rem; margin-top: 25px; margin-bottom: 10px !important;}
             #msg-vencedor { padding: 15px !important; }
             #msg-vencedor .titulo-vencedor { font-size: 1.2rem !important; }
             #msg-vencedor .time-historico { font-size: 1.1rem !important; }
+            .placar-box h2 { font-size: 1.5rem; }
         }
     </style>
 </head>
@@ -63,34 +90,97 @@
 </div>
 
 <div class="container-fluid arena mt-4">
-    <h3 class="text-success fw-bold mb-4 text-uppercase" style="letter-spacing: 2px; text-shadow: 2px 2px 4px rgba(0,0,0,0.8);">
+    <h3 class="text-success fw-bold mb-3 text-uppercase" style="letter-spacing: 2px; text-shadow: 2px 2px 4px rgba(0,0,0,0.8);">
         <i class="fa-solid fa-clipboard-list"></i> Prancheta do Professor
     </h3>
 
+    <!-- PLACAR SUPERIOR -->
+    <div class="row justify-content-center mb-3">
+        <div class="col-11 col-md-8">
+            <div class="d-flex justify-content-between align-items-center bg-dark p-2 rounded-4 border border-secondary shadow placar-box">
+                <div class="text-center w-50 border-end border-secondary">
+                    <small class="text-muted text-uppercase d-block" style="font-size: 0.65rem;">Mandante</small>
+                    <span class="fw-bold text-success text-truncate d-block px-1">{{ partida.jogador_criador.first_name|default:partida.jogador_criador.username }}</span>
+                    <h2 class="fw-bold text-white mb-0" id="pts-j1">0</h2>
+                </div>
+                <div class="text-center w-50">
+                    <small class="text-muted text-uppercase d-block" style="font-size: 0.65rem;">Visitante</small>
+                    <span class="fw-bold text-primary text-truncate d-block px-1">{{ partida.jogador_convidado.first_name|default:partida.jogador_convidado.username }}</span>
+                    <h2 class="fw-bold text-white mb-0" id="pts-j2">0</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="row justify-content-center">
-        <div class="col-10 col-md-8">
-            <div class="campo-verde">
-                <h5 class="text-white opacity-75 mb-4 fw-bold text-uppercase"><i class="fa-solid fa-futbol"></i> Jogadores Descobertos</h5>
-                
-                <div id="area-jogadores" class="d-flex flex-wrap justify-content-center align-items-center">
-                    
-                    <div id="status-informativo" class="d-flex flex-column align-items-center opacity-75 mt-3 w-100">
-                        <div id="icone-spinner" class="spinner-border text-light mb-2" role="status"></div>
-                        <span id="texto-spinner" class="fw-bold">Conectando ao campo...</span>
-                    </div>
+        <div class="col-11 col-md-8">
+            
+            <div class="text-center mb-2">
+                <!-- AQUI ESTÁ O TIME HISTÓRICO! -->
+                <h4 class="fw-bold text-warning text-uppercase mb-1" style="text-shadow: 1px 1px 2px #000;">{{ partida.categoria.titulo }}</h4>
+            </div>
 
-                    <!-- O Django pré-carrega todos os nomes escondidos. O JS só revela na hora certa! -->
+            <!-- O GRAMADO TÁTICO -->
+            <div class="campinho-bg shadow-lg">
+                <!-- LINHA 4: ATAQUE (Itens 9, 10, 11) -->
+                <div class="pitch-row">
                     {% for item in partida.categoria.itens.all %}
-                        <div class="jogador-revelado d-none" id="jogador-{{ item.id }}">
-                            <i class="fa-solid fa-check text-success me-1"></i> {{ item.get_nome }}
+                        {% if forloop.counter > 8 %}
+                        <div class="jogador-slot" id="slot-{{ item.id }}">
+                            <span class="posicao-badge">{{ item.posicao_tatica }}</span>
+                            <i class="fa-solid fa-shirt fs-3 mb-1 text-muted"></i>
+                            <span class="nome-oculto">????</span>
+                            <span class="nome-real d-none text-uppercase text-truncate w-100 px-1">{{ item.get_nome }}</span>
                         </div>
+                        {% endif %}
                     {% endfor %}
+                </div>
 
+                <!-- LINHA 3: MEIO-CAMPO (Itens 6, 7, 8) -->
+                <div class="pitch-row" style="margin-top: 10px;">
+                    {% for item in partida.categoria.itens.all %}
+                        {% if forloop.counter > 5 and forloop.counter <= 8 %}
+                        <div class="jogador-slot" id="slot-{{ item.id }}">
+                            <span class="posicao-badge">{{ item.posicao_tatica }}</span>
+                            <i class="fa-solid fa-shirt fs-3 mb-1 text-muted"></i>
+                            <span class="nome-oculto">????</span>
+                            <span class="nome-real d-none text-uppercase text-truncate w-100 px-1">{{ item.get_nome }}</span>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+
+                <!-- LINHA 2: DEFESA (Itens 2, 3, 4, 5) -->
+                <div class="pitch-row" style="margin-top: 10px;">
+                    {% for item in partida.categoria.itens.all %}
+                        {% if forloop.counter > 1 and forloop.counter <= 5 %}
+                        <div class="jogador-slot" id="slot-{{ item.id }}">
+                            <span class="posicao-badge">{{ item.posicao_tatica }}</span>
+                            <i class="fa-solid fa-shirt fs-3 mb-1 text-muted"></i>
+                            <span class="nome-oculto">????</span>
+                            <span class="nome-real d-none text-uppercase text-truncate w-100 px-1">{{ item.get_nome }}</span>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+
+                <!-- LINHA 1: GOLEIRO (Item 1) -->
+                <div class="pitch-row" style="margin-top: 10px;">
+                    {% for item in partida.categoria.itens.all %}
+                        {% if forloop.counter == 1 %}
+                        <div class="jogador-slot" id="slot-{{ item.id }}" style="max-width: 30%; border-color: #ff9800;">
+                            <span class="posicao-badge bg-warning text-dark">{{ item.posicao_tatica }}</span>
+                            <i class="fa-solid fa-hands-bubbles fs-3 mb-1 text-muted"></i>
+                            <span class="nome-oculto">????</span>
+                            <span class="nome-real d-none text-uppercase text-truncate w-100 px-1">{{ item.get_nome }}</span>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
                 </div>
             </div>
             
-            <!-- A DIV DO VENCEDOR AGORA É UM BLOCO MAIOR E MAIS BONITO -->
-            <div id="msg-vencedor" class="mt-4 w-100 bg-dark p-4 rounded-4 shadow-lg border border-warning d-none"></div>
+            <!-- RESULTADO FINAL -->
+            <div id="msg-vencedor" class="mt-4 w-100 bg-dark p-4 rounded-4 shadow-lg border border-warning d-none text-center"></div>
 
         </div>
     </div>
@@ -102,42 +192,34 @@
         .then(res => res.json())
         .then(data => {
             
-            // Ibope 100% Real
+            // Ibope
             if (data.espectadores_reais !== undefined) {
                 document.getElementById('espectadores-count').innerText = data.espectadores_reais;
             }
 
-            let statusBox = document.getElementById('status-informativo');
-            let spinnerIcon = document.getElementById('icone-spinner');
-            let statusText = document.getElementById('texto-spinner');
-
-            if (data.status === 'aguardando') {
-                statusBox.classList.remove('d-none');
-                spinnerIcon.classList.remove('d-none');
-                statusText.innerText = "Aguardando os jogadores conectarem...";
-            
-            } else if (data.revelados_ids && data.revelados_ids.length > 0) {
-                statusBox.classList.add('d-none');
-                data.revelados_ids.forEach(id => {
-                    let pill = document.getElementById(`jogador-${id}`);
-                    if (pill && pill.classList.contains('d-none')) {
-                        pill.classList.remove('d-none');
-                        pill.animate([{ transform: 'scale(0)' }, { transform: 'scale(1)' }], { duration: 300 });
-                    }
-                });
-            
-            } else {
-                statusBox.classList.remove('d-none');
-                spinnerIcon.classList.add('d-none');
-                statusText.innerHTML = "<i class='fa-solid fa-eye fs-3 mb-2 d-block'></i> De olho na prancheta...<br>Nenhum acerto ainda!";
+            // Atualiza o Placar
+            if (data.pontos_j1 !== undefined) {
+                document.getElementById('pts-j1').innerText = data.pontos_j1;
+                document.getElementById('pts-j2').innerText = data.pontos_j2;
             }
 
-            // ========================================================
-            // FIM DE JOGO: ANÚNCIO DE VENCEDOR E TIME HISTÓRICO
-            // ========================================================
+            // Animação: Acende os jogadores no campo à medida que a API manda os IDs!
+            if (data.revelados_ids && data.revelados_ids.length > 0) {
+                data.revelados_ids.forEach(id => {
+                    let slot = document.getElementById(`slot-${id}`);
+                    if (slot && !slot.classList.contains('jogador-revelado')) {
+                        slot.classList.add('jogador-revelado');
+                        slot.querySelector('.nome-oculto').classList.add('d-none');
+                        slot.querySelector('.nome-real').classList.remove('d-none');
+                        
+                        // Efeitozinho "Pop" para a galera ver que alguém acertou na hora!
+                        slot.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.1)' }, { transform: 'scale(1)' }], { duration: 400 });
+                    }
+                });
+            }
+
+            // Fim de jogo e anúncio do Mestre da Tática
             if (data.status === 'finalizado') {
-                statusBox.classList.add('d-none'); 
-                
                 let msgDiv = document.getElementById('msg-vencedor');
                 msgDiv.classList.remove('d-none');
                 
@@ -148,17 +230,12 @@
                     nomeVencedor = "{{ partida.jogador_convidado.first_name|default:partida.jogador_convidado.username|escapejs }}";
                 }
                 
-                // Monta o placar com o título da categoria (Time Histórico)
+                // Mensagem Final
                 msgDiv.innerHTML = `
-                    <div class="titulo-vencedor text-warning fw-bold fs-3 mb-3">
+                    <div class="titulo-vencedor text-warning fw-bold fs-3 mb-2">
                         <i class="fa-solid fa-trophy"></i> Venceu: ${nomeVencedor}
                     </div>
-                    <div class="pt-3 border-top border-secondary">
-                        <span class="fs-6 text-muted d-block mb-1 text-uppercase">O Time da Prancheta era:</span>
-                        <div class="time-historico text-white fw-bold fs-4 text-uppercase">
-                            {{ partida.categoria.titulo }}
-                        </div>
-                    </div>
+                    <span class="fs-6 text-muted text-uppercase">Time Finalizado: {{ partida.categoria.titulo }}</span>
                 `;
             }
         }).catch(err => console.error(err));

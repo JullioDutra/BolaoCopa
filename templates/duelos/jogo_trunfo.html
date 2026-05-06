@@ -4,7 +4,7 @@
 
 {% block content %}
 <style>
-    /* VARIÁVEL DE ESCALA: Define o tamanho padrão no PC (1) e encolhe no Mobile (0.48) */
+    /* VARIÁVEL DE ESCALA */
     :root {
         --card-scale: 1;
     }
@@ -63,7 +63,6 @@
         <div class="modal-content bg-dark text-white" style="border: 3px solid #d4af37; border-radius: 15px;">
             <div class="modal-header border-secondary">
                 <h4 class="modal-title fw-bold text-warning" id="modalRegrasLabel"><i class="fa-solid fa-book-open"></i> Regras da Batalha</h4>
-                <!-- Correção do Aria-Hidden: Adicionado onclick="this.blur()" -->
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar" onclick="this.blur()"></button>
             </div>
             <div class="modal-body fs-5 text-start px-4">
@@ -77,7 +76,6 @@
                 <p class="text-center text-warning fw-bold fs-4 mb-0"><i class="fa-solid fa-trophy"></i> Que vença o melhor!</p>
             </div>
             <div class="modal-footer border-secondary justify-content-center">
-                <!-- Correção do Aria-Hidden: Adicionado onclick="this.blur()" -->
                 <button type="button" class="btn btn-warning btn-lg fw-bold px-5 rounded-pill shadow-sm" data-bs-dismiss="modal" onclick="this.blur()">Entendi, vamos pro jogo!</button>
             </div>
         </div>
@@ -139,9 +137,6 @@
 </div>
 
 <script>
-    // ========================================================
-    // CORREÇÃO CRUCIAL: Começa em -1 para forçar o desenho na primeira rodada
-    // ========================================================
     let rodadaAtual = -1; 
     let minhaVez = false;
     let animandoBatalha = false;
@@ -150,7 +145,6 @@
     const labels = { rit: 'RITMO', fin: 'FINALIZAÇÃO', pas: 'PASSE', dri: 'DRIBLE', def: 'DEFESA', fis: 'FÍSICO' };
 
     function montarHtmlCarta(carta, isMinhaVez) {
-        // Blindagem extra para caso a API ainda não tenha enviado os stats da carta
         if (!carta || !carta.stats) {
             return `
                 <div class="d-flex flex-column align-items-center justify-content-center h-100 text-dark opacity-50">
@@ -193,7 +187,6 @@
         document.getElementById('tela-loading').classList.add('d-none');
         document.getElementById('tela-jogo').classList.remove('d-none');
 
-        // Aguardando adversário
         if (data.status === 'aguardando') {
             document.getElementById('badge-turno').className = "badge bg-warning text-dark p-2 px-4 turno-badge shadow";
             document.getElementById('badge-turno').innerHTML = '<i class="fa-solid fa-hourglass-half fa-spin"></i> Aguardando oponente...';
@@ -204,10 +197,9 @@
         document.getElementById('placar-meu').innerText = data.pontos_meus;
         document.getElementById('placar-adv').innerText = data.pontos_adv;
 
-        // Se a rodada mudou, nós desenhamos as cartas
         if (data.rodada !== rodadaAtual) {
             rodadaAtual = data.rodada;
-            dadosCartaAdv = data.carta_adv_info;
+            dadosCartaAdv = data.carta_adv_info; // Salva a carta adversária recebida!
 
             document.getElementById('container-carta-adv').classList.add('virada');
             document.getElementById('msg-batalha').style.opacity = "0";
@@ -254,8 +246,10 @@
             .then(respostaData => {
                 if (respostaData.sucesso) {
                     
-                    // Desenha a carta do adversário agora revelada
-                    document.getElementById('carta-adv-frente').innerHTML = montarHtmlCarta(respostaData.carta_adv_info, false);
+                    // ========================================================
+                    // MAGIA ACONTECENDO AQUI: Agora usamos a carta salva para desenhar!
+                    // ========================================================
+                    document.getElementById('carta-adv-frente').innerHTML = montarHtmlCarta(dadosCartaAdv, false);
                     
                     let msgDiv = document.getElementById('msg-batalha');
                     let valMeu = respostaData.valor_j1;
@@ -301,7 +295,6 @@
         .then(data => atualizarInterface(data))
         .catch(err => {
             console.error("Erro na API Status Trunfo:", err);
-            // Evita que a tela fique em branco se der algum erro passageiro no backend
         });
     }
 

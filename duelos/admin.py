@@ -13,7 +13,8 @@ from .models import (
     PartidaMiniFanaticos, 
     JogadorMiniFanaticos,
     CartaTrunfo, 
-    PartidaTrunfo
+    PartidaTrunfo,
+    GrandeFinalCampeonato
     
 
 )
@@ -139,3 +140,5 @@ class CartaTrunfoAdmin(admin.ModelAdmin):
 class PartidaTrunfoAdmin(admin.ModelAdmin):
     list_display = ('id', 'criador', 'convidado', 'status', 'rodada_atual')
     list_filter = ('status',)
+
+admin.site.register(GrandeFinalCampeonato)

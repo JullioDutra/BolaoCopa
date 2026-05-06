@@ -1017,18 +1017,27 @@ def status_trunfo_api(request, partida_id):
     # Formata a carta para o JSON
     def formatar_carta(c):
         if not c: return None
+        
+        # =========================================================
+        # BLINDAGEM ANTI-ERRO 500 (Trata cartas sem foto com segurança)
+        # =========================================================
+        img_url = 'https://i.pravatar.cc/150'
+        if getattr(c, 'foto', None) and getattr(c.foto, 'name', None):
+            try:
+                img_url = c.foto.url
+            except Exception:
+                pass # Se der qualquer erro ao ler a imagem, usa a genérica e não derruba o jogo!
+
         return {
             'nome': c.nome, 'pos': c.posicao, 'ovr': c.overall,
-            'img': c.foto.url if c.foto else 'https://i.pravatar.cc/150', # Foto genérica se estiver sem
+            'img': img_url,
             'stats': {
                 'rit': c.ritmo, 'fin': c.finalizacao, 'pas': c.passe, 
                 'dri': c.drible, 'def': c.defesa, 'fis': c.fisico
             }
         }
 
-    # =========================================================
-    # 1. MONTAMOS O DICIONÁRIO DE RESPOSTA PRIMEIRO
-    # =========================================================
+    # MONTAMOS O DICIONÁRIO DE RESPOSTA
     dados = {
         'status': partida.status,
         'rodada': partida.rodada_atual,
@@ -1039,24 +1048,16 @@ def status_trunfo_api(request, partida_id):
         'carta_adv_info': formatar_carta(carta_adv) # Enviamos oculta pro JS só revelar na hora H
     }
 
-    # =========================================================
-    # 2. ADICIONAMOS OS ESPECTADORES E O ROTEADOR DA FINAL
-    # =========================================================
+    # ADICIONAMOS OS ESPECTADORES E O ROTEADOR DA FINAL
     qtd_viewers = contar_espectadores_reais(request, f"partida_{partida.id}")
-    dados['espectadores_reais'] = max(1, qtd_viewers - 2) # Tira os 2 jogadores da conta
+    dados['espectadores_reais'] = max(1, qtd_viewers - 2)
 
     from .models import GrandeFinalCampeonato
-    
-    # Como já sabemos que é Trunfo, buscamos direto no campo id_partida_trunfo
     final = GrandeFinalCampeonato.objects.filter(id_partida_trunfo=partida.id).first()
 
-    # Se achar a final, manda a rota do próximo round para o JS avançar sozinho
     if final:
         dados['url_proximo_round'] = f"/duelos/campeonato/{final.campeonato.id}/jogar-final/"
 
-    # =========================================================
-    # 3. DEVOLVEMOS TUDO PRONTO PARA O FRONTEND
-    # =========================================================
     return JsonResponse(dados)
 
 @login_required

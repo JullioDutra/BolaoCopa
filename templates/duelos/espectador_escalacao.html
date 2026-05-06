@@ -48,7 +48,9 @@
             .arena { padding: 10px; }
             .arena h3 { font-size: 1.2rem; margin-top: 15px; }
             .campo-verde h5 { font-size: 1rem; }
-            #msg-vencedor { font-size: 1.1rem !important; }
+            #msg-vencedor { padding: 15px !important; }
+            #msg-vencedor .titulo-vencedor { font-size: 1.2rem !important; }
+            #msg-vencedor .time-historico { font-size: 1.1rem !important; }
         }
     </style>
 </head>
@@ -66,15 +68,15 @@
     </h3>
 
     <div class="row justify-content-center">
-        <div class="col-10">
+        <div class="col-10 col-md-8">
             <div class="campo-verde">
                 <h5 class="text-white opacity-75 mb-4 fw-bold text-uppercase"><i class="fa-solid fa-futbol"></i> Jogadores Descobertos</h5>
                 
                 <div id="area-jogadores" class="d-flex flex-wrap justify-content-center align-items-center">
                     
-                    <div id="spinner-aguardando" class="d-flex flex-column align-items-center opacity-50 mt-3 w-100">
-                        <div class="spinner-border text-light mb-2" role="status"></div>
-                        <span>Analisando táticas...</span>
+                    <div id="status-informativo" class="d-flex flex-column align-items-center opacity-75 mt-3 w-100">
+                        <div id="icone-spinner" class="spinner-border text-light mb-2" role="status"></div>
+                        <span id="texto-spinner" class="fw-bold">Conectando ao campo...</span>
                     </div>
 
                     <!-- O Django pré-carrega todos os nomes escondidos. O JS só revela na hora certa! -->
@@ -86,7 +88,10 @@
 
                 </div>
             </div>
-            <div id="msg-vencedor" class="mt-4 fs-3 fw-bold text-success d-none bg-dark py-2 px-4 rounded-pill d-inline-block shadow border border-success"></div>
+            
+            <!-- A DIV DO VENCEDOR AGORA É UM BLOCO MAIOR E MAIS BONITO -->
+            <div id="msg-vencedor" class="mt-4 w-100 bg-dark p-4 rounded-4 shadow-lg border border-warning d-none"></div>
+
         </div>
     </div>
 </div>
@@ -102,26 +107,40 @@
                 document.getElementById('espectadores-count').innerText = data.espectadores_reais;
             }
 
-            // Revela os jogadores que tiveram seus IDs enviados pela API
-            if (data.revelados_ids && data.revelados_ids.length > 0) {
-                document.getElementById('spinner-aguardando').classList.add('d-none');
-                
+            let statusBox = document.getElementById('status-informativo');
+            let spinnerIcon = document.getElementById('icone-spinner');
+            let statusText = document.getElementById('texto-spinner');
+
+            if (data.status === 'aguardando') {
+                statusBox.classList.remove('d-none');
+                spinnerIcon.classList.remove('d-none');
+                statusText.innerText = "Aguardando os jogadores conectarem...";
+            
+            } else if (data.revelados_ids && data.revelados_ids.length > 0) {
+                statusBox.classList.add('d-none');
                 data.revelados_ids.forEach(id => {
                     let pill = document.getElementById(`jogador-${id}`);
                     if (pill && pill.classList.contains('d-none')) {
                         pill.classList.remove('d-none');
-                        // Efeito Pop ao aparecer na tela
                         pill.animate([{ transform: 'scale(0)' }, { transform: 'scale(1)' }], { duration: 300 });
                     }
                 });
+            
+            } else {
+                statusBox.classList.remove('d-none');
+                spinnerIcon.classList.add('d-none');
+                statusText.innerHTML = "<i class='fa-solid fa-eye fs-3 mb-2 d-block'></i> De olho na prancheta...<br>Nenhum acerto ainda!";
             }
 
-            // Fim de jogo e anúncio do Mestre da Tática
+            // ========================================================
+            // FIM DE JOGO: ANÚNCIO DE VENCEDOR E TIME HISTÓRICO
+            // ========================================================
             if (data.status === 'finalizado') {
+                statusBox.classList.add('d-none'); 
+                
                 let msgDiv = document.getElementById('msg-vencedor');
                 msgDiv.classList.remove('d-none');
                 
-                // Inteligência para descobrir o nome do vencedor pelos pontos
                 let nomeVencedor = "Empate Tático!";
                 if (data.pontos_j1 > data.pontos_j2) {
                     nomeVencedor = "{{ partida.jogador_criador.first_name|default:partida.jogador_criador.username|escapejs }}";
@@ -129,9 +148,20 @@
                     nomeVencedor = "{{ partida.jogador_convidado.first_name|default:partida.jogador_convidado.username|escapejs }}";
                 }
                 
-                msgDiv.innerHTML = `<i class="fa-solid fa-trophy"></i> Mestre da Tática: ${nomeVencedor}`;
+                // Monta o placar com o título da categoria (Time Histórico)
+                msgDiv.innerHTML = `
+                    <div class="titulo-vencedor text-warning fw-bold fs-3 mb-3">
+                        <i class="fa-solid fa-trophy"></i> Venceu: ${nomeVencedor}
+                    </div>
+                    <div class="pt-3 border-top border-secondary">
+                        <span class="fs-6 text-muted d-block mb-1 text-uppercase">O Time da Prancheta era:</span>
+                        <div class="time-historico text-white fw-bold fs-4 text-uppercase">
+                            {{ partida.categoria.titulo }}
+                        </div>
+                    </div>
+                `;
             }
-        });
+        }).catch(err => console.error(err));
     }
     
     // Roda a cada 2 segundos

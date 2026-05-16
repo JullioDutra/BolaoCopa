@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+
+{% block title %}Mais Escalados - Cartolândia{% endblock %}
+
+{% block content %}
+<div class="row mt-4 mb-4">
+    <div class="col-12 text-center">
+        <h2 class="fw-bold" style="color: var(--verde-escuro);"><i class="fa-solid fa-chart-line text-primary"></i> Os Mais Escalados</h2>
+        <p class="text-muted">Veja quais são os queridinhos da galera e quem realmente entrou na lista oficial (<strong>{{ total_listas }}</strong> convocações feitas).</p>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-9">
+        <div class="d-flex justify-content-center mb-4">
+            <a href="{% url 'convocacao:ranking_convocacao' %}" class="btn btn-outline-success fw-bold me-2">Ver Ranking de Usuários</a>
+            <a href="{% url 'convocacao:montar_selecao' %}" class="btn btn-outline-secondary fw-bold">Minha Seleção</a>
+        </div>
+
+        <div class="card card-clean border-0 shadow-sm rounded-4">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th scope="col" class="ps-4" style="width: 80px;">Posição</th>
+                                <th scope="col">Jogador</th>
+                                <th scope="col" class="text-center">Escalações</th>
+                                <th scope="col" class="text-center">Popularidade</th>
+                                <th scope="col" class="text-center pe-4">Status Oficial</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in dados_jogadores %}
+                                <tr>
+                                    <td class="ps-4 text-center fw-bold text-muted">{{ forloop.counter }}º</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            {% if item.jogador.foto %}
+                                                <img src="{{ item.jogador.foto.url }}" alt="{{ item.jogador.nome }}" class="rounded-circle me-3" style="width: 40px; height: 40px; object-fit: cover;">
+                                            {% else %}
+                                                <div class="rounded-circle bg-secondary bg-opacity-25 d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                                                    <i class="fa-solid fa-user text-secondary"></i>
+                                                </div>
+                                            {% endif %}
+                                            <div>
+                                                <h6 class="mb-0 fw-bold">{{ item.jogador.nome }}</h6>
+                                                <small class="text-muted">{{ item.jogador.posicao }} • {{ item.jogador.clube_atual|default:"Sem clube" }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="text-center fw-bold text-dark">{{ item.total_escalacoes }}</td>
+                                    <td class="text-center">
+                                        <div class="d-flex align-items-center justify-content-center">
+                                            <span class="me-2 fw-bold text-primary">{{ item.porcentagem }}%</span>
+                                            <div class="progress style-progress w-50" style="height: 6px;">
+                                                <div class="progress-bar bg-primary" role="progressbar" style="width: {{ item.porcentagem }}%" aria-valuenow="{{ item.porcentagem }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="text-center pe-4">
+                                        {% if item.acertou_oficial %}
+                                            <span class="badge bg-success py-2 px-3"><i class="fa-solid fa-check-double me-1"></i> Confirmado</span>
+                                        {% else %}
+                                            <span class="badge bg-danger bg-opacity-10 text-danger py-2 px-3"><i class="fa-solid fa-xmark me-1"></i> Fora da Lista</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-5 text-muted">Nenhum jogador foi escalado ainda.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

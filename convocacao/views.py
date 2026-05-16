@@ -88,11 +88,16 @@ def montar_selecao(request):
 
 @acesso_liberado_required
 def ranking_convocacao(request):
-    # Pega os IDs de todos os jogadores que você marcou como "Oficial" no Admin
+    # 1. Pega os IDs de todos os jogadores que você marcou como "Oficial" no Admin
     oficiais = set(Jogador.objects.filter(convocado_oficial=True).values_list('id', flat=True))
     
-    # Pega todas as listas feitas pelos usuários
+    # 2. Pega todas as listas feitas pelos usuários
     convocacoes = Convocacao.objects.select_related('usuario').all()
+    
+    # Busca todas as transações de apostas de convocação de uma vez só para otimizar o banco de dados
+    usuarios_pagos = set(Transacao.objects.filter(
+        descricao="Convocação Valendo Prêmio"
+    ).values_list('carteira__usuario_id', flat=True))
     
     ranking = []
     for conv in convocacoes:
@@ -102,9 +107,12 @@ def ranking_convocacao(request):
         # A matemática da interseção (quantos IDs batem entre a lista dele e a oficial)
         acertos = len(oficiais.intersection(escolhidos))
         
+        # Define a modalidade com base no histórico financeiro, contornando a ausência da coluna
+        modalidade = 'pago' if conv.usuario.id in usuarios_pagos else 'resenha'
+        
         ranking.append({
             'usuario': conv.usuario,
-            'modalidade': conv.modalidade,
+            'modalidade': modalidade,
             'acertos': acertos
         })
         

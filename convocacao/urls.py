@@ -7,4 +7,6 @@ urlpatterns = [
     # A rota para a tela de escalar os 26 jogadores
     path('montar/', views.montar_selecao, name='montar_selecao'),
     path('resultado/', views.ranking_convocacao, name='ranking_convocacao'),
+    path('mais-escalados/', views.estatisticas_convocacao, name='mais_escalados'),
+]
 ]

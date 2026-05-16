@@ -51,13 +51,34 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'dashboard' %}"><i class="fa-solid fa-house"></i> Início</a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'convocacao:montar_selecao' %}"><i class="fa-solid fa-clipboard-list"></i> Convocação</a>
+                    
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="convocacaoDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fa-solid fa-clipboard-list"></i> Convocação
+                        </a>
+                        <ul class="dropdown-menu shadow border-0" aria-labelledby="convocacaoDropdown">
+                            <li>
+                                <a class="dropdown-item fw-bold" href="{% url 'convocacao:montar_selecao' %}">
+                                    <i class="fa-solid fa-shirt text-success me-2"></i> Minha Seleção
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'convocacao:ranking_convocacao' %}">
+                                    <i class="fa-solid fa-medal text-warning me-2"></i> Ranking Geral
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'convocacao:mais_escalados' %}">
+                                    <i class="fa-solid fa-chart-line text-primary me-2"></i> Mais Escalados
+                                </a>
+                            </li>
+                        </ul>
                     </li>
+
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'palpites:listar_jogos' %}"><i class="fa-regular fa-futbol"></i> Jogos</a>
                     </li>
-                    <!-- Novo link para a Arena X1 -->
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'duelos:listar_desafios' %}"><i class="fa-solid fa-khanda"></i> Arena X1</a>
                     </li>
@@ -105,7 +126,7 @@
                     <i class="fa-solid fa-circle-info"></i> {{ message }}
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
-            {% endfor %}
+            </for>
         {% endif %}
     </div>
 

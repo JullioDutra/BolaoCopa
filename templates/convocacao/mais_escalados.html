@@ -3,6 +3,62 @@
 {% block title %}Mais Escalados - Cartolândia{% endblock %}
 
 {% block content %}
+<style>
+    /* Estilos customizados para transformar a tabela em Cards no Mobile */
+    @media (max-width: 767.98px) {
+        .table-responsive-stack thead {
+            display: none; /* Esconde o cabeçalho da tabela no mobile */
+        }
+        .table-responsive-stack tr {
+            display: block;
+            border: 1px solid #e3e6f0;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            padding: 1rem;
+            background-color: #ffffff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        .table-responsive-stack td {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            text-align: right;
+            padding: 0.5rem 0;
+            border-bottom: 1px dashed #f1f3f9;
+        }
+        .table-responsive-stack td:last-child {
+            border-bottom: none;
+        }
+        /* Cria rótulos simulando as colunas no mobile */
+        .table-responsive-stack td::before {
+            content: attr(data-label);
+            font-weight: bold;
+            text-align: left;
+            color: #495057;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+        }
+        /* Ajustes específicos de alinhamento para os blocos internos */
+        .table-responsive-stack .player-cell {
+            flex-direction: row-reverse;
+            border-bottom: 2px solid #f1f3f9;
+            padding-bottom: 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+        .table-responsive-stack .player-cell::before {
+            display: none; /* O nome do jogador não precisa do rótulo "Jogador" */
+        }
+        .table-responsive-stack .player-info-wrapper {
+            text-align: left;
+            width: 100%;
+        }
+        .table-responsive-stack .pop-cell-content {
+            width: 60%;
+        }
+    }
+</style>
+
 <div class="row mt-4 mb-4">
     <div class="col-12 text-center">
         <h2 class="fw-bold" style="color: var(--verde-escuro);"><i class="fa-solid fa-chart-line text-primary"></i> Os Mais Escalados</h2>
@@ -17,10 +73,10 @@
             <a href="{% url 'convocacao:montar_selecao' %}" class="btn btn-outline-secondary fw-bold">Minha Seleção</a>
         </div>
 
-        <div class="card card-clean border-0 shadow-sm rounded-4">
+        <div class="card card-clean border-0 shadow-sm rounded-4 bg-transparent bg-md-white">
             <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
+                <div class="table-responsive border-0">
+                    <table class="table table-hover align-middle mb-0 table-responsive-stack">
                         <thead class="table-light">
                             <tr>
                                 <th scope="col" class="ps-4" style="width: 80px;">Posição</th>
@@ -33,9 +89,13 @@
                         <tbody>
                             {% for item in dados_jogadores %}
                                 <tr>
-                                    <td class="ps-4 text-center fw-bold text-muted">{{ forloop.counter }}º</td>
-                                    <td>
-                                        <div class="d-flex align-items-center">
+                                    <td class="ps-4 text-center fw-bold text-muted" data-label="Posição">
+                                        <span class="badge bg-light text-dark border px-2 py-1 rounded-pill d-md-none"># {{ forloop.counter }}</span>
+                                        <span class="d-none d-md-inline">{{ forloop.counter }}º</span>
+                                    </td>
+                                    
+                                    <td class="player-cell">
+                                        <div class="d-flex align-items-center player-info-wrapper">
                                             {% if item.jogador.foto %}
                                                 <img src="{{ item.jogador.foto.url }}" alt="{{ item.jogador.nome }}" class="rounded-circle me-3" style="width: 40px; height: 40px; object-fit: cover;">
                                             {% else %}
@@ -44,21 +104,26 @@
                                                 </div>
                                             {% endif %}
                                             <div>
-                                                <h6 class="mb-0 fw-bold">{{ item.jogador.nome }}</h6>
+                                                <h6 class="mb-0 fw-bold text-dark">{{ item.jogador.nome }}</h6>
                                                 <small class="text-muted">{{ item.jogador.posicao }} • {{ item.jogador.clube_atual|default:"Sem clube" }}</small>
                                             </div>
                                         </div>
                                     </td>
-                                    <td class="text-center fw-bold text-dark">{{ item.total_escalacoes }}</td>
-                                    <td class="text-center">
-                                        <div class="d-flex align-items-center justify-content-center">
+                                    
+                                    <td class="text-center fw-bold text-dark" data-label="Escalações">
+                                        {{ item.total_escalacoes }}
+                                    </td>
+                                    
+                                    <td class="text-center" data-label="Popularidade">
+                                        <div class="d-flex align-items-center justify-content-end justify-content-md-center pop-cell-content ms-auto ms-md-0">
                                             <span class="me-2 fw-bold text-primary">{{ item.porcentagem }}%</span>
-                                            <div class="progress style-progress w-50" style="height: 6px;">
+                                            <div class="progress style-progress d-none d-sm-flex" style="height: 6px; width: 60px;">
                                                 <div class="progress-bar bg-primary" role="progressbar" style="width: {{ item.porcentagem }}%" aria-valuenow="{{ item.porcentagem }}" aria-valuemin="0" aria-valuemax="100"></div>
                                             </div>
                                         </div>
                                     </td>
-                                    <td class="text-center pe-4">
+                                    
+                                    <td class="text-center pe-4" data-label="Status Oficial">
                                         {% if item.acertou_oficial %}
                                             <span class="badge bg-success py-2 px-3"><i class="fa-solid fa-check-double me-1"></i> Confirmado</span>
                                         {% else %}

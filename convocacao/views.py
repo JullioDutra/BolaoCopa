@@ -9,6 +9,7 @@ from .models import Jogador, Convocacao
 from .forms import ConvocacaoForm
 from bolao.decorators import acesso_liberado_required
 from accounts.models import Transacao
+from django.db.models import Count
 
 @acesso_liberado_required
 def montar_selecao(request):
@@ -115,3 +116,33 @@ def ranking_convocacao(request):
         'total_oficiais': len(oficiais)
     }
     return render(request, 'convocacao/ranking_convocacao.html', context)
+
+@acesso_liberado_required
+def estatisticas_convocacao(request):
+    # 1. Total de usuários que submeteram uma convocação
+    total_listas = Convocacao.objects.count()
+    
+    # 2. Busca os jogadores ordenados pelos mais escalados (M2M relation 'convocados')
+    # Filtramos apenas os jogadores que foram escalados pelo menos 1 vez
+    jogadores_mais_escalados = Jogador.objects.annotate(
+        total_escalacoes=Count('convocados')
+    ).filter(total_escalacoes__gt=0).order_by('-total_escalacoes')
+    
+    dados_jogadores = []
+    for jogador in jogadores_mais_escalados:
+        # Calcula a porcentagem de vezes que esse jogador apareceu nas listas
+        porcentagem = (jogador.total_escalacoes / total_listas * 100) if total_listas > 0 else 0
+        
+        dados_jogadores.append({
+            'jogador': jogador,
+            'total_escalacoes': jogador.total_escalacoes,
+            'porcentagem': round(porcentagem, 1),
+            # O acerto aqui é binário com base no que você marcou no Admin
+            'acertou_oficial': jogador.convocado_oficial  
+        })
+        
+    context = {
+        'dados_jogadores': dados_jogadores,
+        'total_listas': total_listas
+    }
+    return render(request, 'convocacao/mais_escalados.html', context)

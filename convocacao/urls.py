@@ -9,4 +9,3 @@ urlpatterns = [
     path('resultado/', views.ranking_convocacao, name='ranking_convocacao'),
     path('mais-escalados/', views.estatisticas_convocacao, name='mais_escalados'),
 ]
-]

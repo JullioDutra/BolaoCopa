@@ -135,3 +135,16 @@ LOGIN_URL = 'login'
 
 # Libera o uso de iframes dentro do próprio site (Necessário para o Hub da Grande Final)
 X_FRAME_OPTIONS = 'SAMEORIGIN'
+
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+
+EMAIL_HOST = 'smtp.gmail.com'
+
+EMAIL_PORT = 585
+
+EMAIL_USE_TLS = True
+
+EMAIL_HOST_USER = 'jullio.dutra1@gmail.com'
+
+EMAIL_HOST_PASSWORD = 'uwdj zucn mnip gdqu'

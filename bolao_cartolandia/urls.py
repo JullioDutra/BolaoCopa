@@ -12,6 +12,19 @@ urlpatterns = [
     # Rotas de Acesso
     path('login/', accounts_views.acesso_usuario, name='login'),
     path('logout/', accounts_views.sair, name='logout'),
+    # Rotas para Reset de Senha (Nativas do Django com templates customizados)
+    path('reset-senha/', 
+         auth_views.PasswordResetView.as_view(template_name='accounts/reset_senha.html'), 
+         name='password_reset'),
+    path('reset-senha/enviado/', 
+         auth_views.PasswordResetDoneView.as_view(template_name='accounts/reset_senha_enviado.html'), 
+         name='password_reset_done'),
+    path('reset-senha/confirmar/<uidb64>/<token>/', 
+         auth_views.PasswordResetConfirmView.as_view(template_name='accounts/reset_senha_confirmar.html'), 
+         name='password_reset_confirm'),
+    path('reset-senha/concluido/', 
+         auth_views.PasswordResetCompleteView.as_view(template_name='accounts/reset_senha_concluido.html'), 
+         name='password_reset_complete'),
     
     # Rotas dos seus aplicativos usando include
     path('bolao/', include('bolao.urls')), # <--- ATUALIZE ESTA LINHA

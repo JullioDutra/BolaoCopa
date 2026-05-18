@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block title %}Recuperar Senha - Cartolândia{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-5 mb-5">
+    <div class="col-md-6 col-lg-5">
+        <div class="card card-clean p-4 p-md-5 shadow-lg border-0 text-center rounded-4">
+            <div class="mb-4">
+                <i class="fa-solid fa-key text-success mb-2" style="font-size: 3.5rem;"></i>
+                <h3 class="fw-bold" style="color: var(--verde-escuro);">Recuperar Senha</h3>
+                <p class="text-muted">Introduza o e-mail da sua conta para receber as instruções de recuperação.</p>
+            </div>
+
+            <form method="POST" class="text-start">
+                {% csrf_token %}
+                <div class="mb-4">
+                    <label for="id_email" class="form-label fw-bold text-secondary">Endereço de E-mail</label>
+                    <input type="email" name="email" id="id_email" autocomplete="email" class="form-control form-control-lg" placeholder="seu@email.com" required>
+                </div>
+
+                <button type="submit" class="btn btn-success w-100 btn-lg fw-bold shadow-sm">
+                    <i class="fa-solid fa-paper-plane"></i> Enviar Link de Recuperação
+                </button>
+            </form>
+
+            <div class="mt-4">
+                <a href="{% url 'login' %}" class="text-decoration-none small fw-bold" style="color: var(--verde-escuro);">
+                    <i class="fa-solid fa-arrow-left"></i> Voltar para o Login
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

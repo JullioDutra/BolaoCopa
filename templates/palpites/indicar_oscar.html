@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+
+{% block title %}Oscar da Cartolândia{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            
+            <div class="text-center mb-4">
+                <i class="fa-solid fa-trophy text-warning mb-2" style="font-size: 4rem;"></i>
+                <h2 class="fw-bold text-uppercase" style="letter-spacing: 2px;">Melhores do Ano</h2>
+                <p class="text-muted fs-5">O tribunal da resenha está aberto. Registre aqui as maiores atrocidades (ou genialidades) ditas pela galera!</p>
+            </div>
+
+            {% if messages %}
+                {% for msg in messages %}
+                <div class="alert alert-success fw-bold text-center shadow-sm fs-5">
+                    <i class="fa-solid fa-check-double"></i> {{ msg }}
+                </div>
+                {% endfor %}
+            {% endif %}
+
+            <div class="card bg-dark text-white border-warning shadow-lg rounded-4 p-4 p-md-5">
+                <form method="POST" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <div class="mb-4">
+                        <label class="form-label text-warning fw-bold"><i class="fa-solid fa-tag"></i> Qual é a Categoria?</label>
+                        <select name="categoria" class="form-select form-select-lg bg-light text-dark fw-bold" required>
+                            <option value="" disabled selected>Escolha o nível da resenha...</option>
+                            <option value="perola">💩 Pérola do Ano (Maior Merda dita)</option>
+                            <option value="cravacao">🎯 Nostradamus (Cravação Máxima)</option>
+                            <option value="zica">🐈‍⬛ Zica Suprema (Falou e zicou o time)</option>
+                            <option value="iludido">🤡 Iludido do Ano (Acreditou na contratação)</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label text-warning fw-bold"><i class="fa-solid fa-user-pen"></i> Quem foi o filósofo?</label>
+                        <input type="text" name="autor" class="form-control form-control-lg" placeholder="Ex: Joãozinho, Zé da Manga..." required>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label text-warning fw-bold"><i class="fa-solid fa-quote-left"></i> A Aspa (O que o abençoado disse?)</label>
+                        <textarea name="fala" class="form-control" rows="3" placeholder="Digita exatamente as palavras do craque..." required></textarea>
+                    </div>
+
+                    <div class="mb-4 bg-secondary p-3 rounded-3 bg-opacity-25">
+                        <label class="form-label text-warning fw-bold d-flex justify-content-between">
+                            <span><i class="fa-solid fa-gauge-high"></i> Nível da Merda / Cravação</span>
+                            <span id="nivel-valor" class="text-white fs-5">5</span>
+                        </label>
+                        <input type="range" name="nivel" class="form-range" min="1" max="10" value="5" id="sliderNivel" oninput="document.getElementById('nivel-valor').innerText = this.value">
+                        <div class="d-flex justify-content-between text-muted small mt-1 fw-bold">
+                            <span>1 - Foi só um deslize</span>
+                            <span>10 - Caso de internação</span>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label text-warning fw-bold"><i class="fa-solid fa-camera"></i> Prova do Crime (Opcional)</label>
+                        <p class="text-muted small mb-2">Contra fatos não há argumentos. Tem print do WhatsApp ou Twitter? Manda aí!</p>
+                        <input type="file" name="print_prova" class="form-control" accept="image/*">
+                    </div>
+
+                    <div class="text-center mt-5">
+                        <button type="submit" class="btn btn-warning btn-lg w-100 fw-bold rounded-pill shadow text-uppercase" style="letter-spacing: 1px;">
+                            <i class="fa-solid fa-gavel"></i> Formalizar Indicação
+                        </button>
+                    </div>
+                </form>
+            </div>
+            
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -146,3 +146,22 @@ class Palpite(models.Model):
         def __str__(self):
          return f"{self.usuario.username}: {self.jogo.time_casa} {self.gols_casa} x {self.gols_fora} {self.jogo.time_fora} ({self.pontuacao_obtida} pts)"
         
+
+class OscarCartolandia(models.Model):
+    CATEGORIAS_CHOICES = [
+        ('perola', '💩 Pérola do Ano (Maior Merda dita)'),
+        ('cravacao', '🎯 Nostradamus (Cravação Máxima)'),
+        ('zica', '🐈‍⬛ Zica Suprema (Falou e zicou o time)'),
+        ('iludido', '🤡 Iludido do Ano'),
+    ]
+
+    indicado_por = models.ForeignKey(User, on_delete=models.CASCADE, related_name='minhas_indicacoes')
+    categoria = models.CharField(max_length=20, choices=CATEGORIAS_CHOICES)
+    autor = models.CharField(max_length=100, verbose_name="Filósofo/Autor")
+    fala = models.TextField(verbose_name="A Aspa (O que o abençoado disse?)")
+    nivel = models.IntegerField(default=5, verbose_name="Nível da Merda/Cravação (1 a 10)")
+    print_prova = models.ImageField(upload_to='prints_oscar/', blank=True, null=True, verbose_name="Print (Contra fatos não há argumentos)")
+    data_criacao = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.autor} - {self.get_categoria_display()}"

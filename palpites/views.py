@@ -4,11 +4,12 @@ from django.db.models import Sum, Max
 from decimal import Decimal
 from django.db import transaction
 from django.contrib.auth.models import User
+from django.contrib import messages
 
 
 # Imports dos seus aplicativos
 from bolao.decorators import acesso_liberado_required
-from .models import Jogo, Palpite
+from .models import Jogo, Palpite, OscarCartolandia
 from .forms import PalpiteForm
 from accounts.models import Transacao
 
@@ -139,3 +140,27 @@ def ranking_geral(request):
         .order_by('-total_pontos')
         
     return render(request, 'palpites/ranking.html', {'ranking': ranking})
+
+@login_required
+def indicar_oscar(request):
+    if request.method == 'POST':
+        categoria = request.POST.get('categoria')
+        autor = request.POST.get('autor')
+        fala = request.POST.get('fala')
+        nivel = request.POST.get('nivel')
+        print_prova = request.FILES.get('print_prova') # Pega a imagem se tiver
+
+        # Salva a fofoca no banco
+        OscarCartolandia.objects.create(
+            indicado_por=request.user,
+            categoria=categoria,
+            autor=autor,
+            fala=fala,
+            nivel=nivel,
+            print_prova=print_prova
+        )
+        
+        messages.success(request, "Indicação registrada com sucesso! O VAR já tem as provas.")
+        return redirect('duelos:indicar_oscar') # Recarrega a página limpando o form
+
+    return render(request, 'palpites/indicar_oscar.html')

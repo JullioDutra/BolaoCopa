@@ -3,70 +3,200 @@
 {% block title %}Oscar da Cartolândia{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            
-            <div class="text-center mb-4">
-                <i class="fa-solid fa-trophy text-warning mb-2" style="font-size: 4rem;"></i>
-                <h2 class="fw-bold text-uppercase" style="letter-spacing: 2px;">Melhores do Ano</h2>
-                <p class="text-muted fs-5">O tribunal da resenha está aberto. Registre aqui as maiores atrocidades (ou genialidades) ditas pela galera!</p>
-            </div>
+<style>
+    /* TEMA BOLEIRO DE GALA */
+    body {
+        background-color: #121212;
+        background-image: radial-gradient(circle at center, #222 0%, #050505 100%);
+    }
+    
+    .oscar-header {
+        text-align: center;
+        padding: 30px 15px;
+        margin-bottom: 10px;
+    }
+    
+    .titulo-ouro {
+        color: #d4af37;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 3px;
+        text-shadow: 0 4px 10px rgba(212, 175, 55, 0.4);
+        font-size: 2.8rem;
+    }
 
+    .card-vestiario {
+        background: linear-gradient(145deg, #1a1a1a 0%, #2a2a2a 100%);
+        border: 2px solid #d4af37;
+        border-radius: 20px;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.8), inset 0 0 20px rgba(212,175,55,0.05);
+    }
+
+    .label-boleiro {
+        color: #d4af37;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-size: 0.95rem;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .input-boleiro {
+        background-color: #0a0a0a !important;
+        border: 1px solid #444 !important;
+        color: #fff !important;
+        border-radius: 12px !important;
+        padding: 15px !important;
+        transition: all 0.3s ease;
+    }
+
+    .input-boleiro:focus {
+        border-color: #d4af37 !important;
+        box-shadow: 0 0 15px rgba(212, 175, 55, 0.4) !important;
+    }
+    
+    /* Customiza o select para não ficar branco no padrão do navegador */
+    select.input-boleiro {
+        background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 5'%3E%3Cpath fill='%23d4af37' d='M2 0L0 2h4zm0 5L0 3h4z'/%3E%3C/svg%3E") !important;
+    }
+
+    /* O Termômetro da Resenha */
+    .termometro-box {
+        background: rgba(0,0,0,0.6);
+        border-radius: 15px;
+        padding: 25px 20px;
+        border: 1px dashed #555;
+    }
+    
+    .range-boleiro {
+        -webkit-appearance: none;
+        width: 100%;
+        height: 12px;
+        border-radius: 6px;
+        background: linear-gradient(90deg, #198754 0%, #ffc107 50%, #dc3545 100%);
+        outline: none;
+        margin: 15px 0;
+    }
+    
+    .range-boleiro::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: #fff;
+        border: 4px solid #d4af37;
+        cursor: pointer;
+        box-shadow: 0 0 10px rgba(0,0,0,0.8);
+    }
+
+    .btn-chutar {
+        background: linear-gradient(135deg, #d4af37 0%, #b5952f 100%);
+        color: #000;
+        font-weight: 900;
+        font-size: 1.3rem;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        border: none;
+        border-radius: 50px;
+        padding: 18px 30px;
+        transition: all 0.3s;
+        box-shadow: 0 8px 20px rgba(212, 175, 55, 0.4);
+    }
+
+    .btn-chutar:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 25px rgba(212, 175, 55, 0.6);
+        background: linear-gradient(135deg, #eadd7a 0%, #d4af37 100%);
+    }
+
+    .alerta-var {
+        background-color: #198754;
+        color: white;
+        border: 2px solid #20c997;
+        border-radius: 12px;
+        font-weight: bold;
+    }
+
+    /* MAGIA MOBILE */
+    @media (max-width: 768px) {
+        .titulo-ouro { font-size: 2rem; letter-spacing: 1px; }
+        .oscar-header { padding: 15px 10px; }
+        .card-vestiario { padding: 25px 15px !important; border-radius: 15px; }
+        .btn-chutar { font-size: 1.1rem; padding: 15px 20px; }
+    }
+</style>
+
+<div class="container pb-5">
+    <div class="oscar-header">
+        <i class="fa-solid fa-trophy mb-3" style="font-size: 4rem; color: #d4af37; filter: drop-shadow(0 0 15px rgba(212,175,55,0.6));"></i>
+        <h1 class="titulo-ouro">Oscar da Cartolândia</h1>
+        <p class="text-light opacity-75 fs-5 mt-2 px-3">
+            <i class="fa-solid fa-microphone-lines"></i> O tribunal da resenha tá on! Dedure aqui as maiores cravadas, zicas ou pérolas do ano.
+        </p>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-9 col-lg-7">
+            
             {% if messages %}
                 {% for msg in messages %}
-                <div class="alert alert-success fw-bold text-center shadow-sm fs-5">
-                    <i class="fa-solid fa-check-double"></i> {{ msg }}
+                <div class="alert alerta-var text-center shadow-lg fs-5 mb-4 p-3 alert-dismissible fade show" role="alert">
+                    <i class="fa-solid fa-desktop fs-4 mb-2 d-block"></i> VAR analisou: <strong>{{ msg }}</strong>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
                 {% endfor %}
             {% endif %}
 
-            <div class="card bg-dark text-white border-warning shadow-lg rounded-4 p-4 p-md-5">
+            <div class="card card-vestiario p-4 p-md-5">
                 <form method="POST" enctype="multipart/form-data">
                     {% csrf_token %}
                     
                     <div class="mb-4">
-                        <label class="form-label text-warning fw-bold"><i class="fa-solid fa-tag"></i> Qual é a Categoria?</label>
-                        <select name="categoria" class="form-select form-select-lg bg-light text-dark fw-bold" required>
-                            <option value="" disabled selected>Escolha o nível da resenha...</option>
-                            <option value="perola">💩 Pérola do Ano (Maior Merda dita)</option>
-                            <option value="cravacao">🎯 Nostradamus (Cravação Máxima)</option>
-                            <option value="zica">🐈‍⬛ Zica Suprema (Falou e zicou o time)</option>
-                            <option value="iludido">🤡 Iludido do Ano (Acreditou na contratação)</option>
+                        <label class="label-boleiro"><i class="fa-solid fa-tags fs-4"></i> Abre o jogo, qual foi o lance?</label>
+                        <select name="categoria" class="form-select input-boleiro fs-5" required>
+                            <option value="" disabled selected>Seleciona a categoria do bagre...</option>
+                            <option value="perola">💩 Pérola (Falou a maior asneira do ano)</option>
+                            <option value="cravacao">🎯 Nostradamus (Cravou o impossível)</option>
+                            <option value="zica">🐈‍⬛ Zica Suprema (Falou e o time perdeu)</option>
+                            <option value="iludido">🤡 Iludido do Ano (Acreditou no "Projeto")</option>
                         </select>
                     </div>
 
                     <div class="mb-4">
-                        <label class="form-label text-warning fw-bold"><i class="fa-solid fa-user-pen"></i> Quem foi o filósofo?</label>
-                        <input type="text" name="autor" class="form-control form-control-lg" placeholder="Ex: Joãozinho, Zé da Manga..." required>
+                        <label class="label-boleiro"><i class="fa-solid fa-user-pen fs-4"></i> Quem foi o filósofo?</label>
+                        <input type="text" name="autor" class="form-control input-boleiro fs-5" placeholder="Ex: Zé da Manga, Joãozinho..." required>
                     </div>
 
                     <div class="mb-4">
-                        <label class="form-label text-warning fw-bold"><i class="fa-solid fa-quote-left"></i> A Aspa (O que o abençoado disse?)</label>
-                        <textarea name="fala" class="form-control" rows="3" placeholder="Digita exatamente as palavras do craque..." required></textarea>
+                        <label class="label-boleiro"><i class="fa-solid fa-quote-left fs-4"></i> Abre aspas!</label>
+                        <textarea name="fala" class="form-control input-boleiro fs-5" rows="3" placeholder="O que o abençoado teve a coragem de dizer?" required></textarea>
                     </div>
 
-                    <div class="mb-4 bg-secondary p-3 rounded-3 bg-opacity-25">
-                        <label class="form-label text-warning fw-bold d-flex justify-content-between">
-                            <span><i class="fa-solid fa-gauge-high"></i> Nível da Merda / Cravação</span>
-                            <span id="nivel-valor" class="text-white fs-5">5</span>
+                    <div class="mb-4 termometro-box shadow-sm">
+                        <label class="label-boleiro d-flex justify-content-between w-100 mb-0">
+                            <span><i class="fa-solid fa-temperature-half fs-4"></i> Termômetro da Resenha</span>
+                            <span id="nivel-valor" class="badge bg-warning text-dark fs-5 rounded-pill px-3 py-1 border border-dark shadow-sm">Nível 5</span>
                         </label>
-                        <input type="range" name="nivel" class="form-range" min="1" max="10" value="5" id="sliderNivel" oninput="document.getElementById('nivel-valor').innerText = this.value">
-                        <div class="d-flex justify-content-between text-muted small mt-1 fw-bold">
-                            <span>1 - Foi só um deslize</span>
-                            <span>10 - Caso de internação</span>
+                        <input type="range" name="nivel" class="range-boleiro" min="1" max="10" value="5" id="sliderNivel" oninput="document.getElementById('nivel-valor').innerText = 'Nível ' + this.value">
+                        <div class="d-flex justify-content-between text-muted small mt-2 fw-bold text-uppercase" style="font-size: 0.75rem;">
+                            <span><i class="fa-solid fa-face-meh"></i> Erro bobo</span>
+                            <span>Caso de Internação <i class="fa-solid fa-ambulance"></i></span>
                         </div>
                     </div>
 
-                    <div class="mb-4">
-                        <label class="form-label text-warning fw-bold"><i class="fa-solid fa-camera"></i> Prova do Crime (Opcional)</label>
-                        <p class="text-muted small mb-2">Contra fatos não há argumentos. Tem print do WhatsApp ou Twitter? Manda aí!</p>
-                        <input type="file" name="print_prova" class="form-control" accept="image/*">
+                    <div class="mb-5">
+                        <label class="label-boleiro"><i class="fa-solid fa-camera fs-4"></i> Provas pro VAR (Opcional)</label>
+                        <p class="text-light opacity-50 small mb-3 lh-sm">Lembrou daquele print cabuloso do WhatsApp ou Twitter? Anexa aqui pra não ter "mas veja bem" depois.</p>
+                        <input type="file" name="print_prova" class="form-control input-boleiro" accept="image/*">
                     </div>
 
-                    <div class="text-center mt-5">
-                        <button type="submit" class="btn btn-warning btn-lg w-100 fw-bold rounded-pill shadow text-uppercase" style="letter-spacing: 1px;">
-                            <i class="fa-solid fa-gavel"></i> Formalizar Indicação
+                    <div class="text-center">
+                        <button type="submit" class="btn-chutar w-100">
+                            <i class="fa-solid fa-paper-plane me-2"></i> Mandar pra súmula
                         </button>
                     </div>
                 </form>

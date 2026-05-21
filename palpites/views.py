@@ -162,6 +162,6 @@ def indicar_oscar(request):
         )
         
         messages.success(request, "Indicação registrada com sucesso! O VAR já tem as provas.")
-        return redirect('duelos:indicar_oscar') # Recarrega a página limpando o form
+        return redirect('palpites:indicar_oscar') # Recarrega a página limpando o form
 
     return render(request, 'palpites/indicar_oscar.html')

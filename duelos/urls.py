@@ -64,4 +64,6 @@ urlpatterns = [
     path('trajetoria/assistir/<int:partida_id>/', views.assistir_trajetoria, name='assistir_trajetoria'),
     path('escalacao/assistir/<int:partida_id>/', views.assistir_escalacao, name='assistir_escalacao'),
     path('minifanaticos/assistir/<int:partida_id>/', views.assistir_minifanaticos, name='assistir_minifanaticos'),
+    path('var/', views.hub_var, name='hub_var'),
+    path('var/lance/<int:lance_id>/', views.cabine_var, name='cabine_var'),
 ]

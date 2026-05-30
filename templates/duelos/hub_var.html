@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{% block title %}Escolinha do VAR - Cartolândia{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    
+    <div class="text-center mb-5">
+        <i class="fa-solid fa-tv text-primary mb-3" style="font-size: 4rem;"></i>
+        <h1 class="fw-bold text-uppercase" style="letter-spacing: 2px;">Simulador de VAR</h1>
+        <p class="text-muted fs-5">Falar que o juiz é roubado é fácil. Quero ver você decidir na cabine!</p>
+    </div>
+
+    <div class="row justify-content-center">
+        <!-- O SEU CRACHÁ DE ÁRBITRO -->
+        <div class="col-md-10 mb-4">
+            <div class="card bg-dark text-white border-0 shadow-lg rounded-4 p-4 text-center" style="border-bottom: 5px solid #0dcaf0 !important;">
+                <h6 class="text-uppercase text-muted fw-bold tracking-wide mb-3"><i class="fa-solid fa-id-badge"></i> Sua Patente de Árbitro</h6>
+                <h2 class="fw-bold {{ patente.cor }} mb-2" style="font-size: 2.5rem;">{{ patente.nome }}</h2>
+                <div class="d-inline-block bg-secondary bg-opacity-25 px-4 py-2 rounded-pill mt-2">
+                    <span class="fs-5 fw-bold text-white"><i class="fa-solid fa-star text-warning"></i> Pontos Acumulados: <span class="text-info">{{ patente.pts }}</span></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- LISTA DE LANCES POLÊMICOS -->
+        <div class="col-md-10">
+            <h4 class="fw-bold mb-3"><i class="fa-solid fa-list"></i> Lances Disponíveis</h4>
+            
+            <div class="list-group shadow-sm">
+                {% for lance in lances %}
+                    <a href="{% url 'duelos:cabine_var' lance.id %}" class="list-group-item list-group-item-action p-4 border-0 mb-2 rounded-3 {% if lance.id in lances_respondidos %}bg-light{% else %}bg-white border-start border-4 border-primary{% endif %}">
+                        <div class="d-flex w-100 justify-content-between align-items-center">
+                            <div>
+                                <h5 class="mb-1 fw-bold text-dark">{{ lance.titulo }}</h5>
+                                <small class="text-muted"><i class="fa-solid fa-coins text-warning"></i> Vale {{ lance.pontos_recompensa }} pontos</small>
+                            </div>
+                            
+                            <!-- Etiqueta se já respondeu -->
+                            {% if lance.id in lances_respondidos %}
+                                <span class="badge bg-secondary p-2 fs-6"><i class="fa-solid fa-check-double"></i> Analisado</span>
+                            {% else %}
+                                <span class="badge bg-primary p-2 fs-6"><i class="fa-solid fa-play"></i> Analisar Lance</span>
+                            {% endif %}
+                        </div>
+                    </a>
+                {% empty %}
+                    <div class="alert alert-info text-center fw-bold">
+                        A rodada foi tranquila. Nenhum lance polêmico no momento!
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -24,7 +24,9 @@ from .models import (
     JogadorMiniFanaticos,
     CartaTrunfo,
     PartidaTrunfo,
-    GrandeFinalCampeonato
+    GrandeFinalCampeonato,
+    LanceVAR, 
+    PalpiteVAR
 
 
 )
@@ -1382,3 +1384,60 @@ def roteador_jogadores_final(request, campeonato_id):
         return redirect('duelos:lobby_mini', partida_id=final.id_partida_minifanaticos)
     else:
         return redirect('duelos:hub_grande_final', camp_id=campeonato_id) # Acabou tudo! Pódio!
+
+
+@login_required
+def hub_var(request):
+    """Vestiário da Arbitragem: Mostra o ranking do usuário e os lances disponíveis"""
+    
+    # Pega a patente do usuário usando aquela função mágica que criamos no Model
+    patente = PalpiteVAR.pegar_patente_arbitro(request.user)
+    
+    # Pega todos os lances ativos
+    lances = LanceVAR.objects.filter(ativo=True).order_by('-data_criacao')
+    
+    # Descobre quais lances o usuário já apitou
+    lances_respondidos = PalpiteVAR.objects.filter(usuario=request.user).values_list('lance_id', flat=True)
+
+    return render(request, 'duelos/hub_var.html', {
+        'patente': patente,
+        'lances': lances,
+        'lances_respondidos': lances_respondidos
+    })
+
+@login_required
+def cabine_var(request, lance_id):
+    """A tela escura do VAR onde o filho chora e a mãe não vê"""
+    lance = get_object_or_404(LanceVAR, id=lance_id, ativo=True)
+    
+    # Verifica se o usuário já apitou esse lance
+    palpite_existente = PalpiteVAR.objects.filter(usuario=request.user, lance=lance).first()
+
+    if request.method == 'POST' and not palpite_existente:
+        resposta_escolhida = request.POST.get('decisao')
+        
+        if resposta_escolhida in ['A', 'B', 'C', 'D']:
+            acertou = (resposta_escolhida == lance.resposta_correta)
+            pontos = lance.pontos_recompensa if acertou else 0
+            
+            # Salva o apito no banco
+            palpite_existente = PalpiteVAR.objects.create(
+                usuario=request.user,
+                lance=lance,
+                resposta_escolhida=resposta_escolhida,
+                acertou=acertou,
+                pontos_ganhos=pontos
+            )
+            
+            if acertou:
+                messages.success(request, f"Decisão perfeita, professor! Ganhou {pontos} pontos!")
+            else:
+                messages.error(request, "Foi pra Central do Apito e passou vergonha! Errou feio.")
+                
+            # Recarrega a página para mostrar o gabarito
+            return redirect('duelos:cabine_var', lance_id=lance.id)
+
+    return render(request, 'duelos/cabine_var.html', {
+        'lance': lance,
+        'palpite': palpite_existente # Se tiver palpite, o HTML trava os botões e mostra o gabarito
+    })

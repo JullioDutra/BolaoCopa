@@ -309,3 +309,72 @@ class GrandeFinalCampeonato(models.Model):
 
     def __str__(self):
         return f"FINAL: {self.jogador_1.username} x {self.jogador_2.username} ({self.campeonato.nome})"
+
+# ==========================================
+# SIMULADOR DE VAR (ESCOLINHA DE ARBITRAGEM)
+# ==========================================
+
+class LanceVAR(models.Model):
+    OPCOES_RESPOSTA = [
+        ('A', 'Opção A'),
+        ('B', 'Opção B'),
+        ('C', 'Opção C'),
+        ('D', 'Opção D'),
+    ]
+
+    titulo = models.CharField(max_length=150, verbose_name="Título do Lance (Ex: Carrinho do Fagner)")
+    midia = models.FileField(upload_to='lances_var/', verbose_name="GIF ou Imagem do Lance")
+    descricao = models.TextField(verbose_name="Contexto (O que aconteceu?)")
+    
+    # As 4 opções que vão aparecer nos botões
+    opcao_a = models.CharField(max_length=100, verbose_name="Opção A")
+    opcao_b = models.CharField(max_length=100, verbose_name="Opção B")
+    opcao_c = models.CharField(max_length=100, verbose_name="Opção C")
+    opcao_d = models.CharField(max_length=100, verbose_name="Opção D")
+    
+    resposta_correta = models.CharField(max_length=1, choices=OPCOES_RESPOSTA, verbose_name="Gabarito da Regra")
+    justificativa = models.TextField(verbose_name="Por que essa é a certa? (Explicação da Regra)", blank=True)
+    
+    pontos_recompensa = models.IntegerField(default=10, verbose_name="Pontos se acertar")
+    ativo = models.BooleanField(default=True, verbose_name="Lance está ativo?")
+    data_criacao = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Lance: {self.titulo}"
+
+class PalpiteVAR(models.Model):
+    usuario = models.ForeignKey(User, on_delete=models.CASCADE, related_name='meus_apitos')
+    lance = models.ForeignKey(LanceVAR, on_delete=models.CASCADE, related_name='palpites')
+    resposta_escolhida = models.CharField(max_length=1)
+    acertou = models.BooleanField(default=False)
+    pontos_ganhos = models.IntegerField(default=0)
+    data_palpite = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        # Garante que a pessoa só possa apitar o mesmo lance UMA vez
+        unique_together = ('usuario', 'lance')
+
+    def __str__(self):
+        return f"{self.usuario.username} apitou {self.lance.titulo} - {'Acertou' if self.acertou else 'Errou'}"
+
+    # ==========================================
+    # A MÁGICA DO RANKING / PATENTE
+    # ==========================================
+    @classmethod
+    def pegar_patente_arbitro(cls, usuario):
+        """Calcula o total de pontos do usuário no VAR e devolve a patente dele."""
+        from django.db.models import Sum
+        total_pontos = cls.objects.filter(usuario=usuario, acertou=True).aggregate(Sum('pontos_ganhos'))['pontos_ganhos__sum'] or 0
+        
+        if total_pontos < 50:
+            return {'nome': 'Juiz de Várzea', 'cor': 'text-muted', 'pts': total_pontos}
+        elif total_pontos < 150:
+            return {'nome': 'Wilton Pereira Sampaio', 'cor': 'text-warning', 'pts': total_pontos}
+        elif total_pontos < 300:
+            return {'nome': 'Sandro Meira Ricci', 'cor': 'text-primary', 'pts': total_pontos}
+        elif total_pontos < 500:
+            return {'nome': 'Anderson Daronco', 'cor': 'text-danger', 'pts': total_pontos}
+        elif total_pontos < 800:
+            return {'nome': 'Raphael Claus', 'cor': 'text-success', 'pts': total_pontos}
+        else:
+            return {'nome': 'Pierluigi Collina (Deus da Arbitragem)', 'cor': 'text-info', 'pts': total_pontos}

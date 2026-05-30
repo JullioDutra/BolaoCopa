@@ -14,7 +14,9 @@ from .models import (
     JogadorMiniFanaticos,
     CartaTrunfo, 
     PartidaTrunfo,
-    GrandeFinalCampeonato
+    GrandeFinalCampeonato,
+    LanceVAR, 
+    PalpiteVAR
     
 
 )
@@ -142,3 +144,20 @@ class PartidaTrunfoAdmin(admin.ModelAdmin):
     list_filter = ('status',)
 
 admin.site.register(GrandeFinalCampeonato)
+
+
+@admin.register(LanceVAR)
+class LanceVARAdmin(admin.ModelAdmin):
+    list_display = ('titulo', 'resposta_correta', 'pontos_recompensa', 'ativo')
+    list_filter = ('ativo',)
+    search_fields = ('titulo', 'descricao')
+
+@admin.register(PalpiteVAR)
+class PalpiteVARAdmin(admin.ModelAdmin):
+    list_display = ('usuario', 'lance', 'acertou', 'pontos_ganhos', 'data_palpite')
+    list_filter = ('acertou', 'data_palpite')
+    search_fields = ('usuario__username', 'lance__titulo')
+
+
+
+

@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'palpites',
     'pagamentos',
     'duelos',
+    'draft',
 ]
 
 MIDDLEWARE = [

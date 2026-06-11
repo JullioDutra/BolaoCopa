@@ -138,6 +138,8 @@ class Palpite(models.Model):
         gols_fora = models.IntegerField()
         pontuacao_obtida = models.IntegerField(default=0)
         modalidade = models.CharField(max_length=10, choices=[('resenha', 'Resenha'), ('pago', 'Pago')], default='resenha')
+        pontuacao_obtida = models.IntegerField(default=0)
+        is_maior_pontuador = models.BooleanField(default=False, verbose_name="Maior pontuador da rodada?")
     
         class Meta:
         # Trava fundamental no banco: um usuário só pode ter UM palpite por jogo

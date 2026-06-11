@@ -81,7 +81,8 @@
                     <i class="fa-regular fa-futbol text-success" style="font-size: 3rem;"></i>
                 </div>
                 <h4 class="fw-bold">Bolão de Jogos</h4>
-                <p class="text-muted small">Palpite nos placares. Bloqueio 24h antes do jogo.</p>
+                <!-- Texto alterado para 1h -->
+                <p class="text-muted small">Palpite nos placares. Bloqueio 1h antes do jogo.</p>
                 <div class="mt-auto">
                     <a href="{% url 'palpites:listar_jogos' %}" class="btn btn-outline-success w-100 fw-bold">Dar Palpites</a>
                 </div>
@@ -98,6 +99,7 @@
                 <h4 class="fw-bold">Ranking Geral</h4>
                 <p class="text-muted small">Veja quem está liderando a corrida pelo prêmio.</p>
                 <div class="mt-auto">
+                    <!-- URL mantida, já apontando perfeitamente para 'palpites:ranking_geral' -->
                     <a href="{% url 'palpites:ranking_geral' %}" class="btn btn-warning text-dark w-100 fw-bold">Ver Classificação</a>
                 </div>
             </div>
@@ -114,11 +116,12 @@
         const deadlineConvocacao = new Date(`May 17, ${year} 23:59:59`).getTime();
         renderTime(deadlineConvocacao - now, "timer-convocacao");
 
-        // Timer Jogo: Data do Jogo menos 24 horas
+        // Timer Jogo: Data do Jogo menos 1 hora
         const timerJogoElement = document.getElementById("timer-jogo");
         if (timerJogoElement) {
             const gameDateStr = timerJogoElement.getAttribute("data-limite");
-            const deadlineJogo = new Date(gameDateStr).getTime() - (24 * 60 * 60 * 1000);
+            // Matemática ajustada: 60 minutos * 60 segundos * 1000 ms = 1 hora (antes era 24 horas)
+            const deadlineJogo = new Date(gameDateStr).getTime() - (60 * 60 * 1000);
             renderTime(deadlineJogo - now, "timer-jogo");
         }
     }

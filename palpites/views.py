@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from django.db.models import Sum, Max
+from django.db.models import Sum, Count, Q
 from decimal import Decimal
 from django.db import transaction
 from django.contrib.auth.models import User
@@ -132,15 +132,37 @@ def fazer_palpite(request, jogo_id):
     })
 
 
+
+
+# Mantenha os seus outros imports aqui (ex: @acesso_liberado_required, Palpite, etc.)
+
 @acesso_liberado_required
 def ranking_geral(request):
     """ Soma a pontuação de todos os palpites agrupando por usuário e monta a tabela do ranking """
     
-    ranking = Palpite.objects.values('usuario__username', 'usuario__first_name', 'usuario__participacao__tipo') \
-        .annotate(total_pontos=Sum('pontuacao_obtida')) \
-        .order_by('-total_pontos')
+    ranking = Palpite.objects.values(
+        'usuario__username', 
+        'usuario__first_name', 
+        'usuario__participacao__tipo'
+    ).annotate(
+        # Soma total dos pontos
+        total_pontos=Sum('pontuacao_obtida'),
+        
+        # Conta quantos palpites o usuário tem com pontuação igual a 15
+        acertos_placar=Count('id', filter=Q(pontuacao_obtida=15)),
+        
+        # Conta quantos palpites o usuário tem com pontuação igual a 5
+        # NOTA: Veja a observação abaixo sobre o Maior Pontuador
+        acertos_vencedor=Count('id', filter=Q(pontuacao_obtida=5)),
+        
+        # Se você criou um campo booleano no model Palpite chamado 'is_maior_pontuador',
+        # você poderia contar assim:
+        # maior_pontuador=Count('id', filter=Q(is_maior_pontuador=True)),
+        
+    ).order_by('-total_pontos')
         
     return render(request, 'palpites/ranking.html', {'ranking': ranking})
+
 
 @login_required
 def indicar_oscar(request):

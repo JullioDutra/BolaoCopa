@@ -21,7 +21,8 @@ class Jogo(models.Model):
 
     @property
     def aceita_palpite(self):
-        return timezone.now() < self.data_hora
+        # Bloqueia o recebimento de palpites exatamente 1 hora antes do jogo
+        return timezone.now() < (self.data_hora - timedelta(hours=1))
 
     def calcular_pontuacao_palpites(self):
         """ Varre os palpites deste jogo e distribui os pontos """
@@ -32,25 +33,17 @@ class Jogo(models.Model):
         for palpite in palpites:
             pontos = 0
             
-            # 1. Acerto Exato do placar (5 pontos)
+            # 1. Acerto Exato do placar (15 pontos)
             if palpite.gols_casa == self.gols_casa_real and palpite.gols_fora == self.gols_fora_real:
-                pontos = 5
+                pontos = 15
             else:
                 # Descobre quem ganhou na vida real e no palpite
                 vencedor_real = 'casa' if self.gols_casa_real > self.gols_fora_real else 'fora' if self.gols_fora_real > self.gols_casa_real else 'empate'
                 vencedor_palpite = 'casa' if palpite.gols_casa > palpite.gols_fora else 'fora' if palpite.gols_fora > palpite.gols_casa else 'empate'
 
-                # 2. Acertou o Vencedor (ou Empate)
+                # 2. Acertou o Vencedor ou Empate (5 pontos)
                 if vencedor_real == vencedor_palpite:
-                    saldo_real = abs(self.gols_casa_real - self.gols_fora_real)
-                    saldo_palpite = abs(palpite.gols_casa - palpite.gols_fora)
-                    
-                    # 3. Acertou Vencedor + Saldo de Gols (3 pontos)
-                    if saldo_real == saldo_palpite:
-                        pontos = 3
-                    # 4. Acertou só o Vencedor (2 pontos)
-                    else:
-                        pontos = 2
+                    pontos = 5
 
             # Salva a pontuação no palpite do usuário
             palpite.pontuacao_obtida = pontos

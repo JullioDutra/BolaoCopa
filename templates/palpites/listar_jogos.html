@@ -3,10 +3,31 @@
 {% block title %}Arena de Palpites - Cartolândia{% endblock %}
 
 {% block content %}
+<style>
+    /* Truque CSS: Se a caixa de vencedores não possuir nenhuma badge (ninguém acertou), altera o estilo para cinza */
+    .caixa-vencedores:not(:has(.badge)) {
+        background-color: #f8f9fa !important;
+        border-color: #dee2e6 !important;
+        text-align: center !important;
+    }
+    .caixa-vencedores:not(:has(.badge))::after {
+        content: "Ninguém cravou o placar exato!";
+        display: block;
+        color: #6c757d;
+        font-weight: bold;
+        font-size: 0.875em;
+        margin-top: 5px;
+        margin-bottom: 5px;
+    }
+    .caixa-vencedores:not(:has(.badge)) .titulo-vencedores {
+        display: none !important;
+    }
+</style>
+
 <div class="row mt-4 mb-4">
     <div class="col-12 text-center">
         <h2 class="fw-bold" style="color: var(--verde-escuro);"><i class="fa-regular fa-futbol"></i> Arena de Palpites</h2>
-        <p class="text-muted">Apostas e edições encerram exatamente <strong>24 horas antes</strong> do apito inicial.</p>
+        <p class="text-muted">Apostas e edições encerram exatamente <strong>1 hora antes</strong> do apito inicial.</p>
     </div>
 </div>
 
@@ -65,18 +86,15 @@
                             <br>
                             <small class="text-muted">Placar Real: {{ jogo.gols_casa_real }} x {{ jogo.gols_fora_real }}</small>
                             
-                            {% if jogo.ganhadores %}
-                                <div class="mt-3 p-2 bg-success bg-opacity-10 border border-success border-opacity-25 rounded-3 text-start">
-                                    <small class="fw-bold text-success d-block mb-1"><i class="fa-solid fa-trophy"></i> Vencedores do Prêmio:</small>
-                                    {% for ganhador in jogo.ganhadores %}
-                                        <span class="badge bg-success me-1 mb-1 fs-6 shadow-sm"><i class="fa-solid fa-crown text-warning"></i> {{ ganhador.usuario.first_name|default:ganhador.usuario.username }}</span>
-                                    {% endfor %}
-                                </div>
-                            {% else %}
-                                <div class="mt-3 p-2 bg-light border rounded-3 text-center">
-                                    <small class="text-muted fw-bold"><i class="fa-solid fa-face-frown-open"></i> Ninguém cravou para levar o prêmio!</small>
-                                </div>
-                            {% endif %}
+                            <!-- Nova lógica para mostrar todos os acertadores diretamente pelo HTML -->
+                            <div class="mt-3 p-2 bg-success bg-opacity-10 border border-success border-opacity-25 rounded-3 text-start caixa-vencedores">
+                                <small class="fw-bold text-success d-block mb-2 titulo-vencedores"><i class="fa-solid fa-trophy"></i> Cravaram o Placar:</small>
+                                {% for palpite in jogo.palpites.all %}
+                                    {% if palpite.pontuacao_obtida == 15 %}
+                                        <span class="badge bg-success me-1 mb-1 fs-6 shadow-sm"><i class="fa-solid fa-crown text-warning"></i> {{ palpite.usuario.first_name|default:palpite.usuario.username }}</span>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
                         
                         {% elif jogo.aceita_palpite %}
                             {% if jogo.meu_palpite %}
@@ -93,7 +111,7 @@
                             <button class="btn btn-secondary w-100 fw-bold mt-2" disabled>
                                 <i class="fa-solid fa-lock"></i> Palpites Encerrados
                             </button>
-                            <small class="text-danger d-block mt-2"><i class="fa-solid fa-clock"></i> Faltam menos de 24h</small>
+                            <small class="text-danger d-block mt-2"><i class="fa-solid fa-clock"></i> Falta menos de 1h</small>
                         {% endif %}
                     </div>
                 </div>

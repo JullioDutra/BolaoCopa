@@ -4,16 +4,16 @@
 
 {% block content %}
 <div class="row justify-content-center mt-4">
-    <!-- Aumentei a largura da coluna de col-md-8 para col-md-10 para acomodar mais dados -->
     <div class="col-md-10">
-        <div class="card card-clean p-4">
+        <div class="card card-clean p-3 p-md-4">
             <h2 class="fw-bold text-center mb-4" style="color: var(--verde-escuro);">🏆 Tabela do Campeonato</h2>
             
             <div class="table-responsive">
-                <table class="table table-hover align-middle text-center">
+                <!-- Adicionado table-sm para comprimir a tabela no mobile e text-nowrap para evitar quebra de linha indesejada -->
+                <table class="table table-hover table-sm align-middle text-center">
                     <thead class="table-dark">
                         <tr>
-                            <th scope="col" class="text-start">Pos</th>
+                            <th scope="col" class="text-start px-2">Pos</th>
                             <th scope="col" class="text-start">Jogador</th>
                             <th scope="col" title="Total de Pontos">PTS</th>
                             <th scope="col" title="Acertou o Placar Cheio (15 pts)">AP</th>
@@ -24,7 +24,7 @@
                     <tbody>
                         {% for posicao in ranking %}
                         <tr>
-                            <th scope="row" class="text-start">
+                            <th scope="row" class="text-start px-2 text-nowrap">
                                 {% if forloop.counter == 1 %}🥇 1º
                                 {% elif forloop.counter == 2 %}🥈 2º
                                 {% elif forloop.counter == 3 %}🥉 3º
@@ -32,25 +32,28 @@
                             </th>
                             
                             <td class="text-start fw-bold">
-                                {{ posicao.usuario__username }}
-                                <span class="badge {% if posicao.usuario__participacao__tipo == 'pago' %}bg-warning text-dark{% else %}bg-secondary{% endif %} ms-2">
+                                <!-- Mostra o primeiro nome. Se não existir, mostra o username -->
+                                {{ posicao.usuario__first_name|default:posicao.usuario__username|title }}
+                                
+                                <!-- No celular (d-block mt-1), a badge fica embaixo do nome. No PC (d-md-inline-block ms-md-2 mt-md-0), fica do lado -->
+                                <span class="badge {% if posicao.usuario__participacao__tipo == 'pago' %}bg-warning text-dark{% else %}bg-secondary{% endif %} d-block d-md-inline-block mt-1 mt-md-0 ms-md-2" style="font-size: 0.7rem;">
                                     {{ posicao.usuario__participacao__tipo|title }}
                                 </span>
                             </td>
                             
                             <!-- Pontuação Total -->
-                            <td class="fw-bold fs-5 text-success">
+                            <td class="fw-bold fs-5 text-success text-nowrap">
                                 {{ posicao.total_pontos|default:"0" }}
                             </td>
                             
                             <!-- Estatísticas Detalhadas -->
-                            <td>{{ posicao.acertos_placar|default:"0" }}</td>
-                            <td>{{ posicao.acertos_vencedor|default:"0" }}</td>
-                            <td>{{ posicao.maior_pontuador|default:"0" }}</td>
+                            <td class="text-nowrap">{{ posicao.acertos_placar|default:"0" }}</td>
+                            <td class="text-nowrap">{{ posicao.acertos_vencedor|default:"0" }}</td>
+                            <td class="text-nowrap">{{ posicao.maior_pontuador|default:"0" }}</td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="6" class="text-center text-muted">Nenhum palpite finalizado ainda.</td>
+                            <td colspan="6" class="text-center text-muted py-4">Nenhum palpite finalizado ainda.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -59,16 +62,16 @@
 
             <!-- Legenda Explicativa -->
             <div class="mt-4 pt-3 border-top text-muted small">
-                <h6 class="fw-bold">Entenda a Pontuação:</h6>
-                <div class="row">
-                    <div class="col-md-4">
-                        <strong>AP (Acertou o Placar):</strong><br> 15 pontos
+                <h6 class="fw-bold mb-3">Entenda a Pontuação:</h6>
+                <div class="row g-2">
+                    <div class="col-12 col-md-4">
+                        <strong>AP (Acertou o Placar):</strong> 15 pts
                     </div>
-                    <div class="col-md-4">
-                        <strong>AV (Acertou Vencedor/Empate):</strong><br> 5 pontos
+                    <div class="col-12 col-md-4">
+                        <strong>AV (Acertou Vencedor/Empate):</strong> 5 pts
                     </div>
-                    <div class="col-md-4">
-                        <strong>MP (Maior Pontuador):</strong><br> 5 pontos extras (Admin)
+                    <div class="col-12 col-md-4">
+                        <strong>MP (Maior Pontuador):</strong> 5 pts extras
                     </div>
                 </div>
             </div>

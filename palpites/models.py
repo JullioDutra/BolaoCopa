@@ -2,10 +2,9 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
 from datetime import timedelta
-from django.db import models, transaction
+from django.db import transaction
 from django.db.models import Max
 from decimal import Decimal
-from django.utils import timezone
 from accounts.models import Transacao
 
 class Jogo(models.Model):
@@ -21,8 +20,9 @@ class Jogo(models.Model):
 
     @property
     def aceita_palpite(self):
-        # Bloqueia o recebimento de palpites exatamente 1 hora antes do jogo
-        return timezone.now() < (self.data_hora - timedelta(hours=1))
+        """ Retorna True se faltar MAIS de 1 hora para o jogo começar """
+        limite_para_apostar = self.data_hora - timedelta(hours=1)
+        return timezone.now() < limite_para_apostar
 
     def calcular_pontuacao_palpites(self):
         """ Varre os palpites deste jogo e distribui os pontos """
@@ -50,27 +50,15 @@ class Jogo(models.Model):
             palpite.save()
 
     def save(self, *args, **kwargs):
-        # Primeiro salva o jogo no banco
+        # 1. Primeiro, salva as alterações do jogo no banco de dados
         super().save(*args, **kwargs)
-        # Depois verifica se finalizou para rodar o cálculo
+
+        # 2. Se o jogo ACABOU, roda a regra dos pontos para todo mundo!
         if self.finalizado:
             self.calcular_pontuacao_palpites()
 
-    def __str__(self):
-        return f"{self.time_casa} x {self.time_fora}"
-    
-    @property
-    def aceita_palpite(self):
-        """ Retorna True se faltar MAIS de 1 horas para o jogo começar """
-        limite_para_apostar = self.data_hora - timedelta(hours=1)
-        return timezone.now() < limite_para_apostar
-    
-    def save(self, *args, **kwargs):
-            # 1. Primeiro, salva as alterações do jogo no banco de dados
-            super().save(*args, **kwargs)
-
-            # 2. Verifica se o jogo ACABOU e se o prêmio AINDA NÃO FOI PAGO
-            if self.finalizado and not self.premio_distribuido:
+            # 3. Verifica se o prêmio AINDA NÃO FOI PAGO
+            if not self.premio_distribuido:
                 
                 # Pega todos os palpites que valeram dinheiro
                 palpites_pagos = self.palpites.filter(modalidade='pago')
@@ -121,25 +109,26 @@ class Jogo(models.Model):
                 # Por fim, tranca o cadeado para não pagar essa mesma partida duas vezes!
                 self.premio_distribuido = True
                 super().save(update_fields=['premio_distribuido'])
-    
-    
+
+    def __str__(self):
+        return f"{self.time_casa} x {self.time_fora}"
+
 
 class Palpite(models.Model):
-        usuario = models.ForeignKey(User, on_delete=models.CASCADE, related_name='palpites')
-        jogo = models.ForeignKey(Jogo, on_delete=models.CASCADE, related_name='palpites')
-        gols_casa = models.IntegerField()
-        gols_fora = models.IntegerField()
-        pontuacao_obtida = models.IntegerField(default=0)
-        modalidade = models.CharField(max_length=10, choices=[('resenha', 'Resenha'), ('pago', 'Pago')], default='resenha')
-        pontuacao_obtida = models.IntegerField(default=0)
-        is_maior_pontuador = models.BooleanField(default=False, verbose_name="Maior pontuador da rodada?")
-    
-        class Meta:
-        # Trava fundamental no banco: um usuário só pode ter UM palpite por jogo
-         unique_together = ['usuario', 'jogo']
+    usuario = models.ForeignKey(User, on_delete=models.CASCADE, related_name='palpites')
+    jogo = models.ForeignKey(Jogo, on_delete=models.CASCADE, related_name='palpites')
+    gols_casa = models.IntegerField()
+    gols_fora = models.IntegerField()
+    modalidade = models.CharField(max_length=10, choices=[('resenha', 'Resenha'), ('pago', 'Pago')], default='resenha')
+    pontuacao_obtida = models.IntegerField(default=0)
+    is_maior_pontuador = models.BooleanField(default=False, verbose_name="Maior pontuador da rodada?")
 
-        def __str__(self):
-         return f"{self.usuario.username}: {self.jogo.time_casa} {self.gols_casa} x {self.gols_fora} {self.jogo.time_fora} ({self.pontuacao_obtida} pts)"
+    class Meta:
+        # Trava fundamental no banco: um usuário só pode ter UM palpite por jogo
+        unique_together = ['usuario', 'jogo']
+
+    def __str__(self):
+        return f"{self.usuario.username}: {self.jogo.time_casa} {self.gols_casa} x {self.gols_fora} {self.jogo.time_fora} ({self.pontuacao_obtida} pts)"
         
 
 class OscarCartolandia(models.Model):

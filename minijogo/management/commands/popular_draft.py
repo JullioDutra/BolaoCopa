@@ -2,263 +2,168 @@ from django.core.management.base import BaseCommand
 from minijogo.models import ElencoHistorico, CartaJogador
 
 class Command(BaseCommand):
-    help = 'Popula o banco de dados com elencos históricos épicos e jogadores para o Draft X1'
+    help = 'Popula o banco de dados com uma mistura de times lendários e times COMUNS/FRACOS para o Draft X1'
 
     def handle(self, *args, **kwargs):
-        # Dicionário GIGANTE com os maiores times da história (Nome, Posição, Over)
         dados_elencos = {
-            # =================== TIMES BRASILEIROS ===================
-            "Flamengo 2019": [
-                ("Diego Alves", "goleiro", 85),
-                ("Rafinha", "linha", 83),
-                ("Rodrigo Caio", "linha", 84),
-                ("Pablo Marí", "linha", 83),
-                ("Filipe Luís", "linha", 86),
-                ("Gerson", "linha", 85),
-                ("Willian Arão", "linha", 83),
-                ("Éverton Ribeiro", "linha", 87),
-                ("De Arrascaeta", "linha", 88),
-                ("Bruno Henrique", "linha", 88),
-                ("Gabigol", "linha", 89),
+            # =================== TIMES COMUNS / MÉDIOS (OVR 70 - 78) ===================
+            "Criciúma 2024": [
+                ("Gustavo", "goleiro", 74),
+                ("Claudinho", "linha", 72),
+                ("Rodrigo", "linha", 73),
+                ("Wilker Ángel", "linha", 72),
+                ("Marcelo Hermes", "linha", 71),
+                ("Barreto", "linha", 73),
+                ("Higor Meritão", "linha", 72),
+                ("Fellipe Mateus", "linha", 74),
+                ("Matheusinho", "linha", 75),
+                ("Bolasie", "linha", 76),
+                ("Arthur Caíke", "linha", 73),
             ],
-            "Grêmio 2017": [
-                ("Marcelo Grohe", "goleiro", 87),
-                ("Edílson", "linha", 82),
-                ("Pedro Geromel", "linha", 88),
-                ("Kannemann", "linha", 86),
-                ("Bruno Cortez", "linha", 81),
-                ("Arthur", "linha", 86),
-                ("Maicon", "linha", 84),
-                ("Ramiro", "linha", 82),
-                ("Luan", "linha", 89),
-                ("Fernandinho", "linha", 81),
-                ("Lucas Barrios", "linha", 83),
+            "Juventude 2024": [
+                ("Gabriel", "goleiro", 74),
+                ("João Lucas", "linha", 72),
+                ("Danilo Boza", "linha", 73),
+                ("Zé Marcos", "linha", 72),
+                ("Alan Ruschel", "linha", 74),
+                ("Jadson", "linha", 73),
+                ("Jean Carlos", "linha", 75),
+                ("Nenê", "linha", 76),
+                ("Lucas Barbosa", "linha", 74),
+                ("Erick Farias", "linha", 73),
+                ("Gilberto", "linha", 75),
             ],
-            "Corinthians 2012": [
-                ("Cássio", "goleiro", 88),
-                ("Alessandro", "linha", 82),
-                ("Chicão", "linha", 85),
-                ("Leandro Castán", "linha", 84),
-                ("Fábio Santos", "linha", 84),
-                ("Ralf", "linha", 85),
-                ("Paulinho", "linha", 87),
-                ("Danilo", "linha", 86),
-                ("Alex", "linha", 83),
-                ("Emerson Sheik", "linha", 88),
-                ("Paolo Guerrero", "linha", 89),
+            "Vitória 2024": [
+                ("Lucas Arcanjo", "goleiro", 75),
+                ("Zeca", "linha", 73),
+                ("Camutanga", "linha", 74),
+                ("Wagner Leonardo", "linha", 74),
+                ("PK", "linha", 72),
+                ("Willian Oliveira", "linha", 73),
+                ("Dudu", "linha", 72),
+                ("Matheuzinho", "linha", 76),
+                ("Osvaldo", "linha", 75),
+                ("Iury Castilho", "linha", 73),
+                ("Alerrandro", "linha", 74),
             ],
-            "Palmeiras 2020": [
-                ("Weverton", "goleiro", 87),
-                ("Marcos Rocha", "linha", 83),
-                ("Gustavo Gómez", "linha", 88),
-                ("Luan", "linha", 83),
-                ("Matías Viña", "linha", 84),
-                ("Danilo", "linha", 83),
-                ("Zé Rafael", "linha", 84),
-                ("Raphael Veiga", "linha", 87),
-                ("Dudu", "linha", 88),
-                ("Rony", "linha", 86),
-                ("Luiz Adriano", "linha", 83),
+            "Cuiabá 2024": [
+                ("Walter", "goleiro", 77),
+                ("Matheus Alexandre", "linha", 73),
+                ("Marllon", "linha", 74),
+                ("Empereur", "linha", 74),
+                ("Ramon", "linha", 72),
+                ("Lucas Mineiro", "linha", 73),
+                ("Fernando Sobral", "linha", 74),
+                ("Denilson", "linha", 72),
+                ("Clayson", "linha", 75),
+                ("Derik Lacerda", "linha", 73),
+                ("Isidro Pitta", "linha", 76),
             ],
-            "São Paulo 2005": [
-                ("Rogério Ceni", "goleiro", 91),
-                ("Cicinho", "linha", 87),
-                ("Diego Lugano", "linha", 88),
-                ("Fabão", "linha", 84),
-                ("Júnior", "linha", 85),
-                ("Mineiro", "linha", 86),
-                ("Josué", "linha", 86),
-                ("Danilo", "linha", 87),
-                ("Amoroso", "linha", 88),
-                ("Aloísio Chulapa", "linha", 84),
-                ("Luizão", "linha", 85),
-            ],
-            "Santos 2011": [
-                ("Rafael Cabral", "goleiro", 83),
-                ("Danilo", "linha", 84),
-                ("Edu Dracena", "linha", 85),
-                ("Durval", "linha", 82),
-                ("Léo", "linha", 81),
-                ("Arouca", "linha", 84),
-                ("Elano", "linha", 86),
-                ("Ganso", "linha", 88),
-                ("Neymar", "linha", 92),
-                ("Borges", "linha", 85),
-                ("Zé Eduardo", "linha", 80),
-            ],
-            "Cruzeiro 2003": [
-                ("Gomes", "goleiro", 85),
-                ("Maurinho", "linha", 82),
-                ("Cris", "linha", 86),
-                ("Edu Dracena", "linha", 84),
-                ("Leandro", "linha", 83),
-                ("Maldonado", "linha", 85),
-                ("Augusto Recife", "linha", 82),
-                ("Wendell", "linha", 84),
-                ("Alex", "linha", 92),
-                ("Aristizábal", "linha", 87),
-                ("Deivid", "linha", 86),
-            ],
-            "Internacional 2006": [
-                ("Clemer", "goleiro", 86),
-                ("Ceará", "linha", 82),
-                ("Índio", "linha", 88),
-                ("Fabiano Eller", "linha", 84),
-                ("Rubens Cardoso", "linha", 81),
-                ("Edinho", "linha", 83),
-                ("Tinga", "linha", 87),
-                ("Alex", "linha", 86),
-                ("Fernandão", "linha", 89),
-                ("Iarley", "linha", 84),
-                ("Alexandre Pato", "linha", 85),
-            ],
-            "Vasco 1998": [
-                ("Carlos Germano", "goleiro", 87),
-                ("Vágner", "linha", 82),
-                ("Odvan", "linha", 86),
-                ("Mauro Galvão", "linha", 87),
-                ("Felipe", "linha", 86),
-                ("Nasa", "linha", 82),
-                ("Luisinho", "linha", 83),
-                ("Juninho Pernambucano", "linha", 90),
-                ("Pedrinho", "linha", 88),
-                ("Donizete", "linha", 86),
-                ("Luizão", "linha", 87),
+            "Luton Town 2024 (ING)": [
+                ("Kaminski", "goleiro", 75),
+                ("Kaboré", "linha", 74),
+                ("Mengi", "linha", 73),
+                ("Lockyer", "linha", 74),
+                ("Bell", "linha", 74),
+                ("Nakamba", "linha", 75),
+                ("Barkley", "linha", 78),
+                ("Doughty", "linha", 74),
+                ("Chong", "linha", 76),
+                ("Morris", "linha", 77),
+                ("Adebayo", "linha", 76),
             ],
 
-            # =================== TIMES INTERNACIONAIS ===================
-            "Barcelona 2015": [
-                ("Ter Stegen", "goleiro", 88),
-                ("Dani Alves", "linha", 89),
-                ("Piqué", "linha", 88),
-                ("Mascherano", "linha", 86),
-                ("Jordi Alba", "linha", 87),
-                ("Busquets", "linha", 88),
-                ("Rakitic", "linha", 87),
-                ("Iniesta", "linha", 90),
-                ("Messi", "linha", 98),
-                ("Suárez", "linha", 93),
-                ("Neymar", "linha", 94),
+            # =================== TIMES BONS / FORTES (OVR 78 - 85) ===================
+            "Vasco 2024": [
+                ("Léo Jardim", "goleiro", 80),
+                ("Paulo Henrique", "linha", 76),
+                ("Maicon", "linha", 77),
+                ("Léo", "linha", 75),
+                ("Lucas Piton", "linha", 78),
+                ("Sforza", "linha", 76),
+                ("Hugo Moura", "linha", 77),
+                ("Payet", "linha", 82),
+                ("Adson", "linha", 76),
+                ("David", "linha", 75),
+                ("Vegetti", "linha", 81),
             ],
-            "Real Madrid 2017": [
-                ("Keylor Navas", "goleiro", 88),
-                ("Carvajal", "linha", 87),
-                ("Sergio Ramos", "linha", 91),
-                ("Varane", "linha", 89),
-                ("Marcelo", "linha", 89),
-                ("Casemiro", "linha", 88),
+            "Bayer Leverkusen 2024": [
+                ("Hradecky", "goleiro", 86),
+                ("Frimpong", "linha", 85),
+                ("Tah", "linha", 84),
+                ("Tapsoba", "linha", 85),
+                ("Grimaldo", "linha", 86),
+                ("Xhaka", "linha", 86),
+                ("Palacios", "linha", 85),
+                ("Hofmann", "linha", 85),
+                ("Wirtz", "linha", 88),
+                ("Schick", "linha", 86),
+                ("Boniface", "linha", 84),
+            ],
+            
+            # =================== TIMES LENDÁRIOS / RAROS (OVR 85 - 90+) ===================
+            "Real Madrid 2024": [
+                ("Courtois", "goleiro", 90),
+                ("Carvajal", "linha", 86),
+                ("Rüdiger", "linha", 88),
+                ("Militão", "linha", 87),
+                ("Mendy", "linha", 84),
+                ("Tchouaméni", "linha", 87),
                 ("Kroos", "linha", 89),
-                ("Modric", "linha", 91),
-                ("Isco", "linha", 88),
-                ("Cristiano Ronaldo", "linha", 97),
-                ("Benzema", "linha", 91),
+                ("Valverde", "linha", 88),
+                ("Bellingham", "linha", 91),
+                ("Rodrygo", "linha", 87),
+                ("Vini Jr", "linha", 91),
             ],
-            "Milan 2007": [
-                ("Dida", "goleiro", 87),
-                ("Oddo", "linha", 83),
-                ("Nesta", "linha", 91),
-                ("Maldini", "linha", 92),
-                ("Jankulovski", "linha", 82),
-                ("Gattuso", "linha", 88),
-                ("Ambrosini", "linha", 85),
-                ("Pirlo", "linha", 90),
-                ("Seedorf", "linha", 89),
-                ("Kaká", "linha", 95),
-                ("Filippo Inzaghi", "linha", 88),
-            ],
-            "Bayern de Munique 2013": [
-                ("Neuer", "goleiro", 90),
-                ("Lahm", "linha", 90),
-                ("Boateng", "linha", 86),
-                ("Dante", "linha", 84),
-                ("Alaba", "linha", 87),
-                ("Javi Martínez", "linha", 85),
-                ("Schweinsteiger", "linha", 89),
-                ("Thomas Müller", "linha", 88),
-                ("Robben", "linha", 89),
-                ("Ribéry", "linha", 90),
-                ("Lewandowski", "linha", 89),
-            ],
-            "Manchester United 2008": [
-                ("Van der Sar", "goleiro", 88),
-                ("Wes Brown", "linha", 83),
-                ("Rio Ferdinand", "linha", 90),
-                ("Vidic", "linha", 89),
-                ("Evra", "linha", 87),
-                ("Carrick", "linha", 86),
-                ("Scholes", "linha", 88),
-                ("Giggs", "linha", 87),
-                ("Cristiano Ronaldo", "linha", 94),
-                ("Rooney", "linha", 90),
-                ("Tevez", "linha", 89),
-            ],
-            "Arsenal 2004 (Invincibles)": [
-                ("Lehmann", "goleiro", 88),
-                ("Lauren", "linha", 84),
-                ("Sol Campbell", "linha", 89),
-                ("Kolo Touré", "linha", 86),
-                ("Ashley Cole", "linha", 88),
-                ("Gilberto Silva", "linha", 86),
-                ("Patrick Vieira", "linha", 91),
-                ("Ljungberg", "linha", 87),
-                ("Pires", "linha", 88),
-                ("Bergkamp", "linha", 90),
-                ("Thierry Henry", "linha", 94),
-            ],
-            "Boca Juniors 2007": [
-                ("Caranta", "goleiro", 82),
-                ("Ibarra", "linha", 84),
-                ("Cata Díaz", "linha", 83),
-                ("Morel Rodríguez", "linha", 82),
-                ("Clemente Rodríguez", "linha", 81),
-                ("Ledesma", "linha", 80),
-                ("Banega", "linha", 83),
-                ("Neri Cardozo", "linha", 81),
-                ("Riquelme", "linha", 93),
-                ("Palacio", "linha", 86),
-                ("Palermo", "linha", 87),
+            "Manchester City 2023": [
+                ("Ederson", "goleiro", 89),
+                ("Kyle Walker", "linha", 86),
+                ("Rúben Dias", "linha", 88),
+                ("Akanji", "linha", 86),
+                ("Aké", "linha", 85),
+                ("Rodri", "linha", 89),
+                ("Gündogan", "linha", 87),
+                ("De Bruyne", "linha", 92),
+                ("Bernardo Silva", "linha", 89),
+                ("Grealish", "linha", 87),
+                ("Haaland", "linha", 92),
             ],
 
-            # =================== SELEÇÕES LENDÁRIAS ===================
-            "Brasil 2002": [
-                ("Marcos", "goleiro", 89),
-                ("Cafu", "linha", 92),
-                ("Lúcio", "linha", 88),
-                ("Roque Júnior", "linha", 86),
-                ("Edmílson", "linha", 85),
-                ("Roberto Carlos", "linha", 93),
-                ("Gilberto Silva", "linha", 86),
-                ("Kléberson", "linha", 84),
-                ("Ronaldinho Gaúcho", "linha", 94),
-                ("Rivaldo", "linha", 95),
-                ("Ronaldo Fenômeno", "linha", 98),
+            # =================== O TIME MEME (OVR 50 - 60) ===================
+            "Íbis 2000 (Pior do Mundo)": [
+                ("Jailson", "goleiro", 55),
+                ("Carlinhos", "linha", 52),
+                ("Zezinho", "linha", 50),
+                ("Beto", "linha", 51),
+                ("Rato", "linha", 53),
+                ("Tonho", "linha", 54),
+                ("Zé", "linha", 52),
+                ("Chiquinho", "linha", 55),
+                ("Mauro Shampoo", "linha", 59),
+                ("Vavá", "linha", 53),
+                ("Garrinchinha", "linha", 56),
             ]
         }
 
-        self.stdout.write(self.style.WARNING('Iniciando o cadastro de Elencos e Jogadores Lendários...'))
+        self.stdout.write(self.style.WARNING('Limpando times antigos...'))
+        ElencoHistorico.objects.all().delete() # Isso garante que a lista velha seja apagada
+
+        self.stdout.write(self.style.WARNING('Iniciando o cadastro dos novos Elencos...'))
 
         total_times = 0
         total_jogadores = 0
 
         for nome_time, jogadores in dados_elencos.items():
-            # Cria ou pega o time
-            elenco, created = ElencoHistorico.objects.get_or_create(nome=nome_time)
+            elenco = ElencoHistorico.objects.create(nome=nome_time)
+            total_times += 1
             
-            if created:
-                self.stdout.write(self.style.SUCCESS(f'🏆 Elenco Cadastrado: {nome_time}'))
-                total_times += 1
-            else:
-                self.stdout.write(self.style.WARNING(f'⚠️ Elenco {nome_time} já existe no banco. Sincronizando cartas...'))
-
-            # Adiciona os jogadores ao time
             for j_nome, j_posicao, j_over in jogadores:
-                jogador, j_created = CartaJogador.objects.get_or_create(
+                CartaJogador.objects.create(
                     nome=j_nome,
                     elenco=elenco,
-                    defaults={'posicao': j_posicao, 'over': j_over}
+                    posicao=j_posicao,
+                    over=j_over
                 )
-                
-                if j_created:
-                    total_jogadores += 1
+                total_jogadores += 1
 
-        self.stdout.write(self.style.SUCCESS(f'🎉 MAGNÍFICO! {total_times} novos times e {total_jogadores} novas cartas foram adicionadas ao Draft!'))
+        self.stdout.write(self.style.SUCCESS(f'🎉 FEITO! {total_times} times e {total_jogadores} jogadores foram adicionados!'))

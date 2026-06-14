@@ -5,34 +5,124 @@
 
 {% block content %}
 <style>
-    /* Cenário e Trave */
+    /* =========================================
+       LAYOUT RESPONSIVO E COMPACTO
+       ========================================= */
+    .arena-container {
+        max-width: 800px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    /* Placar Superior e Bolinhas */
+    .placar-tv {
+        background-color: #111;
+        color: white;
+        padding: 10px 15px;
+        border-radius: 10px;
+        border: 2px solid #333;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .placar-nome {
+        font-family: monospace;
+        font-size: clamp(1rem, 3.5vw, 1.4rem);
+        max-width: 35%;
+    }
+    .placar-numeros {
+        font-family: monospace;
+        font-size: clamp(1.5rem, 5vw, 2.2rem);
+        font-weight: 900;
+    }
+    
+    /* As Bolinhas do Pênalti (TV Style) */
+    .dots-container {
+        display: flex;
+        gap: 4px;
+        margin-top: 4px;
+        justify-content: center;
+    }
+    .dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background-color: #444; /* Vazio */
+        border: 1px solid #111;
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+    }
+    .dot.green {
+        background-color: #00ff00;
+        box-shadow: 0 0 8px #00ff00, inset 0 2px 4px rgba(255,255,255,0.4);
+        border: 1px solid #00cc00;
+    }
+    .dot.red {
+        background-color: #ff3333;
+        box-shadow: 0 0 8px #ff3333, inset 0 2px 4px rgba(255,255,255,0.4);
+        border: 1px solid #cc0000;
+    }
+
+    /* Narrador / Status */
+    .narrador-box {
+        background: #222;
+        border-radius: 8px;
+        padding: 8px;
+        text-align: center;
+        border-left: 4px solid #cfb53b;
+    }
+    .status-turno {
+        font-size: clamp(1.1rem, 4vw, 1.8rem);
+        font-weight: 900;
+        text-transform: uppercase;
+        margin: 0;
+        line-height: 1;
+    }
+    .status-sub {
+        font-size: 0.85rem;
+        color: #aaa;
+        margin: 0;
+    }
+
+    /* O Estádio e a Trave */
     .stadium-bg {
         background: linear-gradient(to bottom, #0f2027, #203a43, #2c5364);
-        border-radius: 15px;
-        padding: 20px;
+        border-radius: 12px;
         position: relative;
         overflow: hidden;
-        min-height: 550px;
-        box-shadow: inset 0 -50px 100px rgba(0,255,0,0.1);
+        height: 40vh;
+        min-height: 250px;
+        max-height: 350px;
+        box-shadow: inset 0 -30px 60px rgba(0,255,0,0.1);
+        display: flex;
+        justify-content: center;
+    }
+    .enemy-gk-badge {
+        position: absolute;
+        top: 10px;
+        background: rgba(0,0,0,0.7);
+        color: white;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: bold;
+        border: 1px solid #cfb53b;
+        z-index: 5;
     }
     .goal-frame {
         position: absolute;
-        bottom: 40px;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 85%;
-        height: 65%;
-        border: 12px solid #fff;
+        bottom: 15px;
+        width: 90%;
+        height: 75%;
+        border: 8px solid #fff;
         border-bottom: none;
         background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAOklEQVQYV2NkYGAwYkAD////Z4TRyMDFwEIGRhSVAfI1igKofZhUkGw0kgL0cQwlkqKASiIl40QBAAB8xQk/Wb04fAAAAABJRU5ErkJggg==') repeat;
         display: grid;
         grid-template-columns: 1fr 1fr 1fr;
         grid-template-rows: 1fr 1fr;
-        gap: 8px;
-        box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        gap: 5px;
     }
-    
-    /* Botões de Ação na Trave */
     .alvo-btn {
         background-color: rgba(255, 255, 255, 0.05);
         border: 2px dashed rgba(255,255,255,0.4);
@@ -44,189 +134,266 @@
         font-weight: bold;
         color: transparent;
         border-radius: 5px;
+        font-size: 0.8rem;
     }
     .alvo-btn:hover {
         background-color: rgba(255, 215, 0, 0.6);
         border-color: #ffd700;
         color: white;
-        transform: scale(0.95);
     }
     .alvo-bloqueado {
         pointer-events: none;
         opacity: 0.3;
     }
 
-    /* Placar Superior */
-    .placar-tv {
-        background-color: #111;
+    /* DECK DE BATEDORES */
+    .deck-container {
+        background: #111;
+        padding: 10px;
+        border-radius: 10px;
+    }
+    .deck-scroll {
+        display: flex;
+        gap: 10px;
+        overflow-x: auto;
+        padding-bottom: 5px;
+    }
+    .batedor-card {
+        flex: 0 0 auto;
+        background: #2d2d2d;
+        border: 2px solid #555;
+        border-radius: 8px;
+        padding: 8px 12px;
         color: white;
-        padding: 10px 30px;
-        border-radius: 0 0 15px 15px;
-        font-family: monospace;
-        font-size: 1.8rem;
-        border: 2px solid #333;
-        border-top: none;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        min-width: 100px;
+    }
+    .batedor-card .ovr {
+        display: block;
+        font-size: 1.2rem;
+        font-weight: 900;
+        color: #cfb53b;
+        line-height: 1;
+    }
+    .batedor-card .nome {
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        font-weight: bold;
+    }
+    .batedor-card.selected {
+        border-color: #cfb53b;
+        background: #cfb53b;
+        color: black;
+        transform: translateY(-3px);
+    }
+    .batedor-card.selected .ovr { color: black; }
+    .batedor-card.used {
+        opacity: 0.3;
+        filter: grayscale(100%);
+        pointer-events: none;
+        border-color: #333;
     }
 
-    /* Textos Centrais e Cronômetro */
-    .status-turno {
-        font-size: 2.2rem;
-        font-weight: 900;
-        text-transform: uppercase;
-        text-shadow: 2px 2px 5px rgba(0,0,0,0.9);
-    }
-    .timer-circle {
-        width: 60px;
-        height: 60px;
-        border-radius: 50%;
-        background-color: #dc3545;
-        color: white;
-        display: flex;
+    /* TELA DE FEEDBACK VISUAL (GOL / DEFESA) */
+    #feedback-overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(0,0,0,0.85);
+        z-index: 50;
+        display: none;
+        flex-direction: column;
         align-items: center;
         justify-content: center;
-        font-size: 1.5rem;
-        font-weight: bold;
-        border: 4px solid #fff;
-        box-shadow: 0 0 15px rgba(220, 53, 69, 0.8);
+        text-align: center;
+    }
+    #feedback-text {
+        font-size: clamp(3rem, 10vw, 5rem);
+        font-weight: 900;
+        text-transform: uppercase;
+        margin: 0;
+        text-shadow: 0 0 20px rgba(0,0,0,0.5);
     }
 
-    /* Card do Jogador Atual (Batedor/Goleiro) */
-    .kicker-info {
-        background: rgba(0,0,0,0.8);
-        border-left: 5px solid #cfb53b;
-        color: white;
-        padding: 10px 15px;
-        border-radius: 5px;
-        min-width: 260px;
-    }
-    .btn-escolher-batedor {
-        background-color: #cfb53b;
-        color: #000;
-        font-weight: bold;
-        border: none;
-    }
-    .btn-escolher-batedor:hover {
-        background-color: #b59e33;
+    /* =========================================
+       TELA DE FIM DE JOGO
+       ========================================= */
+    #tela-fim-jogo {
+        display: none;
+        background: linear-gradient(135deg, #111, #222);
+        border: 3px solid #cfb53b;
+        border-radius: 15px;
+        padding: 40px 20px;
+        text-align: center;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.8);
     }
 </style>
 
-<div class="row">
-    <div class="col-12 text-center">
-        <!-- PLACAR SUPERIOR -->
-        <div class="placar-tv d-inline-block shadow-lg">
-            <span class="text-primary">{{ partida.jogador1.username }}</span> 
-            <span id="placar-num-j1" class="fw-bold">{{ partida.placar_j1 }}</span> 
-            <span class="mx-3 text-muted" style="font-size: 1.2rem;">X</span> 
-            <span id="placar-num-j2" class="fw-bold">{{ partida.placar_j2 }}</span> 
-            <span class="text-danger">{% if partida.jogador2 %}{{ partida.jogador2.username }}{% else %}Aguardando...{% endif %}</span>
-            
-            <div class="mt-1 text-center text-warning" style="font-size: 0.9rem; font-family: sans-serif;">
-                Rodada <span id="rodada-atual">{{ partida.rodada_atual }}</span> | <span id="fase-atual">{{ partida.get_fase_display }}</span>
-            </div>
+<div class="container-fluid px-2 py-2">
+    
+    <!-- TELA DE FIM DE JOGO (Oculta por padrão) -->
+    <div id="tela-fim-jogo" class="arena-container text-white">
+        <h1 class="fw-bold mb-1" style="color: #cfb53b; font-size: 3rem;"><i class="fa-solid fa-trophy"></i></h1>
+        <h2 class="fw-bold text-uppercase mb-4">Fim de Jogo!</h2>
+        
+        <h4 class="text-muted mb-2">Vencedor</h4>
+        <h1 id="nome-vencedor" class="text-success fw-bold text-uppercase mb-4" style="font-size: 2.5rem;">---</h1>
+        
+        <div class="p-3 bg-dark rounded-4 mb-4 border border-secondary d-inline-block mx-auto" style="min-width: 250px;">
+            <p class="text-muted small mb-1">Placar Final</p>
+            <h1 class="fw-bold m-0" style="font-size: 3rem; letter-spacing: 5px;">
+                <span id="placar-final-j1">0</span> <span class="text-muted fs-3">x</span> <span id="placar-final-j2">0</span>
+            </h1>
         </div>
+        
+        <a href="/" class="btn btn-warning text-dark btn-lg fw-bold rounded-pill shadow w-100 mt-2">
+            <i class="fa-solid fa-right-from-bracket"></i> Voltar ao Menu Principal
+        </a>
     </div>
-</div>
 
-<div class="row mt-3">
-    <div class="col-lg-10 mx-auto">
-        <!-- BARRA DE CONTROLES: CARTA ATIVA E DESISTIR -->
-        <div class="d-flex justify-content-between align-items-center mb-3 px-2">
-            
-            <div class="kicker-info shadow-sm" id="info-carta-atual">
-                <small class="text-muted d-block text-uppercase fw-bold" id="label-papel">Aguardando Turno</small>
-                
-                <!-- Bloco: Escolher Batedor (Aparece quando for chutar e ainda não escolheu) -->
-                <div id="bloco-escolher-batedor" style="display: none;">
-                    <button class="btn btn-sm btn-escolher-batedor mt-1 w-100" data-bs-toggle="modal" data-bs-target="#modalBatedores">
-                        <i class="fa-solid fa-hand-pointer"></i> Selecionar Carta
-                    </button>
-                </div>
-
-                <!-- Bloco: Carta Selecionada (Aparece após escolher ou se for goleiro) -->
-                <div id="bloco-carta-selecionada">
-                    <span class="fw-bold fs-5" id="nome-carta-ativa"><i class="fa-solid fa-spinner fa-spin"></i> Preparando...</span>
-                    <span class="badge bg-secondary text-white ms-2" id="over-carta-ativa">OVR --</span>
+    <!-- ARENA PRINCIPAL (Ocultada no fim do jogo) -->
+    <div id="arena-principal" class="arena-container">
+        
+        <!-- PLACAR COMPACTO E BOLINHAS -->
+        <div class="placar-tv shadow-sm">
+            <!-- J1 -->
+            <div class="placar-nome text-primary text-center">
+                <div class="text-truncate">{{ partida.jogador1.username }}</div>
+                <div class="dots-container" id="dots-j1">
+                    <!-- Bolinhas injetadas via JS -->
                 </div>
             </div>
-
-            <!-- Botão Desistir -->
-            <button class="btn btn-outline-danger fw-bold rounded-pill shadow-sm" onclick="desistirPartida()">
-                <i class="fa-solid fa-flag"></i> Desistir
-            </button>
+            
+            <!-- NÚMEROS -->
+            <div class="placar-numeros text-center">
+                <span id="placar-num-j1">{{ partida.placar_j1 }}</span> 
+                <span class="text-muted mx-1" style="font-size: 1.2rem;">x</span> 
+                <span id="placar-num-j2">{{ partida.placar_j2 }}</span>
+            </div>
+            
+            <!-- J2 -->
+            <div class="placar-nome text-danger text-center">
+                <div class="text-truncate">
+                    {% if partida.jogador2 %}{{ partida.jogador2.username }}{% else %}Aguardando...{% endif %}
+                </div>
+                <div class="dots-container" id="dots-j2">
+                    <!-- Bolinhas injetadas via JS -->
+                </div>
+            </div>
         </div>
 
-        <div class="stadium-bg shadow-lg">
-            <!-- HUD CENTRAL: CRONÔMETRO E MENSAGENS -->
-            <div class="text-center mt-3 position-absolute w-100" style="z-index: 10;">
-                <div class="d-flex justify-content-center mb-2">
-                    <div class="timer-circle" id="cronometro" style="display: none;">15</div>
-                </div>
-                
-                <div id="mensagem-narrador" class="status-turno text-warning">Sincronizando Jogo...</div>
-                <div id="status-adversario" class="text-white mt-1 fw-bold">Aguarde o carregamento inicial.</div>
+        <!-- MENSAGENS E CRONÔMETRO -->
+        <div class="d-flex gap-2">
+            <div class="narrador-box flex-grow-1 shadow-sm">
+                <p id="mensagem-narrador" class="status-turno text-warning">Sincronizando...</p>
+                <p id="status-adversario" class="status-sub">Carregando a partida...</p>
+            </div>
+            <div class="narrador-box d-flex align-items-center justify-content-center" style="min-width: 60px;">
+                <span id="cronometro" class="fw-bold fs-4 text-danger">15</span>
+            </div>
+        </div>
+
+        <!-- O ESTÁDIO -->
+        <div class="stadium-bg shadow-sm">
+            <div class="enemy-gk-badge" id="enemy-info" style="display: none;">
+                <!-- Preenchido via JS na hora de bater -->
             </div>
 
-            <!-- A TRAVE COM OS QUADRANTES -->
+            <div id="feedback-overlay">
+                <h1 id="feedback-text">GOL!</h1>
+            </div>
+
+            <!-- A TRAVE -->
             <div class="goal-frame alvo-bloqueado" id="trave-botoes">
-                <div class="alvo-btn" onclick="enviarAcao('se')">Ângulo Esq.</div>
+                <div class="alvo-btn" onclick="enviarAcao('se')">Esq. Alto</div>
                 <div class="alvo-btn" onclick="enviarAcao('me')">Meio Alto</div>
-                <div class="alvo-btn" onclick="enviarAcao('sd')">Ângulo Dir.</div>
-                <div class="alvo-btn" onclick="enviarAcao('ie')">Rasteiro Esq.</div>
-                <div class="alvo-btn" onclick="enviarAcao('mc')">Meio Baixo</div>
-                <div class="alvo-btn" onclick="enviarAcao('id')">Rasteiro Dir.</div>
+                <div class="alvo-btn" onclick="enviarAcao('sd')">Dir. Alto</div>
+                <div class="alvo-btn" onclick="enviarAcao('ie')">Esq. Chão</div>
+                <div class="alvo-btn" onclick="enviarAcao('mc')">Meio Chão</div>
+                <div class="alvo-btn" onclick="enviarAcao('id')">Dir. Chão</div>
             </div>
         </div>
-    </div>
-</div>
 
-<!-- ========================================== -->
-<!-- MODAL PARA ESCOLHER O BATEDOR DA RODADA    -->
-<!-- ========================================== -->
-<div class="modal fade" id="modalBatedores" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content bg-dark text-white border-warning">
-      <div class="modal-header border-0 pb-0">
-        <h5 class="modal-title fw-bold text-warning"><i class="fa-solid fa-clipboard-list"></i> Sua Prancheta</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <p class="text-muted small mb-3">Escolha quem vai para a cobrança nesta rodada. Cada batedor só pode ser usado 1 vez!</p>
-        <div class="list-group">
-            {% for batedor in meu_draft.batedores.all %}
-                <button type="button" class="list-group-item list-group-item-action bg-transparent text-white border-secondary mb-2 rounded" 
-                        onclick="selecionarKicker({{ batedor.id }}, '{{ batedor.nome }}', {{ batedor.over }})" data-bs-dismiss="modal">
-                    <span class="badge bg-warning text-dark me-2 fs-6">{{ batedor.over }}</span> 
-                    <span class="fw-bold fs-5">{{ batedor.nome }}</span>
-                </button>
-            {% endfor %}
+        <!-- DECK DE BATEDORES -->
+        <div class="deck-container shadow-sm" id="bloco-escolher-batedor">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+                <span class="text-white small fw-bold"><i class="fa-solid fa-hand-pointer text-warning"></i> Selecione seu Batedor:</span>
+                <span class="badge bg-secondary" id="carta-ativa-nome">Nenhum</span>
+            </div>
+            
+            <div class="deck-scroll">
+                {% for batedor in meu_draft.batedores.all %}
+                    <div class="batedor-card" id="card-{{ batedor.id }}" onclick="selecionarKicker({{ batedor.id }}, '{{ batedor.nome }}')">
+                        <span class="ovr">{{ batedor.over }}</span>
+                        <span class="nome">{{ batedor.nome }}</span>
+                    </div>
+                {% endfor %}
+            </div>
         </div>
-      </div>
+
+        <button class="btn btn-outline-danger btn-sm fw-bold w-100 mt-1" onclick="desistirPartida()">
+            <i class="fa-solid fa-flag"></i> Abandonar Partida
+        </button>
+
     </div>
-  </div>
 </div>
 
 <script>
-    // Configurações do Jogo
     const partidaId = {{ partida.id }};
     const csrfToken = '{{ csrf_token }}';
+    const souJ1 = {% if request.user == partida.jogador1 %}true{% else %}false{% endif %};
     
-    // Variáveis de Controle de Turno
-    let acaoTravada = true; // Começa travado até a API liberar
-    let cartaEscolhidaId = null;
-    let papelAtual = 'aguardando'; // 'chutar', 'defender' ou 'aguardando'
-    
-    // Variáveis do Goleiro
-    const goleiroId = {% if meu_draft.goleiro %}{{ meu_draft.goleiro.id }}{% else %}null{% endif %};
-    const goleiroNome = "{% if meu_draft.goleiro %}{{ meu_draft.goleiro.nome }}{% else %}Goleiro Genérico{% endif %}";
-    const goleiroOver = "{% if meu_draft.goleiro %}{{ meu_draft.goleiro.over }}{% else %}--{% endif %}";
+    // Nomes e status dos Goleiros
+    const meuGoleiroNome = "{% if meu_draft.goleiro %}{{ meu_draft.goleiro.nome }}{% else %}Goleiro{% endif %}";
+    const meuGoleiroId = {% if meu_draft.goleiro %}{{ meu_draft.goleiro.id }}{% else %}null{% endif %};
+    const advGoleiroNome = souJ1 ? 
+        "{% if partida.draft_j2 %}{{ partida.draft_j2.goleiro.nome }} (OVR {{ partida.draft_j2.goleiro.over }}){% else %}Aguardando...{% endif %}" : 
+        "{% if partida.draft_j1 %}{{ partida.draft_j1.goleiro.nome }} (OVR {{ partida.draft_j1.goleiro.over }}){% endif %}";
 
-    // Controle de Tempo
+    // Controles Locais
+    let acaoTravada = true; 
+    let papelAtual = 'aguardando'; 
+    let cartaEscolhidaId = null;
+    let placarMeuAnterior = souJ1 ? {{ partida.placar_j1 }} : {{ partida.placar_j2 }};
+    let placarAdvAnterior = souJ1 ? {{ partida.placar_j2 }} : {{ partida.placar_j1 }};
+
+    // Gerenciamento de Histórico (Bolinhas e Cartas Usadas na Sessão)
+    let batedoresUsados = JSON.parse(sessionStorage.getItem(`p_${partidaId}_cards`)) || [];
+    let historicoJ1 = JSON.parse(sessionStorage.getItem(`p_${partidaId}_h1`)) || [];
+    let historicoJ2 = JSON.parse(sessionStorage.getItem(`p_${partidaId}_h2`)) || [];
+
+    // Carrega o estado inicial das cartas
+    function carregarCartasUsadas() {
+        batedoresUsados.forEach(id => {
+            let card = document.getElementById('card-' + id);
+            if(card) card.classList.add('used');
+        });
+    }
+    carregarCartasUsadas();
+
+    // Renderiza as 5 bolinhas de cada jogador
+    function renderizarBolinhas() {
+        ['j1', 'j2'].forEach(jogador => {
+            const hist = jogador === 'j1' ? historicoJ1 : historicoJ2;
+            let html = '';
+            for(let i=0; i<5; i++) {
+                if (i < hist.length) {
+                    html += `<div class="dot ${hist[i] === 'G' ? 'green' : 'red'}"></div>`;
+                } else {
+                    html += `<div class="dot"></div>`;
+                }
+            }
+            document.getElementById(`dots-${jogador}`).innerHTML = html;
+        });
+    }
+    renderizarBolinhas();
+
     let tempoRestante = 15;
     let timerInterval = null;
 
     function iniciarCronometro() {
         if(timerInterval) clearInterval(timerInterval);
-        document.getElementById('cronometro').style.display = 'flex';
         tempoRestante = 15;
         document.getElementById('cronometro').innerText = tempoRestante;
         
@@ -239,50 +406,50 @@
             document.getElementById('cronometro').innerText = tempoRestante;
             if (tempoRestante <= 0) {
                 clearInterval(timerInterval);
-                enviarAcao('timeout'); // Tempo Esgotado!
+                enviarAcao('timeout');
             }
         }, 1000);
     }
 
-    // O jogador selecionou uma carta no Modal
-    function selecionarKicker(id, nome, over) {
-        cartaEscolhidaId = id;
-        document.getElementById('bloco-escolher-batedor').style.display = 'none';
-        document.getElementById('bloco-carta-selecionada').style.display = 'block';
+    function selecionarKicker(id, nome) {
+        if(papelAtual !== 'chutar') return; 
+        if(batedoresUsados.includes(id)) return; 
         
-        document.getElementById('nome-carta-ativa').innerText = nome;
-        document.getElementById('over-carta-ativa').innerText = "OVR " + over;
-        document.getElementById('over-carta-ativa').className = "badge bg-warning text-dark ms-2";
+        cartaEscolhidaId = id;
+        document.getElementById('carta-ativa-nome').innerText = nome;
+        document.getElementById('carta-ativa-nome').className = "badge bg-warning text-dark";
+
+        document.querySelectorAll('.batedor-card').forEach(c => c.classList.remove('selected'));
+        document.getElementById('card-' + id).classList.add('selected');
     }
 
-    // O jogador clicou na trave ou o tempo estourou
     function enviarAcao(zonaClicada) {
         if (acaoTravada) return;
 
-        // Regra: Se for Batedor, obriga a escolher a carta (exceto se for timeout)
         if (papelAtual === 'chutar' && !cartaEscolhidaId && zonaClicada !== 'timeout') {
-            alert("Atenção: Você precisa selecionar um batedor da sua prancheta antes de chutar!");
-            var myModal = new bootstrap.Modal(document.getElementById('modalBatedores'));
-            myModal.show();
+            alert("Toque em um Batedor no deck abaixo antes de chutar!");
             return;
         }
 
-        // Regra: Se for Defender, a carta é automaticamente o Goleiro
         if (papelAtual === 'defender') {
-            cartaEscolhidaId = goleiroId;
+            cartaEscolhidaId = meuGoleiroId;
         }
 
-        // Trava a tela para esperar o adversário e a resolução da rodada
+        // Marca a carta como usada se chutou
+        if (papelAtual === 'chutar' && zonaClicada !== 'timeout') {
+            batedoresUsados.push(cartaEscolhidaId);
+            sessionStorage.setItem(`p_${partidaId}_cards`, JSON.stringify(batedoresUsados));
+            carregarCartasUsadas();
+        }
+
         acaoTravada = true;
         clearInterval(timerInterval);
-        document.getElementById('cronometro').style.display = 'none';
         
         document.getElementById('mensagem-narrador').innerText = "AÇÃO REGISTRADA!";
         document.getElementById('mensagem-narrador').style.color = "#28a745";
-        document.getElementById('status-adversario').innerText = "Aguardando a ação do adversário...";
+        document.getElementById('status-adversario').innerText = "Aguardando o adversário...";
         document.getElementById('trave-botoes').classList.add('alvo-bloqueado');
 
-        // Disparo AJAX
         fetch("{% url 'minijogo:api_enviar_acao' %}", {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
@@ -294,8 +461,127 @@
         });
     }
 
+    function mostrarFeedbackVisual(texto, tipo) {
+        const overlay = document.getElementById('feedback-overlay');
+        const textEl = document.getElementById('feedback-text');
+        
+        textEl.innerText = texto;
+        if (tipo === 'gol_meu') {
+            textEl.style.color = '#00ff00'; 
+            textEl.style.textShadow = '0 0 30px #00ff00';
+        } else if (tipo === 'erro_meu' || tipo === 'gol_adv') {
+            textEl.style.color = '#ff3333'; 
+            textEl.style.textShadow = '0 0 30px #ff3333';
+        } else {
+            textEl.style.color = '#fff'; 
+            textEl.style.textShadow = '0 0 30px #fff';
+        }
+        
+        overlay.style.display = 'flex';
+        setTimeout(() => { overlay.style.display = 'none'; }, 2500);
+    }
+
+    function registrarBolinha(deQuem, foiGol) {
+        let hist = deQuem === 'j1' ? historicoJ1 : historicoJ2;
+        hist.push(foiGol ? 'G' : 'E');
+        sessionStorage.setItem(`p_${partidaId}_h${deQuem === 'j1' ? '1' : '2'}`, JSON.stringify(hist));
+        renderizarBolinhas();
+    }
+
+    function radarDoJogo() {
+        fetch(`/minijogo/api/partida/${partidaId}/status/`)
+        .then(response => response.json())
+        .then(data => {
+            let placarMeuAtual = souJ1 ? data.placar_j1 : data.placar_j2;
+            let placarAdvAtual = souJ1 ? data.placar_j2 : data.placar_j1;
+
+            document.getElementById('placar-num-j1').innerText = data.placar_j1;
+            document.getElementById('placar-num-j2').innerText = data.placar_j2;
+
+            // ===============================================
+            // TELA FINAL DE JOGO (ESCONDE ARENA, MOSTRA PLACAR)
+            // ===============================================
+            if (data.fase === 'finalizado') {
+                clearInterval(timerInterval);
+                document.getElementById('arena-principal').style.display = 'none';
+                document.getElementById('tela-fim-jogo').style.display = 'block';
+                
+                document.getElementById('placar-final-j1').innerText = data.placar_j1;
+                document.getElementById('placar-final-j2').innerText = data.placar_j2;
+                document.getElementById('nome-vencedor').innerText = data.vencedor;
+                return; // Para o radar de rodar
+            }
+
+            // ===============================================
+            // FEEDBACK VISUAL E REGISTRO DE BOLINHAS
+            // ===============================================
+            if (papelAtual !== data.meu_turno && data.meu_turno !== 'aguardando' && papelAtual !== 'aguardando') {
+                
+                // Eu estava atacando
+                if (papelAtual === 'chutar') {
+                    if (placarMeuAtual > placarMeuAnterior) {
+                        mostrarFeedbackVisual('GOOOOOL!', 'gol_meu');
+                        registrarBolinha(souJ1 ? 'j1' : 'j2', true);
+                    } else {
+                        mostrarFeedbackVisual('PERDEU!', 'erro_meu');
+                        registrarBolinha(souJ1 ? 'j1' : 'j2', false);
+                    }
+                } 
+                // Eu estava defendendo (Ele estava atacando)
+                else if (papelAtual === 'defender') {
+                    if (placarAdvAtual > placarAdvAnterior) {
+                        mostrarFeedbackVisual('GOL DELE!', 'gol_adv');
+                        registrarBolinha(souJ1 ? 'j2' : 'j1', true);
+                    } else {
+                        mostrarFeedbackVisual('DEFENDEU!', 'defesa');
+                        registrarBolinha(souJ1 ? 'j2' : 'j1', false);
+                    }
+                }
+            }
+
+            placarMeuAnterior = placarMeuAtual;
+            placarAdvAnterior = placarAdvAtual;
+
+            // ===============================================
+            // PREPARA O PRÓXIMO TURNO
+            // ===============================================
+            if (data.meu_turno !== papelAtual && data.meu_turno !== 'aguardando') {
+                papelAtual = data.meu_turno;
+                acaoTravada = false; 
+                cartaEscolhidaId = null; 
+                
+                document.getElementById('trave-botoes').classList.remove('alvo-bloqueado');
+                document.querySelectorAll('.batedor-card').forEach(c => c.classList.remove('selected'));
+                document.getElementById('carta-ativa-nome').innerText = "Nenhum";
+                document.getElementById('carta-ativa-nome').className = "badge bg-secondary";
+
+                iniciarCronometro();
+
+                if (papelAtual === 'chutar') {
+                    document.getElementById('mensagem-narrador').innerText = "SUA VEZ DE BATER";
+                    document.getElementById('mensagem-narrador').style.color = "#28a745";
+                    document.getElementById('status-adversario').innerText = "Toque num batedor abaixo e mire!";
+                    document.getElementById('bloco-escolher-batedor').style.opacity = "1";
+                    
+                    document.getElementById('enemy-info').innerText = `Enfrentando: ${advGoleiroNome}`;
+                    document.getElementById('enemy-info').style.display = "block";
+
+                } else if (papelAtual === 'defender') {
+                    document.getElementById('mensagem-narrador').innerText = "SUA VEZ DE DEFENDER";
+                    document.getElementById('mensagem-narrador').style.color = "#dc3545";
+                    document.getElementById('status-adversario').innerText = `Seu Goleiro: ${meuGoleiroNome}`;
+                    document.getElementById('bloco-escolher-batedor').style.opacity = "0.3"; 
+                    document.getElementById('enemy-info').style.display = "none"; 
+                }
+            } else if (data.meu_turno === 'aguardando') {
+                papelAtual = 'aguardando';
+                acaoTravada = true;
+            }
+        });
+    }
+
     function desistirPartida() {
-        if(confirm("Tem certeza que deseja desistir? A vitória irá para o adversário.")) {
+        if(confirm("Deseja desistir? O rival vencerá.")) {
             fetch("{% url 'minijogo:api_desistir' %}", {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
@@ -304,76 +590,7 @@
         }
     }
 
-    // O "Radar" que pergunta pro backend o estado do jogo a cada 2 segundos
-    function radarDoJogo() {
-        fetch(`/minijogo/api/partida/${partidaId}/status/`)
-        .then(response => response.json())
-        .then(data => {
-            // 1. Atualiza Placar e Rodada
-            document.getElementById('placar-num-j1').innerText = data.placar_j1;
-            document.getElementById('placar-num-j2').innerText = data.placar_j2;
-            document.getElementById('rodada-atual').innerText = data.rodada_atual;
-
-            // 2. Verifica Fim de Jogo
-            if (data.fase === 'finalizado') {
-                acaoTravada = true;
-                clearInterval(timerInterval);
-                document.getElementById('cronometro').style.display = 'none';
-                document.getElementById('trave-botoes').classList.add('alvo-bloqueado');
-                
-                document.getElementById('mensagem-narrador').innerText = "FIM DE JOGO!";
-                document.getElementById('status-adversario').innerText = "Vencedor: " + data.vencedor;
-                
-                setTimeout(() => window.location.href = "/", 4000); // Retorna ao menu
-                return;
-            }
-            
-            // 3. Controle de Turno (Só atualiza a UI se o turno realmente mudou no backend)
-            // IMPORTANTE: Isso só vai funcionar 100% depois que configurarmos o `views.py`
-            if (data.meu_turno !== papelAtual && data.meu_turno !== 'aguardando') {
-                papelAtual = data.meu_turno;
-                acaoTravada = false; // Destrava a trave
-                cartaEscolhidaId = null; // Reseta a carta da rodada
-                
-                document.getElementById('trave-botoes').classList.remove('alvo-bloqueado');
-                iniciarCronometro();
-
-                if (papelAtual === 'chutar') {
-                    // Prepara Painel Batedor
-                    document.getElementById('label-papel').innerText = "É hora de marcar!";
-                    document.getElementById('bloco-escolher-batedor').style.display = 'block';
-                    document.getElementById('bloco-carta-selecionada').style.display = 'none';
-                    
-                    document.getElementById('mensagem-narrador').innerText = "SUA VEZ DE BATER!";
-                    document.getElementById('mensagem-narrador').style.color = "#28a745"; // Verde
-                    document.getElementById('status-adversario').innerText = "1. Escolha a carta  |  2. Mire na trave";
-                
-                } else if (papelAtual === 'defender') {
-                    // Prepara Painel Goleiro
-                    document.getElementById('label-papel').innerText = "Defenda a meta!";
-                    document.getElementById('bloco-escolher-batedor').style.display = 'none';
-                    document.getElementById('bloco-carta-selecionada').style.display = 'block';
-                    
-                    // Coloca o goleiro fixo na carta ativa
-                    document.getElementById('nome-carta-ativa').innerText = goleiroNome;
-                    document.getElementById('over-carta-ativa').innerText = "OVR " + goleiroOver;
-                    document.getElementById('over-carta-ativa').className = "badge bg-info text-dark ms-2";
-                    
-                    document.getElementById('mensagem-narrador').innerText = "SUA VEZ DE DEFENDER!";
-                    document.getElementById('mensagem-narrador').style.color = "#dc3545"; // Vermelho
-                    document.getElementById('status-adversario').innerText = "Adivinhe o canto e pule!";
-                }
-            } else if (data.meu_turno === 'aguardando') {
-                // Sala de espera inicial (adversário ainda não entrou ou round calculando)
-                papelAtual = 'aguardando';
-                acaoTravada = true;
-            }
-        });
-    }
-
-    // Liga o radar
-    setInterval(radarDoJogo, 2000);
-    // Dispara a primeira checagem imediatamente
+    setInterval(radarDoJogo, 2500); // 2.5s para dar tempo do feedback brilhar na tela
     radarDoJogo();
 </script>
 {% endblock %}

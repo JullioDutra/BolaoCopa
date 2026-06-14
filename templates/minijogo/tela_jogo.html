@@ -1,0 +1,180 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}X1 Pênaltis - Disputa{% endblock %}
+
+{% block content %}
+<style>
+    /* Cenário do Estádio */
+    .stadium-bg {
+        background: linear-gradient(to bottom, #1a2a6c, #11998e, #38ef7d); /* Grama e Céu */
+        border-radius: 15px;
+        padding: 20px;
+        position: relative;
+        overflow: hidden;
+        min-height: 500px;
+        box-shadow: inset 0 0 50px rgba(0,0,0,0.5);
+    }
+    
+    /* A Trave e a Rede */
+    .goal-frame {
+        position: absolute;
+        bottom: 50px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 80%;
+        height: 60%;
+        border: 10px solid white;
+        border-bottom: none;
+        background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAOklEQVQYV2NkYGAwYkAD////Z4TRyMDFwEIGRhSVAfI1igKofZhUkGw0kgL0cQwlkqKASiIl40QBAAB8xQk/Wb04fAAAAABJRU5ErkJggg==') repeat; /* Textura de rede simples */
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        grid-template-rows: 1fr 1fr;
+        gap: 5px;
+    }
+
+    /* Os Botões de Chute/Defesa (invisíveis até passar o mouse) */
+    .alvo-btn {
+        background-color: rgba(255, 255, 255, 0.1);
+        border: 2px dashed rgba(255,255,255,0.3);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        color: transparent;
+    }
+    .alvo-btn:hover {
+        background-color: rgba(40, 167, 69, 0.6);
+        border-color: white;
+        color: white;
+        transform: scale(0.95);
+    }
+
+    /* Placar de TV */
+    .placar-tv {
+        background-color: rgba(0,0,0,0.8);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-family: monospace;
+        font-size: 1.5rem;
+    }
+    .bolinha {
+        display: inline-block;
+        width: 15px;
+        height: 15px;
+        background-color: gray;
+        border-radius: 50%;
+        margin: 0 3px;
+    }
+    .gol { background-color: #28a745; }
+    .erro { background-color: #dc3545; }
+    
+    #mensagem-narrador {
+        font-size: 2rem;
+        font-weight: 900;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        color: yellow;
+    }
+</style>
+
+<div class="row mt-3">
+    <div class="col-12 text-center">
+        <div class="placar-tv d-inline-block shadow">
+            <span class="text-primary">{{ partida.jogador1.username }}</span> 
+            <span id="placar-num-j1">{{ partida.placar_j1 }}</span> 
+            <span class="mx-3 text-muted">X</span> 
+            <span id="placar-num-j2">{{ partida.placar_j2 }}</span> 
+            <span class="text-danger">{% if partida.jogador2 %}{{ partida.jogador2.username }}{% else %}Aguardando...{% endif %}</span>
+            
+            <div class="mt-2 text-center" style="font-size: 0.8rem;">
+                Rodada: <span id="rodada-atual">{{ partida.rodada_atual }}</span> | Fase: <span id="fase-atual">{{ partida.get_fase_display }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-lg-10 mx-auto">
+        <div class="stadium-bg">
+            
+            <div class="text-center mt-4 position-absolute w-100" style="z-index: 10;">
+                <div id="mensagem-narrador">Sua Vez de Bater!</div>
+                <div id="status-adversario" class="text-white mt-2">Escolha o canto...</div>
+            </div>
+
+            <div class="goal-frame">
+                <div class="alvo-btn" onclick="enviarAcao('se')">Ângulo Esq.</div>
+                <div class="alvo-btn" onclick="enviarAcao('me')">Gaveta (Meio)</div>
+                <div class="alvo-btn" onclick="enviarAcao('sd')">Ângulo Dir.</div>
+                <div class="alvo-btn" onclick="enviarAcao('ie')">Rasteiro Esq.</div>
+                <div class="alvo-btn" style="border:none; cursor:default; background:transparent;"></div> <div class="alvo-btn" onclick="enviarAcao('id')">Rasteiro Dir.</div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    const partidaId = {{ partida.id }};
+    const csrfToken = '{{ csrf_token }}';
+    let acaoTravada = false; // Impede que o jogador clique duas vezes
+
+    function enviarAcao(zonaClicada) {
+        if (acaoTravada) return;
+
+        acaoTravada = true;
+        document.getElementById('mensagem-narrador').innerText = "Aguardando Oponente...";
+        document.getElementById('mensagem-narrador').style.color = "white";
+
+        // Manda o clique para a API (Aquela que criamos no passo anterior!)
+        fetch("{% url 'minijogo:api_enviar_acao' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({
+                partida_id: partidaId,
+                zona: zonaClicada,
+                tipo_acao: 'chute' // (No futuro você ajusta dinamicamente se é chute ou defesa)
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (!data.sucesso) {
+                alert(data.mensagem);
+                acaoTravada = false;
+            }
+        });
+    }
+
+    // O Radar: Pergunta pro servidor a cada 2 segundos o que está acontecendo
+    function radarDoJogo() {
+        fetch(`/minijogo/api/partida/${partidaId}/status/`)
+        .then(response => response.json())
+        .then(data => {
+            // Atualiza os números do placar
+            document.getElementById('placar-num-j1').innerText = data.placar_j1;
+            document.getElementById('placar-num-j2').innerText = data.placar_j2;
+            document.getElementById('rodada-atual').innerText = data.rodada_atual;
+
+            // Se o jogo acabou, mostra quem ganhou e redireciona
+            if (data.fase === 'finalizado') {
+                document.getElementById('mensagem-narrador').innerText = "FIM DE JOGO!";
+                document.getElementById('status-adversario').innerText = "Vencedor: " + data.vencedor;
+                setTimeout(() => window.location.href = "{% url 'core:dashboard' %}", 4000); // Volta pro menu após 4s
+            }
+            
+            // Aqui, se a rodada mudou no backend, significa que os dois jogaram.
+            // Destravamos a tela para o próximo chute!
+            // (Para um MVP completo, você precisa de uma variável na API dizendo se a rodada virou)
+        });
+    }
+
+    // Liga o radar para rodar a cada 2000 milissegundos (2 segundos)
+    setInterval(radarDoJogo, 2000);
+</script>
+{% endblock %}

@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'pagamentos',
     'duelos',
     'draft',
+    'minijogo'
 ]
 
 MIDDLEWARE = [

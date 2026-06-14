@@ -1,0 +1,144 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Montar Time - Draft{% endblock %}
+
+{% block content %}
+<style>
+    /* Estilo das Cartas do Draft */
+    .draft-card {
+        background: linear-gradient(135deg, #1e1e1e, #2d2d2d);
+        border: 2px solid #cfb53b; /* Borda dourada */
+        border-radius: 12px;
+        color: white;
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    .draft-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(207, 181, 59, 0.4); /* Brilho dourado ao passar o mouse */
+    }
+    .draft-over {
+        font-size: 2.5rem;
+        font-weight: 900;
+        color: #cfb53b;
+        line-height: 1;
+    }
+    .draft-posicao {
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #aaa;
+    }
+    .draft-nome {
+        font-weight: bold;
+        font-size: 1.1rem;
+        border-top: 1px solid rgba(255,255,255,0.1);
+        padding-top: 8px;
+    }
+    .bg-prancheta {
+        background-color: #f8f9fa;
+        border: 2px dashed #ccc;
+        border-radius: 12px;
+    }
+</style>
+
+<div class="row mt-4 mb-4">
+    <div class="col-12 text-center">
+        <h2 class="fw-bold" style="color: var(--verde-escuro);"><i class="fa-solid fa-layer-group"></i> Sorteio do Draft</h2>
+        <p class="text-muted">Escolha 5 batedores e 1 goleiro para o seu duelo.</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8 mb-4">
+        <div class="card card-clean p-4 border-0 shadow-sm h-100">
+            <h4 class="fw-bold text-center mb-4">
+                Elenco Sorteado: <span class="text-primary">{{ elenco_atual.nome }}</span>
+            </h4>
+            
+            <div class="row row-cols-2 row-cols-md-3 g-3">
+                {% for jogador in jogadores_sorteados %}
+                <div class="col">
+                    <div class="draft-card p-3 text-center h-100" onclick="escolherCarta({{ jogador.id }})">
+                        <div class="draft-over">{{ jogador.over }}</div>
+                        <div class="draft-posicao mb-3">{{ jogador.get_posicao_display }}</div>
+                        <div class="draft-nome">{{ jogador.nome }}</div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12 text-center text-muted">
+                    <p>Carregando jogadores...</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4 mb-4">
+        <div class="bg-prancheta p-4 h-100 shadow-sm">
+            <h5 class="fw-bold mb-3 text-center"><i class="fa-solid fa-clipboard-list"></i> Sua Prancheta</h5>
+            
+            <div class="mb-4">
+                <h6 class="fw-bold text-dark border-bottom pb-2">Batedores ({{ meus_batedores.count }}/5)</h6>
+                <ul class="list-group list-group-flush">
+                    {% for batedor in meus_batedores %}
+                        <li class="list-group-item bg-transparent px-0 fw-bold">
+                            <span class="badge bg-dark me-2">OVR {{ batedor.over }}</span> {{ batedor.nome }}
+                        </li>
+                    {% empty %}
+                        <li class="list-group-item bg-transparent px-0 text-muted small">Nenhum batedor escolhido.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <div>
+                <h6 class="fw-bold text-dark border-bottom pb-2">Goleiro ({% if meu_goleiro %}1{% else %}0{% endif %}/1)</h6>
+                <ul class="list-group list-group-flush">
+                    {% if meu_goleiro %}
+                        <li class="list-group-item bg-transparent px-0 fw-bold">
+                            <span class="badge bg-warning text-dark me-2">OVR {{ meu_goleiro.over }}</span> {{ meu_goleiro.nome }}
+                        </li>
+                    {% else %}
+                        <li class="list-group-item bg-transparent px-0 text-muted small">Nenhum goleiro escolhido.</li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Pegar o token de segurança do Django
+    const csrfToken = '{{ csrf_token }}';
+
+    function escolherCarta(cartaId) {
+        // Envia o clique silenciosamente para a nossa API no backend
+        fetch("{% url 'duelos:api_escolher_carta' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({ carta_id: cartaId })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.sucesso) {
+                // Se deu certo, recarrega a página rapidamente para trazer o próximo time
+                // (Como é rápido, parece uma transição de pacote pro usuário)
+                window.location.reload();
+            } else {
+                // Se ele tentar escolher 2 goleiros ou 6 batedores, mostra o erro da engine.py
+                alert("Aviso: " + data.mensagem);
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert("Ocorreu um erro ao selecionar a carta.");
+        });
+    }
+</script>
+{% endblock %}

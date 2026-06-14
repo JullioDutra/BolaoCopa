@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block title %}Aguardando Adversário - X1{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-6 text-center">
+        <div class="card card-clean border-0 shadow-lg p-5 rounded-4">
+            
+            <div class="mb-4">
+                <i class="fa-solid fa-spinner fa-spin text-success" style="font-size: 4rem;"></i>
+            </div>
+            
+            <h2 class="fw-bold mb-3" style="color: var(--verde-escuro);">Aguardando Adversário...</h2>
+            <p class="text-muted mb-4">Você pode esperar alguém cair na partida aleatoriamente ou convidar um amigo agora mesmo!</p>
+            
+            <!-- Link de Convite -->
+            <div class="bg-light p-3 rounded-3 border mb-4">
+                <small class="text-muted fw-bold d-block mb-2">Mande este link para um amigo:</small>
+                
+                <div class="input-group">
+                    <!-- Monta o link completo automaticamente usando a URL do seu site -->
+                    <input type="text" id="linkConvite" class="form-control text-center fw-bold text-primary" 
+                           value="{{ request.scheme }}://{{ request.get_host }}{% url 'minijogo:aceitar_convite' partida.id %}" readonly>
+                    
+                    <button class="btn btn-success fw-bold" onclick="copiarLink()">
+                        <i class="fa-regular fa-copy"></i> Copiar
+                    </button>
+                </div>
+            </div>
+
+            <a href="https://api.whatsapp.com/send?text=Te desafiei para um X1 de Pênaltis na Cartolândia! Entra aí: {{ request.scheme }}://{{ request.get_host }}{% url 'minijogo:aceitar_convite' partida.id %}" 
+               target="_blank" class="btn btn-outline-success w-100 fw-bold rounded-pill">
+               <i class="fa-brands fa-whatsapp"></i> Desafiar no WhatsApp
+            </a>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    // Função para o botão de copiar o link
+    function copiarLink() {
+        var copyText = document.getElementById("linkConvite");
+        copyText.select();
+        copyText.setSelectionRange(0, 99999); /* Para mobile */
+        navigator.clipboard.writeText(copyText.value);
+        
+        alert("Link copiado! Mande para o seu amigo.");
+    }
+
+    // O Radar: Fica checando se o amigo (ou um desconhecido) já entrou na sala!
+    function checarAdversario() {
+        fetch(`/minijogo/api/partida/{{ partida.id }}/status/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.fase !== 'aguardando') {
+                // Alguém clicou no link ou entrou aleatoriamente! Joga pra tela da trave!
+                window.location.href = "{% url 'minijogo:tela_jogo' partida.id %}";
+            }
+        });
+    }
+
+    // Checa a cada 2 segundos
+    setInterval(checarAdversario, 2000);
+</script>
+{% endblock %}

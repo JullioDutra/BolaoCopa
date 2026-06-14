@@ -31,6 +31,7 @@ urlpatterns = [
     path('bolao/', include('bolao.urls')), # <--- ATUALIZE ESTA LINHA
     path('convocacao/', include('convocacao.urls')),
     path('palpites/', include('palpites.urls')),
+    path('minijogo/', include('minijogo.urls')),
     path('pagamentos/', include('pagamentos.urls')),
     path('duelos/', include('duelos.urls')),
 ]

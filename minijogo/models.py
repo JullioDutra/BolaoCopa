@@ -36,7 +36,7 @@ class MeuDraft(models.Model):
         ('campeao', 'Campeão (Levantou a Taça!) 🏆')
     ]
     
-    usuario = models.ForeignKey(User, on_delete=models.CASCADE, related_name='meus_drafts')
+    usuario = models.ForeignKey(User, on_delete=models.CASCADE, related_name='drafts_x1')
     elenco_sorteado = models.ForeignKey(ElencoHistorico, on_delete=models.SET_NULL, null=True)
     goleiro = models.ForeignKey(CartaJogador, related_name='goleiro_draftado', on_delete=models.SET_NULL, null=True)
     batedores = models.ManyToManyField(CartaJogador, related_name='batedores_draftados')

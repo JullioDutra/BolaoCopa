@@ -9,6 +9,8 @@ urlpatterns = [
     path('lobby/', views.lobby_batalha, name='lobby'),
     path('partida/<int:partida_id>/', views.tela_jogo, name='tela_jogo'),
     path('convite/<int:partida_id>/', views.aceitar_convite, name='aceitar_convite'),
+    path('api/partida/desistir/', views.api_desistir, name='api_desistir'),
+
     
     # --- APIs (Chamadas AJAX em segundo plano) ---
     path('api/draft/escolher/', views.api_escolher_carta, name='api_escolher_carta'),

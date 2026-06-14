@@ -199,3 +199,26 @@ def aceitar_convite(request, partida_id):
         
     # Se a sala já lotou ou se ele clicou no próprio link, joga ele pra tela da partida
     return redirect('minijogo:tela_jogo', partida_id=partida.id)
+
+@login_required
+def api_desistir(request):
+    """ Encerra o jogo imediatamente e dá a vitória ao adversário """
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        partida_id = data.get('partida_id')
+        
+        partida = get_object_or_404(PartidaPenalti, id=partida_id)
+        
+        # Define quem desistiu e quem ganhou
+        if request.user == partida.jogador1:
+            vencedor = partida.jogador2
+        else:
+            vencedor = partida.jogador1
+            
+        # Aplica regras de fim de jogo
+        partida.fase = 'finalizado'
+        partida.vencedor = vencedor
+        partida.save()
+        
+        return JsonResponse({'sucesso': True})
+    return JsonResponse({'sucesso': False})

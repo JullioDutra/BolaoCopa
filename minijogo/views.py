@@ -104,7 +104,7 @@ def tela_draft(request):
         
     # Se o draft já está totalmente completo (5 linha + 1 goleiro)
     if draft.elenco_sorteado is None and draft.batedores.count() == 5 and draft.goleiro is not None:
-        return redirect('duelos:lobby') # Manda ele pra tela de procurar partida! (Criaremos depois)
+        return redirect('minijogo:lobby') # Manda ele pra tela de procurar partida! (Criaremos depois)
 
     context = {
         'draft': draft,
@@ -130,7 +130,7 @@ def lobby_batalha(request):
     ).first()
     
     if partida_atual:
-        return redirect('duelos:tela_jogo', partida_id=partida_atual.id)
+        return redirect('minijogo:tela_jogo', partida_id=partida_atual.id)
         
     # 2. Tenta achar uma partida aguardando jogador
     partida_aguardando = PartidaPenalti.objects.filter(fase='aguardando').exclude(jogador1=request.user).first()
@@ -141,7 +141,7 @@ def lobby_batalha(request):
         partida_aguardando.draft_j2 = meu_draft
         partida_aguardando.fase = '5_cobrancas'
         partida_aguardando.save()
-        return redirect('duelos:tela_jogo', partida_id=partida_aguardando.id)
+        return redirect('minijogo:tela_jogo', partida_id=partida_aguardando.id)
     else:
         # Não achou ninguém. Cria uma sala e fica esperando.
         nova_partida, created = PartidaPenalti.objects.get_or_create(

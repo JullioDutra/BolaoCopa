@@ -5,17 +5,16 @@
 
 {% block content %}
 <style>
-    /* Estádio e Gol melhorados */
+    /* Cenário e Trave */
     .stadium-bg {
-        background: linear-gradient(to bottom, #0f2027, #203a43, #2c5364); /* Fundo noturno */
+        background: linear-gradient(to bottom, #0f2027, #203a43, #2c5364);
         border-radius: 15px;
         padding: 20px;
         position: relative;
         overflow: hidden;
         min-height: 550px;
-        box-shadow: inset 0 -50px 100px rgba(0,255,0,0.1); /* Brilho de grama no fundo */
+        box-shadow: inset 0 -50px 100px rgba(0,255,0,0.1);
     }
-    
     .goal-frame {
         position: absolute;
         bottom: 40px;
@@ -32,7 +31,8 @@
         gap: 8px;
         box-shadow: 0 20px 50px rgba(0,0,0,0.5);
     }
-
+    
+    /* Botões de Ação na Trave */
     .alvo-btn {
         background-color: rgba(255, 255, 255, 0.05);
         border: 2px dashed rgba(255,255,255,0.4);
@@ -45,15 +45,18 @@
         color: transparent;
         border-radius: 5px;
     }
-    
     .alvo-btn:hover {
-        background-color: rgba(255, 215, 0, 0.6); /* Dourado ao mirar */
+        background-color: rgba(255, 215, 0, 0.6);
         border-color: #ffd700;
         color: white;
         transform: scale(0.95);
     }
+    .alvo-bloqueado {
+        pointer-events: none;
+        opacity: 0.3;
+    }
 
-    /* Placar de TV e UI */
+    /* Placar Superior */
     .placar-tv {
         background-color: #111;
         color: white;
@@ -65,14 +68,13 @@
         border-top: none;
     }
 
+    /* Textos Centrais e Cronômetro */
     .status-turno {
         font-size: 2.2rem;
         font-weight: 900;
         text-transform: uppercase;
         text-shadow: 2px 2px 5px rgba(0,0,0,0.9);
     }
-
-    /* Cronômetro */
     .timer-circle {
         width: 60px;
         height: 60px;
@@ -88,12 +90,23 @@
         box-shadow: 0 0 15px rgba(220, 53, 69, 0.8);
     }
 
+    /* Card do Jogador Atual (Batedor/Goleiro) */
     .kicker-info {
-        background: rgba(0,0,0,0.7);
-        border-left: 4px solid #cfb53b;
+        background: rgba(0,0,0,0.8);
+        border-left: 5px solid #cfb53b;
         color: white;
         padding: 10px 15px;
         border-radius: 5px;
+        min-width: 260px;
+    }
+    .btn-escolher-batedor {
+        background-color: #cfb53b;
+        color: #000;
+        font-weight: bold;
+        border: none;
+    }
+    .btn-escolher-batedor:hover {
+        background-color: #b59e33;
     }
 </style>
 
@@ -116,107 +129,173 @@
 
 <div class="row mt-3">
     <div class="col-lg-10 mx-auto">
-        <!-- BARRA DE CONTROLES E INFORMAÇÕES -->
+        <!-- BARRA DE CONTROLES: CARTA ATIVA E DESISTIR -->
         <div class="d-flex justify-content-between align-items-center mb-3 px-2">
             
-            <!-- Carta de quem Bate/Defende -->
             <div class="kicker-info shadow-sm" id="info-carta-atual">
-                <small class="text-muted d-block text-uppercase">Na bola agora:</small>
-                <span class="fw-bold fs-5"><i class="fa-solid fa-user"></i> Batedor Automático</span>
-                <span class="badge bg-warning text-dark ms-2">OVR --</span>
+                <small class="text-muted d-block text-uppercase fw-bold" id="label-papel">Aguardando Turno</small>
+                
+                <!-- Bloco: Escolher Batedor (Aparece quando for chutar e ainda não escolheu) -->
+                <div id="bloco-escolher-batedor" style="display: none;">
+                    <button class="btn btn-sm btn-escolher-batedor mt-1 w-100" data-bs-toggle="modal" data-bs-target="#modalBatedores">
+                        <i class="fa-solid fa-hand-pointer"></i> Selecionar Carta
+                    </button>
+                </div>
+
+                <!-- Bloco: Carta Selecionada (Aparece após escolher ou se for goleiro) -->
+                <div id="bloco-carta-selecionada">
+                    <span class="fw-bold fs-5" id="nome-carta-ativa"><i class="fa-solid fa-spinner fa-spin"></i> Preparando...</span>
+                    <span class="badge bg-secondary text-white ms-2" id="over-carta-ativa">OVR --</span>
+                </div>
             </div>
 
-            <!-- Botão de Desistir -->
+            <!-- Botão Desistir -->
             <button class="btn btn-outline-danger fw-bold rounded-pill shadow-sm" onclick="desistirPartida()">
                 <i class="fa-solid fa-flag"></i> Desistir
             </button>
         </div>
 
         <div class="stadium-bg shadow-lg">
-            
-            <!-- HUD Central: Mensagens e Cronômetro -->
+            <!-- HUD CENTRAL: CRONÔMETRO E MENSAGENS -->
             <div class="text-center mt-3 position-absolute w-100" style="z-index: 10;">
                 <div class="d-flex justify-content-center mb-2">
-                    <div class="timer-circle" id="cronometro">15</div>
+                    <div class="timer-circle" id="cronometro" style="display: none;">15</div>
                 </div>
                 
-                <!-- A Mensagem Dinâmica -->
-                <div id="mensagem-narrador" class="status-turno text-warning">Preparando...</div>
-                <div id="status-adversario" class="text-white mt-1 fw-bold">Aguardando início do turno...</div>
+                <div id="mensagem-narrador" class="status-turno text-warning">Sincronizando Jogo...</div>
+                <div id="status-adversario" class="text-white mt-1 fw-bold">Aguarde o carregamento inicial.</div>
             </div>
 
             <!-- A TRAVE COM OS QUADRANTES -->
-            <div class="goal-frame" id="trave-botoes">
+            <div class="goal-frame alvo-bloqueado" id="trave-botoes">
                 <div class="alvo-btn" onclick="enviarAcao('se')">Ângulo Esq.</div>
                 <div class="alvo-btn" onclick="enviarAcao('me')">Meio Alto</div>
                 <div class="alvo-btn" onclick="enviarAcao('sd')">Ângulo Dir.</div>
-                
                 <div class="alvo-btn" onclick="enviarAcao('ie')">Rasteiro Esq.</div>
                 <div class="alvo-btn" onclick="enviarAcao('mc')">Meio Baixo</div>
                 <div class="alvo-btn" onclick="enviarAcao('id')">Rasteiro Dir.</div>
             </div>
-
         </div>
     </div>
 </div>
 
+<!-- ========================================== -->
+<!-- MODAL PARA ESCOLHER O BATEDOR DA RODADA    -->
+<!-- ========================================== -->
+<div class="modal fade" id="modalBatedores" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content bg-dark text-white border-warning">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-bold text-warning"><i class="fa-solid fa-clipboard-list"></i> Sua Prancheta</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-muted small mb-3">Escolha quem vai para a cobrança nesta rodada. Cada batedor só pode ser usado 1 vez!</p>
+        <div class="list-group">
+            {% for batedor in meu_draft.batedores.all %}
+                <button type="button" class="list-group-item list-group-item-action bg-transparent text-white border-secondary mb-2 rounded" 
+                        onclick="selecionarKicker({{ batedor.id }}, '{{ batedor.nome }}', {{ batedor.over }})" data-bs-dismiss="modal">
+                    <span class="badge bg-warning text-dark me-2 fs-6">{{ batedor.over }}</span> 
+                    <span class="fw-bold fs-5">{{ batedor.nome }}</span>
+                </button>
+            {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
+    // Configurações do Jogo
     const partidaId = {{ partida.id }};
     const csrfToken = '{{ csrf_token }}';
-    let acaoTravada = false; 
     
-    // Configuração do Cronômetro
+    // Variáveis de Controle de Turno
+    let acaoTravada = true; // Começa travado até a API liberar
+    let cartaEscolhidaId = null;
+    let papelAtual = 'aguardando'; // 'chutar', 'defender' ou 'aguardando'
+    
+    // Variáveis do Goleiro
+    const goleiroId = {% if meu_draft.goleiro %}{{ meu_draft.goleiro.id }}{% else %}null{% endif %};
+    const goleiroNome = "{% if meu_draft.goleiro %}{{ meu_draft.goleiro.nome }}{% else %}Goleiro Genérico{% endif %}";
+    const goleiroOver = "{% if meu_draft.goleiro %}{{ meu_draft.goleiro.over }}{% else %}--{% endif %}";
+
+    // Controle de Tempo
     let tempoRestante = 15;
     let timerInterval = null;
 
     function iniciarCronometro() {
+        if(timerInterval) clearInterval(timerInterval);
+        document.getElementById('cronometro').style.display = 'flex';
         tempoRestante = 15;
         document.getElementById('cronometro').innerText = tempoRestante;
-        
-        if(timerInterval) clearInterval(timerInterval);
         
         timerInterval = setInterval(() => {
             if(acaoTravada) {
                 clearInterval(timerInterval);
                 return;
             }
-            
             tempoRestante--;
             document.getElementById('cronometro').innerText = tempoRestante;
-            
             if (tempoRestante <= 0) {
                 clearInterval(timerInterval);
-                enviarAcao('timeout'); // O tempo acabou! Erro automático.
+                enviarAcao('timeout'); // Tempo Esgotado!
             }
         }, 1000);
     }
 
+    // O jogador selecionou uma carta no Modal
+    function selecionarKicker(id, nome, over) {
+        cartaEscolhidaId = id;
+        document.getElementById('bloco-escolher-batedor').style.display = 'none';
+        document.getElementById('bloco-carta-selecionada').style.display = 'block';
+        
+        document.getElementById('nome-carta-ativa').innerText = nome;
+        document.getElementById('over-carta-ativa').innerText = "OVR " + over;
+        document.getElementById('over-carta-ativa').className = "badge bg-warning text-dark ms-2";
+    }
+
+    // O jogador clicou na trave ou o tempo estourou
     function enviarAcao(zonaClicada) {
         if (acaoTravada) return;
 
+        // Regra: Se for Batedor, obriga a escolher a carta (exceto se for timeout)
+        if (papelAtual === 'chutar' && !cartaEscolhidaId && zonaClicada !== 'timeout') {
+            alert("Atenção: Você precisa selecionar um batedor da sua prancheta antes de chutar!");
+            var myModal = new bootstrap.Modal(document.getElementById('modalBatedores'));
+            myModal.show();
+            return;
+        }
+
+        // Regra: Se for Defender, a carta é automaticamente o Goleiro
+        if (papelAtual === 'defender') {
+            cartaEscolhidaId = goleiroId;
+        }
+
+        // Trava a tela para esperar o adversário e a resolução da rodada
         acaoTravada = true;
-        clearInterval(timerInterval); // Para o relógio
+        clearInterval(timerInterval);
+        document.getElementById('cronometro').style.display = 'none';
         
         document.getElementById('mensagem-narrador').innerText = "AÇÃO REGISTRADA!";
         document.getElementById('mensagem-narrador').style.color = "#28a745";
-        document.getElementById('status-adversario').innerText = "Aguardando o adversário escolher...";
-        
-        // Esconde os botões da trave para evitar duplo clique
-        document.getElementById('trave-botoes').style.opacity = '0.3';
-        document.getElementById('trave-botoes').style.pointerEvents = 'none';
+        document.getElementById('status-adversario').innerText = "Aguardando a ação do adversário...";
+        document.getElementById('trave-botoes').classList.add('alvo-bloqueado');
 
+        // Disparo AJAX
         fetch("{% url 'minijogo:api_enviar_acao' %}", {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
             body: JSON.stringify({
                 partida_id: partidaId,
-                zona: zonaClicada
+                zona: zonaClicada,
+                carta_id: cartaEscolhidaId
             })
         });
     }
 
     function desistirPartida() {
-        if(confirm("Tem certeza que deseja desistir? Você será ELIMINADO do Draft!")) {
+        if(confirm("Tem certeza que deseja desistir? A vitória irá para o adversário.")) {
             fetch("{% url 'minijogo:api_desistir' %}", {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
@@ -225,38 +304,76 @@
         }
     }
 
+    // O "Radar" que pergunta pro backend o estado do jogo a cada 2 segundos
     function radarDoJogo() {
         fetch(`/minijogo/api/partida/${partidaId}/status/`)
         .then(response => response.json())
         .then(data => {
+            // 1. Atualiza Placar e Rodada
             document.getElementById('placar-num-j1').innerText = data.placar_j1;
             document.getElementById('placar-num-j2').innerText = data.placar_j2;
             document.getElementById('rodada-atual').innerText = data.rodada_atual;
 
+            // 2. Verifica Fim de Jogo
             if (data.fase === 'finalizado') {
+                acaoTravada = true;
+                clearInterval(timerInterval);
+                document.getElementById('cronometro').style.display = 'none';
+                document.getElementById('trave-botoes').classList.add('alvo-bloqueado');
+                
                 document.getElementById('mensagem-narrador').innerText = "FIM DE JOGO!";
                 document.getElementById('status-adversario').innerText = "Vencedor: " + data.vencedor;
-                document.getElementById('cronometro').style.display = 'none';
-                setTimeout(() => window.location.href = "/", 4000);
+                
+                setTimeout(() => window.location.href = "/", 4000); // Retorna ao menu
                 return;
             }
             
-            // Simulação visual de Turno (A lógica real virá no backend a seguir)
-            // Se for sua vez de chutar:
-            if (data.meu_turno === 'chutar' && acaoTravada === false) {
-                document.getElementById('mensagem-narrador').innerText = "SUA VEZ DE BATER!";
-                document.getElementById('mensagem-narrador').style.color = "#28a745"; // Verde
-                document.getElementById('status-adversario').innerText = "Mire no gol antes que o tempo acabe!";
-            } else if (data.meu_turno === 'defender' && acaoTravada === false) {
-                document.getElementById('mensagem-narrador').innerText = "SUA VEZ DE DEFENDER!";
-                document.getElementById('mensagem-narrador').style.color = "#dc3545"; // Vermelho
-                document.getElementById('status-adversario').innerText = "Escolha o canto para pular!";
+            // 3. Controle de Turno (Só atualiza a UI se o turno realmente mudou no backend)
+            // IMPORTANTE: Isso só vai funcionar 100% depois que configurarmos o `views.py`
+            if (data.meu_turno !== papelAtual && data.meu_turno !== 'aguardando') {
+                papelAtual = data.meu_turno;
+                acaoTravada = false; // Destrava a trave
+                cartaEscolhidaId = null; // Reseta a carta da rodada
+                
+                document.getElementById('trave-botoes').classList.remove('alvo-bloqueado');
+                iniciarCronometro();
+
+                if (papelAtual === 'chutar') {
+                    // Prepara Painel Batedor
+                    document.getElementById('label-papel').innerText = "É hora de marcar!";
+                    document.getElementById('bloco-escolher-batedor').style.display = 'block';
+                    document.getElementById('bloco-carta-selecionada').style.display = 'none';
+                    
+                    document.getElementById('mensagem-narrador').innerText = "SUA VEZ DE BATER!";
+                    document.getElementById('mensagem-narrador').style.color = "#28a745"; // Verde
+                    document.getElementById('status-adversario').innerText = "1. Escolha a carta  |  2. Mire na trave";
+                
+                } else if (papelAtual === 'defender') {
+                    // Prepara Painel Goleiro
+                    document.getElementById('label-papel').innerText = "Defenda a meta!";
+                    document.getElementById('bloco-escolher-batedor').style.display = 'none';
+                    document.getElementById('bloco-carta-selecionada').style.display = 'block';
+                    
+                    // Coloca o goleiro fixo na carta ativa
+                    document.getElementById('nome-carta-ativa').innerText = goleiroNome;
+                    document.getElementById('over-carta-ativa').innerText = "OVR " + goleiroOver;
+                    document.getElementById('over-carta-ativa').className = "badge bg-info text-dark ms-2";
+                    
+                    document.getElementById('mensagem-narrador').innerText = "SUA VEZ DE DEFENDER!";
+                    document.getElementById('mensagem-narrador').style.color = "#dc3545"; // Vermelho
+                    document.getElementById('status-adversario').innerText = "Adivinhe o canto e pule!";
+                }
+            } else if (data.meu_turno === 'aguardando') {
+                // Sala de espera inicial (adversário ainda não entrou ou round calculando)
+                papelAtual = 'aguardando';
+                acaoTravada = true;
             }
         });
     }
 
-    // Inicia o jogo
-    iniciarCronometro();
+    // Liga o radar
     setInterval(radarDoJogo, 2000);
+    // Dispara a primeira checagem imediatamente
+    radarDoJogo();
 </script>
 {% endblock %}

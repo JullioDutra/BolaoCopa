@@ -165,7 +165,8 @@
             if (data.fase === 'finalizado') {
                 document.getElementById('mensagem-narrador').innerText = "FIM DE JOGO!";
                 document.getElementById('status-adversario').innerText = "Vencedor: " + data.vencedor;
-                setTimeout(() => window.location.href = "{% url 'core:dashboard' %}", 4000); // Volta pro menu após 4s
+                setTimeout(() => window.location.href = "/", 4000);
+ // Volta pro menu após 4s
             }
             
             // Aqui, se a rodada mudou no backend, significa que os dois jogaram.

@@ -92,19 +92,27 @@ def api_status_partida(request, partida_id):
 @login_required
 def tela_draft(request):
     """ Exibe a tela de escolha de cartas do Draft """
-    # Busca um draft ativo do usuário, ou cria um novo se ele não tiver nenhum
-    draft, created = MeuDraft.objects.get_or_create(
-        usuario=request.user, 
-        status='ativo'
-    )
+    
+    # Camada de segurança: Tenta buscar o draft ativo, se não existir, cria um.
+    # Se houver mais de um ativo (erro no banco), ele pega o último e ignora o resto.
+    try:
+        draft = MeuDraft.objects.filter(usuario=request.user, status='ativo').last()
+        if not draft:
+            draft = MeuDraft.objects.create(usuario=request.user, status='ativo')
+            created = True
+        else:
+            created = False
+    except Exception as e:
+        draft = MeuDraft.objects.create(usuario=request.user, status='ativo')
+        created = True
     
     # Se acabou de criar ou se a prancheta não está cheia mas não tem elenco na tela:
     if created or (draft.elenco_sorteado is None and (draft.batedores.count() < 5 or draft.goleiro is None)):
         sortear_novo_elenco(draft)
         
-    # Se o draft já está totalmente completo (5 linha + 1 goleiro)
+    # Se o draft já está totalmente completo (5 de linha + 1 goleiro)
     if draft.elenco_sorteado is None and draft.batedores.count() == 5 and draft.goleiro is not None:
-        return redirect('minijogo:lobby') # Manda ele pra tela de procurar partida! (Criaremos depois)
+        return redirect('minijogo:lobby')
 
     context = {
         'draft': draft,
@@ -116,13 +124,15 @@ def tela_draft(request):
     return render(request, 'minijogo/draft.html', context)
 
 
-
-
 @login_required
 def lobby_batalha(request):
     """ Coloca o jogador na fila e procura um adversário """
-    meu_draft = get_object_or_404(MeuDraft, usuario=request.user, status='ativo')
     
+    # Camada de segurança: Se ele não tiver um draft ativo, devolve ele pro Draft!
+    draft = MeuDraft.objects.filter(usuario=request.user, status='ativo').last()
+    if not draft:
+        return redirect('minijogo:tela_draft')
+        
     # 1. Verifica se já estou em uma partida em andamento
     partida_atual = PartidaPenalti.objects.filter(
         (Q(jogador1=request.user) | Q(jogador2=request.user)) & 
@@ -138,7 +148,7 @@ def lobby_batalha(request):
     if partida_aguardando:
         # Achou adversário! Entra na partida
         partida_aguardando.jogador2 = request.user
-        partida_aguardando.draft_j2 = meu_draft
+        partida_aguardando.draft_j2 = draft
         partida_aguardando.fase = '5_cobrancas'
         partida_aguardando.save()
         return redirect('minijogo:tela_jogo', partida_id=partida_aguardando.id)
@@ -146,11 +156,12 @@ def lobby_batalha(request):
         # Não achou ninguém. Cria uma sala e fica esperando.
         nova_partida, created = PartidaPenalti.objects.get_or_create(
             jogador1=request.user,
-            draft_j1=meu_draft,
+            draft_j1=draft,
             fase='aguardando'
         )
         return render(request, 'minijogo/esperando_adversario.html', {'partida': nova_partida})
-
+    
+    
 @login_required
 def tela_jogo(request, partida_id):
     """ Carrega o visual do gol e os controles """

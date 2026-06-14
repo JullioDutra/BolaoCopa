@@ -5,43 +5,69 @@
 
 {% block content %}
 <style>
-    /* Estilo das Cartas do Draft */
-    .draft-card {
-        background: linear-gradient(135deg, #1e1e1e, #2d2d2d);
-        border: 2px solid #cfb53b; /* Borda dourada */
-        border-radius: 12px;
-        color: white;
-        cursor: pointer;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-        position: relative;
+    /* Estilos da Tabela do Draft */
+    .table-draft {
+        background-color: white;
+        border-radius: 10px;
         overflow: hidden;
     }
-    .draft-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 20px rgba(207, 181, 59, 0.4); /* Brilho dourado ao passar o mouse */
-    }
-    .draft-over {
-        font-size: 2.5rem;
-        font-weight: 900;
-        color: #cfb53b;
-        line-height: 1;
-    }
-    .draft-posicao {
-        font-size: 0.9rem;
+    .table-draft th {
+        background-color: #f1f3f5;
+        color: #495057;
+        font-weight: 700;
         text-transform: uppercase;
-        letter-spacing: 1px;
-        color: #aaa;
+        font-size: 0.85rem;
+        letter-spacing: 0.5px;
     }
-    .draft-nome {
-        font-weight: bold;
+    .table-draft td {
+        vertical-align: middle;
+        border-bottom: 1px solid #f1f3f5;
+    }
+    .table-draft tbody tr {
+        transition: background-color 0.2s ease;
+    }
+    .table-draft tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+    
+    /* Destaques (OVR e Posições) */
+    .ovr-badge {
         font-size: 1.1rem;
-        border-top: 1px solid rgba(255,255,255,0.1);
-        padding-top: 8px;
+        font-weight: 900;
+        background-color: #cfb53b; /* Dourado */
+        color: #fff;
+        padding: 5px 10px;
+        border-radius: 8px;
     }
+    .pos-goleiro {
+        background-color: #17a2b8;
+        color: white;
+    }
+    .pos-linha {
+        background-color: #6c757d;
+        color: white;
+    }
+
+    /* Prancheta Lateral */
     .bg-prancheta {
         background-color: #f8f9fa;
         border: 2px dashed #ccc;
         border-radius: 12px;
+    }
+
+    /* Ajustes Mobile */
+    @media (max-width: 768px) {
+        .btn-escolher {
+            padding: 4px 8px;
+            font-size: 0.85rem;
+        }
+        .ovr-badge {
+            font-size: 0.95rem;
+            padding: 4px 8px;
+        }
+        .jogador-nome {
+            font-size: 0.9rem;
+        }
     }
 </style>
 
@@ -53,30 +79,60 @@
 </div>
 
 <div class="row">
+    <!-- COLUNA ESQUERDA: A TABELA DO ELENCO -->
     <div class="col-lg-8 mb-4">
-        <div class="card card-clean p-4 border-0 shadow-sm h-100">
-            <h4 class="fw-bold text-center mb-4">
-                Elenco Sorteado: <span class="text-primary">{{ elenco_atual.nome }}</span>
-            </h4>
+        <div class="card card-clean p-0 border-0 shadow-sm h-100">
+            <div class="card-header bg-dark text-white text-center py-3 border-0" style="border-radius: 12px 12px 0 0;">
+                <h5 class="fw-bold mb-0">
+                    Elenco Sorteado: <span class="text-warning">{{ elenco_atual.nome }}</span>
+                </h5>
+            </div>
             
-            <div class="row row-cols-2 row-cols-md-3 g-3">
-                {% for jogador in jogadores_sorteados %}
-                <div class="col">
-                    <div class="draft-card p-3 text-center h-100" onclick="escolherCarta({{ jogador.id }})">
-                        <div class="draft-over">{{ jogador.over }}</div>
-                        <div class="draft-posicao mb-3">{{ jogador.get_posicao_display }}</div>
-                        <div class="draft-nome">{{ jogador.nome }}</div>
-                    </div>
-                </div>
-                {% empty %}
-                <div class="col-12 text-center text-muted">
-                    <p>Carregando jogadores...</p>
-                </div>
-                {% endfor %}
+            <div class="table-responsive table-draft shadow-sm">
+                <table class="table mb-0 text-center">
+                    <thead>
+                        <tr>
+                            <th scope="col" style="width: 15%;">OVR</th>
+                            <th scope="col" class="text-start" style="width: 40%;">Jogador</th>
+                            <th scope="col" style="width: 20%;">Posição</th>
+                            <th scope="col" style="width: 25%;">Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- dictsort:"posicao" organiza alfabeticamente: 'goleiro' vem antes de 'linha' -->
+                        {% for jogador in jogadores_sorteados|dictsort:"posicao" %}
+                        <tr>
+                            <td>
+                                <span class="ovr-badge shadow-sm">{{ jogador.over }}</span>
+                            </td>
+                            <td class="text-start fw-bold text-dark jogador-nome">
+                                {{ jogador.nome }}
+                            </td>
+                            <td>
+                                {% if jogador.posicao == 'goleiro' %}
+                                    <span class="badge pos-goleiro">{{ jogador.get_posicao_display }}</span>
+                                {% else %}
+                                    <span class="badge pos-linha">{{ jogador.get_posicao_display }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <button class="btn btn-success fw-bold rounded-pill btn-escolher w-100" onclick="escolherCarta({{ jogador.id }})">
+                                    <i class="fa-solid fa-check"></i> <span class="d-none d-sm-inline">Escolher</span>
+                                </button>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted py-4">Nenhum jogador encontrado...</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
 
+    <!-- COLUNA DIREITA: A PRANCHETA DO USUÁRIO -->
     <div class="col-lg-4 mb-4">
         <div class="bg-prancheta p-4 h-100 shadow-sm">
             <h5 class="fw-bold mb-3 text-center"><i class="fa-solid fa-clipboard-list"></i> Sua Prancheta</h5>
@@ -111,11 +167,9 @@
 </div>
 
 <script>
-    // Pegar o token de segurança do Django
     const csrfToken = '{{ csrf_token }}';
 
     function escolherCarta(cartaId) {
-        // Envia o clique silenciosamente para a nossa API no backend
         fetch("{% url 'minijogo:api_escolher_carta' %}", {
             method: 'POST',
             headers: {
@@ -127,11 +181,8 @@
         .then(response => response.json())
         .then(data => {
             if (data.sucesso) {
-                // Se deu certo, recarrega a página rapidamente para trazer o próximo time
-                // (Como é rápido, parece uma transição de pacote pro usuário)
                 window.location.reload();
             } else {
-                // Se ele tentar escolher 2 goleiros ou 6 batedores, mostra o erro da engine.py
                 alert("Aviso: " + data.mensagem);
             }
         })

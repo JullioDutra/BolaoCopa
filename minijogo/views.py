@@ -7,7 +7,7 @@ from django.shortcuts import render, redirect
 from .engine import sortear_novo_elenco
 # Importe seus modelos e o motor lógico que criamos
 from .models import MeuDraft, CartaJogador, PartidaPenalti
-from .engine import selecionar_carta, calcular_resultado_penalti, processar_fim_de_rodada, processar_cobranca
+from .engine import selecionar_carta, calcular_resultado_penalti, processar_cobranca, sortear_novo_elenco
 from django.db.models import Q
 
 

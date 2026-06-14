@@ -76,13 +76,10 @@ def tela_draft(request):
 @login_required
 def lobby_batalha(request):
     """ Coloca o jogador na fila e procura um adversário """
-    
-    # Camada de segurança: Se ele não tiver um draft ativo, devolve ele pro Draft!
     draft = MeuDraft.objects.filter(usuario=request.user, status='ativo').last()
     if not draft:
         return redirect('minijogo:tela_draft')
         
-    # 1. Verifica se já estou em uma partida em andamento
     partida_atual = PartidaPenalti.objects.filter(
         (Q(jogador1=request.user) | Q(jogador2=request.user)) & 
         ~Q(fase='finalizado')
@@ -91,7 +88,6 @@ def lobby_batalha(request):
     if partida_atual:
         return redirect('minijogo:tela_jogo', partida_id=partida_atual.id)
         
-    # 2. Tenta achar uma partida aguardando jogador
     partida_aguardando = PartidaPenalti.objects.filter(fase='aguardando').exclude(jogador1=request.user).first()
     
     if partida_aguardando:
@@ -99,16 +95,36 @@ def lobby_batalha(request):
         partida_aguardando.jogador2 = request.user
         partida_aguardando.draft_j2 = draft
         partida_aguardando.fase = '5_cobrancas'
+        partida_aguardando.turno_batedor = partida_aguardando.jogador1 # 👈 CRUCIAL: Jogador 1 começa a bater!
         partida_aguardando.save()
         return redirect('minijogo:tela_jogo', partida_id=partida_aguardando.id)
     else:
-        # Não achou ninguém. Cria uma sala e fica esperando.
         nova_partida, created = PartidaPenalti.objects.get_or_create(
             jogador1=request.user,
             draft_j1=draft,
             fase='aguardando'
         )
         return render(request, 'minijogo/esperando_adversario.html', {'partida': nova_partida})
+
+
+@login_required
+def aceitar_convite(request, partida_id):
+    """ Coloca o amigo na sala de pênaltis através do link """
+    partida = get_object_or_404(PartidaPenalti, id=partida_id)
+    draft = MeuDraft.objects.filter(usuario=request.user, status='ativo').last()
+    
+    if not draft:
+        return redirect('minijogo:tela_draft')
+    
+    if partida.fase == 'aguardando' and partida.jogador1 != request.user:
+        partida.jogador2 = request.user
+        partida.draft_j2 = draft
+        partida.fase = '5_cobrancas'
+        partida.turno_batedor = partida.jogador1 # 👈 CRUCIAL: Jogador 1 começa a bater!
+        partida.save()
+        return redirect('minijogo:tela_jogo', partida_id=partida.id)
+        
+    return redirect('minijogo:tela_jogo', partida_id=partida.id)
     
     
 @login_required
@@ -130,24 +146,7 @@ def tela_jogo(request, partida_id):
 
 from django.urls import reverse
 
-@login_required
-def aceitar_convite(request, partida_id):
-    """ Coloca o amigo na sala de pênaltis através do link """
-    partida = get_object_or_404(PartidaPenalti, id=partida_id)
-    
-    # Pega o draft do amigo (ele precisa ter um time montado!)
-    meu_draft = get_object_or_404(MeuDraft, usuario=request.user, status='ativo')
-    
-    # Verifica se a sala ainda está vazia e se ele não está clicando no próprio link
-    if partida.fase == 'aguardando' and partida.jogador1 != request.user:
-        partida.jogador2 = request.user
-        partida.draft_j2 = meu_draft
-        partida.fase = '5_cobrancas'
-        partida.save()
-        return redirect('minijogo:tela_jogo', partida_id=partida.id)
-        
-    # Se a sala já lotou ou se ele clicou no próprio link, joga ele pra tela da partida
-    return redirect('minijogo:tela_jogo', partida_id=partida.id)
+
 
 @login_required
 def api_desistir(request):

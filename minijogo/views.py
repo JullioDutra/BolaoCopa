@@ -7,8 +7,9 @@ from django.shortcuts import render, redirect
 from .engine import sortear_novo_elenco
 # Importe seus modelos e o motor lógico que criamos
 from .models import MeuDraft, CartaJogador, PartidaPenalti
-from .engine import selecionar_carta, calcular_resultado_penalti, processar_fim_de_rodada
+from .engine import selecionar_carta, calcular_resultado_penalti, processar_fim_de_rodada, processar_cobranca
 from django.db.models import Q
+
 
 # ==========================================
 # API 1: ESCOLHER CARTA NO DRAFT
@@ -35,58 +36,6 @@ def api_escolher_carta(request):
     except Exception as e:
         return JsonResponse({'sucesso': False, 'mensagem': str(e)})
 
-
-# ==========================================
-# API 2: CHUTAR OU DEFENDER NA PARTIDA
-# ==========================================
-@login_required
-@require_POST
-def api_enviar_acao(request):
-    """ Recebe o quadrante que o usuário clicou na trave """
-    try:
-        data = json.loads(request.body)
-        partida_id = data.get('partida_id')
-        tipo_acao = data.get('tipo_acao') # 'chute' ou 'defesa'
-        zona = data.get('zona') # 'se', 'me', 'id', etc.
-        
-        partida = get_object_or_404(PartidaPenalti, id=partida_id)
-        
-        # Aqui, no mundo real, você vai salvar a ação na tabela Cobranca correspondente
-        # Exemplo resumido:
-        # cobranca.alvo_chute = zona (se for o batedor)
-        # cobranca.pulo_goleiro = zona (se for o goleiro)
-        # cobranca.save()
-        
-        # Se os DOIS já tiverem jogado (um escolheu chutar e outro pular),
-        # você chama a matemática do Over lá do engine.py e atualiza o placar!
-        
-        return JsonResponse({'sucesso': True, 'mensagem': 'Ação registrada! Aguardando adversário...'})
-    except Exception as e:
-        return JsonResponse({'sucesso': False, 'mensagem': str(e)})
-
-
-# ==========================================
-# API 3: O RADAR DO JOGO (POLLING)
-# ==========================================
-@login_required
-def api_status_partida(request, partida_id):
-    """ 
-    O JavaScript vai chamar essa view a cada 2 segundos (Polling).
-    Ela serve para dizer ao navegador: "Teve gol?", "Acabou?", "Aumentou a rodada?"
-    """
-    partida = get_object_or_404(PartidaPenalti, id=partida_id)
-    
-    # Montamos um pacote de dados atualizados para a tela do usuário
-    dados = {
-        'fase': partida.fase,
-        'rodada_atual': partida.rodada_atual,
-        'placar_j1': partida.placar_j1,
-        'placar_j2': partida.placar_j2,
-        # Se for a fase finalizada, enviamos o ganhador
-        'vencedor': partida.vencedor.username if partida.vencedor else None
-    }
-    
-    return JsonResponse(dados)
 
 
 @login_required
@@ -222,3 +171,66 @@ def api_desistir(request):
         
         return JsonResponse({'sucesso': True})
     return JsonResponse({'sucesso': False})
+
+
+
+# ==========================================
+# O JOGADOR CLICOU NA TRAVE OU DEU TIMEOUT
+# ==========================================
+def api_enviar_acao(request):
+    try:
+        data = json.loads(request.body)
+        partida = get_object_or_404(PartidaPenalti, id=data.get('partida_id'))
+        zona = data.get('zona')
+        carta_id = data.get('carta_id')
+
+        # Se for a vez do usuário bater
+        if request.user == partida.turno_batedor:
+            partida.chute_zona = zona
+            partida.chute_carta_id = carta_id
+        # Se for a vez do usuário defender
+        elif request.user != partida.turno_batedor:
+            partida.defesa_zona = zona
+            partida.defesa_carta_id = carta_id
+
+        partida.save()
+
+        # Se as duas ações já foram preenchidas (ou se alguém deu timeout), calcula a rodada!
+        if partida.chute_zona and partida.defesa_zona:
+            processar_cobranca(partida)
+
+        return JsonResponse({'sucesso': True})
+    except Exception as e:
+        return JsonResponse({'sucesso': False, 'mensagem': str(e)})
+
+
+# ==========================================
+# O RADAR DA TELA (ATUALIZA A CADA 2 SEGUNDOS)
+# ==========================================
+def api_status_partida(request, partida_id):
+    partida = get_object_or_404(PartidaPenalti, id=partida_id)
+    
+    # Lógica para descobrir de quem é o turno na tela
+    meu_turno = 'aguardando'
+    
+    if partida.fase in ['5_cobrancas', 'alternadas']:
+        if request.user == partida.turno_batedor:
+            # É batedor, mas verifica se ele JÁ chutou nesta rodada
+            if not partida.chute_zona:
+                meu_turno = 'chutar'
+        else:
+            # É goleiro, mas verifica se ele JÁ pulou nesta rodada
+            if not partida.defesa_zona:
+                meu_turno = 'defender'
+
+    dados = {
+        'fase': partida.fase,
+        'rodada_atual': partida.rodada_atual,
+        'placar_j1': partida.placar_j1,
+        'placar_j2': partida.placar_j2,
+        'meu_turno': meu_turno,
+        'vencedor': partida.vencedor.username if partida.vencedor else None
+    }
+    
+    return JsonResponse(dados)
+

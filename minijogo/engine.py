@@ -156,4 +156,10 @@ def encerrar_partida(partida, vencedor):
         draft_perdedor.status = 'eliminado'
         draft_perdedor.save()
     
-    # O Venced
+    # O Vencedor avança rumo à taça
+    if draft_vencedor:
+        draft_vencedor.vitorias_seguidas += 1
+        if draft_vencedor.vitorias_seguidas >= 10:
+            draft_vencedor.status = 'campeao'
+            # (Futuro: Aqui você pode rodar a função para depositar moedas na conta dele)
+        draft_vencedor.save()

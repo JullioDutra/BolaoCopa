@@ -116,7 +116,7 @@
 
     function escolherCarta(cartaId) {
         // Envia o clique silenciosamente para a nossa API no backend
-        fetch("{% url 'duelos:api_escolher_carta' %}", {
+        fetch("{% url 'minijogo:api_escolher_carta' %}", {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

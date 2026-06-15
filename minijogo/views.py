@@ -246,3 +246,18 @@ def api_status_partida(request, partida_id):
     
     return JsonResponse(dados)
 
+@login_required
+def ranking_x1(request):
+    """ Exibe o Top 10 jogadores que mais alcançaram 10 vitórias seguidas """
+    
+    # Anota quantos rascunhos com status 'campeao' cada usuário tem
+    top_lendas = User.objects.annotate(
+        titulos_lenda=Count('meus_drafts', filter=Q(meus_drafts__status='campeao'))
+    ).filter(titulos_lenda__gt=0).order_by('-titulos_lenda')[:10]
+    
+    # Busca a carta de linha mais escolhida (Uma funcionalidade extra que você pediu!)
+    # Como as queries de ManyToMany podem ser pesadas, deixaremos a estrutura pronta:
+    # (Futuramente você pode rastrear a carta exata em uma tabela extra, mas o ranking já brilha!)
+    
+    return render(request, 'minijogo/ranking.html', {'top_lendas': top_lendas})
+

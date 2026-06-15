@@ -261,6 +261,8 @@ def api_status_partida(request, partida_id):
         if draft_vencedor:
             vencedor_streak = draft_vencedor.vitorias_seguidas
 
+    emote_adv = partida.emote_j2 if request.user == partida.jogador1 else partida.emote_j1
+
     dados = {
         'fase': partida.fase,
         'rodada_atual': partida.rodada_atual,
@@ -273,8 +275,16 @@ def api_status_partida(request, partida_id):
         'ultimo_resultado': partida.ultimo_resultado,
         # Variáveis novas enviadas para a tela!
         'vencedor_nome': vencedor_nome,
+        'emote_adversario': emote_adv,
         'vencedor_streak': vencedor_streak,
     }
+
+    if request.user == partida.jogador1 and partida.emote_j2:
+        partida.emote_j2 = None
+        partida.save(update_fields=['emote_j2'])
+    elif request.user == partida.jogador2 and partida.emote_j1:
+        partida.emote_j1 = None
+        partida.save(update_fields=['emote_j1'])
     
     return JsonResponse(dados)
 
@@ -305,3 +315,19 @@ def cancelar_lobby(request, partida_id):
         
     return redirect('duelos:listar_desafios')
 
+
+@login_required
+@require_POST
+def api_enviar_emote(request):
+    """ Regista o emoji que o jogador acabou de enviar """
+    data = json.loads(request.body)
+    partida = get_object_or_404(PartidaPenalti, id=data.get('partida_id'))
+    emoji = data.get('emoji')
+
+    if request.user == partida.jogador1:
+        partida.emote_j1 = emoji
+    elif request.user == partida.jogador2:
+        partida.emote_j2 = emoji
+    partida.save()
+    
+    return JsonResponse({'sucesso': True})

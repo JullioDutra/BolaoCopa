@@ -75,6 +75,9 @@ class PartidaPenalti(models.Model):
     # === NOVOS CAMPOS: CONTROLE DE TURNO E AÇÕES ===
     turno_batedor = models.ForeignKey(User, related_name='ataques_x1', on_delete=models.SET_NULL, null=True, blank=True)
     chutes_na_rodada = models.IntegerField(default=0) # Conta se os 2 já bateram na rodada
+    ultimo_chute_zona = models.CharField(max_length=10, null=True, blank=True)
+    ultima_defesa_zona = models.CharField(max_length=10, null=True, blank=True)
+    ultimo_resultado = models.CharField(max_length=20, null=True, blank=True)
     
     chute_zona = models.CharField(max_length=10, null=True, blank=True)
     chute_carta_id = models.IntegerField(null=True, blank=True)

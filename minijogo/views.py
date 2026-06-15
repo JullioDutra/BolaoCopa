@@ -1,5 +1,7 @@
 import json
 from django.http import JsonResponse
+import random 
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from django.shortcuts import get_object_or_404
@@ -96,14 +98,33 @@ def lobby_batalha(request):
         partida_aguardando.jogador2 = request.user
         partida_aguardando.draft_j2 = draft
         partida_aguardando.fase = '5_cobrancas'
-        partida_aguardando.turno_batedor = partida_aguardando.jogador1 # 👈 CRUCIAL: Jogador 1 começa a bater!
+        
+        # 👈 LÓGICA DO CARA OU COROA 
+        # Usa o sorteio feito na criação da sala para definir quem bate primeiro
+        if partida_aguardando.moeda_sorteio == 'j1':
+            partida_aguardando.turno_batedor = partida_aguardando.jogador1
+        else:
+            partida_aguardando.turno_batedor = partida_aguardando.jogador2
+            
         partida_aguardando.save()
         return redirect('minijogo:tela_jogo', partida_id=partida_aguardando.id)
     else:
-        nova_partida, created = PartidaPenalti.objects.get_or_create(
+        # 👈 LÓGICA DA NOVA SALA: Sorteia a moeda e regista as configurações
+        quem_comeca = random.choice(['j1', 'j2'])
+        
+        # Lê os Toggles do request (se vierem do form da Arena)
+        usa_poderes = request.POST.get('usa_poderes') == 'on' if request.method == 'POST' else True
+        usa_olheiro = request.POST.get('usa_olheiro') == 'on' if request.method == 'POST' else True
+        usa_emotes = request.POST.get('usa_emotes') == 'on' if request.method == 'POST' else True
+
+        nova_partida = PartidaPenalti.objects.create(
             jogador1=request.user,
             draft_j1=draft,
-            fase='aguardando'
+            fase='aguardando',
+            moeda_sorteio=quem_comeca, # Regista o vencedor do sorteio
+            usa_poderes=usa_poderes,
+            usa_olheiro=usa_olheiro,
+            usa_emotes=usa_emotes
         )
         return render(request, 'minijogo/esperando_adversario.html', {'partida': nova_partida})
 

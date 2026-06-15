@@ -252,7 +252,7 @@ def ranking_x1(request):
     
     # Anota quantos rascunhos com status 'campeao' cada usuário tem
     top_lendas = User.objects.annotate(
-        titulos_lenda=Count('meus_drafts', filter=Q(meus_drafts__status='campeao'))
+        titulos_lenda=Count('drafts_x1', filter=Q(drafts_x1__status='campeao'))
     ).filter(titulos_lenda__gt=0).order_by('-titulos_lenda')[:10]
     
     # Busca a carta de linha mais escolhida (Uma funcionalidade extra que você pediu!)

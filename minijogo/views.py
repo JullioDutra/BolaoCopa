@@ -209,18 +209,25 @@ def api_enviar_acao(request):
 def api_status_partida(request, partida_id):
     partida = get_object_or_404(PartidaPenalti, id=partida_id)
     
-    # Lógica para descobrir de quem é o turno na tela
     meu_turno = 'aguardando'
-    
     if partida.fase in ['5_cobrancas', 'alternadas']:
         if request.user == partida.turno_batedor:
-            # É batedor, mas verifica se ele JÁ chutou nesta rodada
-            if not partida.chute_zona:
-                meu_turno = 'chutar'
+            if not partida.chute_zona: meu_turno = 'chutar'
         else:
-            # É goleiro, mas verifica se ele JÁ pulou nesta rodada
-            if not partida.defesa_zona:
-                meu_turno = 'defender'
+            if not partida.defesa_zona: meu_turno = 'defender'
+
+    # --- NOVIDADE: Buscando Nome e Sequência Invicta do Vencedor ---
+    vencedor_nome = None
+    vencedor_streak = 0
+    
+    if partida.vencedor:
+        # Pega o primeiro nome, se não tiver, usa o username
+        vencedor_nome = partida.vencedor.first_name if partida.vencedor.first_name else partida.vencedor.username
+        
+        # Descobre qual foi o draft que ganhou para pegar as vitórias seguidas
+        draft_vencedor = partida.draft_j1 if partida.vencedor == partida.jogador1 else partida.draft_j2
+        if draft_vencedor:
+            vencedor_streak = draft_vencedor.vitorias_seguidas
 
     dados = {
         'fase': partida.fase,
@@ -231,8 +238,10 @@ def api_status_partida(request, partida_id):
         'vencedor': partida.vencedor.username if partida.vencedor else None,
         'ultimo_chute_zona': partida.ultimo_chute_zona,
         'ultima_defesa_zona': partida.ultima_defesa_zona,
-        'ultimo_resultado': partida.ultimo_resultado
-        
+        'ultimo_resultado': partida.ultimo_resultado,
+        # Variáveis novas enviadas para a tela!
+        'vencedor_nome': vencedor_nome,
+        'vencedor_streak': vencedor_streak,
     }
     
     return JsonResponse(dados)

@@ -83,6 +83,18 @@ class PartidaPenalti(models.Model):
     chute_carta_id = models.IntegerField(null=True, blank=True)
     defesa_zona = models.CharField(max_length=10, null=True, blank=True)
     defesa_carta_id = models.IntegerField(null=True, blank=True)
+    # === CONFIGURAÇÕES DA SALA (REGRAS) ===
+    usa_poderes = models.BooleanField(default=True)
+    usa_olheiro = models.BooleanField(default=True)
+    usa_emotes = models.BooleanField(default=True)
+    # === CARA OU COROA ===
+    # Vai guardar 'j1' ou 'j2' para sabermos quem ganhou o sorteio de bater primeiro
+    moeda_sorteio = models.CharField(max_length=2, blank=True, null=True)
+    # === CONTROLE DE PODERES (1 uso por jogo) ===
+    j1_usou_olheiro = models.BooleanField(default=False)
+    j2_usou_olheiro = models.BooleanField(default=False)
+    j1_usou_poder = models.BooleanField(default=False)
+    j2_usou_poder = models.BooleanField(default=False)
     
     # Fim de Jogo
     vencedor = models.ForeignKey(User, related_name='vitorias_x1', on_delete=models.SET_NULL, null=True, blank=True)

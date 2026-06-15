@@ -10,6 +10,7 @@ urlpatterns = [
     path('partida/<int:partida_id>/', views.tela_jogo, name='tela_jogo'),
     path('convite/<int:partida_id>/', views.aceitar_convite, name='aceitar_convite'),
     path('api/partida/desistir/', views.api_desistir, name='api_desistir'),
+    path('ranking/', views.ranking_x1, name='ranking_x1'),
 
     
     # --- APIs (Chamadas AJAX em segundo plano) ---

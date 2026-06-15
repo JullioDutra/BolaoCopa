@@ -272,3 +272,15 @@ def ranking_x1(request):
     
     return render(request, 'minijogo/ranking.html', {'top_lendas': top_lendas})
 
+@login_required
+def cancelar_lobby(request, partida_id):
+    """ Exclui a partida se o adversário ainda não tiver entrado """
+    partida = PartidaPenalti.objects.filter(id=partida_id, jogador1=request.user).first()
+    
+    # Só deixa cancelar se o Jogador 2 ainda for None (ninguém entrou)
+    if partida and partida.jogador2 is None:
+        partida.delete()
+        messages.success(request, "Sala cancelada com sucesso.")
+        
+    return redirect('duelos:listar_desafios')
+

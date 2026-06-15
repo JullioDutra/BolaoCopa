@@ -9,6 +9,7 @@ from .engine import sortear_novo_elenco
 from .models import MeuDraft, CartaJogador, PartidaPenalti
 from .engine import selecionar_carta, calcular_resultado_penalti, processar_cobranca, sortear_novo_elenco
 from django.db.models import Q
+from django.contrib.auth.models import User
 
 
 # ==========================================

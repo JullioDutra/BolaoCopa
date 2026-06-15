@@ -85,14 +85,12 @@ def processar_cobranca(partida):
     
     if partida.chute_zona == 'timeout':
         gol = False
+        resultado_lance = 'isolou'
     else:
         batedor = CartaJogador.objects.get(id=partida.chute_carta_id)
         goleiro = CartaJogador.objects.get(id=partida.defesa_carta_id)
         
-        # Chama a sua função detalhada!
         resultado_lance = calcular_resultado_penalti(batedor, goleiro, partida.chute_zona, partida.defesa_zona)
-        
-        # Define se soma no placar ou não
         gol = True if resultado_lance in ['gol', 'frango'] else False
 
     # Atualiza o Placar
@@ -102,7 +100,12 @@ def processar_cobranca(partida):
         else:
             partida.placar_j2 += 1
 
-    # Prepara a Próxima Cobrança (Limpa as escolhas)
+    # --- SALVA O REPLAY PARA A TELA ---
+    partida.ultimo_chute_zona = partida.chute_zona
+    partida.ultima_defesa_zona = partida.defesa_zona
+    partida.ultimo_resultado = resultado_lance
+
+    # Prepara a Próxima Cobrança (Limpa as escolhas atuais)
     partida.chute_zona = None
     partida.chute_carta_id = None
     partida.defesa_zona = None
@@ -110,20 +113,17 @@ def processar_cobranca(partida):
     
     partida.chutes_na_rodada += 1
     
-    # Alterna quem bate o próximo pênalti
+    # Alterna quem bate
     if partida.turno_batedor == partida.jogador1:
         partida.turno_batedor = partida.jogador2
     else:
         partida.turno_batedor = partida.jogador1
 
-    # Se os dois já chutaram, avança a rodada
     if partida.chutes_na_rodada >= 2:
         partida.chutes_na_rodada = 0
         partida.rodada_atual += 1
 
-    # Verifica se o jogo acabou
     verificar_fim_de_jogo(partida)
-    
     partida.save()
 
 

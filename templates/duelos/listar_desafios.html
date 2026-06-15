@@ -22,18 +22,35 @@
     
     <!-- NOVO JOGO: Draft X1 Pênaltis -->
     <div class="col-md-5 mb-4">
-        <div class="card card-clean h-100 text-center p-5 shadow border-0 border-top border-5 border-dark rounded-4" style="background: linear-gradient(to bottom, #ffffff, #f8f9fa);">
+        <div class="card card-clean h-100 text-center p-4 p-md-5 shadow border-0 border-top border-5 border-dark rounded-4" style="background: linear-gradient(to bottom, #ffffff, #f8f9fa);">
             <div class="mb-3">
                 <i class="fa-solid fa-futbol text-dark" style="font-size: 4rem;"></i>
             </div>
             <h3 class="fw-bold">Draft X1 Pênaltis</h3>
-            <p class="text-muted">
+            <p class="text-muted mb-3">
                 Sorteio insano! Abra os pacotes, escale seus 5 batedores lendários e 1 goleiro, e decida tudo na marca da cal.
             </p>
             
-            <div class="mt-auto pt-4">
+            <!-- EXIBIÇÃO DO RECORDE ATUAL -->
+            <div class="bg-dark text-white rounded-3 p-2 mb-4 shadow-sm mx-auto d-inline-block" style="border: 1px solid #cfb53b; min-width: 200px;">
+                <span class="small text-uppercase text-muted fw-bold d-block" style="font-size: 0.7rem; letter-spacing: 1px;">👑 Atual Rei do X1</span>
+                
+                {% if top_invicto_nome %}
+                    <span class="fw-bold" style="color: #cfb53b;">{{ top_invicto_nome }}</span> 
+                    <span class="badge bg-danger rounded-pill ms-1 shadow-sm">{{ top_invicto_streak }} 🔥</span>
+                {% else %}
+                    <span class="fw-bold" style="color: #cfb53b;">Ninguém</span> 
+                    <span class="badge bg-secondary rounded-pill ms-1">0 🔥</span>
+                {% endif %}
+            </div>
+            
+            <div class="mt-auto d-flex flex-column gap-2">
                 <a href="{% url 'minijogo:tela_draft' %}" class="btn btn-dark btn-lg w-100 fw-bold shadow-sm rounded-pill">
                     <i class="fa-solid fa-play"></i> Entrar no Draft
+                </a>
+                <!-- BOTÃO DO RANKING LA DÉCIMA -->
+                <a href="{% url 'minijogo:ranking_x1' %}" class="btn btn-outline-warning text-dark btn-md w-100 fw-bold shadow-sm rounded-pill" style="border-width: 2px;">
+                    <i class="fa-solid fa-crown"></i> Ver Hall da Fama
                 </a>
             </div>
         </div>

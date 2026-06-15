@@ -1,14 +1,14 @@
 {% extends 'base.html' %}
 
-{% block title %}Hall da Fama - X1 Pênaltis{% endblock %}
+{% block title %}Hall da Fama - La Décima{% endblock %}
 
 {% block content %}
 <div class="row mt-5">
     <div class="col-md-8 mx-auto text-center">
-        <h1 class="fw-bold" style="color: var(--ouro); font-size: 3rem;">
+        <h1 class="fw-bold text-uppercase" style="color: var(--ouro); font-size: 3.5rem; letter-spacing: 2px;">
             <i class="fa-solid fa-crown"></i> Hall da Fama
         </h1>
-        <p class="text-muted fs-5">Olimpo dos jogadores que alcançaram <strong class="text-warning">10 Vitórias Seguidas</strong> no Draft.</p>
+        <p class="text-muted fs-5">Olimpo dos treinadores que alcançaram a glória absoluta de <strong class="text-warning">La Décima</strong>.</p>
     </div>
 </div>
 
@@ -21,7 +21,7 @@
                         <tr>
                             <th class="py-3" style="width: 15%;">Posição</th>
                             <th class="py-3 text-start">Treinador</th>
-                            <th class="py-3 text-warning">Títulos Lenda do X1</th>
+                            <th class="py-3 text-warning">Conquistas de La Décima</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -42,7 +42,7 @@
                                     {{ lenda.first_name|default:lenda.username }}
                                 </td>
                                 <td class="py-3">
-                                    <span class="badge bg-warning text-dark fs-5 rounded-pill px-3">
+                                    <span class="badge bg-warning text-dark fs-5 rounded-pill px-3 shadow-sm">
                                         {{ lenda.titulos_lenda }}
                                     </span>
                                 </td>
@@ -51,8 +51,8 @@
                             <tr>
                                 <td colspan="3" class="py-5 text-muted">
                                     <i class="fa-solid fa-ghost fs-1 mb-3 opacity-50"></i>
-                                    <h5>O Olimpo está vazio!</h5>
-                                    <p>Ninguém conseguiu as 10 vitórias ainda. Seja o primeiro!</p>
+                                    <h5>A História ainda não foi escrita!</h5>
+                                    <p>Nenhum jogador conseguiu as 10 vitórias seguidas ainda. Seja o primeiro a alcançar La Décima!</p>
                                 </td>
                             </tr>
                         {% endfor %}

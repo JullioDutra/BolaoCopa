@@ -34,12 +34,30 @@ from .models import (
 # ==========================================
 # ARENA X1 E LOBBY PRINCIPAL
 # ==========================================
+from minijogo.models import MeuDraft  # 👈 Certifique-se de ter esse import no topo do arquivo!
+
 def listar_desafios(request):
     # Busca todos os campeonatos para que o Radar mostre tanto os de Inscrição quanto os em Andamento (Ver Chaves)
     campeonatos = Campeonato.objects.all().order_by('-criado_em')
     
+    # ==========================================
+    # BUSCANDO O ATUAL REI DO X1 (MAIOR SEQUÊNCIA)
+    # ==========================================
+    maior_draft = MeuDraft.objects.order_by('-vitorias_seguidas').first()
+    
+    top_invicto_nome = None
+    top_invicto_streak = 0
+    
+    # Só exibe se houver algum draft com pelo menos 1 vitória para não puxar dados zerados
+    if maior_draft and maior_draft.vitorias_seguidas > 0:
+        top_invicto_nome = maior_draft.usuario.first_name if maior_draft.usuario.first_name else maior_draft.usuario.username
+        top_invicto_streak = maior_draft.vitorias_seguidas
+    # ==========================================
+    
     context = {
         'campeonatos_abertos': campeonatos, # Mantido este nome para não quebrar o seu HTML
+        'top_invicto_nome': top_invicto_nome,       # 👈 Enviando para o HTML
+        'top_invicto_streak': top_invicto_streak,   # 👈 Enviando para o HTML
     }
     return render(request, 'duelos/listar_desafios.html', context)
 

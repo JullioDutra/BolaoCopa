@@ -133,6 +133,16 @@ def tela_jogo(request, partida_id):
     """ Carrega o visual do gol e os controles """
     partida = get_object_or_404(PartidaPenalti, id=partida_id)
     
+    # ================================================================
+    # SEGURANÇA DA SALA: BARRAR TERCEIROS ("BICO" NÃO ENTRA)
+    # ================================================================
+    # Se o usuário não for nem o dono da sala (J1) e nem o adversário oficial (J2)...
+    if request.user != partida.jogador1 and request.user != partida.jogador2:
+        # Mostra a mensagem de erro e chuta ele de volta pro Radar de Desafios
+        messages.error(request, "🔒 Ops! Esta sala já está lotada ou a partida está em andamento.")
+        return redirect('duelos:listar_desafios')
+    # ================================================================
+
     # Define quem é o jogador na tela para o JavaScript saber de que lado ele está
     sou_jogador_1 = (request.user == partida.jogador1)
     

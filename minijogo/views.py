@@ -228,7 +228,11 @@ def api_status_partida(request, partida_id):
         'placar_j1': partida.placar_j1,
         'placar_j2': partida.placar_j2,
         'meu_turno': meu_turno,
-        'vencedor': partida.vencedor.username if partida.vencedor else None
+        'vencedor': partida.vencedor.username if partida.vencedor else None,
+        'ultimo_chute_zona': partida.ultimo_chute_zona,
+        'ultima_defesa_zona': partida.ultima_defesa_zona,
+        'ultimo_resultado': partida.ultimo_resultado
+        
     }
     
     return JsonResponse(dados)

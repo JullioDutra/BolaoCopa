@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block title %}Hall da Fama - X1 Pênaltis{% endblock %}
+
+{% block content %}
+<div class="row mt-5">
+    <div class="col-md-8 mx-auto text-center">
+        <h1 class="fw-bold" style="color: var(--ouro); font-size: 3rem;">
+            <i class="fa-solid fa-crown"></i> Hall da Fama
+        </h1>
+        <p class="text-muted fs-5">Olimpo dos jogadores que alcançaram <strong class="text-warning">10 Vitórias Seguidas</strong> no Draft.</p>
+    </div>
+</div>
+
+<div class="row mt-4 mb-5">
+    <div class="col-md-8 mx-auto">
+        <div class="card bg-dark text-white shadow-lg border-warning" style="border-radius: 15px;">
+            <div class="card-body p-0">
+                <table class="table table-dark table-hover table-borderless mb-0 rounded-3 overflow-hidden text-center">
+                    <thead class="text-uppercase small" style="background-color: #111;">
+                        <tr>
+                            <th class="py-3" style="width: 15%;">Posição</th>
+                            <th class="py-3 text-start">Treinador</th>
+                            <th class="py-3 text-warning">Títulos Lenda do X1</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for lenda in top_lendas %}
+                            <tr class="align-middle border-bottom border-secondary">
+                                <td class="py-3">
+                                    {% if forloop.counter == 1 %}
+                                        <i class="fa-solid fa-trophy fs-3" style="color: #ffd700;"></i> <!-- Ouro -->
+                                    {% elif forloop.counter == 2 %}
+                                        <i class="fa-solid fa-medal fs-4" style="color: #c0c0c0;"></i> <!-- Prata -->
+                                    {% elif forloop.counter == 3 %}
+                                        <i class="fa-solid fa-medal fs-5" style="color: #cd7f32;"></i> <!-- Bronze -->
+                                    {% else %}
+                                        <span class="fw-bold text-muted fs-5">{{ forloop.counter }}º</span>
+                                    {% endif %}
+                                </td>
+                                <td class="py-3 text-start fw-bold fs-5">
+                                    {{ lenda.first_name|default:lenda.username }}
+                                </td>
+                                <td class="py-3">
+                                    <span class="badge bg-warning text-dark fs-5 rounded-pill px-3">
+                                        {{ lenda.titulos_lenda }}
+                                    </span>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="3" class="py-5 text-muted">
+                                    <i class="fa-solid fa-ghost fs-1 mb-3 opacity-50"></i>
+                                    <h5>O Olimpo está vazio!</h5>
+                                    <p>Ninguém conseguiu as 10 vitórias ainda. Seja o primeiro!</p>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -45,6 +45,9 @@ class MeuDraft(models.Model):
     vitorias_seguidas = models.IntegerField(default=0, help_text="Se chegar a 10, vira campeão!")
     status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='ativo')
     data_criacao = models.DateTimeField(auto_now_add=True)
+    jogos_jogados = models.IntegerField(default=0)
+    vitorias = models.IntegerField(default=0)
+    derrotas = models.IntegerField(default=0)
 
     def __str__(self):
         return f"Draft de {self.usuario.username} ({self.vitorias_seguidas}/10 vitórias) - {self.get_status_display()}"

@@ -6,336 +6,214 @@
 {% block content %}
 <style>
     /* =========================================
-       LAYOUT RESPONSIVO E COMPACTO
+       VARIÁVEIS E ANIMAÇÕES GERAIS
        ========================================= */
-    .arena-container {
-        max-width: 800px;
-        margin: 0 auto;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
+    :root {
+        --ouro: #cfb53b;
+        --ouro-escuro: #998322;
+        --grama-escura: #0f2027;
+        --grama-clara: #203a43;
     }
 
-    /* Placar Superior e Bolinhas */
-    .placar-tv {
-        background-color: #111;
-        color: white;
-        padding: 10px 15px;
-        border-radius: 10px;
-        border: 2px solid #333;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-    .placar-nome {
-        font-family: monospace;
-        font-size: clamp(1rem, 3.5vw, 1.4rem);
-        max-width: 35%;
-    }
-    .placar-numeros {
-        font-family: monospace;
-        font-size: clamp(1.5rem, 5vw, 2.2rem);
-        font-weight: 900;
-    }
-    
-    /* As Bolinhas do Pênalti (TV Style) */
-    .dots-container {
-        display: flex;
-        gap: 4px;
-        margin-top: 4px;
-        justify-content: center;
-    }
-    .dot {
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        background-color: #444; /* Vazio */
-        border: 1px solid #111;
-        box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
-    }
-    .dot.green {
-        background-color: #00ff00;
-        box-shadow: 0 0 8px #00ff00, inset 0 2px 4px rgba(255,255,255,0.4);
-        border: 1px solid #00cc00;
-    }
-    .dot.red {
-        background-color: #ff3333;
-        box-shadow: 0 0 8px #ff3333, inset 0 2px 4px rgba(255,255,255,0.4);
-        border: 1px solid #cc0000;
+    @keyframes pulse-alvo {
+        0% { border-color: rgba(255, 255, 255, 0.4); box-shadow: 0 0 0 rgba(255, 255, 255, 0); }
+        50% { border-color: rgba(255, 255, 255, 0.8); box-shadow: 0 0 10px rgba(255, 255, 255, 0.3); }
+        100% { border-color: rgba(255, 255, 255, 0.4); box-shadow: 0 0 0 rgba(255, 255, 255, 0); }
     }
 
-    /* Narrador / Status */
-    .narrador-box {
-        background: #222;
-        border-radius: 8px;
-        padding: 8px;
-        text-align: center;
-        border-left: 4px solid #cfb53b;
-    }
-    .status-turno {
-        font-size: clamp(1.1rem, 4vw, 1.8rem);
-        font-weight: 900;
-        text-transform: uppercase;
-        margin: 0;
-        line-height: 1;
-    }
-    .status-sub {
-        font-size: 0.85rem;
-        color: #aaa;
-        margin: 0;
+    @keyframes camera-shake {
+        0% { transform: translate(1px, 1px) rotate(0deg); }
+        10% { transform: translate(-1px, -2px) rotate(-1deg); }
+        20% { transform: translate(-3px, 0px) rotate(1deg); }
+        30% { transform: translate(3px, 2px) rotate(0deg); }
+        40% { transform: translate(1px, -1px) rotate(1deg); }
+        50% { transform: translate(-1px, 2px) rotate(-1deg); }
+        60% { transform: translate(-3px, 1px) rotate(0deg); }
+        70% { transform: translate(3px, 1px) rotate(-1deg); }
+        80% { transform: translate(-1px, -1px) rotate(1deg); }
+        90% { transform: translate(1px, 2px) rotate(0deg); }
+        100% { transform: translate(1px, -2px) rotate(-1deg); }
     }
 
-    /* O Estádio e a Trave */
-    .stadium-bg {
-        background: linear-gradient(to bottom, #0f2027, #203a43, #2c5364);
-        border-radius: 12px;
-        position: relative;
-        overflow: hidden;
-        height: 40vh;
-        min-height: 250px;
-        max-height: 350px;
-        box-shadow: inset 0 -30px 60px rgba(0,255,0,0.1);
-        display: flex;
-        justify-content: center;
-    }
-    .enemy-gk-badge {
-        position: absolute;
-        top: 10px;
-        background: rgba(0,0,0,0.7);
-        color: white;
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-size: 0.8rem;
-        font-weight: bold;
-        border: 1px solid #cfb53b;
-        z-index: 5;
-    }
-    .goal-frame {
-        position: absolute;
-        bottom: 15px;
-        width: 90%;
-        height: 75%;
-        border: 8px solid #fff;
-        border-bottom: none;
-        background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAOklEQVQYV2NkYGAwYkAD////Z4TRyMDFwEIGRhSVAfI1igKofZhUkGw0kgL0cQwlkqKASiIl40QBAAB8xQk/Wb04fAAAAABJRU5ErkJggg==') repeat;
-        display: grid;
-        grid-template-columns: 1fr 1fr 1fr;
-        grid-template-rows: 1fr 1fr;
-        gap: 5px;
-    }
-    .alvo-btn {
-        background-color: rgba(255, 255, 255, 0.05);
-        border: 2px dashed rgba(255,255,255,0.4);
-        cursor: pointer;
-        transition: all 0.2s ease;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: bold;
-        color: transparent;
-        border-radius: 5px;
-        font-size: 0.8rem;
-    }
-    .alvo-btn:hover {
-        background-color: rgba(255, 215, 0, 0.6);
-        border-color: #ffd700;
-        color: white;
-    }
-    .alvo-bloqueado {
-        pointer-events: none;
-        opacity: 0.3;
-    }
-
-    /* DECK DE BATEDORES */
-    .deck-container {
-        background: #111;
-        padding: 10px;
-        border-radius: 10px;
-    }
-    .deck-scroll {
-        display: flex;
-        gap: 10px;
-        overflow-x: auto;
-        padding-bottom: 5px;
-    }
-    .batedor-card {
-        flex: 0 0 auto;
-        background: #2d2d2d;
-        border: 2px solid #555;
-        border-radius: 8px;
-        padding: 8px 12px;
-        color: white;
-        text-align: center;
-        cursor: pointer;
-        transition: all 0.2s;
-        min-width: 100px;
-    }
-    .batedor-card .ovr {
-        display: block;
-        font-size: 1.2rem;
-        font-weight: 900;
-        color: #cfb53b;
-        line-height: 1;
-    }
-    .batedor-card .nome {
-        font-size: 0.8rem;
-        text-transform: uppercase;
-        font-weight: bold;
-    }
-    .batedor-card.selected {
-        border-color: #cfb53b;
-        background: #cfb53b;
-        color: black;
-        transform: translateY(-3px);
-    }
-    .batedor-card.selected .ovr { color: black; }
-    .batedor-card.used {
-        opacity: 0.3;
-        filter: grayscale(100%);
-        pointer-events: none;
-        border-color: #333;
-    }
-
-    /* TELA DE FEEDBACK VISUAL (GOL / DEFESA) */
-    #feedback-overlay {
-        position: absolute;
-        inset: 0;
-        background: rgba(0,0,0,0.85);
-        z-index: 50;
-        display: none;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
-    }
-    #feedback-text {
-        font-size: clamp(3rem, 10vw, 5rem);
-        font-weight: 900;
-        text-transform: uppercase;
-        margin: 0;
-        text-shadow: 0 0 20px rgba(0,0,0,0.5);
+    @keyframes pop-in {
+        0% { transform: scale(0.5); opacity: 0; }
+        80% { transform: scale(1.1); opacity: 1; }
+        100% { transform: scale(1); opacity: 1; }
     }
 
     /* =========================================
-       TELA DE FIM DE JOGO
+       LAYOUT DA ARENA
        ========================================= */
-    #tela-fim-jogo {
-        display: none;
-        background: linear-gradient(135deg, #111, #222);
-        border: 3px solid #cfb53b;
-        border-radius: 15px;
-        padding: 40px 20px;
-        text-align: center;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+    .arena-container { max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
+    
+    .placar-tv { 
+        background: linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%);
+        color: white; padding: 12px 18px; border-radius: 12px; 
+        border: 2px solid #333; display: flex; justify-content: space-between; align-items: center;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.5);
     }
+    .placar-nome { font-family: 'Courier New', Courier, monospace; font-size: clamp(1.1rem, 4vw, 1.5rem); max-width: 35%; font-weight: bold; text-shadow: 1px 1px 2px black;}
+    .placar-numeros { font-family: 'Courier New', Courier, monospace; font-size: clamp(1.8rem, 6vw, 2.5rem); font-weight: 900; background: #000; padding: 0 15px; border-radius: 8px; border: 1px solid #444; }
+    
+    .dots-container { display: flex; gap: 5px; margin-top: 6px; justify-content: center; }
+    .dot { width: 14px; height: 14px; border-radius: 50%; background-color: #333; border: 2px solid #111; box-shadow: inset 0 2px 4px rgba(0,0,0,0.8); transition: all 0.3s; }
+    .dot.green { background-color: #00ff00; box-shadow: 0 0 10px #00ff00, inset 0 2px 4px rgba(255,255,255,0.4); border-color: #00aa00; }
+    .dot.red { background-color: #ff3333; box-shadow: 0 0 10px #ff3333, inset 0 2px 4px rgba(255,255,255,0.4); border-color: #aa0000; }
+
+    .narrador-box { background: rgba(0,0,0,0.8); border-radius: 10px; padding: 10px; text-align: center; border-left: 5px solid var(--ouro); box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+    .status-turno { font-size: clamp(1.2rem, 4.5vw, 2rem); font-weight: 900; text-transform: uppercase; margin: 0; line-height: 1.1; letter-spacing: 1px; }
+    .status-sub { font-size: 0.9rem; color: #ccc; margin: 0; font-weight: 500; }
+
+    .stadium-bg { 
+        background: radial-gradient(circle at 50% 100%, var(--grama-clara), var(--grama-escura)); 
+        border-radius: 15px; position: relative; overflow: hidden; height: 42vh; min-height: 280px; max-height: 400px; 
+        box-shadow: inset 0 -40px 80px rgba(0,0,0,0.6), 0 10px 20px rgba(0,0,0,0.4); 
+        display: flex; justify-content: center; border: 2px solid #222;
+    }
+    .enemy-gk-badge { position: absolute; top: 12px; background: rgba(0,0,0,0.85); color: white; padding: 6px 16px; border-radius: 25px; font-size: 0.85rem; font-weight: bold; border: 1px solid var(--ouro); z-index: 5; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+    
+    .goal-frame { position: absolute; bottom: 20px; width: 92%; height: 78%; border: 10px solid #f8f9fa; border-bottom: none; background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAOklEQVQYV2NkYGAwYkAD////Z4TRyMDFwEIGRhSVAfI1igKofZhUkGw0kgL0cQwlkqKASiIl40QBAAB8xQk/Wb04fAAAAABJRU5ErkJggg==') repeat; display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 6px; box-shadow: 0 20px 30px rgba(0,0,0,0.5); }
+    
+    .alvo-btn { background-color: rgba(255, 255, 255, 0.03); border: 2px dashed rgba(255,255,255,0.3); cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; font-weight: 800; color: transparent; border-radius: 8px; font-size: 0.9rem; text-transform: uppercase; }
+    .alvo-btn:hover { background-color: rgba(255, 215, 0, 0.5); border-color: var(--ouro); color: white; transform: scale(0.97); }
+    .alvo-ativo { animation: pulse-alvo 2s infinite; }
+    .alvo-bloqueado { pointer-events: none; opacity: 0.3; }
+
+    /* EFEITOS CINEMÁTICOS */
+    .shake-animation { animation: camera-shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+    .bola-aqui { background-color: rgba(255, 255, 255, 0.95) !important; font-size: 3rem !important; opacity: 1 !important; border: 4px solid white !important; animation: pop-in 0.3s ease-out forwards; }
+    .gk-aqui { background-color: rgba(220, 53, 69, 0.9) !important; font-size: 3rem !important; opacity: 1 !important; border: 4px solid #ff3333 !important; animation: pop-in 0.3s ease-out forwards; }
+    .bola-e-gk { background: linear-gradient(135deg, rgba(255,255,255,0.95) 50%, rgba(220,53,69,0.9) 50%) !important; font-size: 3rem !important; opacity: 1 !important; border: 4px solid var(--ouro) !important; animation: pop-in 0.3s ease-out forwards; }
+
+    /* DECK DE BATEDORES */
+    .deck-container { background: linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%); padding: 12px; border-radius: 12px; border: 1px solid #333; box-shadow: 0 8px 20px rgba(0,0,0,0.5); }
+    .deck-scroll { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 8px; scrollbar-width: none; -ms-overflow-style: none; }
+    .deck-scroll::-webkit-scrollbar { display: none; }
+    
+    .batedor-card { flex: 0 0 auto; background: #222; border: 2px solid #444; border-radius: 10px; padding: 10px 15px; color: white; text-align: center; cursor: pointer; transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); min-width: 110px; position: relative; overflow: hidden; }
+    .batedor-card::before { content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%; background: linear-gradient(to right, transparent, rgba(255,255,255,0.1), transparent); transform: skewX(-20deg); transition: 0.5s; }
+    .batedor-card:hover::before { left: 150%; }
+    .batedor-card .ovr { display: block; font-size: 1.4rem; font-weight: 900; color: var(--ouro); line-height: 1; text-shadow: 1px 1px 2px black; }
+    .batedor-card .nome { font-size: 0.85rem; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px; margin-top: 4px; display: block; }
+    .batedor-card.selected { border-color: var(--ouro); background: var(--ouro-escuro); color: white; transform: translateY(-5px); box-shadow: 0 5px 15px rgba(207, 181, 59, 0.4); }
+    .batedor-card.selected .ovr { color: white; }
+    .batedor-card.used { opacity: 0.4; filter: grayscale(100%); pointer-events: none; border-color: #222; background: #111; }
+
+    /* TELA DE FEEDBACK VISUAL */
+    #feedback-overlay { position: absolute; inset: 0; background: radial-gradient(circle, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.95) 100%); z-index: 50; display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+    #feedback-text { font-size: clamp(3.5rem, 12vw, 6rem); font-weight: 900; text-transform: uppercase; margin: 0; font-style: italic; animation: pop-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+    
+    #tela-fim-jogo { display: none; background: linear-gradient(135deg, #111, #1a1a1a); border: 4px solid var(--ouro); border-radius: 20px; padding: 50px 20px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.9); }
 </style>
 
-<div class="container-fluid px-2 py-2">
+<!-- MODAL DE INSTRUÇÕES -->
+<div class="modal fade" id="modalTutorial" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content bg-dark text-white border-0 shadow-lg" style="border-radius: 15px;">
+      <div class="modal-header border-bottom border-secondary">
+        <h4 class="modal-title fw-bold" style="color: var(--ouro);"><i class="fa-solid fa-clipboard-question"></i> Regras da Disputa</h4>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body pt-4 pb-4">
+        <ul class="list-unstyled">
+            <li class="mb-4 d-flex align-items-start">
+                <i class="fa-solid fa-star fs-3 text-warning me-3 mt-1"></i> 
+                <div><strong>A Batalha de OVR:</strong> Se o goleiro pular para o lado correto, a matemática define o lance. Maior OVR aumenta drasticamente a chance de vitória.</div>
+            </li>
+            <li class="mb-4 d-flex align-items-start">
+                <i class="fa-solid fa-hand-pointer fs-3 text-success me-3 mt-1"></i> 
+                <div><strong>No Ataque:</strong> Ative um batedor no deck inferior e escolha o canto no gol. Cada batedor executa apenas uma cobrança.</div>
+            </li>
+            <li class="d-flex align-items-start">
+                <i class="fa-solid fa-hands fs-3 text-danger me-3 mt-1"></i> 
+                <div><strong>Na Defesa:</strong> O sistema posiciona seu goleiro automaticamente. Analise o adversário e pule no canto certo.</div>
+            </li>
+        </ul>
+        <button class="btn btn-warning w-100 fw-bold mt-3 py-2 text-dark text-uppercase letter-spacing-1" data-bs-dismiss="modal">Iniciar Partida</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container-fluid px-2 py-3">
     
-    <!-- TELA DE FIM DE JOGO (Oculta por padrão) -->
+    <!-- TELA DE FIM DE JOGO -->
     <div id="tela-fim-jogo" class="arena-container text-white">
-        <h1 class="fw-bold mb-1" style="color: #cfb53b; font-size: 3rem;"><i class="fa-solid fa-trophy"></i></h1>
-        <h2 class="fw-bold text-uppercase mb-4">Fim de Jogo!</h2>
+        <h1 class="fw-bold mb-2" style="color: var(--ouro); font-size: 4rem;"><i class="fa-solid fa-trophy"></i></h1>
+        <h2 class="fw-bold text-uppercase mb-4" style="letter-spacing: 2px;">Fim de Jogo</h2>
+        <h5 class="text-muted text-uppercase letter-spacing-1 mb-1">Vencedor</h5>
+        <h1 id="nome-vencedor" class="text-success fw-bold text-uppercase mb-5" style="font-size: 2.8rem; text-shadow: 0 0 20px rgba(40, 167, 69, 0.5);">---</h1>
         
-        <h4 class="text-muted mb-2">Vencedor</h4>
-        <h1 id="nome-vencedor" class="text-success fw-bold text-uppercase mb-4" style="font-size: 2.5rem;">---</h1>
-        
-        <div class="p-3 bg-dark rounded-4 mb-4 border border-secondary d-inline-block mx-auto" style="min-width: 250px;">
-            <p class="text-muted small mb-1">Placar Final</p>
-            <h1 class="fw-bold m-0" style="font-size: 3rem; letter-spacing: 5px;">
-                <span id="placar-final-j1">0</span> <span class="text-muted fs-3">x</span> <span id="placar-final-j2">0</span>
+        <div class="p-4 bg-black rounded-4 mb-5 border border-secondary d-inline-block mx-auto shadow-lg" style="min-width: 280px;">
+            <p class="text-muted small text-uppercase fw-bold mb-2">Placar Oficial</p>
+            <h1 class="fw-bold m-0" style="font-size: 3.5rem; letter-spacing: 8px;">
+                <span id="placar-final-j1" class="text-primary">0</span> <span class="text-muted fs-3 mx-2">x</span> <span id="placar-final-j2" class="text-danger">0</span>
             </h1>
         </div>
-        
-        <a href="/" class="btn btn-warning text-dark btn-lg fw-bold rounded-pill shadow w-100 mt-2">
-            <i class="fa-solid fa-right-from-bracket"></i> Voltar ao Menu Principal
-        </a>
+        <a href="/" class="btn btn-warning text-dark btn-lg fw-bold rounded-pill shadow-lg w-100 text-uppercase py-3">Retornar ao Menu</a>
     </div>
 
-    <!-- ARENA PRINCIPAL (Ocultada no fim do jogo) -->
+    <!-- ARENA PRINCIPAL -->
     <div id="arena-principal" class="arena-container">
-        
-        <!-- PLACAR COMPACTO E BOLINHAS -->
-        <div class="placar-tv shadow-sm">
-            <!-- J1 -->
+        <!-- PLACAR -->
+        <div class="placar-tv">
             <div class="placar-nome text-primary text-center">
                 <div class="text-truncate">{{ partida.jogador1.username }}</div>
-                <div class="dots-container" id="dots-j1">
-                    <!-- Bolinhas injetadas via JS -->
-                </div>
+                <div class="dots-container" id="dots-j1"></div>
             </div>
-            
-            <!-- NÚMEROS -->
-            <div class="placar-numeros text-center">
+            <div class="placar-numeros text-center shadow-inner">
                 <span id="placar-num-j1">{{ partida.placar_j1 }}</span> 
-                <span class="text-muted mx-1" style="font-size: 1.2rem;">x</span> 
+                <span class="text-muted mx-2" style="font-size: 1.2rem;">x</span> 
                 <span id="placar-num-j2">{{ partida.placar_j2 }}</span>
             </div>
-            
-            <!-- J2 -->
             <div class="placar-nome text-danger text-center">
-                <div class="text-truncate">
-                    {% if partida.jogador2 %}{{ partida.jogador2.username }}{% else %}Aguardando...{% endif %}
-                </div>
-                <div class="dots-container" id="dots-j2">
-                    <!-- Bolinhas injetadas via JS -->
-                </div>
+                <div class="text-truncate">{% if partida.jogador2 %}{{ partida.jogador2.username }}{% else %}Aguardando...{% endif %}</div>
+                <div class="dots-container" id="dots-j2"></div>
             </div>
         </div>
 
-        <!-- MENSAGENS E CRONÔMETRO -->
         <div class="d-flex gap-2">
-            <div class="narrador-box flex-grow-1 shadow-sm">
+            <div class="narrador-box flex-grow-1">
                 <p id="mensagem-narrador" class="status-turno text-warning">Sincronizando...</p>
-                <p id="status-adversario" class="status-sub">Carregando a partida...</p>
+                <p id="status-adversario" class="status-sub">Aguarde o carregamento.</p>
             </div>
-            <div class="narrador-box d-flex align-items-center justify-content-center" style="min-width: 60px;">
-                <span id="cronometro" class="fw-bold fs-4 text-danger">15</span>
+            <div class="narrador-box d-flex align-items-center justify-content-center" style="min-width: 70px; border-left-color: #dc3545;">
+                <span id="cronometro" class="fw-bold fs-3 text-danger">15</span>
             </div>
         </div>
 
-        <!-- O ESTÁDIO -->
-        <div class="stadium-bg shadow-sm">
-            <div class="enemy-gk-badge" id="enemy-info" style="display: none;">
-                <!-- Preenchido via JS na hora de bater -->
-            </div>
+        <!-- ESTÁDIO -->
+        <div class="stadium-bg" id="stadium-container">
+            <div class="enemy-gk-badge" id="enemy-info" style="display: none;"></div>
+            <div id="feedback-overlay"><h1 id="feedback-text">GOL!</h1></div>
 
-            <div id="feedback-overlay">
-                <h1 id="feedback-text">GOL!</h1>
-            </div>
-
-            <!-- A TRAVE -->
             <div class="goal-frame alvo-bloqueado" id="trave-botoes">
-                <div class="alvo-btn" onclick="enviarAcao('se')">Esq. Alto</div>
-                <div class="alvo-btn" onclick="enviarAcao('me')">Meio Alto</div>
-                <div class="alvo-btn" onclick="enviarAcao('sd')">Dir. Alto</div>
-                <div class="alvo-btn" onclick="enviarAcao('ie')">Esq. Chão</div>
-                <div class="alvo-btn" onclick="enviarAcao('mc')">Meio Chão</div>
-                <div class="alvo-btn" onclick="enviarAcao('id')">Dir. Chão</div>
+                <div class="alvo-btn" id="zona-se" data-text="Esq. Alto" onclick="enviarAcao('se')">Esq. Alto</div>
+                <div class="alvo-btn" id="zona-me" data-text="Meio Alto" onclick="enviarAcao('me')">Meio Alto</div>
+                <div class="alvo-btn" id="zona-sd" data-text="Dir. Alto" onclick="enviarAcao('sd')">Dir. Alto</div>
+                <div class="alvo-btn" id="zona-ie" data-text="Esq. Baixo" onclick="enviarAcao('ie')">Esq. Baixo</div>
+                <div class="alvo-btn" id="zona-mc" data-text="Meio Baixo" onclick="enviarAcao('mc')">Meio Baixo</div>
+                <div class="alvo-btn" id="zona-id" data-text="Dir. Baixo" onclick="enviarAcao('id')">Dir. Baixo</div>
             </div>
         </div>
 
-        <!-- DECK DE BATEDORES -->
-        <div class="deck-container shadow-sm" id="bloco-escolher-batedor">
-            <div class="d-flex justify-content-between align-items-center mb-1">
-                <span class="text-white small fw-bold"><i class="fa-solid fa-hand-pointer text-warning"></i> Selecione seu Batedor:</span>
-                <span class="badge bg-secondary" id="carta-ativa-nome">Nenhum</span>
+        <!-- DECK -->
+        <div class="deck-container" id="bloco-escolher-batedor">
+            <div class="d-flex justify-content-between align-items-center mb-2 px-1">
+                <span class="text-white small fw-bold text-uppercase"><i class="fa-solid fa-users text-warning me-1"></i> Elenco</span>
+                <span class="badge bg-secondary fw-bold" id="carta-ativa-nome">Seleção Pendente</span>
             </div>
-            
             <div class="deck-scroll">
                 {% for batedor in meu_draft.batedores.all %}
-                    <div class="batedor-card" id="card-{{ batedor.id }}" onclick="selecionarKicker({{ batedor.id }}, '{{ batedor.nome }}')">
+                    <div class="batedor-card shadow-sm" id="card-{{ batedor.id }}" onclick="selecionarKicker({{ batedor.id }}, '{{ batedor.nome }}')">
                         <span class="ovr">{{ batedor.over }}</span>
                         <span class="nome">{{ batedor.nome }}</span>
                     </div>
                 {% endfor %}
             </div>
         </div>
-
-        <button class="btn btn-outline-danger btn-sm fw-bold w-100 mt-1" onclick="desistirPartida()">
-            <i class="fa-solid fa-flag"></i> Abandonar Partida
-        </button>
-
+        
+        <button class="btn btn-link text-danger btn-sm w-100 mt-1 fw-bold text-decoration-none" onclick="desistirPartida()"><i class="fa-solid fa-flag"></i> Abandonar Partida</button>
     </div>
 </div>
 
@@ -344,46 +222,33 @@
     const csrfToken = '{{ csrf_token }}';
     const souJ1 = {% if request.user == partida.jogador1 %}true{% else %}false{% endif %};
     
-    // Nomes e status dos Goleiros
     const meuGoleiroNome = "{% if meu_draft.goleiro %}{{ meu_draft.goleiro.nome }}{% else %}Goleiro{% endif %}";
     const meuGoleiroId = {% if meu_draft.goleiro %}{{ meu_draft.goleiro.id }}{% else %}null{% endif %};
     const advGoleiroNome = souJ1 ? 
         "{% if partida.draft_j2 %}{{ partida.draft_j2.goleiro.nome }} (OVR {{ partida.draft_j2.goleiro.over }}){% else %}Aguardando...{% endif %}" : 
         "{% if partida.draft_j1 %}{{ partida.draft_j1.goleiro.nome }} (OVR {{ partida.draft_j1.goleiro.over }}){% endif %}";
 
-    // Controles Locais
+    let turnoReal = null; 
     let acaoTravada = true; 
     let papelAtual = 'aguardando'; 
     let cartaEscolhidaId = null;
-    let placarMeuAnterior = souJ1 ? {{ partida.placar_j1 }} : {{ partida.placar_j2 }};
-    let placarAdvAnterior = souJ1 ? {{ partida.placar_j2 }} : {{ partida.placar_j1 }};
+    let fimDeJogoProcessado = false;
+    let animandoCena = false; 
 
-    // Gerenciamento de Histórico (Bolinhas e Cartas Usadas na Sessão)
     let batedoresUsados = JSON.parse(sessionStorage.getItem(`p_${partidaId}_cards`)) || [];
     let historicoJ1 = JSON.parse(sessionStorage.getItem(`p_${partidaId}_h1`)) || [];
     let historicoJ2 = JSON.parse(sessionStorage.getItem(`p_${partidaId}_h2`)) || [];
 
-    // Carrega o estado inicial das cartas
-    function carregarCartasUsadas() {
-        batedoresUsados.forEach(id => {
-            let card = document.getElementById('card-' + id);
-            if(card) card.classList.add('used');
-        });
-    }
+    window.onload = () => { new bootstrap.Modal(document.getElementById('modalTutorial')).show(); };
+
+    function carregarCartasUsadas() { batedoresUsados.forEach(id => { let c = document.getElementById('card-'+id); if(c) c.classList.add('used'); }); }
     carregarCartasUsadas();
 
-    // Renderiza as 5 bolinhas de cada jogador
     function renderizarBolinhas() {
         ['j1', 'j2'].forEach(jogador => {
             const hist = jogador === 'j1' ? historicoJ1 : historicoJ2;
             let html = '';
-            for(let i=0; i<5; i++) {
-                if (i < hist.length) {
-                    html += `<div class="dot ${hist[i] === 'G' ? 'green' : 'red'}"></div>`;
-                } else {
-                    html += `<div class="dot"></div>`;
-                }
-            }
+            for(let i=0; i<5; i++) { html += `<div class="dot ${hist[i] === 'G' ? 'green' : (hist[i] === 'E' ? 'red' : '')}"></div>`; }
             document.getElementById(`dots-${jogador}`).innerHTML = html;
         });
     }
@@ -396,46 +261,33 @@
         if(timerInterval) clearInterval(timerInterval);
         tempoRestante = 15;
         document.getElementById('cronometro').innerText = tempoRestante;
-        
         timerInterval = setInterval(() => {
-            if(acaoTravada) {
-                clearInterval(timerInterval);
-                return;
-            }
+            if(acaoTravada) { clearInterval(timerInterval); return; }
             tempoRestante--;
             document.getElementById('cronometro').innerText = tempoRestante;
-            if (tempoRestante <= 0) {
-                clearInterval(timerInterval);
-                enviarAcao('timeout');
-            }
+            if (tempoRestante <= 0) { clearInterval(timerInterval); enviarAcao('timeout'); }
         }, 1000);
     }
 
     function selecionarKicker(id, nome) {
-        if(papelAtual !== 'chutar') return; 
-        if(batedoresUsados.includes(id)) return; 
-        
+        if(papelAtual !== 'chutar' || batedoresUsados.includes(id)) return; 
         cartaEscolhidaId = id;
         document.getElementById('carta-ativa-nome').innerText = nome;
-        document.getElementById('carta-ativa-nome').className = "badge bg-warning text-dark";
-
+        document.getElementById('carta-ativa-nome').className = "badge bg-warning text-dark fw-bold";
         document.querySelectorAll('.batedor-card').forEach(c => c.classList.remove('selected'));
         document.getElementById('card-' + id).classList.add('selected');
+        
+        // Ativa o pulso nos botões para indicar que está pronto para chutar
+        document.querySelectorAll('.alvo-btn').forEach(btn => btn.classList.add('alvo-ativo'));
     }
 
     function enviarAcao(zonaClicada) {
         if (acaoTravada) return;
-
         if (papelAtual === 'chutar' && !cartaEscolhidaId && zonaClicada !== 'timeout') {
-            alert("Toque em um Batedor no deck abaixo antes de chutar!");
-            return;
+            alert("Selecione um batedor na prancheta inferior."); return;
         }
+        if (papelAtual === 'defender') cartaEscolhidaId = meuGoleiroId;
 
-        if (papelAtual === 'defender') {
-            cartaEscolhidaId = meuGoleiroId;
-        }
-
-        // Marca a carta como usada se chutou
         if (papelAtual === 'chutar' && zonaClicada !== 'timeout') {
             batedoresUsados.push(cartaEscolhidaId);
             sessionStorage.setItem(`p_${partidaId}_cards`, JSON.stringify(batedoresUsados));
@@ -444,41 +296,17 @@
 
         acaoTravada = true;
         clearInterval(timerInterval);
-        
-        document.getElementById('mensagem-narrador').innerText = "AÇÃO REGISTRADA!";
+        document.querySelectorAll('.alvo-btn').forEach(btn => btn.classList.remove('alvo-ativo'));
+        document.getElementById('mensagem-narrador').innerText = "AÇÃO REGISTRADA";
         document.getElementById('mensagem-narrador').style.color = "#28a745";
-        document.getElementById('status-adversario').innerText = "Aguardando o adversário...";
+        document.getElementById('status-adversario').innerText = "Aguardando posicionamento do oponente...";
         document.getElementById('trave-botoes').classList.add('alvo-bloqueado');
 
         fetch("{% url 'minijogo:api_enviar_acao' %}", {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
-            body: JSON.stringify({
-                partida_id: partidaId,
-                zona: zonaClicada,
-                carta_id: cartaEscolhidaId
-            })
+            body: JSON.stringify({ partida_id: partidaId, zona: zonaClicada, carta_id: cartaEscolhidaId })
         });
-    }
-
-    function mostrarFeedbackVisual(texto, tipo) {
-        const overlay = document.getElementById('feedback-overlay');
-        const textEl = document.getElementById('feedback-text');
-        
-        textEl.innerText = texto;
-        if (tipo === 'gol_meu') {
-            textEl.style.color = '#00ff00'; 
-            textEl.style.textShadow = '0 0 30px #00ff00';
-        } else if (tipo === 'erro_meu' || tipo === 'gol_adv') {
-            textEl.style.color = '#ff3333'; 
-            textEl.style.textShadow = '0 0 30px #ff3333';
-        } else {
-            textEl.style.color = '#fff'; 
-            textEl.style.textShadow = '0 0 30px #fff';
-        }
-        
-        overlay.style.display = 'flex';
-        setTimeout(() => { overlay.style.display = 'none'; }, 2500);
     }
 
     function registrarBolinha(deQuem, foiGol) {
@@ -488,109 +316,156 @@
         renderizarBolinhas();
     }
 
+    function dispararShake(intensidade) {
+        const stadium = document.getElementById('stadium-container');
+        stadium.classList.remove('shake-animation');
+        void stadium.offsetWidth; // trigger reflow
+        stadium.classList.add('shake-animation');
+    }
+
+    function rodarAnimacao(data, callbackFim) {
+        animandoCena = true;
+        clearInterval(timerInterval);
+        document.getElementById('mensagem-narrador').innerText = "CORRENDO PARA A BOLA...";
+        document.getElementById('mensagem-narrador').style.color = "var(--ouro)";
+        document.getElementById('status-adversario').innerText = "Atenção máxima no estádio...";
+
+        document.querySelectorAll('.alvo-btn').forEach(btn => { 
+            btn.classList.remove('bola-aqui', 'gk-aqui', 'bola-e-gk', 'alvo-ativo'); 
+            btn.innerHTML = ''; 
+        });
+
+        let zChute = document.getElementById('zona-' + data.ultimo_chute_zona);
+        let zDefesa = document.getElementById('zona-' + data.ultima_defesa_zona);
+
+        setTimeout(() => {
+            if (data.ultimo_chute_zona === data.ultima_defesa_zona && zChute) {
+                zChute.classList.add('bola-e-gk');
+                zChute.innerHTML = '🧤⚽';
+            } else {
+                if(zChute) { zChute.classList.add('bola-aqui'); zChute.innerHTML = '⚽'; }
+                if(zDefesa) { zDefesa.classList.add('gk-aqui'); zDefesa.innerHTML = '🧤'; }
+            }
+
+            setTimeout(() => {
+                let texto = ""; let cor = "";
+                let foiGol = ['gol', 'frango'].includes(data.ultimo_resultado);
+
+                if (turnoReal === 'chutar') {
+                    if (foiGol) { texto = data.ultimo_resultado === 'frango' ? 'PASSOU POR BAIXO!' : 'GOOOOOL!'; cor = 'gol_meu'; } 
+                    else {
+                        if (data.ultimo_resultado === 'isolou') { texto = 'ISOLOU!'; }
+                        else if (data.ultimo_resultado === 'trave') { texto = 'NA TRAVE!'; dispararShake(); }
+                        else { texto = 'ESPALMOU!'; }
+                        cor = 'erro_meu';
+                    }
+                    registrarBolinha(souJ1 ? 'j1' : 'j2', foiGol);
+                } else if (turnoReal === 'defender') {
+                    if (foiGol) { texto = data.ultimo_resultado === 'frango' ? 'FRANGO!' : 'GOL DELE!'; cor = 'gol_adv'; } 
+                    else {
+                        if (data.ultimo_resultado === 'isolou') texto = 'ELE ISOLOU!';
+                        else if (data.ultimo_resultado === 'trave') { texto = 'NA TRAVE!'; dispararShake(); }
+                        else texto = 'DEFENDEEEU!';
+                        cor = 'defesa';
+                    }
+                    registrarBolinha(souJ1 ? 'j2' : 'j1', foiGol);
+                }
+
+                if(foiGol) dispararShake(); // Impacto visual na rede
+
+                const overlay = document.getElementById('feedback-overlay');
+                const textEl = document.getElementById('feedback-text');
+                textEl.innerText = texto;
+                if(cor === 'gol_meu') { textEl.style.color = '#00ff00'; textEl.style.textShadow = '0 0 40px #00ff00'; }
+                else if (cor === 'erro_meu' || cor === 'gol_adv') { textEl.style.color = '#ff3333'; textEl.style.textShadow = '0 0 40px #ff3333'; }
+                else { textEl.style.color = '#fff'; textEl.style.textShadow = '0 0 40px #fff'; }
+                overlay.style.display = 'flex';
+
+                setTimeout(() => {
+                    overlay.style.display = 'none';
+                    if(zChute) { zChute.classList.remove('bola-aqui', 'bola-e-gk'); zChute.innerHTML = zChute.dataset.text; }
+                    if(zDefesa) { zDefesa.classList.remove('gk-aqui', 'bola-e-gk'); zDefesa.innerHTML = zDefesa.dataset.text; }
+                    animandoCena = false;
+                    callbackFim();
+                }, 2800); // Tempo estendido para contemplar o resultado
+
+            }, 1200); 
+        }, 800); 
+    }
+
+    function atualizarInterfaceTurno(data) {
+        document.getElementById('placar-num-j1').innerText = data.placar_j1;
+        document.getElementById('placar-num-j2').innerText = data.placar_j2;
+
+        turnoReal = data.meu_turno;
+        papelAtual = data.meu_turno;
+        acaoTravada = false; 
+        cartaEscolhidaId = null; 
+        
+        document.getElementById('trave-botoes').classList.remove('alvo-bloqueado');
+        document.querySelectorAll('.batedor-card').forEach(c => c.classList.remove('selected'));
+        document.querySelectorAll('.alvo-btn').forEach(btn => btn.classList.remove('alvo-ativo'));
+        document.getElementById('carta-ativa-nome').innerText = "Seleção Pendente";
+        document.getElementById('carta-ativa-nome').className = "badge bg-secondary fw-bold";
+
+        iniciarCronometro();
+
+        if (papelAtual === 'chutar') {
+            document.getElementById('mensagem-narrador').innerText = "SUA VEZ DE BATER";
+            document.getElementById('mensagem-narrador').style.color = "#28a745";
+            document.getElementById('status-adversario').innerText = "Habilite um batedor para liberar o gol.";
+            document.getElementById('bloco-escolher-batedor').style.opacity = "1";
+            document.getElementById('enemy-info').innerText = `Oponente: ${advGoleiroNome}`;
+            document.getElementById('enemy-info').style.display = "block";
+        } else if (papelAtual === 'defender') {
+            document.getElementById('mensagem-narrador').innerText = "SUA VEZ DE DEFENDER";
+            document.getElementById('mensagem-narrador').style.color = "#dc3545";
+            document.getElementById('status-adversario').innerText = `Seu Goleiro: ${meuGoleiroNome}`;
+            document.getElementById('bloco-escolher-batedor').style.opacity = "0.3"; 
+            document.getElementById('enemy-info').style.display = "none"; 
+        }
+    }
+
     function radarDoJogo() {
+        if(animandoCena) return; 
+
         fetch(`/minijogo/api/partida/${partidaId}/status/`)
         .then(response => response.json())
         .then(data => {
-            let placarMeuAtual = souJ1 ? data.placar_j1 : data.placar_j2;
-            let placarAdvAtual = souJ1 ? data.placar_j2 : data.placar_j1;
-
-            document.getElementById('placar-num-j1').innerText = data.placar_j1;
-            document.getElementById('placar-num-j2').innerText = data.placar_j2;
-
-            // ===============================================
-            // TELA FINAL DE JOGO (ESCONDE ARENA, MOSTRA PLACAR)
-            // ===============================================
+            
             if (data.fase === 'finalizado') {
-                clearInterval(timerInterval);
-                document.getElementById('arena-principal').style.display = 'none';
-                document.getElementById('tela-fim-jogo').style.display = 'block';
-                
-                document.getElementById('placar-final-j1').innerText = data.placar_j1;
-                document.getElementById('placar-final-j2').innerText = data.placar_j2;
-                document.getElementById('nome-vencedor').innerText = data.vencedor;
-                return; // Para o radar de rodar
-            }
-
-            // ===============================================
-            // FEEDBACK VISUAL E REGISTRO DE BOLINHAS
-            // ===============================================
-            if (papelAtual !== data.meu_turno && data.meu_turno !== 'aguardando' && papelAtual !== 'aguardando') {
-                
-                // Eu estava atacando
-                if (papelAtual === 'chutar') {
-                    if (placarMeuAtual > placarMeuAnterior) {
-                        mostrarFeedbackVisual('GOOOOOL!', 'gol_meu');
-                        registrarBolinha(souJ1 ? 'j1' : 'j2', true);
-                    } else {
-                        mostrarFeedbackVisual('PERDEU!', 'erro_meu');
-                        registrarBolinha(souJ1 ? 'j1' : 'j2', false);
-                    }
-                } 
-                // Eu estava defendendo (Ele estava atacando)
-                else if (papelAtual === 'defender') {
-                    if (placarAdvAtual > placarAdvAnterior) {
-                        mostrarFeedbackVisual('GOL DELE!', 'gol_adv');
-                        registrarBolinha(souJ1 ? 'j2' : 'j1', true);
-                    } else {
-                        mostrarFeedbackVisual('DEFENDEU!', 'defesa');
-                        registrarBolinha(souJ1 ? 'j2' : 'j1', false);
+                if (!fimDeJogoProcessado) {
+                    fimDeJogoProcessado = true;
+                    acaoTravada = true; clearInterval(timerInterval); document.getElementById('trave-botoes').classList.add('alvo-bloqueado');
+                    if (turnoReal !== null && data.ultimo_resultado) {
+                        rodarAnimacao(data, () => {
+                            document.getElementById('arena-principal').style.display = 'none';
+                            document.getElementById('tela-fim-jogo').style.display = 'block';
+                            document.getElementById('placar-final-j1').innerText = data.placar_j1;
+                            document.getElementById('placar-final-j2').innerText = data.placar_j2;
+                            document.getElementById('nome-vencedor').innerText = data.vencedor;
+                        });
                     }
                 }
+                return;
             }
 
-            placarMeuAnterior = placarMeuAtual;
-            placarAdvAnterior = placarAdvAtual;
-
-            // ===============================================
-            // PREPARA O PRÓXIMO TURNO
-            // ===============================================
-            if (data.meu_turno !== papelAtual && data.meu_turno !== 'aguardando') {
-                papelAtual = data.meu_turno;
-                acaoTravada = false; 
-                cartaEscolhidaId = null; 
-                
-                document.getElementById('trave-botoes').classList.remove('alvo-bloqueado');
-                document.querySelectorAll('.batedor-card').forEach(c => c.classList.remove('selected'));
-                document.getElementById('carta-ativa-nome').innerText = "Nenhum";
-                document.getElementById('carta-ativa-nome').className = "badge bg-secondary";
-
-                iniciarCronometro();
-
-                if (papelAtual === 'chutar') {
-                    document.getElementById('mensagem-narrador').innerText = "SUA VEZ DE BATER";
-                    document.getElementById('mensagem-narrador').style.color = "#28a745";
-                    document.getElementById('status-adversario').innerText = "Toque num batedor abaixo e mire!";
-                    document.getElementById('bloco-escolher-batedor').style.opacity = "1";
-                    
-                    document.getElementById('enemy-info').innerText = `Enfrentando: ${advGoleiroNome}`;
-                    document.getElementById('enemy-info').style.display = "block";
-
-                } else if (papelAtual === 'defender') {
-                    document.getElementById('mensagem-narrador').innerText = "SUA VEZ DE DEFENDER";
-                    document.getElementById('mensagem-narrador').style.color = "#dc3545";
-                    document.getElementById('status-adversario').innerText = `Seu Goleiro: ${meuGoleiroNome}`;
-                    document.getElementById('bloco-escolher-batedor').style.opacity = "0.3"; 
-                    document.getElementById('enemy-info').style.display = "none"; 
-                }
-            } else if (data.meu_turno === 'aguardando') {
-                papelAtual = 'aguardando';
-                acaoTravada = true;
+            if (turnoReal !== null && turnoReal !== data.meu_turno && data.meu_turno !== 'aguardando') {
+                rodarAnimacao(data, () => { atualizarInterfaceTurno(data); });
+            } else if (turnoReal !== data.meu_turno && data.meu_turno !== 'aguardando') {
+                atualizarInterfaceTurno(data);
             }
         });
     }
 
     function desistirPartida() {
-        if(confirm("Deseja desistir? O rival vencerá.")) {
-            fetch("{% url 'minijogo:api_desistir' %}", {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
-                body: JSON.stringify({ partida_id: partidaId })
+        if(confirm("Confirmar desistência? A vitória será concedida ao adversário.")) {
+            fetch("{% url 'minijogo:api_desistir' %}", { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken }, body: JSON.stringify({ partida_id: partidaId })
             }).then(() => window.location.href = "/");
         }
     }
 
-    setInterval(radarDoJogo, 2500); // 2.5s para dar tempo do feedback brilhar na tela
+    setInterval(radarDoJogo, 2500); 
     radarDoJogo();
 </script>
 {% endblock %}

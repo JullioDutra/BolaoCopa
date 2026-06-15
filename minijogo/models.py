@@ -98,6 +98,8 @@ class PartidaPenalti(models.Model):
     j2_usou_olheiro = models.BooleanField(default=False)
     j1_usou_poder = models.BooleanField(default=False)
     j2_usou_poder = models.BooleanField(default=False)
+    emote_j1 = models.CharField(max_length=10, blank=True, null=True)
+    emote_j2 = models.CharField(max_length=10, blank=True, null=True)
     
     # Fim de Jogo
     vencedor = models.ForeignKey(User, related_name='vitorias_x1', on_delete=models.SET_NULL, null=True, blank=True)

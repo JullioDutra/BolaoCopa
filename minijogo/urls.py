@@ -12,6 +12,7 @@ urlpatterns = [
     path('api/partida/desistir/', views.api_desistir, name='api_desistir'),
     path('ranking/', views.ranking_x1, name='ranking_x1'),
     path('partida/<int:partida_id>/cancelar/', views.cancelar_lobby, name='cancelar_lobby'),
+    path('api/enviar-emote/', views.api_enviar_emote, name='api_enviar_emote'),
 
     
     # --- APIs (Chamadas AJAX em segundo plano) ---

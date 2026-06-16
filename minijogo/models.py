@@ -42,6 +42,7 @@ class MeuDraft(models.Model):
     batedores = models.ManyToManyField(CartaJogador, related_name='batedores_draftados')
     
     # Sistema de Progressão e Punição
+    historico_chutes = models.CharField(max_length=255, default="", blank=True
     vitorias_seguidas = models.IntegerField(default=0, help_text="Se chegar a 10, vira campeão!")
     status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='ativo')
     data_criacao = models.DateTimeField(auto_now_add=True)

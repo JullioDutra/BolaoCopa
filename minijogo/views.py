@@ -45,6 +45,12 @@ def api_escolher_carta(request):
 def tela_draft(request):
     """ Exibe a tela de escolha de cartas do Draft """
     
+    # 💥 LÓGICA DAS REGRAS (Toggles): Lê do POST e salva na sessão do navegador
+    if request.method == 'POST':
+        request.session['usa_poderes'] = request.POST.get('usa_poderes') == 'on'
+        request.session['usa_olheiro'] = request.POST.get('usa_olheiro') == 'on'
+        request.session['usa_emotes'] = request.POST.get('usa_emotes') == 'on'
+    
     # Camada de segurança: Tenta buscar o draft ativo, se não existir, cria um.
     # Se houver mais de um ativo (erro no banco), ele pega o último e ignora o resto.
     try:
@@ -74,7 +80,7 @@ def tela_draft(request):
         'meu_goleiro': draft.goleiro
     }
     return render(request, 'minijogo/draft.html', context)
-
+    
 
 @login_required
 def lobby_batalha(request):
@@ -94,12 +100,12 @@ def lobby_batalha(request):
     partida_aguardando = PartidaPenalti.objects.filter(fase='aguardando').exclude(jogador1=request.user).first()
     
     if partida_aguardando:
-        # Achou adversário! Entra na partida
+        # Achou adversário! Entra na partida (e submete-se às regras de quem criou a sala)
         partida_aguardando.jogador2 = request.user
         partida_aguardando.draft_j2 = draft
         partida_aguardando.fase = '5_cobrancas'
         
-        # 👈 LÓGICA DO CARA OU COROA 
+        # LÓGICA DO CARA OU COROA 
         # Usa o sorteio feito na criação da sala para definir quem bate primeiro
         if partida_aguardando.moeda_sorteio == 'j1':
             partida_aguardando.turno_batedor = partida_aguardando.jogador1
@@ -109,22 +115,25 @@ def lobby_batalha(request):
         partida_aguardando.save()
         return redirect('minijogo:tela_jogo', partida_id=partida_aguardando.id)
     else:
-        # 👈 LÓGICA DA NOVA SALA: Sorteia a moeda e regista as configurações
-        quem_comeca = random.choice(['j1', 'j2'])
+        # 💥 LÓGICA DA NOVA SALA: Sorteia a moeda e aplica as configurações salvas na sessão
         
-        # Lê os Toggles do request (se vierem do form da Arena)
-        usa_poderes = request.POST.get('usa_poderes') == 'on' if request.method == 'POST' else True
-        usa_olheiro = request.POST.get('usa_olheiro') == 'on' if request.method == 'POST' else True
-        usa_emotes = request.POST.get('usa_emotes') == 'on' if request.method == 'POST' else True
+        # Puxa as regras salvas na sessão (se o usuário veio direto, assume True como padrão)
+        usa_poderes = request.session.get('usa_poderes', True)
+        usa_olheiro = request.session.get('usa_olheiro', True)
+        usa_emotes = request.session.get('usa_emotes', True)
 
-        nova_partida = PartidaPenalti.objects.create(
+        quem_comeca = random.choice(['j1', 'j2'])
+
+        nova_partida, created = PartidaPenalti.objects.get_or_create(
             jogador1=request.user,
             draft_j1=draft,
             fase='aguardando',
-            moeda_sorteio=quem_comeca, # Regista o vencedor do sorteio
-            usa_poderes=usa_poderes,
-            usa_olheiro=usa_olheiro,
-            usa_emotes=usa_emotes
+            defaults={
+                'moeda_sorteio': quem_comeca,
+                'usa_poderes': usa_poderes,
+                'usa_olheiro': usa_olheiro,
+                'usa_emotes': usa_emotes
+            }
         )
         return render(request, 'minijogo/esperando_adversario.html', {'partida': nova_partida})
 

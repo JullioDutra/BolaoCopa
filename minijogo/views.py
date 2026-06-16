@@ -94,19 +94,20 @@ def lobby_batalha(request):
         ~Q(fase='finalizado')
     ).first()
     
+    # 💥 CORREÇÃO 1: Impede que o jogador entre na tela de jogo sozinho!
     if partida_atual:
+        if partida_atual.fase == 'aguardando':
+            return render(request, 'minijogo/esperando_adversario.html', {'partida': partida_atual})
         return redirect('minijogo:tela_jogo', partida_id=partida_atual.id)
         
     partida_aguardando = PartidaPenalti.objects.filter(fase='aguardando').exclude(jogador1=request.user).first()
     
     if partida_aguardando:
-        # Achou adversário! Entra na partida (e submete-se às regras de quem criou a sala)
+        # Achou adversário! Entra na partida
         partida_aguardando.jogador2 = request.user
         partida_aguardando.draft_j2 = draft
         partida_aguardando.fase = '5_cobrancas'
         
-        # LÓGICA DO CARA OU COROA 
-        # Usa o sorteio feito na criação da sala para definir quem bate primeiro
         if partida_aguardando.moeda_sorteio == 'j1':
             partida_aguardando.turno_batedor = partida_aguardando.jogador1
         else:
@@ -115,25 +116,20 @@ def lobby_batalha(request):
         partida_aguardando.save()
         return redirect('minijogo:tela_jogo', partida_id=partida_aguardando.id)
     else:
-        # 💥 LÓGICA DA NOVA SALA: Sorteia a moeda e aplica as configurações salvas na sessão
-        
-        # Puxa as regras salvas na sessão (se o usuário veio direto, assume True como padrão)
+        # Nova sala
+        quem_comeca = random.choice(['j1', 'j2'])
         usa_poderes = request.session.get('usa_poderes', True)
         usa_olheiro = request.session.get('usa_olheiro', True)
         usa_emotes = request.session.get('usa_emotes', True)
 
-        quem_comeca = random.choice(['j1', 'j2'])
-
-        nova_partida, created = PartidaPenalti.objects.get_or_create(
+        nova_partida = PartidaPenalti.objects.create(
             jogador1=request.user,
             draft_j1=draft,
             fase='aguardando',
-            defaults={
-                'moeda_sorteio': quem_comeca,
-                'usa_poderes': usa_poderes,
-                'usa_olheiro': usa_olheiro,
-                'usa_emotes': usa_emotes
-            }
+            moeda_sorteio=quem_comeca,
+            usa_poderes=usa_poderes,
+            usa_olheiro=usa_olheiro,
+            usa_emotes=usa_emotes
         )
         return render(request, 'minijogo/esperando_adversario.html', {'partida': nova_partida})
 
@@ -144,6 +140,7 @@ def aceitar_convite(request, partida_id):
     partida = get_object_or_404(PartidaPenalti, id=partida_id)
     draft = MeuDraft.objects.filter(usuario=request.user, status='ativo').last()
     
+    # Se não tem time, vai pro draft. O draft devolve pro lobby, e o lobby pesca ele pro jogo!
     if not draft:
         return redirect('minijogo:tela_draft')
     
@@ -151,9 +148,14 @@ def aceitar_convite(request, partida_id):
         partida.jogador2 = request.user
         partida.draft_j2 = draft
         partida.fase = '5_cobrancas'
-        partida.turno_batedor = partida.jogador1 # 👈 CRUCIAL: Jogador 1 começa a bater!
+        
+        # 💥 CORREÇÃO 2: O convite agora respeita o cara-ou-coroa da sala!
+        if partida.moeda_sorteio == 'j1':
+            partida.turno_batedor = partida.jogador1
+        else:
+            partida.turno_batedor = partida.jogador2
+            
         partida.save()
-        return redirect('minijogo:tela_jogo', partida_id=partida.id)
         
     return redirect('minijogo:tela_jogo', partida_id=partida.id)
     

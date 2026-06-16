@@ -51,30 +51,59 @@ def selecionar_carta(draft, carta_id):
 # ==========================================
 # 2. A MATEMÁTICA DO PÊNALTI
 # ==========================================
-def calcular_resultado_penalti(batedor, goleiro, alvo_chute, pulo_goleiro):
-    """ Retorna o resultado final do chute ('gol', 'defesa', 'frango', 'isolou', 'trave') """
+import random
+
+def calcular_resultado_penalti(chute_zona, defesa_zona, batedor_ovr, goleiro_ovr, rodada_atual):
+    """
+    Motor matemático que define o resultado da cobrança baseado em RPG, zonas e pressão.
+    """
+    # 1. MAPEAMENTO DAS ZONAS ALTAS (A "Gaveta")
+    zonas_altas = ['se', 'me', 'sd']
+    chutou_no_alto = chute_zona in zonas_altas
+
+    # =========================================================
+    # CENA 1: GOLEIRO PULOU PARA O LADO ERRADO
+    # =========================================================
+    if chute_zona != defesa_zona:
+        chance_erro = 5  # Normal: 5% de chance de errar 
+        
+        if chutou_no_alto:
+            chance_erro = 22  # RISCO DA GAVETA: 22% de chance de errar!
+
+        sorteio = random.randint(1, 100)
+        if sorteio <= chance_erro:
+            # 👈 MUDANÇA AQUI: Diferencia o erro rasteiro do erro no alto
+            if chutou_no_alto:
+                return random.choice(['isolou', 'trave'])
+            else:
+                return random.choice(['recuou', 'trave']) 
+        return 'gol'
+
+    # =========================================================
+    # CENA 2: GOLEIRO PULOU PARA O LADO CERTO (Batalha de OVR)
+    # =========================================================
     
-    # CENÁRIO A: Goleiro pulou para o lado ERRADO
-    if alvo_chute != pulo_goleiro:
-        # Fórmula de erro: Quanto menor o Over, maior a chance de isolar.
-        chance_erro = max(0, 100 - batedor.over) / 1.5
-        dado = random.uniform(0, 100)
-        
-        if dado < chance_erro:
-            return random.choice(['isolou', 'trave']) # Errou sozinho!
-        else:
-            return 'gol' # Golaço padrão
-            
-    # CENÁRIO B: Goleiro pulou para o lado CERTO (Batalha de Overs)
+    # RECOMPENSA DA GAVETA: Se acertou o alvo no alto, o chute é indefensável (+10 OVR)
+    bonus_gaveta = 10 if chutou_no_alto else 0
+    
+    # FATOR PRESSÃO (A partir da 5ª rodada a perna treme)
+    # Craques (OVR 88+) não sentem a pressão. Jogadores comuns sim!
+    fator_sorte_max_batedor = 20
+    if rodada_atual >= 5 and batedor_ovr < 88:
+        fator_sorte_max_batedor = 10 # O dado do batedor cai pela metade!
+
+    # Rolando os dados (Sorte + OVR + Bônus)
+    poder_batedor = batedor_ovr + bonus_gaveta + random.randint(1, fator_sorte_max_batedor)
+    poder_goleiro = goleiro_ovr + random.randint(1, 20)
+
+    # Quem ganha a disputa?
+    if poder_batedor > poder_goleiro:
+        # Se o batedor ganhou por muito pouco (margem de 3), a bola passa chorando
+        if poder_batedor - poder_goleiro <= 3:
+            return 'frango' 
+        return 'gol'
     else:
-        # Fórmula de disputa de status
-        chance_batedor = (batedor.over / (batedor.over + goleiro.over)) * 100
-        dado = random.uniform(0, 100)
-        
-        if dado <= chance_batedor:
-            return 'frango' # Bola passou raspando ou por baixo do goleiro (GOL)
-        else:
-            return 'defesa' # Goleiro foi buscar (NÃO GOL)
+        return 'defendeu'
 
 
 # ==========================================

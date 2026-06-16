@@ -31,23 +31,25 @@
                 Sorteio insano! Abra os pacotes, escale seus 5 batedores lendários e 1 goleiro, e decida tudo na marca da cal.
             </p>
             
-            <!-- EXIBIÇÃO DO RECORDE ATUAL -->
+            <!-- EXIBIÇÃO DO RECORDE ATUAL (Com contraste melhorado) -->
             <div class="bg-dark text-white rounded-3 p-2 mb-4 shadow-sm mx-auto d-inline-block" style="border: 1px solid #cfb53b; min-width: 200px;">
-                <span class="small text-uppercase text-muted fw-bold d-block" style="font-size: 0.7rem; letter-spacing: 1px;">👑 Atual Rei do X1</span>
+                <span class="small text-uppercase text-white-50 fw-bold d-block mb-1" style="font-size: 0.7rem; letter-spacing: 1px;">👑 Atual Rei do X1</span>
                 
                 {% if top_invicto_nome %}
-                    <span class="fw-bold" style="color: #cfb53b;">{{ top_invicto_nome }}</span> 
+                    <span class="fw-bold" style="color: #cfb53b; font-size: 1.1rem;">{{ top_invicto_nome }}</span> 
                     <span class="badge bg-danger rounded-pill ms-1 shadow-sm">{{ top_invicto_streak }} 🔥</span>
                 {% else %}
-                    <span class="fw-bold" style="color: #cfb53b;">Ninguém</span> 
+                    <span class="fw-bold text-light" style="font-size: 1.1rem;">Ninguém</span> 
                     <span class="badge bg-secondary rounded-pill ms-1">0 🔥</span>
                 {% endif %}
             </div>
             
             <div class="mt-auto d-flex flex-column gap-2">
-                <a href="{% url 'minijogo:tela_draft' %}" class="btn btn-dark btn-lg w-100 fw-bold shadow-sm rounded-pill">
+                <!-- BOTÃO QUE ABRE O MODAL -->
+                <button type="button" class="btn btn-dark btn-lg w-100 fw-bold shadow-sm rounded-pill" data-bs-toggle="modal" data-bs-target="#modalConfigPenaltis">
                     <i class="fa-solid fa-play"></i> Entrar no Draft
-                </a>
+                </button>
+                
                 <!-- BOTÃO DO RANKING LA DÉCIMA -->
                 <a href="{% url 'minijogo:ranking_x1' %}" class="btn btn-outline-warning text-dark btn-md w-100 fw-bold shadow-sm rounded-pill" style="border-width: 2px;">
                     <i class="fa-solid fa-crown"></i> Ver Hall da Fama
@@ -187,14 +189,12 @@
                             </p>
 
                             <div class="mt-auto d-flex flex-column gap-2">
-                                <!-- SE O USUÁRIO FOR O ADMIN DO CAMPEONATO -->
                                 {% if camp.admin == request.user %}
                                     <a href="{% url 'duelos:painel_campeonato' camp.id %}" class="btn btn-dark w-100 fw-bold rounded-pill shadow-sm">
                                         <i class="fa-solid fa-gears"></i> Gerenciar Torneio
                                     </a>
                                 {% endif %}
 
-                                <!-- BOTÕES DE AÇÃO DEPENDENDO DO STATUS -->
                                 {% if camp.status == 'inscricoes' %}
                                     <a href="{% url 'duelos:entrar_campeonato' camp.codigo_convite %}" class="btn btn-warning w-100 fw-bold rounded-pill text-dark shadow-sm">
                                         <i class="fa-solid fa-pen-to-square"></i> Inscrever-se
@@ -220,6 +220,57 @@
                 <p class="mb-0">Aguarde a criação de um novo campeonato.</p>
             </div>
         {% endif %}
+    </div>
+</div>
+
+<!-- ============================================================== -->
+<!-- 💥 MODAL DE CONFIGURAÇÕES DO JOGO (COM ALTO CONTRASTE) 💥 -->
+<!-- ============================================================== -->
+<div class="modal fade" id="modalConfigPenaltis" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark text-white rounded-4 border-warning" style="border-width: 2px;">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title fw-bold text-warning"><i class="fa-solid fa-sliders"></i> Regras da Partida</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            
+            <!-- O formulário envia as regras para a view de iniciar o Draft -->
+            <form action="{% url 'minijogo:tela_draft' %}" method="POST">
+                {% csrf_token %}
+                <div class="modal-body py-4 px-4">
+                    <p class="text-white-50 small mb-4">Escolha as mecânicas extras que deseja ativar para este duelo:</p>
+
+                    <div class="form-check form-switch fs-5 mb-4 text-start">
+                        <input class="form-check-input bg-warning border-warning" type="checkbox" name="usa_poderes" id="usaPoderes" checked>
+                        <label class="form-check-label text-light ms-2 fw-bold" for="usaPoderes">
+                            🃏 Cartas Táticas
+                            <span class="d-block text-white-50 fw-normal mt-1" style="font-size: 0.85rem; line-height: 1.2;">Permite reduzir o OVR do adversário 1x por partida.</span>
+                        </label>
+                    </div>
+                    
+                    <div class="form-check form-switch fs-5 mb-4 text-start">
+                        <input class="form-check-input bg-info border-info" type="checkbox" name="usa_olheiro" id="usaOlheiro" checked>
+                        <label class="form-check-label text-light ms-2 fw-bold" for="usaOlheiro">
+                            🕵️ Relatório do Olheiro
+                            <span class="d-block text-white-50 fw-normal mt-1" style="font-size: 0.85rem; line-height: 1.2;">Revela a zona favorita do adversário baseado no histórico dele.</span>
+                        </label>
+                    </div>
+                    
+                    <div class="form-check form-switch fs-5 mb-2 text-start">
+                        <input class="form-check-input bg-danger border-danger" type="checkbox" name="usa_emotes" id="usaEmotes" checked>
+                        <label class="form-check-label text-light ms-2 fw-bold" for="usaEmotes">
+                            🤬 Provocações ao Vivo
+                            <span class="d-block text-white-50 fw-normal mt-1" style="font-size: 0.85rem; line-height: 1.2;">Habilita envio de Emojis que flutuam na tela do adversário.</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="submit" class="btn btn-warning w-100 fw-bold text-dark rounded-pill py-2 text-uppercase letter-spacing-1">
+                        <i class="fa-solid fa-check"></i> Salvar e Iniciar Draft
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 {% endblock %}

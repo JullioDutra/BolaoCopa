@@ -119,11 +119,11 @@
             </li>
             <li class="mb-4 d-flex align-items-start">
                 <i class="fa-solid fa-hand-pointer fs-3 text-success me-3 mt-1"></i> 
-                <div><strong>No Ataque:</strong> Ative um batedor no deck inferior e escolha o canto no gol. (Nas alternadas, seus jogadores cansam e recomeçam!)</div>
+                <div><strong>No Ataque:</strong> Ative um batedor no deck inferior e escolha o canto no gol. (Nas alternadas, os seus jogadores descansam e recomeçam!)</div>
             </li>
             <li class="d-flex align-items-start">
                 <i class="fa-solid fa-hands fs-3 text-danger me-3 mt-1"></i> 
-                <div><strong>Na Defesa:</strong> O sistema posiciona seu goleiro automaticamente. Analise o adversário e pule no canto certo.</div>
+                <div><strong>Na Defesa:</strong> O sistema posiciona o seu goleiro automaticamente. Analise o adversário e pule para o canto certo.</div>
             </li>
         </ul>
         <button class="btn btn-warning w-100 fw-bold mt-3 py-2 text-dark text-uppercase letter-spacing-1" data-bs-dismiss="modal">Iniciar Partida</button>
@@ -162,7 +162,7 @@
             </p>
         </div>
         
-        <a href="/" class="btn btn-warning text-dark btn-lg fw-bold rounded-pill shadow-lg w-100 text-uppercase py-3 position-relative" style="z-index: 2;">Retornar ao Menu</a>
+        <a href="{% url 'duelos:listar_desafios' %}" class="btn btn-warning text-dark btn-lg fw-bold rounded-pill shadow-lg w-100 text-uppercase py-3 position-relative" style="z-index: 2;">Retornar ao Menu</a>
     </div>
 
     <div id="arena-principal" class="arena-container">
@@ -180,16 +180,6 @@
                 <div class="text-truncate">{% if partida.jogador2 %}{{ partida.jogador2.username }}{% else %}Aguardando...{% endif %}</div>
                 <div class="dots-container" id="dots-j2"></div>
             </div>
-            {% if request.user == partida.jogador1 and not partida.jogador2 %}
-                <div class="mt-4 text-center">
-                    <form method="POST" action="{% url 'minijogo:cancelar_lobby' partida.id %}">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-outline-danger btn-sm fw-bold px-4 py-2 rounded-pill shadow-sm">
-                            <i class="fa-solid fa-door-open"></i> Cancelar Sala e Voltar
-                        </button>
-                    </form>
-                </div>
-            {% endif %}
         </div>
 
         <div class="d-flex gap-2">
@@ -204,6 +194,10 @@
 
         <div class="stadium-bg" id="stadium-container">
             <div class="enemy-gk-badge" id="enemy-info" style="display: none;"></div>
+            
+            <div id="display-emote-adv" style="position: absolute; top: 15%; right: 10%; font-size: 4rem; z-index: 60; display: none; text-shadow: 0 4px 10px rgba(0,0,0,0.5); animation: pop-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;">
+            </div>
+
             <div id="feedback-overlay"><h1 id="feedback-text">GOL!</h1></div>
 
             <div class="goal-frame alvo-bloqueado" id="trave-botoes">
@@ -214,6 +208,29 @@
                 <div class="alvo-btn" id="zona-mc" data-text="Meio Baixo" onclick="enviarAcao('mc')">Meio Baixo</div>
                 <div class="alvo-btn" id="zona-id" data-text="Dir. Baixo" onclick="enviarAcao('id')">Dir. Baixo</div>
             </div>
+        </div>
+
+        <div class="d-flex justify-content-center flex-wrap gap-2 my-1">
+            {% if partida.usa_olheiro %}
+                <button id="btn-olheiro" class="btn btn-info btn-sm fw-bold text-dark shadow-sm" onclick="abrirOlheiro()">
+                    <i class="fa-solid fa-magnifying-glass"></i> Olheiro
+                </button>
+            {% endif %}
+
+            {% if partida.usa_poderes %}
+                <button id="btn-poder" class="btn btn-warning btn-sm fw-bold text-dark shadow-sm" onclick="abrirTaticas()">
+                    <i class="fa-solid fa-bolt"></i> Carta Tática
+                </button>
+            {% endif %}
+
+            {% if partida.usa_emotes %}
+                <div class="btn-group shadow-sm">
+                    <button class="btn btn-dark btn-sm border-secondary fs-5" onclick="enviarEmote('🥶')">🥶</button>
+                    <button class="btn btn-dark btn-sm border-secondary fs-5" onclick="enviarEmote('🤫')">🤫</button>
+                    <button class="btn btn-dark btn-sm border-secondary fs-5" onclick="enviarEmote('🧤')">🧤</button>
+                    <button class="btn btn-dark btn-sm border-secondary fs-5" onclick="enviarEmote('⚽')">⚽</button>
+                </div>
+            {% endif %}
         </div>
 
         <div class="deck-container" id="bloco-escolher-batedor">
@@ -231,7 +248,9 @@
             </div>
         </div>
         
-        <button class="btn btn-link text-danger btn-sm w-100 mt-1 fw-bold text-decoration-none" onclick="desistirPartida()"><i class="fa-solid fa-flag"></i> Abandonar Partida</button>
+        <button class="btn btn-link text-danger btn-sm w-100 mt-1 fw-bold text-decoration-none" onclick="desistirPartida()">
+            <i class="fa-solid fa-flag"></i> Abandonar Partida
+        </button>
     </div>
 </div>
 
@@ -303,6 +322,29 @@
         document.querySelectorAll('.alvo-btn').forEach(btn => btn.classList.add('alvo-ativo'));
     }
 
+    // ==========================================
+    // FUNÇÕES DO NOVO PAINEL TÁTICO (Fase 2 & 3)
+    // ==========================================
+    function enviarEmote(emoji) {
+        fetch("{% url 'minijogo:api_enviar_emote' %}", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+            body: JSON.stringify({ partida_id: partidaId, emoji: emoji })
+        });
+        document.getElementById('mensagem-narrador').innerText = "Emote enviado!";
+    }
+
+    function abrirOlheiro() {
+        // Função placeholder - será construída na Fase 3
+        alert("O Relatório do Olheiro será ativado em breve!");
+    }
+
+    function abrirTaticas() {
+        // Função placeholder - será construída na Fase 3
+        alert("As Cartas Táticas estarão disponíveis em breve!");
+    }
+    // ==========================================
+
     function enviarAcao(zonaClicada) {
         if (acaoTravada) return;
         if (papelAtual === 'chutar' && !cartaEscolhidaId && zonaClicada !== 'timeout') {
@@ -343,12 +385,14 @@
         stadium.classList.remove('shake-animation');
         void stadium.offsetWidth; 
         stadium.classList.add('shake-animation');
+        // Vibração do telemóvel para lances emocionantes (se suportado pelo browser/telemóvel)
+        if (navigator.vibrate) navigator.vibrate(300);
     }
 
     function rodarAnimacao(data, callbackFim) {
         animandoCena = true;
         clearInterval(timerInterval);
-        document.getElementById('mensagem-narrador').innerText = "CORRENDO PARA A BOLA...";
+        document.getElementById('mensagem-narrador').innerText = "A CORRER PARA A BOLA...";
         document.getElementById('mensagem-narrador').style.color = "var(--ouro)";
         document.getElementById('status-adversario').innerText = "Atenção máxima no estádio...";
 
@@ -428,7 +472,7 @@
         document.getElementById('barra-streak').style.width = (streak * 10) + "%";
         
         if (streak >= 10) {
-            document.getElementById('texto-lenda').innerHTML = "<i class='fa-solid fa-crown'></i> VOCÊ ALCANÇOU LA DÉCIMA!";
+            document.getElementById('texto-lenda').innerHTML = "<i class='fa-solid fa-crown'></i> ALCANÇASTE LA DÉCIMA!";
             document.getElementById('texto-lenda').classList.add('text-warning');
             document.getElementById('barra-streak').classList.remove('bg-warning');
             document.getElementById('barra-streak').classList.add('bg-success');
@@ -453,27 +497,25 @@
         iniciarCronometro();
 
         if (papelAtual === 'chutar') {
-            // ==========================================
-            // NOVIDADE: RESET DE BATEDORES NA MORTE SÚBITA
-            // ==========================================
+            // Regra da Morte Súbita: Descansar os batedores
             if (batedoresUsados.length >= 5) {
                 batedoresUsados = [];
                 sessionStorage.setItem(`p_${partidaId}_cards`, JSON.stringify(batedoresUsados));
                 document.querySelectorAll('.batedor-card').forEach(c => c.classList.remove('used'));
-                document.getElementById('status-adversario').innerText = "Morte Súbita! Seu elenco descansou para cobrar novamente.";
+                document.getElementById('status-adversario').innerText = "Morte Súbita! O teu plantel descansou para cobrar novamente.";
             } else {
-                document.getElementById('status-adversario').innerText = "Habilite um batedor para liberar o gol.";
+                document.getElementById('status-adversario').innerText = "Habilita um batedor para libertar a baliza.";
             }
 
-            document.getElementById('mensagem-narrador').innerText = "SUA VEZ DE BATER";
+            document.getElementById('mensagem-narrador').innerText = "TUA VEZ DE BATER";
             document.getElementById('mensagem-narrador').style.color = "#28a745";
             document.getElementById('bloco-escolher-batedor').style.opacity = "1";
             document.getElementById('enemy-info').innerText = `Oponente: ${advGoleiroNome}`;
             document.getElementById('enemy-info').style.display = "block";
         } else if (papelAtual === 'defender') {
-            document.getElementById('mensagem-narrador').innerText = "SUA VEZ DE DEFENDER";
+            document.getElementById('mensagem-narrador').innerText = "TUA VEZ DE DEFENDER";
             document.getElementById('mensagem-narrador').style.color = "#dc3545";
-            document.getElementById('status-adversario').innerText = `Seu Goleiro: ${meuGoleiroNome}`;
+            document.getElementById('status-adversario').innerText = `Teu Guarda-redes: ${meuGoleiroNome}`;
             document.getElementById('bloco-escolher-batedor').style.opacity = "0.3"; 
             document.getElementById('enemy-info').style.display = "none"; 
         }
@@ -486,6 +528,17 @@
         .then(response => response.json())
         .then(data => {
             
+            // --- LÓGICA DOS EMOTES AO VIVO ---
+            if (data.emote_adversario) {
+                const emoteDiv = document.getElementById('display-emote-adv');
+                emoteDiv.innerText = data.emote_adversario;
+                emoteDiv.style.display = 'block';
+                // Vibração curta se receber provocação
+                if (navigator.vibrate) navigator.vibrate(100);
+                setTimeout(() => { emoteDiv.style.display = 'none'; }, 3000);
+            }
+            // ----------------------------------
+
             if (data.fase === 'finalizado') {
                 if (!fimDeJogoProcessado) {
                     fimDeJogoProcessado = true;
@@ -510,7 +563,7 @@
     function desistirPartida() {
         if(confirm("Confirmar desistência? A vitória será concedida ao adversário.")) {
             fetch("{% url 'minijogo:api_desistir' %}", { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken }, body: JSON.stringify({ partida_id: partidaId })
-            }).then(() => window.location.href = "/");
+            }).then(() => window.location.href = "{% url 'duelos:listar_desafios' %}");
         }
     }
 

@@ -10,7 +10,7 @@ from .engine import sortear_novo_elenco
 # Importe seus modelos e o motor lógico que criamos
 from .models import MeuDraft, CartaJogador, PartidaPenalti
 from .engine import selecionar_carta, calcular_resultado_penalti, processar_cobranca, sortear_novo_elenco
-from django.db.models import Q, Count
+from django.db.models import Q, Count, Sum, Max
 from django.contrib.auth.models import User
 
 
@@ -299,16 +299,19 @@ def api_status_partida(request, partida_id):
 
 @login_required
 def ranking_x1(request):
-    """ Exibe o Top 10 jogadores que mais alcançaram 10 vitórias seguidas """
+    """ Exibe o Top 10 jogadores detalhado """
     
-    # Anota quantos rascunhos com status 'campeao' cada usuário tem
+    # Busca os usuários e anota as estatísticas totais baseadas em todos os drafts deles
     top_lendas = User.objects.annotate(
-        titulos_lenda=Count('drafts_x1', filter=Q(drafts_x1__status='campeao'))
-    ).filter(titulos_lenda__gt=0).order_by('-titulos_lenda')[:10]
-    
-    # Busca a carta de linha mais escolhida (Uma funcionalidade extra que você pediu!)
-    # Como as queries de ManyToMany podem ser pesadas, deixaremos a estrutura pronta:
-    # (Futuramente você pode rastrear a carta exata em uma tabela extra, mas o ranking já brilha!)
+        titulos_lenda=Count('drafts_x1', filter=Q(drafts_x1__status='campeao')),
+        total_jogos=Sum('drafts_x1__jogos_jogados'),
+        total_vitorias=Sum('drafts_x1__vitorias'),
+        total_derrotas=Sum('drafts_x1__derrotas'),
+        max_streak=Max('drafts_x1__vitorias_seguidas') # Pega a melhor sequência que ele tem ativa
+    ).filter(
+        # Opcional: Só mostra quem já jogou pelo menos 1 partida para não encher o ranking de fantasmas
+        total_jogos__gt=0 
+    ).order_by('-titulos_lenda', '-total_vitorias', '-max_streak')[:10]
     
     return render(request, 'minijogo/ranking.html', {'top_lendas': top_lendas})
 

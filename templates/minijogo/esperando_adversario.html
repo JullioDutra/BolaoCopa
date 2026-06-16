@@ -14,12 +14,10 @@
             <h2 class="fw-bold mb-3" style="color: var(--verde-escuro);">Aguardando Adversário...</h2>
             <p class="text-muted mb-4">Você pode esperar alguém cair na partida aleatoriamente ou convidar um amigo agora mesmo!</p>
             
-            <!-- Link de Convite -->
             <div class="bg-light p-3 rounded-3 border mb-4">
                 <small class="text-muted fw-bold d-block mb-2">Mande este link para um amigo:</small>
                 
                 <div class="input-group">
-                    <!-- Monta o link completo automaticamente usando a URL do seu site -->
                     <input type="text" id="linkConvite" class="form-control text-center fw-bold text-primary" 
                            value="{{ request.scheme }}://{{ request.get_host }}{% url 'minijogo:aceitar_convite' partida.id %}" readonly>
                     
@@ -30,9 +28,18 @@
             </div>
 
             <a href="https://api.whatsapp.com/send?text=Te desafiei para um X1 de Pênaltis na Cartolândia! Entra aí: {{ request.scheme }}://{{ request.get_host }}{% url 'minijogo:aceitar_convite' partida.id %}" 
-               target="_blank" class="btn btn-outline-success w-100 fw-bold rounded-pill">
-               <i class="fa-brands fa-whatsapp"></i> Desafiar no WhatsApp
+                target="_blank" class="btn btn-outline-success w-100 fw-bold rounded-pill mb-3">
+                <i class="fa-brands fa-whatsapp"></i> Desafiar no WhatsApp
             </a>
+
+            {% if request.user == partida.jogador1 %}
+            <form method="POST" action="{% url 'minijogo:cancelar_lobby' partida.id %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger w-100 fw-bold rounded-pill shadow-sm">
+                    <i class="fa-solid fa-door-open"></i> Cancelar Sala e Voltar
+                </button>
+            </form>
+            {% endif %}
 
         </div>
     </div>

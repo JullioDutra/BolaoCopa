@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="row mt-5">
-    <div class="col-md-8 mx-auto text-center">
+    <div class="col-md-10 mx-auto text-center">
         <h1 class="fw-bold text-uppercase" style="color: var(--ouro); font-size: 3.5rem; letter-spacing: 2px;">
             <i class="fa-solid fa-crown"></i> Hall da Fama
         </h1>
@@ -13,46 +13,58 @@
 </div>
 
 <div class="row mt-4 mb-5">
-    <div class="col-md-8 mx-auto">
+    <div class="col-md-10 mx-auto">
         <div class="card bg-dark text-white shadow-lg border-warning" style="border-radius: 15px;">
-            <div class="card-body p-0">
-                <table class="table table-dark table-hover table-borderless mb-0 rounded-3 overflow-hidden text-center">
+            <div class="card-body p-0 table-responsive">
+                <table class="table table-dark table-hover table-borderless mb-0 rounded-3 text-center align-middle" style="white-space: nowrap;">
                     <thead class="text-uppercase small" style="background-color: #111;">
                         <tr>
-                            <th class="py-3" style="width: 15%;">Posição</th>
+                            <th class="py-3" style="width: 10%;">Posição</th>
                             <th class="py-3 text-start">Treinador</th>
-                            <th class="py-3 text-warning">Conquistas de La Décima</th>
+                            <th class="py-3 text-warning" title="Títulos de La Décima">🏆 Títulos</th>
+                            <th class="py-3 text-info" title="Sequência de vitórias atual">🔥 Streak</th>
+                            <th class="py-3 text-secondary">Jogos</th>
+                            <th class="py-3 text-success">V</th>
+                            <th class="py-3 text-danger">D</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for lenda in top_lendas %}
-                            <tr class="align-middle border-bottom border-secondary">
-                                <td class="py-3">
+                            <tr class="border-bottom border-secondary">
+                                <td class="py-3 fw-bold fs-5">
                                     {% if forloop.counter == 1 %}
-                                        <i class="fa-solid fa-trophy fs-3" style="color: #ffd700;"></i> <!-- Ouro -->
+                                        <i class="fa-solid fa-trophy" style="color: #ffd700; text-shadow: 0 0 10px #ffd700;"></i>
                                     {% elif forloop.counter == 2 %}
-                                        <i class="fa-solid fa-medal fs-4" style="color: #c0c0c0;"></i> <!-- Prata -->
+                                        <i class="fa-solid fa-medal" style="color: #c0c0c0;"></i>
                                     {% elif forloop.counter == 3 %}
-                                        <i class="fa-solid fa-medal fs-5" style="color: #cd7f32;"></i> <!-- Bronze -->
+                                        <i class="fa-solid fa-medal" style="color: #cd7f32;"></i>
                                     {% else %}
-                                        <span class="fw-bold text-muted fs-5">{{ forloop.counter }}º</span>
+                                        <span class="text-muted">{{ forloop.counter }}º</span>
                                     {% endif %}
                                 </td>
                                 <td class="py-3 text-start fw-bold fs-5">
                                     {{ lenda.first_name|default:lenda.username }}
                                 </td>
                                 <td class="py-3">
-                                    <span class="badge bg-warning text-dark fs-5 rounded-pill px-3 shadow-sm">
-                                        {{ lenda.titulos_lenda }}
+                                    <span class="badge bg-warning text-dark fs-6 rounded-pill px-3 shadow-sm">
+                                        {{ lenda.titulos_lenda|default:"0" }}
                                     </span>
                                 </td>
+                                <td class="py-3">
+                                    <span class="fw-bold text-info fs-6">
+                                        <i class="fa-solid fa-fire"></i> {{ lenda.max_streak|default:"0" }}
+                                    </span>
+                                </td>
+                                <td class="py-3 text-secondary fw-bold">{{ lenda.total_jogos|default:"0" }}</td>
+                                <td class="py-3 text-success fw-bold">{{ lenda.total_vitorias|default:"0" }}</td>
+                                <td class="py-3 text-danger fw-bold">{{ lenda.total_derrotas|default:"0" }}</td>
                             </tr>
                         {% empty %}
                             <tr>
-                                <td colspan="3" class="py-5 text-muted">
+                                <td colspan="7" class="py-5 text-muted">
                                     <i class="fa-solid fa-ghost fs-1 mb-3 opacity-50"></i>
                                     <h5>A História ainda não foi escrita!</h5>
-                                    <p>Nenhum jogador conseguiu as 10 vitórias seguidas ainda. Seja o primeiro a alcançar La Décima!</p>
+                                    <p>Jogue algumas partidas para aparecer no placar global.</p>
                                 </td>
                             </tr>
                         {% endfor %}

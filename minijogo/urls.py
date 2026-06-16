@@ -19,4 +19,5 @@ urlpatterns = [
     path('api/draft/escolher/', views.api_escolher_carta, name='api_escolher_carta'),
     path('api/partida/acao/', views.api_enviar_acao, name='api_enviar_acao'),
     path('api/partida/<int:partida_id>/status/', views.api_status_partida, name='api_status_partida'),
+    path('api/usar-olheiro/', views.api_usar_olheiro, name='api_usar_olheiro'),
 ]

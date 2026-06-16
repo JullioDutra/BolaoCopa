@@ -51,11 +51,10 @@ def selecionar_carta(draft, carta_id):
 # ==========================================
 # 2. A MATEMÁTICA DO PÊNALTI
 # ==========================================
-import random
 
-def calcular_resultado_penalti(chute_zona, defesa_zona, batedor_ovr, goleiro_ovr, rodada_atual):
+def calcular_resultado_penalti(chute_zona, defesa_zona, batedor_ovr, goleiro_ovr, rodada_atual, tatica_batedor_ativa=False, tatica_goleiro_ativa=False):
     """
-    Motor matemático que define o resultado da cobrança baseado em RPG, zonas e pressão.
+    Motor matemático que define o resultado da cobrança baseado em RPG, zonas, pressão e táticas.
     """
     # 1. MAPEAMENTO DAS ZONAS ALTAS (A "Gaveta")
     zonas_altas = ['se', 'me', 'sd']
@@ -72,7 +71,7 @@ def calcular_resultado_penalti(chute_zona, defesa_zona, batedor_ovr, goleiro_ovr
 
         sorteio = random.randint(1, 100)
         if sorteio <= chance_erro:
-            # 👈 MUDANÇA AQUI: Diferencia o erro rasteiro do erro no alto
+            # Diferencia o erro rasteiro do erro no alto
             if chutou_no_alto:
                 return random.choice(['isolou', 'trave'])
             else:
@@ -91,6 +90,13 @@ def calcular_resultado_penalti(chute_zona, defesa_zona, batedor_ovr, goleiro_ovr
     fator_sorte_max_batedor = 20
     if rodada_atual >= 5 and batedor_ovr < 88:
         fator_sorte_max_batedor = 10 # O dado do batedor cai pela metade!
+
+    # 💥 APLICA A CARTA TÁTICA (CATIMBA) 💥
+    if tatica_goleiro_ativa:
+        batedor_ovr = int(batedor_ovr / 2) # Goleiro ativou poder, batedor perde força
+        
+    if tatica_batedor_ativa:
+        goleiro_ovr = int(goleiro_ovr / 2) # Batedor ativou poder, goleiro perde força
 
     # Rolando os dados (Sorte + OVR + Bônus)
     poder_batedor = batedor_ovr + bonus_gaveta + random.randint(1, fator_sorte_max_batedor)
@@ -119,7 +125,28 @@ def processar_cobranca(partida):
         batedor = CartaJogador.objects.get(id=partida.chute_carta_id)
         goleiro = CartaJogador.objects.get(id=partida.defesa_carta_id)
         
-        resultado_lance = calcular_resultado_penalti(batedor, goleiro, partida.chute_zona, partida.defesa_zona)
+        # Descobre quem é o batedor e quem é o goleiro para aplicar as táticas
+        tatica_batedor_ativa = False
+        tatica_goleiro_ativa = False
+        
+        if partida.turno_batedor == partida.jogador1:
+            tatica_batedor_ativa = partida.j1_tatica_ativa
+            tatica_goleiro_ativa = partida.j2_tatica_ativa
+        else:
+            tatica_batedor_ativa = partida.j2_tatica_ativa
+            tatica_goleiro_ativa = partida.j1_tatica_ativa
+        
+        # 👈 CORREÇÃO: Passando as variáveis na ordem certa para a função
+        resultado_lance = calcular_resultado_penalti(
+            chute_zona=partida.chute_zona, 
+            defesa_zona=partida.defesa_zona, 
+            batedor_ovr=batedor.over, 
+            goleiro_ovr=goleiro.over, 
+            rodada_atual=partida.rodada_atual,
+            tatica_batedor_ativa=tatica_batedor_ativa,
+            tatica_goleiro_ativa=tatica_goleiro_ativa
+        )
+        
         gol = True if resultado_lance in ['gol', 'frango'] else False
 
     # Atualiza o Placar
@@ -134,11 +161,15 @@ def processar_cobranca(partida):
     partida.ultima_defesa_zona = partida.defesa_zona
     partida.ultimo_resultado = resultado_lance
 
-    # Prepara a Próxima Cobrança (Limpa as escolhas atuais)
+    # Prepara a Próxima Cobrança (Limpa as escolhas atuais e os poderes)
     partida.chute_zona = None
     partida.chute_carta_id = None
     partida.defesa_zona = None
     partida.defesa_carta_id = None
+    
+    # 👈 RESETA OS PODERES TÁTICOS PARA A PRÓXIMA RODADA
+    partida.j1_tatica_ativa = False
+    partida.j2_tatica_ativa = False
     
     partida.chutes_na_rodada += 1
     
@@ -190,19 +221,29 @@ def verificar_fim_de_jogo(partida):
 
 
 def encerrar_partida(partida, vencedor):
-    """ Finaliza o X1 e gerencia as vitórias ou eliminação do Draft """
+    """ Finaliza o X1 e atualiza TUDO para o Ranking """
     partida.fase = 'finalizado'
     partida.vencedor = vencedor
     
+    # Identifica os drafts
     draft_vencedor = partida.draft_j1 if vencedor == partida.jogador1 else partida.draft_j2
     draft_perdedor = partida.draft_j2 if vencedor == partida.jogador1 else partida.draft_j1
     
+    # 👈 ATUALIZA ESTATÍSTICAS DO PERDEDOR
     if draft_perdedor:
         draft_perdedor.status = 'eliminado'
+        draft_perdedor.jogos_jogados += 1
+        draft_perdedor.derrotas += 1
+        draft_perdedor.vitorias_seguidas = 0 # Quebrou a invencibilidade
         draft_perdedor.save()
     
+    # 👈 ATUALIZA ESTATÍSTICAS DO VENCEDOR
     if draft_vencedor:
+        draft_vencedor.jogos_jogados += 1
+        draft_vencedor.vitorias += 1
         draft_vencedor.vitorias_seguidas += 1
+        
         if draft_vencedor.vitorias_seguidas >= 10:
             draft_vencedor.status = 'campeao'
+            
         draft_vencedor.save()

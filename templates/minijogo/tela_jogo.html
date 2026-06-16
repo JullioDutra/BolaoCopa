@@ -30,6 +30,7 @@
         background: linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%);
         color: white; padding: 12px 18px; border-radius: 12px; 
         border: 2px solid #333; display: flex; justify-content: space-between; align-items: center;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.5);
     }
     .placar-nome { font-family: 'Courier New', Courier, monospace; font-size: clamp(1.1rem, 4vw, 1.5rem); max-width: 35%; font-weight: bold; text-shadow: 1px 1px 2px black;}
     .placar-numeros { font-family: 'Courier New', Courier, monospace; font-size: clamp(1.8rem, 6vw, 2.5rem); font-weight: 900; background: #000; padding: 0 15px; border-radius: 8px; border: 1px solid #444; }
@@ -39,20 +40,21 @@
     .dot.green { background-color: #00ff00; box-shadow: 0 0 10px #00ff00; border-color: #00aa00; }
     .dot.red { background-color: #ff3333; box-shadow: 0 0 10px #ff3333; border-color: #aa0000; }
 
-    .narrador-box { background: rgba(0,0,0,0.8); border-radius: 10px; padding: 10px; text-align: center; border-left: 5px solid var(--ouro); }
+    .narrador-box { background: rgba(0,0,0,0.8); border-radius: 10px; padding: 10px; text-align: center; border-left: 5px solid var(--ouro); box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
     .status-turno { font-size: clamp(1.2rem, 4.5vw, 2rem); font-weight: 900; text-transform: uppercase; margin: 0; line-height: 1.1; letter-spacing: 1px; }
 
     .stadium-bg { 
         background: radial-gradient(circle at 50% 100%, var(--grama-clara), var(--grama-escura)); 
-        border-radius: 15px; position: relative; overflow: hidden; height: 42vh; min-height: 280px; 
+        border-radius: 15px; position: relative; overflow: hidden; height: 42vh; min-height: 280px; max-height: 400px; 
         display: flex; justify-content: center; border: 2px solid #222;
+        box-shadow: inset 0 -40px 80px rgba(0,0,0,0.6), 0 10px 20px rgba(0,0,0,0.4); 
     }
     .enemy-gk-badge { position: absolute; top: 12px; background: rgba(0,0,0,0.85); color: white; padding: 6px 16px; border-radius: 25px; font-size: 0.85rem; font-weight: bold; border: 1px solid var(--ouro); z-index: 5; }
     
-    .goal-frame { position: absolute; bottom: 20px; width: 92%; height: 78%; border: 10px solid #f8f9fa; border-bottom: none; background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAOklEQVQYV2NkYGAwYkAD////Z4TRyMDFwEIGRhSVAfI1igKofZhUkGw0kgL0cQwlkqKASiIl40QBAAB8xQk/Wb04fAAAAABJRU5ErkJggg==') repeat; display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 6px; }
+    .goal-frame { position: absolute; bottom: 20px; width: 92%; height: 78%; border: 10px solid #f8f9fa; border-bottom: none; background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAOklEQVQYV2NkYGAwYkAD////Z4TRyMDFwEIGRhSVAfI1igKofZhUkGw0kgL0cQwlkqKASiIl40QBAAB8xQk/Wb04fAAAAABJRU5ErkJggg==') repeat; display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 6px; box-shadow: 0 20px 30px rgba(0,0,0,0.5); }
     
     .alvo-btn { background-color: rgba(255, 255, 255, 0.03); border: 2px dashed rgba(255,255,255,0.3); cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; font-weight: 800; color: transparent; border-radius: 8px; font-size: 0.9rem; text-transform: uppercase; }
-    .alvo-btn:hover { background-color: rgba(255, 215, 0, 0.5); border-color: var(--ouro); color: white; }
+    .alvo-btn:hover { background-color: rgba(255, 215, 0, 0.5); border-color: var(--ouro); color: white; transform: scale(0.97); }
     .alvo-ativo { animation: pulse-alvo 2s infinite; }
     .alvo-bloqueado { pointer-events: none; opacity: 0.3; }
 
@@ -61,74 +63,29 @@
     .bola-e-gk { background: linear-gradient(135deg, rgba(255,255,255,0.95) 50%, rgba(220,53,69,0.9) 50%) !important; font-size: 3rem !important; opacity: 1 !important; border: 4px solid var(--ouro) !important; animation: pop-in 0.3s ease-out forwards; }
 
     /* =========================================
-       NOVO LAYOUT EM GRID PARA AS CARTAS
+       DECK GRID (Mobile Friendly 3x2)
        ========================================= */
-    .deck-container { background: linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%); padding: 12px; border-radius: 12px; border: 1px solid #333; }
+    .deck-container { background: linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%); padding: 12px; border-radius: 12px; border: 1px solid #333; box-shadow: 0 8px 20px rgba(0,0,0,0.5); }
     
-    .deck-grid { 
-        display: grid; 
-        grid-template-columns: repeat(3, 1fr); 
-        gap: 8px; 
-    }
+    .deck-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    @media (min-width: 768px) { .deck-grid { grid-template-columns: repeat(6, 1fr); } }
     
-    /* Telas maiores ficam em uma linha só */
-    @media (min-width: 768px) {
-        .deck-grid { grid-template-columns: repeat(6, 1fr); }
-    }
-    
-    .batedor-card { 
-        background: #222; border: 2px solid #444; border-radius: 8px; padding: 10px 5px; 
-        color: white; text-align: center; cursor: pointer; transition: all 0.2s ease;
-        display: flex; flex-direction: column; align-items: center; justify-content: center;
-    }
+    .batedor-card { background: #222; border: 2px solid #444; border-radius: 8px; padding: 10px 5px; color: white; text-align: center; cursor: pointer; transition: all 0.2s ease; display: flex; flex-direction: column; align-items: center; justify-content: center; }
     .batedor-card .ovr { font-size: 1.5rem; font-weight: 900; color: var(--ouro); line-height: 1; text-shadow: 1px 1px 2px black; }
     .batedor-card .nome { font-size: 0.7rem; text-transform: uppercase; font-weight: 800; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
     
-    .batedor-card.selected { border-color: var(--ouro); background: var(--ouro-escuro); color: white; transform: translateY(-3px); }
+    .batedor-card.selected { border-color: var(--ouro); background: var(--ouro-escuro); color: white; transform: translateY(-3px); box-shadow: 0 5px 15px rgba(207, 181, 59, 0.4); }
     .batedor-card.selected .ovr { color: white; }
     .batedor-card.used { opacity: 0.3; filter: grayscale(100%); pointer-events: none; }
 
     /* =========================================
        BOTÃO FLUTUANTE (FAB) DO PAINEL TÁTICO
        ========================================= */
-    .fab-wrapper {
-        position: fixed;
-        bottom: 25%;
-        right: 15px;
-        display: flex;
-        flex-direction: column-reverse;
-        align-items: flex-end;
-        gap: 12px;
-        z-index: 100;
-    }
-    
-    .fab-menu {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-        opacity: 0;
-        pointer-events: none;
-        transform: translateY(20px);
-        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    }
-    
-    .fab-wrapper.active .fab-menu {
-        opacity: 1;
-        pointer-events: auto;
-        transform: translateY(0);
-    }
-
-    .fab-btn {
-        width: 45px; height: 45px; border-radius: 50%; border: none;
-        display: flex; justify-content: center; align-items: center;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.5); font-size: 1.2rem; cursor: pointer;
-    }
-    
-    .fab-main {
-        width: 55px; height: 55px; background: var(--ouro); color: #000; font-size: 1.5rem;
-        transition: transform 0.3s ease;
-    }
-    .fab-wrapper.active .fab-main { transform: rotate(45deg); }
+    .fab-wrapper { position: fixed; bottom: 25%; right: 15px; display: flex; flex-direction: column-reverse; align-items: flex-end; gap: 12px; z-index: 100; }
+    .fab-menu { display: flex; flex-direction: column; gap: 10px; opacity: 0; pointer-events: none; transform: translateY(20px); transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+    .fab-wrapper.active .fab-menu { opacity: 1; pointer-events: auto; transform: translateY(0); }
+    .fab-btn { width: 45px; height: 45px; border-radius: 50%; border: none; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.5); font-size: 1.2rem; cursor: pointer; }
+    .fab-main { width: 55px; height: 55px; background: var(--ouro); color: #000; font-size: 1.5rem; transition: transform 0.3s ease; }
     
     .emotes-row { display: flex; gap: 6px; background: rgba(0,0,0,0.7); padding: 5px; border-radius: 25px; border: 1px solid #444; }
     .emote-btn { background: none; border: none; font-size: 1.3rem; cursor: pointer; transition: transform 0.2s; }
@@ -138,7 +95,7 @@
     #feedback-text { font-size: clamp(3.5rem, 12vw, 6rem); font-weight: 900; text-transform: uppercase; margin: 0; font-style: italic; animation: pop-in 0.4s forwards; }
 </style>
 
-<!-- MODAIS -->
+<!-- MODAL OLHEIRO -->
 <div class="modal fade" id="modalOlheiro" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content bg-dark text-white border-info shadow-lg" style="border-radius: 15px; border-width: 2px;">
@@ -156,12 +113,36 @@
 
 <div class="container-fluid px-2 py-3">
     
-    <!-- TELA DE FIM DE JOGO -->
-    <div id="tela-fim-jogo" class="arena-container text-white" style="display: none; background: linear-gradient(135deg, #0a0a0a, #1a1a1a); border: 4px solid var(--ouro); border-radius: 20px; padding: 40px 15px; text-align: center;">
-        <h1 class="fw-bold mb-0" style="color: var(--ouro); font-size: 3.5rem;"><i class="fa-solid fa-trophy"></i></h1>
-        <h3 class="fw-bold text-uppercase text-muted mb-4">Fim de Disputa</h3>
-        <h1 id="nome-vencedor" class="fw-bold text-uppercase mb-4" style="color: #00ff00; font-size: clamp(2rem, 8vw, 3.5rem);">---</h1>
-        <a href="{% url 'duelos:listar_desafios' %}" class="btn btn-warning text-dark btn-lg fw-bold rounded-pill shadow-lg w-100 text-uppercase py-3">Retornar ao Menu</a>
+    <!-- TELA COMPLETA DE LA DÉCIMA E FIM DE JOGO -->
+    <div id="tela-fim-jogo" class="arena-container text-white" style="display: none; background: linear-gradient(135deg, #0a0a0a, #1a1a1a); border: 4px solid var(--ouro); border-radius: 20px; padding: 40px 15px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.9); position: relative; overflow: hidden;">
+        <div style="position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle, rgba(207,181,59,0.1) 0%, transparent 60%); pointer-events: none; animation: pop-in 2s infinite alternate;"></div>
+
+        <h1 class="fw-bold mb-0" style="color: var(--ouro); font-size: 3.5rem; text-shadow: 0 0 20px rgba(207,181,59,0.5);"><i class="fa-solid fa-trophy"></i></h1>
+        <h3 class="fw-bold text-uppercase text-muted mb-4" style="letter-spacing: 4px; font-size: 1rem;">Fim de Disputa</h3>
+        
+        <h5 class="text-uppercase mb-0" style="color: #aaa; letter-spacing: 2px;">O Vencedor</h5>
+        <h1 id="nome-vencedor" class="fw-bold text-uppercase mb-4" style="color: #00ff00; font-size: clamp(2rem, 8vw, 3.5rem); text-shadow: 0 0 20px rgba(0, 255, 0, 0.4); z-index: 2; position: relative;">---</h1>
+        
+        <div class="p-3 bg-black rounded-4 mb-4 border border-secondary d-inline-block mx-auto shadow-lg position-relative" style="min-width: 260px; z-index: 2;">
+            <p class="text-muted small text-uppercase fw-bold mb-1 letter-spacing-1">Placar dos Pênaltis</p>
+            <h1 class="fw-bold m-0" style="font-size: 3.5rem; letter-spacing: 5px;">
+                <span id="placar-final-j1" class="text-primary">0</span> <span class="text-muted fs-4 mx-2">x</span> <span id="placar-final-j2" class="text-danger">0</span>
+            </h1>
+        </div>
+
+        <div class="mt-2 mb-4 px-3 position-relative" style="z-index: 2;">
+            <h6 id="texto-lenda" class="text-uppercase fw-bold mb-2" style="color: #ccc; letter-spacing: 1px;">
+                <i class="fa-solid fa-fire text-danger"></i> Sequência Invicta
+            </h6>
+            <div class="progress shadow-sm mx-auto" style="height: 18px; max-width: 300px; background-color: #222; border: 1px solid #444; border-radius: 10px;">
+                <div id="barra-streak" class="progress-bar progress-bar-striped progress-bar-animated bg-warning" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="10"></div>
+            </div>
+            <p class="small text-muted mt-2 fw-bold text-uppercase">
+                <span id="num-streak" class="text-white fs-5">0</span>/10 <span class="d-block d-sm-inline">para alcançar <strong class="text-warning">La Décima</strong></span>
+            </p>
+        </div>
+        
+        <a href="{% url 'duelos:listar_desafios' %}" class="btn btn-warning text-dark btn-lg fw-bold rounded-pill shadow-lg w-100 text-uppercase py-3 position-relative" style="z-index: 2;">Retornar ao Menu</a>
     </div>
 
     <!-- ARENA PRINCIPAL -->
@@ -187,6 +168,7 @@
         <div class="d-flex gap-2">
             <div class="narrador-box flex-grow-1">
                 <p id="mensagem-narrador" class="status-turno text-warning">Sincronizando...</p>
+                <!-- O texto abaixo agora será atualizado dinamicamente! -->
                 <p id="status-adversario" class="text-light small m-0 opacity-75">Aguarde o carregamento.</p>
             </div>
             <div class="narrador-box d-flex align-items-center justify-content-center" style="min-width: 70px; border-left-color: #dc3545;">
@@ -212,7 +194,7 @@
             </div>
         </div>
 
-        <!-- O NOVO DECK EM GRID (Mobile Friendly) -->
+        <!-- DECK GRID (Mobile Friendly) -->
         <div class="deck-container" id="bloco-escolher-batedor">
             <div class="d-flex justify-content-between align-items-center mb-2 px-1">
                 <span class="text-white small fw-bold text-uppercase"><i class="fa-solid fa-users text-warning me-1"></i> Elenco</span>
@@ -221,14 +203,14 @@
             
             <div class="deck-grid">
                 {% for batedor in meu_draft.batedores.all %}
-                    <div class="batedor-card shadow-sm" id="card-{{ batedor.id }}" onclick="selecionarKicker({{ batedor.id }}, '{{ batedor.nome }}')">
+                    <div class="batedor-card shadow-sm" id="card-{{ batedor.id }}" onclick="selecionarKicker({{ batedor.id }}, '{{ batedor.nome|escapejs }}')">
                         <span class="ovr">{{ batedor.over }}</span>
                         <span class="nome">{{ batedor.nome }}</span>
                     </div>
                 {% endfor %}
                 
                 {% if meu_draft.goleiro %}
-                <div class="batedor-card shadow-sm border-danger" id="card-{{ meu_draft.goleiro.id }}" onclick="selecionarKicker({{ meu_draft.goleiro.id }}, '{{ meu_draft.goleiro.nome }}')">
+                <div class="batedor-card shadow-sm border-danger" id="card-{{ meu_draft.goleiro.id }}" onclick="selecionarKicker({{ meu_draft.goleiro.id }}, '{{ meu_draft.goleiro.nome|escapejs }}')">
                     <span class="ovr text-danger">{{ meu_draft.goleiro.over }}</span>
                     <span class="nome">{{ meu_draft.goleiro.nome }} (GK)</span>
                 </div>
@@ -240,15 +222,14 @@
             <i class="fa-solid fa-flag"></i> Abandonar Partida
         </button>
 
-        <!-- MENU FLUTUANTE (FAB) -->
+        <!-- MENU FLUTUANTE (FAB) COM BOLA DE FUTEBOL -->
         {% if partida.usa_poderes or partida.usa_olheiro or partida.usa_emotes %}
         <div class="fab-wrapper" id="fabMenu">
-            <!-- Botão Principal -->
+            <!-- Botão Principal de Futebol -->
             <button class="fab-btn fab-main shadow" onclick="document.getElementById('fabMenu').classList.toggle('active')">
-                <i class="fa-solid fa-briefcase"></i>
+                <i class="fa-solid fa-futbol"></i>
             </button>
             
-            <!-- Opções que expandem para cima -->
             <div class="fab-menu">
                 {% if partida.usa_poderes %}
                 <button id="btn-poder" class="fab-btn bg-warning text-dark border border-2 border-dark" onclick="abrirTaticas()" title="Carta Tática">
@@ -282,11 +263,12 @@
     const csrfToken = '{{ csrf_token }}';
     const souJ1 = {% if request.user == partida.jogador1 %}true{% else %}false{% endif %};
     
-    const meuGoleiroNome = "{% if meu_draft.goleiro %}{{ meu_draft.goleiro.nome }}{% else %}Goleiro{% endif %}";
+    // Usando escapejs para prevenir que nomes com apóstrofo quebrem o código Javascript!
+    const meuGoleiroNome = "{% if meu_draft.goleiro %}{{ meu_draft.goleiro.nome|escapejs }}{% else %}Goleiro{% endif %}";
     const meuGoleiroId = {% if meu_draft.goleiro %}{{ meu_draft.goleiro.id }}{% else %}null{% endif %};
     const advGoleiroNome = souJ1 ? 
-        "{% if partida.draft_j2 %}{{ partida.draft_j2.goleiro.nome }} (OVR {{ partida.draft_j2.goleiro.over }}){% else %}Aguardando...{% endif %}" : 
-        "{% if partida.draft_j1 %}{{ partida.draft_j1.goleiro.nome }} (OVR {{ partida.draft_j1.goleiro.over }}){% endif %}";
+        "{% if partida.draft_j2 %}{{ partida.draft_j2.goleiro.nome|escapejs }} (OVR {{ partida.draft_j2.goleiro.over }}){% else %}Aguardando...{% endif %}" : 
+        "{% if partida.draft_j1 %}{{ partida.draft_j1.goleiro.nome|escapejs }} (OVR {{ partida.draft_j1.goleiro.over }}){% endif %}";
 
     let turnoReal = null; 
     let acaoTravada = true; 
@@ -351,6 +333,14 @@
         if(menu) menu.classList.remove('active');
     }
 
+    // Fecha o menu se clicar fora dele
+    document.addEventListener('click', function(event) {
+        let fabWrapper = document.getElementById('fabMenu');
+        if (fabWrapper && fabWrapper.classList.contains('active') && !fabWrapper.contains(event.target)) {
+            fabWrapper.classList.remove('active');
+        }
+    });
+
     function enviarEmote(emoji) {
         fetch("{% url 'minijogo:api_enviar_emote' %}", {
             method: 'POST',
@@ -378,7 +368,7 @@
                 alert(data.mensagem);
                 document.getElementById('btn-olheiro').disabled = false;
             }
-        });
+        }).catch(err => console.error(err));
     }
 
     function abrirTaticas() {
@@ -400,7 +390,7 @@
                 alert(data.mensagem);
                 document.getElementById('btn-poder').disabled = false;
             }
-        });
+        }).catch(err => console.error(err));
     }
 
     function enviarAcao(zonaClicada) {
@@ -427,7 +417,7 @@
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
             body: JSON.stringify({ partida_id: partidaId, zona: zonaClicada, carta_id: cartaEscolhidaId })
-        });
+        }).catch(err => console.error(err));
     }
 
     function registrarBolinha(deQuem, foiGol) {
@@ -508,7 +498,21 @@
     function mostrarTelaFinal(data) {
         document.getElementById('arena-principal').style.display = 'none';
         document.getElementById('tela-fim-jogo').style.display = 'block';
+
+        document.getElementById('placar-final-j1').innerText = data.placar_j1;
+        document.getElementById('placar-final-j2').innerText = data.placar_j2;
         document.getElementById('nome-vencedor').innerText = data.vencedor_nome || data.vencedor;
+
+        let streak = data.vencedor_streak || 0;
+        document.getElementById('num-streak').innerText = streak;
+        document.getElementById('barra-streak').style.width = (streak * 10) + "%";
+
+        if (streak >= 10) {
+            document.getElementById('texto-lenda').innerHTML = "<i class='fa-solid fa-crown'></i> ALCANÇASTE LA DÉCIMA!";
+            document.getElementById('texto-lenda').classList.add('text-warning');
+            document.getElementById('barra-streak').classList.remove('bg-warning');
+            document.getElementById('barra-streak').classList.add('bg-success');
+        }
     }
 
     function atualizarInterfaceTurno(data) {
@@ -532,12 +536,15 @@
                 sessionStorage.setItem(`p_${partidaId}_cards`, JSON.stringify(batedoresUsados));
                 document.querySelectorAll('.batedor-card').forEach(c => c.classList.remove('used'));
             }
+            // Atualiza os textos para tirar a impressão de "Sincronizando"
+            document.getElementById('status-adversario').innerText = "Escolhe um batedor e chuta pro Gol!";
             document.getElementById('mensagem-narrador').innerText = "TUA VEZ DE BATER";
             document.getElementById('mensagem-narrador').style.color = "#28a745";
             document.getElementById('bloco-escolher-batedor').style.opacity = "1";
             document.getElementById('enemy-info').innerText = `Oponente: ${advGoleiroNome}`;
             document.getElementById('enemy-info').style.display = "block";
         } else if (papelAtual === 'defender') {
+            document.getElementById('status-adversario').innerText = `Teu Guarda-redes: ${meuGoleiroNome}`;
             document.getElementById('mensagem-narrador').innerText = "TUA VEZ DE DEFENDER";
             document.getElementById('mensagem-narrador').style.color = "#dc3545";
             document.getElementById('bloco-escolher-batedor').style.opacity = "0.3"; 
@@ -574,11 +581,11 @@
             } else if (turnoReal !== data.meu_turno && data.meu_turno !== 'aguardando') {
                 atualizarInterfaceTurno(data);
             }
-        });
+        }).catch(err => console.error("Erro no radar:", err));
     }
 
     function desistirPartida() {
-        if(confirm("Confirmar desistência?")) {
+        if(confirm("Confirmar desistência? A vitória será dada ao oponente.")) {
             fetch("{% url 'minijogo:api_desistir' %}", { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken }, body: JSON.stringify({ partida_id: partidaId })
             }).then(() => window.location.href = "{% url 'duelos:listar_desafios' %}");
         }

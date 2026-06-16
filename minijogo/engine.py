@@ -64,14 +64,12 @@ def calcular_resultado_penalti(chute_zona, defesa_zona, batedor_ovr, goleiro_ovr
     # CENA 1: GOLEIRO PULOU PARA O LADO ERRADO
     # =========================================================
     if chute_zona != defesa_zona:
-        chance_erro = 5  # Normal: 5% de chance de errar 
-        
+        chance_erro = 5  
         if chutou_no_alto:
-            chance_erro = 22  # RISCO DA GAVETA: 22% de chance de errar!
+            chance_erro = 22  
 
         sorteio = random.randint(1, 100)
         if sorteio <= chance_erro:
-            # Diferencia o erro rasteiro do erro no alto
             if chutou_no_alto:
                 return random.choice(['isolou', 'trave'])
             else:
@@ -82,29 +80,29 @@ def calcular_resultado_penalti(chute_zona, defesa_zona, batedor_ovr, goleiro_ovr
     # CENA 2: GOLEIRO PULOU PARA O LADO CERTO (Batalha de OVR)
     # =========================================================
     
-    # RECOMPENSA DA GAVETA: Se acertou o alvo no alto, o chute é indefensável (+10 OVR)
-    bonus_gaveta = 10 if chutou_no_alto else 0
+    # RECOMPENSA DA GAVETA (+15)
+    bonus_gaveta = 15 if chutou_no_alto else 0
+    
+    # 💥 O "BUFF" DO GOLEIRO: Se acertou o lado, ganha +15 de OVR por puro reflexo!
+    bonus_acerto_lado = 15
     
     # FATOR PRESSÃO (A partir da 5ª rodada a perna treme)
-    # Craques (OVR 88+) não sentem a pressão. Jogadores comuns sim!
     fator_sorte_max_batedor = 20
     if rodada_atual >= 5 and batedor_ovr < 88:
         fator_sorte_max_batedor = 10 # O dado do batedor cai pela metade!
 
-    # 💥 APLICA A CARTA TÁTICA (CATIMBA) 💥
+    # APLICA A CARTA TÁTICA (CATIMBA)
     if tatica_goleiro_ativa:
-        batedor_ovr = int(batedor_ovr / 2) # Goleiro ativou poder, batedor perde força
-        
+        batedor_ovr = int(batedor_ovr / 2)
     if tatica_batedor_ativa:
-        goleiro_ovr = int(goleiro_ovr / 2) # Batedor ativou poder, goleiro perde força
+        goleiro_ovr = int(goleiro_ovr / 2)
 
-    # Rolando os dados (Sorte + OVR + Bônus)
+    # Rolando os dados com as novas vantagens
     poder_batedor = batedor_ovr + bonus_gaveta + random.randint(1, fator_sorte_max_batedor)
-    poder_goleiro = goleiro_ovr + random.randint(1, 20)
+    poder_goleiro = goleiro_ovr + bonus_acerto_lado + random.randint(1, 20)
 
     # Quem ganha a disputa?
     if poder_batedor > poder_goleiro:
-        # Se o batedor ganhou por muito pouco (margem de 3), a bola passa chorando
         if poder_batedor - poder_goleiro <= 3:
             return 'frango' 
         return 'gol'

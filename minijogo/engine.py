@@ -136,7 +136,7 @@ def processar_cobranca(partida):
             tatica_batedor_ativa = partida.j2_tatica_ativa
             tatica_goleiro_ativa = partida.j1_tatica_ativa
         
-        # 👈 CORREÇÃO: Passando as variáveis na ordem certa para a função
+        # Passando as variáveis na ordem certa para a função
         resultado_lance = calcular_resultado_penalti(
             chute_zona=partida.chute_zona, 
             defesa_zona=partida.defesa_zona, 
@@ -161,13 +161,20 @@ def processar_cobranca(partida):
     partida.ultima_defesa_zona = partida.defesa_zona
     partida.ultimo_resultado = resultado_lance
 
+    # 💥 NOVIDADE: Salva a zona chutada no perfil do batedor para o Olheiro
+    if partida.chute_zona and partida.chute_zona != 'timeout':
+        draft_batedor = partida.draft_j1 if partida.turno_batedor == partida.jogador1 else partida.draft_j2
+        if draft_batedor:
+            draft_batedor.historico_chutes += f"{partida.chute_zona}," # Grava separando por vírgula
+            draft_batedor.save()
+
     # Prepara a Próxima Cobrança (Limpa as escolhas atuais e os poderes)
     partida.chute_zona = None
     partida.chute_carta_id = None
     partida.defesa_zona = None
     partida.defesa_carta_id = None
     
-    # 👈 RESETA OS PODERES TÁTICOS PARA A PRÓXIMA RODADA
+    # RESETA OS PODERES TÁTICOS PARA A PRÓXIMA RODADA
     partida.j1_tatica_ativa = False
     partida.j2_tatica_ativa = False
     

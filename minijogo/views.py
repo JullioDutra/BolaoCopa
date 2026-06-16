@@ -331,3 +331,57 @@ def api_enviar_emote(request):
     partida.save()
     
     return JsonResponse({'sucesso': True})
+
+@login_required
+@require_POST
+def api_usar_olheiro(request):
+    """ Lê a mente do adversário: analisa onde ele chutou no passado """
+    data = json.loads(request.body)
+    partida = get_object_or_404(PartidaPenalti, id=data.get('partida_id'))
+
+    # Verifica se o jogador já usou o olheiro nesta partida (é uso único!)
+    if request.user == partida.jogador1:
+        if partida.j1_usou_olheiro:
+            return JsonResponse({'sucesso': False, 'mensagem': 'Você já usou o Olheiro nesta partida!'})
+        partida.j1_usou_olheiro = True
+        adversario = partida.jogador2
+    else:
+        if partida.j2_usou_olheiro:
+            return JsonResponse({'sucesso': False, 'mensagem': 'Você já usou o Olheiro nesta partida!'})
+        partida.j2_usou_olheiro = True
+        adversario = partida.jogador1
+        
+    partida.save()
+
+    if not adversario:
+        return JsonResponse({'sucesso': False, 'mensagem': 'Adversário ainda não entrou.'})
+
+    # Busca o histórico global do adversário (onde ele chutou nas partidas anteriores)
+    # Filtra as cobranças onde ele foi o batedor (turno_batedor = adversario) e chutou
+    ultimos_chutes = PartidaPenalti.objects.filter(
+        turno_batedor=adversario
+    ).exclude(chute_zona__isnull=True).values_list('chute_zona', flat=True).order_by('-id')[:10]
+
+    # Transforma os dados em algo legível
+    dicionario_zonas = {
+        'se': 'Esquerda Alta', 'me': 'Meio Alta', 'sd': 'Direita Alta',
+        'ie': 'Esquerda Baixa', 'mc': 'Meio Rasteiro', 'id': 'Direita Baixa'
+    }
+
+    if not ultimos_chutes:
+        relatorio = "Não há dados suficientes. O adversário é um novato imprevisível."
+    else:
+        # Conta qual lado ele mais chutou
+        contagem = {}
+        for zona in ultimos_chutes:
+            contagem[zona] = contagem.get(zona, 0) + 1
+            
+        zona_favorita = max(contagem, key=contagem.get)
+        porcentagem = int((contagem[zona_favorita] / len(ultimos_chutes)) * 100)
+        
+        relatorio = f"O Scout analisou! Em {porcentagem}% das vezes, o adversário chuta na zona: {dicionario_zonas.get(zona_favorita, 'Desconhecida')}."
+
+    return JsonResponse({
+        'sucesso': True,
+        'relatorio': relatorio
+    })

@@ -74,6 +74,10 @@ class PartidaPenalti(models.Model):
     placar_j2 = models.IntegerField(default=0)
     rodada_atual = models.IntegerField(default=1) 
     fase = models.CharField(max_length=20, choices=FASE_CHOICES, default='aguardando')
+
+    # === GATILHOS TEMPORÁRIOS DA CARTA TÁTICA ===
+    j1_tatica_ativa = models.BooleanField(default=False)
+    j2_tatica_ativa = models.BooleanField(default=False)
     
     # === NOVOS CAMPOS: CONTROLE DE TURNO E AÇÕES ===
     turno_batedor = models.ForeignKey(User, related_name='ataques_x1', on_delete=models.SET_NULL, null=True, blank=True)

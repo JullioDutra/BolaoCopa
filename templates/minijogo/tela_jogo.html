@@ -164,7 +164,7 @@
 
 <div class="container-fluid px-2 py-3">
     
-    <!-- TELA DE FIM DE JOGO (LA DÉCIMA) -->
+    <!-- TELA DE FIM DE JOGO -->
     <div id="tela-fim-jogo" class="arena-container text-white" style="display: none; background: linear-gradient(135deg, #0a0a0a, #1a1a1a); border: 4px solid var(--ouro); border-radius: 20px; padding: 40px 15px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.9); position: relative; overflow: hidden;">
         <div style="position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle, rgba(207,181,59,0.1) 0%, transparent 60%); pointer-events: none; animation: pop-in 2s infinite alternate;"></div>
 
@@ -217,11 +217,12 @@
 
         <div class="d-flex gap-2">
             <div class="narrador-box flex-grow-1">
+                <!-- MENSAGEM DO NARRADOR QUE VAI SE ADAPTAR DINAMICAMENTE -->
                 <p id="mensagem-narrador" class="status-turno text-warning">Sincronizando...</p>
                 <p id="status-adversario" class="status-sub">Aguarde o carregamento.</p>
             </div>
             <div class="narrador-box d-flex align-items-center justify-content-center" style="min-width: 70px; border-left-color: #dc3545;">
-                <span id="cronometro" class="fw-bold fs-3 text-danger">15</span>
+                <span id="cronometro" class="fw-bold fs-3 text-danger">--</span>
             </div>
         </div>
 
@@ -241,7 +242,7 @@
             </div>
         </div>
 
-        <!-- DECK GRID -->
+        <!-- DECK GRID (Mobile Friendly 3x2) -->
         <div class="deck-container" id="bloco-escolher-batedor">
             <div class="d-flex justify-content-between align-items-center mb-2 px-1">
                 <span class="text-white small fw-bold text-uppercase"><i class="fa-solid fa-users text-warning me-1"></i> Elenco</span>
@@ -269,7 +270,7 @@
             <i class="fa-solid fa-flag"></i> Abandonar Partida
         </button>
 
-        <!-- MENU FLUTUANTE (FAB) COM BOLA DE FUTEBOL (APENAS OLHEIRO) -->
+        <!-- MENU FLUTUANTE (FAB) COM BOLA DE FUTEBOL - APENAS OLHEIRO ATIVO -->
         {% if partida.usa_olheiro %}
         <div class="fab-wrapper" id="fabMenu">
             <button class="fab-btn fab-main shadow" onclick="document.getElementById('fabMenu').classList.toggle('active')">
@@ -291,7 +292,7 @@
     const csrfToken = '{{ csrf_token }}';
     const souJ1 = {% if request.user == partida.jogador1 %}true{% else %}false{% endif %};
     
-    // Usando escapejs para prevenir que nomes com apóstrofo quebrem o código Javascript!
+    // Tratando os nomes para evitar falha no Javascript se tiver apóstrofo
     const meuGoleiroNome = "{% if meu_draft.goleiro %}{{ meu_draft.goleiro.nome|escapejs }}{% else %}Goleiro{% endif %}";
     const meuGoleiroId = {% if meu_draft.goleiro %}{{ meu_draft.goleiro.id }}{% else %}null{% endif %};
     const advGoleiroNome = souJ1 ? 
@@ -355,15 +356,11 @@
         document.querySelectorAll('.alvo-btn').forEach(btn => btn.classList.add('alvo-ativo'));
     }
 
-    // ==========================================
-    // FUNÇÕES DO MENU FLUTUANTE (FAB)
-    // ==========================================
     function fecharMenuFab() {
         let menu = document.getElementById('fabMenu');
         if(menu) menu.classList.remove('active');
     }
 
-    // Fecha o menu se clicar em qualquer lugar fora dele
     document.addEventListener('click', function(event) {
         let fabWrapper = document.getElementById('fabMenu');
         if (fabWrapper && fabWrapper.classList.contains('active') && !fabWrapper.contains(event.target)) {
@@ -389,7 +386,7 @@
                 alert(data.mensagem);
                 document.getElementById('btn-olheiro').disabled = false;
             }
-        }).catch(err => console.error(err));
+        });
     }
 
     function enviarAcao(zonaClicada) {
@@ -417,7 +414,7 @@
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
             body: JSON.stringify({ partida_id: partidaId, zona: zonaClicada, carta_id: cartaEscolhidaId })
-        }).catch(err => console.error(err));
+        });
     }
 
     function registrarBolinha(deQuem, foiGol) {
@@ -438,8 +435,19 @@
     function rodarAnimacao(data, callbackFim) {
         animandoCena = true;
         clearInterval(timerInterval);
-        document.getElementById('mensagem-narrador').innerText = "A CORRER PARA A BOLA...";
-        document.getElementById('mensagem-narrador').style.color = "var(--ouro)";
+        
+        let ehDecisivo = (data.rodada_atual >= 5 || data.fase === 'alternadas');
+        
+        // EFEITO DE CORAÇÃO BATENDO SE FOR COBRANÇA DECISIVA!
+        if (ehDecisivo) {
+            document.getElementById('mensagem-narrador').innerText = "MOMENTO DECISIVO! CORREU...";
+            document.getElementById('mensagem-narrador').style.color = "#ff3333";
+            if (navigator.vibrate) navigator.vibrate([100, 100, 100, 400, 100, 100, 100]); // Tum-Tum... Tum-Tum...
+        } else {
+            document.getElementById('mensagem-narrador').innerText = "A CORRER PARA A BOLA...";
+            document.getElementById('mensagem-narrador').style.color = "var(--ouro)";
+        }
+        
         document.getElementById('status-adversario').innerText = "Atenção máxima no estádio...";
 
         document.querySelectorAll('.alvo-btn').forEach(btn => { 
@@ -462,8 +470,14 @@
             setTimeout(() => {
                 let texto = ""; let cor = "";
                 let foiGol = ['gol', 'frango'].includes(data.ultimo_resultado);
+                
+                // 💥 LÓGICA DE DEDUÇÃO (Para não quebrar a animação se a página foi atualizada)
+                let papelAnterior = turnoReal;
+                if (papelAnterior === 'aguardando' || papelAnterior === null) {
+                    papelAnterior = (data.meu_turno === 'defender') ? 'chutar' : 'defender';
+                }
 
-                if (turnoReal === 'chutar') {
+                if (papelAnterior === 'chutar') {
                     if (foiGol) { texto = data.ultimo_resultado === 'frango' ? 'PASSOU POR BAIXO!' : 'GOOOOOL!'; cor = 'gol_meu'; } 
                     else {
                         if (data.ultimo_resultado === 'isolou') { texto = 'ISOLOU!'; }
@@ -473,7 +487,7 @@
                         cor = 'erro_meu';
                     }
                     registrarBolinha(souJ1 ? 'j1' : 'j2', foiGol);
-                } else if (turnoReal === 'defender') {
+                } else if (papelAnterior === 'defender') {
                     if (foiGol) { texto = data.ultimo_resultado === 'frango' ? 'FRANGO!' : 'GOL DELE!'; cor = 'gol_adv'; } 
                     else {
                         if (data.ultimo_resultado === 'isolou') texto = 'ELE ISOLOU!';
@@ -527,25 +541,24 @@
         }
     }
 
+    // 💥 A CORREÇÃO PRINCIPAL ESTÁ AQUI (LIDANDO COM O MODO "AGUARDANDO" ESTRITAMENTE)
     function atualizarInterfaceTurno(data) {
         document.getElementById('placar-num-j1').innerText = data.placar_j1;
         document.getElementById('placar-num-j2').innerText = data.placar_j2;
 
         turnoReal = data.meu_turno;
         papelAtual = data.meu_turno;
-        acaoTravada = false; 
         cartaEscolhidaId = null; 
-        
+
         document.getElementById('trave-botoes').classList.remove('alvo-bloqueado');
         document.querySelectorAll('.batedor-card').forEach(c => c.classList.remove('selected'));
         document.querySelectorAll('.alvo-btn').forEach(btn => btn.classList.remove('alvo-ativo'));
         document.getElementById('carta-ativa-nome').innerText = "Seleção Pendente";
         document.getElementById('carta-ativa-nome').className = "badge bg-secondary fw-bold";
 
-        iniciarCronometro();
-
         if (papelAtual === 'chutar') {
-            // Regra da Morte Súbita: Descansar os batedores
+            acaoTravada = false;
+            iniciarCronometro();
             if (batedoresUsados.length >= 6) {
                 batedoresUsados = [];
                 sessionStorage.setItem(`p_${partidaId}_cards`, JSON.stringify(batedoresUsados));
@@ -560,12 +573,31 @@
             document.getElementById('bloco-escolher-batedor').style.opacity = "1";
             document.getElementById('enemy-info').innerText = `Oponente: ${advGoleiroNome}`;
             document.getElementById('enemy-info').style.display = "block";
+            
+            if (navigator.vibrate) navigator.vibrate(200);
+
         } else if (papelAtual === 'defender') {
+            acaoTravada = false;
+            iniciarCronometro();
             document.getElementById('mensagem-narrador').innerText = "TUA VEZ DE DEFENDER";
             document.getElementById('mensagem-narrador').style.color = "#dc3545";
             document.getElementById('status-adversario').innerText = `Teu Guarda-redes: ${meuGoleiroNome}`;
             document.getElementById('bloco-escolher-batedor').style.opacity = "0.3"; 
             document.getElementById('enemy-info').style.display = "none"; 
+            
+            if (navigator.vibrate) navigator.vibrate(200);
+
+        } else if (papelAtual === 'aguardando') {
+            // Este bloco salva a vida do jogo caso alguém dê F5!
+            acaoTravada = true;
+            clearInterval(timerInterval);
+            document.getElementById('cronometro').innerText = "--";
+            document.getElementById('trave-botoes').classList.add('alvo-bloqueado');
+            document.getElementById('mensagem-narrador').innerText = "AGUARDANDO OPONENTE";
+            document.getElementById('mensagem-narrador').style.color = "#ffc107";
+            document.getElementById('status-adversario').innerText = "A jogada está sendo decidida do outro lado...";
+            document.getElementById('bloco-escolher-batedor').style.opacity = "0.3";
+            document.getElementById('enemy-info').style.display = "none";
         }
     }
 
@@ -575,7 +607,6 @@
         fetch(`/minijogo/api/partida/${partidaId}/status/`)
         .then(response => response.json())
         .then(data => {
-            
             if (data.fase === 'finalizado') {
                 if (!fimDeJogoProcessado) {
                     fimDeJogoProcessado = true;
@@ -589,9 +620,10 @@
                 return;
             }
 
+            // MUDANÇA: A animação dispara mesmo se a página tiver sido atualizada!
             if (turnoReal !== null && turnoReal !== data.meu_turno && data.meu_turno !== 'aguardando') {
                 rodarAnimacao(data, () => { atualizarInterfaceTurno(data); });
-            } else if (turnoReal !== data.meu_turno && data.meu_turno !== 'aguardando') {
+            } else if (turnoReal !== data.meu_turno) {
                 atualizarInterfaceTurno(data);
             }
         });

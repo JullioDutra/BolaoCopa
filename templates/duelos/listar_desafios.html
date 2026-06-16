@@ -20,19 +20,24 @@
 
 <div class="row justify-content-center">
     
-    <!-- NOVO JOGO: Draft X1 Pênaltis -->
-    <div class="col-md-5 mb-4">
-        <div class="card card-clean h-100 text-center p-4 p-md-5 shadow border-0 border-top border-5 border-dark rounded-4" style="background: linear-gradient(to bottom, #ffffff, #f8f9fa);">
+    <!-- NOVO JOGO: Draft X1 Pênaltis (EM MANUTENÇÃO) -->
+    <div class="col-md-5 mb-4 position-relative">
+        <div class="card card-clean h-100 text-center p-4 p-md-5 shadow border-0 border-top border-5 border-secondary rounded-4" style="background: linear-gradient(to bottom, #f8f9fa, #e9ecef); opacity: 0.9;">
+            <!-- Badge de Manutenção -->
+            <span class="badge bg-secondary position-absolute top-0 end-0 m-3 shadow-sm" style="font-size: 0.8rem;">
+                <i class="fa-solid fa-screwdriver-wrench"></i> Em Manutenção
+            </span>
+
             <div class="mb-3">
-                <i class="fa-solid fa-futbol text-dark" style="font-size: 4rem;"></i>
+                <i class="fa-solid fa-futbol text-secondary" style="font-size: 4rem; opacity: 0.5;"></i>
             </div>
-            <h3 class="fw-bold">Draft X1 Pênaltis</h3>
+            <h3 class="fw-bold text-muted">Draft X1 Pênaltis</h3>
             <p class="text-muted mb-3">
                 Sorteio insano! Abra os pacotes, escale seus 5 batedores lendários e 1 goleiro, e decida tudo na marca da cal.
             </p>
             
-            <!-- EXIBIÇÃO DO RECORDE ATUAL (Com contraste melhorado) -->
-            <div class="bg-dark text-white rounded-3 p-2 mb-4 shadow-sm mx-auto d-inline-block" style="border: 1px solid #cfb53b; min-width: 200px;">
+            <!-- EXIBIÇÃO DO RECORDE ATUAL -->
+            <div class="bg-dark text-white rounded-3 p-2 mb-4 shadow-sm mx-auto d-inline-block" style="border: 1px solid #6c757d; min-width: 200px; opacity: 0.8;">
                 <span class="small text-uppercase text-white-50 fw-bold d-block mb-1" style="font-size: 0.7rem; letter-spacing: 1px;">👑 Atual Rei do X1</span>
                 
                 {% if top_invicto_nome %}
@@ -45,13 +50,13 @@
             </div>
             
             <div class="mt-auto d-flex flex-column gap-2">
-                <!-- BOTÃO QUE ABRE O MODAL -->
-                <button type="button" class="btn btn-dark btn-lg w-100 fw-bold shadow-sm rounded-pill" data-bs-toggle="modal" data-bs-target="#modalConfigPenaltis">
-                    <i class="fa-solid fa-play"></i> Entrar no Draft
+                <!-- BOTÃO DESATIVADO -->
+                <button type="button" class="btn btn-secondary btn-lg w-100 fw-bold shadow-sm rounded-pill" disabled>
+                    <i class="fa-solid fa-lock"></i> Aguarde...
                 </button>
                 
-                <!-- BOTÃO DO RANKING LA DÉCIMA -->
-                <a href="{% url 'minijogo:ranking_x1' %}" class="btn btn-outline-warning text-dark btn-md w-100 fw-bold shadow-sm rounded-pill" style="border-width: 2px;">
+                <!-- BOTÃO DO RANKING LA DÉCIMA (Mantido para ver o Hall da Fama) -->
+                <a href="{% url 'minijogo:ranking_x1' %}" class="btn btn-outline-secondary text-dark btn-md w-100 fw-bold shadow-sm rounded-pill" style="border-width: 2px;">
                     <i class="fa-solid fa-crown"></i> Ver Hall da Fama
                 </a>
             </div>
@@ -126,24 +131,27 @@
         </div>
     </div>
 
-    <!-- Card Super Trunfo -->
-    <div class="col-md-5 mb-4">
-        <div class="card card-clean h-100 text-center p-5 shadow border-0 border-top border-5 border-warning rounded-4">
+    <!-- Card Super Trunfo (EM MANUTENÇÃO) -->
+    <div class="col-md-5 mb-4 position-relative">
+        <div class="card card-clean h-100 text-center p-5 shadow border-0 border-top border-5 border-secondary rounded-4" style="background: linear-gradient(to bottom, #f8f9fa, #e9ecef); opacity: 0.9;">
+            <!-- Badge de Manutenção -->
+            <span class="badge bg-secondary position-absolute top-0 end-0 m-3 shadow-sm" style="font-size: 0.8rem;">
+                <i class="fa-solid fa-screwdriver-wrench"></i> Em Manutenção
+            </span>
+
             <div class="mb-3">
-                <i class="fa-solid fa-bolt text-warning" style="font-size: 4rem;"></i>
+                <i class="fa-solid fa-bolt text-secondary" style="font-size: 4rem; opacity: 0.5;"></i>
             </div>
-            <h3 class="fw-bold">Super Trunfo</h3>
+            <h3 class="fw-bold text-muted">Super Trunfo</h3>
             <p class="text-muted">
                 Batalha de atributos! Receba sua carta, escolha o melhor status e vença seu adversário.
             </p>
             
             <div class="mt-auto pt-4">
-                <form method="POST" action="{% url 'duelos:criar_trunfo' %}">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-warning text-dark btn-lg w-100 fw-bold shadow-sm rounded-pill">
-                        <i class="fa-solid fa-plus-circle"></i> Criar Sala 1v1
-                    </button>
-                </form>
+                <!-- BOTÃO DESATIVADO -->
+                <button type="button" class="btn btn-secondary btn-lg w-100 fw-bold shadow-sm rounded-pill" disabled>
+                    <i class="fa-solid fa-lock"></i> Aguarde...
+                </button>
             </div>
         </div>
     </div>
@@ -224,7 +232,7 @@
 </div>
 
 <!-- ============================================================== -->
-<!-- 💥 MODAL DE CONFIGURAÇÕES DO JOGO (COM ALTO CONTRASTE) 💥 -->
+<!-- 💥 MODAL DE CONFIGURAÇÕES DO JOGO (PODE MANTER AQUI ESCONDIDO) 💥 -->
 <!-- ============================================================== -->
 <div class="modal fade" id="modalConfigPenaltis" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -234,7 +242,6 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             
-            <!-- O formulário envia as regras para a view de iniciar o Draft -->
             <form action="{% url 'minijogo:tela_draft' %}" method="POST">
                 {% csrf_token %}
                 <div class="modal-body py-4 px-4">

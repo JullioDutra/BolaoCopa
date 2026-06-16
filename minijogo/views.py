@@ -385,3 +385,24 @@ def api_usar_olheiro(request):
         'sucesso': True,
         'relatorio': relatorio
     })
+
+@login_required
+@require_POST
+def api_usar_tatica(request):
+    """ Ativa a carta tática (Catimba) para a rodada atual """
+    data = json.loads(request.body)
+    partida = get_object_or_404(PartidaPenalti, id=data.get('partida_id'))
+
+    if request.user == partida.jogador1:
+        if partida.j1_usou_poder:
+            return JsonResponse({'sucesso': False, 'mensagem': 'Carta Tática já foi usada!'})
+        partida.j1_usou_poder = True
+        partida.j1_tatica_ativa = True
+    else:
+        if partida.j2_usou_poder:
+            return JsonResponse({'sucesso': False, 'mensagem': 'Carta Tática já foi usada!'})
+        partida.j2_usou_poder = True
+        partida.j2_tatica_ativa = True
+        
+    partida.save()
+    return JsonResponse({'sucesso': True, 'mensagem': 'Tática ativada! O OVR do adversário cairá nesta cobrança!'})

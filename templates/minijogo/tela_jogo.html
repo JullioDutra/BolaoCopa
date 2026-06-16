@@ -5,6 +5,9 @@
 
 {% block content %}
 <style>
+    /* =========================================
+       VARIÁVEIS E ANIMAÇÕES GERAIS
+       ========================================= */
     :root {
         --ouro: #cfb53b;
         --ouro-escuro: #998322;
@@ -18,12 +21,29 @@
         100% { border-color: rgba(255, 255, 255, 0.4); box-shadow: 0 0 0 rgba(255, 255, 255, 0); }
     }
 
+    @keyframes camera-shake {
+        0% { transform: translate(1px, 1px) rotate(0deg); }
+        10% { transform: translate(-1px, -2px) rotate(-1deg); }
+        20% { transform: translate(-3px, 0px) rotate(1deg); }
+        30% { transform: translate(3px, 2px) rotate(0deg); }
+        40% { transform: translate(1px, -1px) rotate(1deg); }
+        50% { transform: translate(-1px, 2px) rotate(-1deg); }
+        60% { transform: translate(-3px, 1px) rotate(0deg); }
+        70% { transform: translate(3px, 1px) rotate(-1deg); }
+        80% { transform: translate(-1px, -1px) rotate(1deg); }
+        90% { transform: translate(1px, 2px) rotate(0deg); }
+        100% { transform: translate(1px, -2px) rotate(-1deg); }
+    }
+
     @keyframes pop-in {
         0% { transform: scale(0.5); opacity: 0; }
         80% { transform: scale(1.1); opacity: 1; }
         100% { transform: scale(1); opacity: 1; }
     }
 
+    /* =========================================
+       LAYOUT DA ARENA
+       ========================================= */
     .arena-container { max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; position: relative; }
     
     .placar-tv { 
@@ -37,8 +57,8 @@
     
     .dots-container { display: flex; gap: 5px; margin-top: 6px; justify-content: center; }
     .dot { width: 14px; height: 14px; border-radius: 50%; background-color: #333; border: 2px solid #111; box-shadow: inset 0 2px 4px rgba(0,0,0,0.8); transition: all 0.3s; }
-    .dot.green { background-color: #00ff00; box-shadow: 0 0 10px #00ff00; border-color: #00aa00; }
-    .dot.red { background-color: #ff3333; box-shadow: 0 0 10px #ff3333; border-color: #aa0000; }
+    .dot.green { background-color: #00ff00; box-shadow: 0 0 10px #00ff00, inset 0 2px 4px rgba(255,255,255,0.4); border-color: #00aa00; }
+    .dot.red { background-color: #ff3333; box-shadow: 0 0 10px #ff3333, inset 0 2px 4px rgba(255,255,255,0.4); border-color: #aa0000; }
 
     .narrador-box { background: rgba(0,0,0,0.8); border-radius: 10px; padding: 10px; text-align: center; border-left: 5px solid var(--ouro); box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
     .status-turno { font-size: clamp(1.2rem, 4.5vw, 2rem); font-weight: 900; text-transform: uppercase; margin: 0; line-height: 1.1; letter-spacing: 1px; }
@@ -59,6 +79,8 @@
     .alvo-ativo { animation: pulse-alvo 2s infinite; }
     .alvo-bloqueado { pointer-events: none; opacity: 0.3; }
 
+    /* EFEITOS CINEMÁTICOS */
+    .shake-animation { animation: camera-shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
     .bola-aqui { background-color: rgba(255, 255, 255, 0.95) !important; font-size: 3rem !important; opacity: 1 !important; border: 4px solid white !important; animation: pop-in 0.3s ease-out forwards; }
     .gk-aqui { background-color: rgba(220, 53, 69, 0.9) !important; font-size: 3rem !important; opacity: 1 !important; border: 4px solid #ff3333 !important; animation: pop-in 0.3s ease-out forwards; }
     .bola-e-gk { background: linear-gradient(135deg, rgba(255,255,255,0.95) 50%, rgba(220,53,69,0.9) 50%) !important; font-size: 3rem !important; opacity: 1 !important; border: 4px solid var(--ouro) !important; animation: pop-in 0.3s ease-out forwards; }
@@ -80,7 +102,7 @@
     .batedor-card.used { opacity: 0.3; filter: grayscale(100%); pointer-events: none; border-color: #222; background: #111; }
 
     /* =========================================
-       BOTÃO FLUTUANTE (FAB) COM BOLA
+       BOTÃO FLUTUANTE (FAB) COM BOLA DE FUTEBOL
        ========================================= */
     .fab-wrapper { position: fixed; bottom: 25%; right: 15px; display: flex; flex-direction: column-reverse; align-items: flex-end; gap: 12px; z-index: 100; }
     .fab-menu { display: flex; flex-direction: column; gap: 10px; opacity: 0; pointer-events: none; transform: translateY(20px); transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
@@ -95,6 +117,7 @@
     #feedback-text { font-size: clamp(3.5rem, 12vw, 6rem); font-weight: 900; text-transform: uppercase; margin: 0; font-style: italic; animation: pop-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
 </style>
 
+<!-- MODAL DE INSTRUÇÕES -->
 <div class="modal fade" id="modalTutorial" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content bg-dark text-white border-0 shadow-lg" style="border-radius: 15px;">
@@ -123,6 +146,7 @@
   </div>
 </div>
 
+<!-- MODAL DO OLHEIRO -->
 <div class="modal fade" id="modalOlheiro" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content bg-dark text-white border-info shadow-lg" style="border-radius: 15px; border-width: 2px;">
@@ -140,7 +164,10 @@
 
 <div class="container-fluid px-2 py-3">
     
+    <!-- TELA DE FIM DE JOGO (LA DÉCIMA) -->
     <div id="tela-fim-jogo" class="arena-container text-white" style="display: none; background: linear-gradient(135deg, #0a0a0a, #1a1a1a); border: 4px solid var(--ouro); border-radius: 20px; padding: 40px 15px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.9); position: relative; overflow: hidden;">
+        <div style="position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle, rgba(207,181,59,0.1) 0%, transparent 60%); pointer-events: none; animation: pop-in 2s infinite alternate;"></div>
+
         <h1 class="fw-bold mb-0" style="color: var(--ouro); font-size: 3.5rem; text-shadow: 0 0 20px rgba(207,181,59,0.5);"><i class="fa-solid fa-trophy"></i></h1>
         <h3 class="fw-bold text-uppercase text-muted mb-4" style="letter-spacing: 4px; font-size: 1rem;">Fim de Disputa</h3>
         
@@ -169,7 +196,9 @@
         <a href="{% url 'duelos:listar_desafios' %}" class="btn btn-warning text-dark btn-lg fw-bold rounded-pill shadow-lg w-100 text-uppercase py-3 position-relative" style="z-index: 2;">Retornar ao Menu</a>
     </div>
 
+    <!-- ARENA PRINCIPAL -->
     <div id="arena-principal" class="arena-container">
+        <!-- PLACAR -->
         <div class="placar-tv">
             <div class="placar-nome text-primary text-center">
                 <div class="text-truncate">{{ partida.jogador1.username }}</div>
@@ -196,6 +225,7 @@
             </div>
         </div>
 
+        <!-- ESTÁDIO -->
         <div class="stadium-bg" id="stadium-container">
             <div class="enemy-gk-badge" id="enemy-info" style="display: none;"></div>
             
@@ -211,6 +241,7 @@
             </div>
         </div>
 
+        <!-- DECK GRID -->
         <div class="deck-container" id="bloco-escolher-batedor">
             <div class="d-flex justify-content-between align-items-center mb-2 px-1">
                 <span class="text-white small fw-bold text-uppercase"><i class="fa-solid fa-users text-warning me-1"></i> Elenco</span>
@@ -224,6 +255,7 @@
                     </div>
                 {% endfor %}
                 
+                <!-- CARTA DO GOLEIRO -->
                 {% if meu_draft.goleiro %}
                 <div class="batedor-card shadow-sm border-danger" id="card-{{ meu_draft.goleiro.id }}" onclick="selecionarKicker({{ meu_draft.goleiro.id }}, '{{ meu_draft.goleiro.nome|escapejs }}')">
                     <span class="ovr text-danger">{{ meu_draft.goleiro.over }}</span>
@@ -237,6 +269,7 @@
             <i class="fa-solid fa-flag"></i> Abandonar Partida
         </button>
 
+        <!-- MENU FLUTUANTE (FAB) COM BOLA DE FUTEBOL (APENAS OLHEIRO) -->
         {% if partida.usa_olheiro %}
         <div class="fab-wrapper" id="fabMenu">
             <button class="fab-btn fab-main shadow" onclick="document.getElementById('fabMenu').classList.toggle('active')">
@@ -258,6 +291,7 @@
     const csrfToken = '{{ csrf_token }}';
     const souJ1 = {% if request.user == partida.jogador1 %}true{% else %}false{% endif %};
     
+    // Usando escapejs para prevenir que nomes com apóstrofo quebrem o código Javascript!
     const meuGoleiroNome = "{% if meu_draft.goleiro %}{{ meu_draft.goleiro.nome|escapejs }}{% else %}Goleiro{% endif %}";
     const meuGoleiroId = {% if meu_draft.goleiro %}{{ meu_draft.goleiro.id }}{% else %}null{% endif %};
     const advGoleiroNome = souJ1 ? 
@@ -321,12 +355,15 @@
         document.querySelectorAll('.alvo-btn').forEach(btn => btn.classList.add('alvo-ativo'));
     }
 
+    // ==========================================
+    // FUNÇÕES DO MENU FLUTUANTE (FAB)
+    // ==========================================
     function fecharMenuFab() {
         let menu = document.getElementById('fabMenu');
         if(menu) menu.classList.remove('active');
     }
 
-    // Fecha o menu se clicar fora
+    // Fecha o menu se clicar em qualquer lugar fora dele
     document.addEventListener('click', function(event) {
         let fabWrapper = document.getElementById('fabMenu');
         if (fabWrapper && fabWrapper.classList.contains('active') && !fabWrapper.contains(event.target)) {
@@ -352,7 +389,7 @@
                 alert(data.mensagem);
                 document.getElementById('btn-olheiro').disabled = false;
             }
-        });
+        }).catch(err => console.error(err));
     }
 
     function enviarAcao(zonaClicada) {
@@ -380,7 +417,7 @@
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
             body: JSON.stringify({ partida_id: partidaId, zona: zonaClicada, carta_id: cartaEscolhidaId })
-        });
+        }).catch(err => console.error(err));
     }
 
     function registrarBolinha(deQuem, foiGol) {
@@ -508,6 +545,7 @@
         iniciarCronometro();
 
         if (papelAtual === 'chutar') {
+            // Regra da Morte Súbita: Descansar os batedores
             if (batedoresUsados.length >= 6) {
                 batedoresUsados = [];
                 sessionStorage.setItem(`p_${partidaId}_cards`, JSON.stringify(batedoresUsados));
@@ -537,6 +575,7 @@
         fetch(`/minijogo/api/partida/${partidaId}/status/`)
         .then(response => response.json())
         .then(data => {
+            
             if (data.fase === 'finalizado') {
                 if (!fimDeJogoProcessado) {
                     fimDeJogoProcessado = true;
@@ -550,7 +589,6 @@
                 return;
             }
 
-            // Exatamente igual à sua versão original funcional:
             if (turnoReal !== null && turnoReal !== data.meu_turno && data.meu_turno !== 'aguardando') {
                 rodarAnimacao(data, () => { atualizarInterfaceTurno(data); });
             } else if (turnoReal !== data.meu_turno && data.meu_turno !== 'aguardando') {

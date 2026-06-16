@@ -5,6 +5,9 @@
 
 {% block content %}
 <style>
+    /* =========================================
+       VARIÁVEIS E ANIMAÇÕES GERAIS
+       ========================================= */
     :root {
         --ouro: #cfb53b;
         --ouro-escuro: #998322;
@@ -18,12 +21,29 @@
         100% { border-color: rgba(255, 255, 255, 0.4); box-shadow: 0 0 0 rgba(255, 255, 255, 0); }
     }
 
+    @keyframes camera-shake {
+        0% { transform: translate(1px, 1px) rotate(0deg); }
+        10% { transform: translate(-1px, -2px) rotate(-1deg); }
+        20% { transform: translate(-3px, 0px) rotate(1deg); }
+        30% { transform: translate(3px, 2px) rotate(0deg); }
+        40% { transform: translate(1px, -1px) rotate(1deg); }
+        50% { transform: translate(-1px, 2px) rotate(-1deg); }
+        60% { transform: translate(-3px, 1px) rotate(0deg); }
+        70% { transform: translate(3px, 1px) rotate(-1deg); }
+        80% { transform: translate(-1px, -1px) rotate(1deg); }
+        90% { transform: translate(1px, 2px) rotate(0deg); }
+        100% { transform: translate(1px, -2px) rotate(-1deg); }
+    }
+
     @keyframes pop-in {
         0% { transform: scale(0.5); opacity: 0; }
         80% { transform: scale(1.1); opacity: 1; }
         100% { transform: scale(1); opacity: 1; }
     }
 
+    /* =========================================
+       LAYOUT DA ARENA
+       ========================================= */
     .arena-container { max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; position: relative; }
     
     .placar-tv { 
@@ -36,20 +56,21 @@
     .placar-numeros { font-family: 'Courier New', Courier, monospace; font-size: clamp(1.8rem, 6vw, 2.5rem); font-weight: 900; background: #000; padding: 0 15px; border-radius: 8px; border: 1px solid #444; }
     
     .dots-container { display: flex; gap: 5px; margin-top: 6px; justify-content: center; }
-    .dot { width: 14px; height: 14px; border-radius: 50%; background-color: #333; border: 2px solid #111; }
-    .dot.green { background-color: #00ff00; box-shadow: 0 0 10px #00ff00; border-color: #00aa00; }
-    .dot.red { background-color: #ff3333; box-shadow: 0 0 10px #ff3333; border-color: #aa0000; }
+    .dot { width: 14px; height: 14px; border-radius: 50%; background-color: #333; border: 2px solid #111; box-shadow: inset 0 2px 4px rgba(0,0,0,0.8); transition: all 0.3s; }
+    .dot.green { background-color: #00ff00; box-shadow: 0 0 10px #00ff00, inset 0 2px 4px rgba(255,255,255,0.4); border-color: #00aa00; }
+    .dot.red { background-color: #ff3333; box-shadow: 0 0 10px #ff3333, inset 0 2px 4px rgba(255,255,255,0.4); border-color: #aa0000; }
 
     .narrador-box { background: rgba(0,0,0,0.8); border-radius: 10px; padding: 10px; text-align: center; border-left: 5px solid var(--ouro); box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
     .status-turno { font-size: clamp(1.2rem, 4.5vw, 2rem); font-weight: 900; text-transform: uppercase; margin: 0; line-height: 1.1; letter-spacing: 1px; }
+    .status-sub { font-size: 0.9rem; color: #ccc; margin: 0; font-weight: 500; }
 
     .stadium-bg { 
         background: radial-gradient(circle at 50% 100%, var(--grama-clara), var(--grama-escura)); 
         border-radius: 15px; position: relative; overflow: hidden; height: 42vh; min-height: 280px; max-height: 400px; 
-        display: flex; justify-content: center; border: 2px solid #222;
         box-shadow: inset 0 -40px 80px rgba(0,0,0,0.6), 0 10px 20px rgba(0,0,0,0.4); 
+        display: flex; justify-content: center; border: 2px solid #222;
     }
-    .enemy-gk-badge { position: absolute; top: 12px; background: rgba(0,0,0,0.85); color: white; padding: 6px 16px; border-radius: 25px; font-size: 0.85rem; font-weight: bold; border: 1px solid var(--ouro); z-index: 5; }
+    .enemy-gk-badge { position: absolute; top: 12px; background: rgba(0,0,0,0.85); color: white; padding: 6px 16px; border-radius: 25px; font-size: 0.85rem; font-weight: bold; border: 1px solid var(--ouro); z-index: 5; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
     
     .goal-frame { position: absolute; bottom: 20px; width: 92%; height: 78%; border: 10px solid #f8f9fa; border-bottom: none; background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAOklEQVQYV2NkYGAwYkAD////Z4TRyMDFwEIGRhSVAfI1igKofZhUkGw0kgL0cQwlkqKASiIl40QBAAB8xQk/Wb04fAAAAABJRU5ErkJggg==') repeat; display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 6px; box-shadow: 0 20px 30px rgba(0,0,0,0.5); }
     
@@ -58,6 +79,8 @@
     .alvo-ativo { animation: pulse-alvo 2s infinite; }
     .alvo-bloqueado { pointer-events: none; opacity: 0.3; }
 
+    /* EFEITOS CINEMÁTICOS */
+    .shake-animation { animation: camera-shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
     .bola-aqui { background-color: rgba(255, 255, 255, 0.95) !important; font-size: 3rem !important; opacity: 1 !important; border: 4px solid white !important; animation: pop-in 0.3s ease-out forwards; }
     .gk-aqui { background-color: rgba(220, 53, 69, 0.9) !important; font-size: 3rem !important; opacity: 1 !important; border: 4px solid #ff3333 !important; animation: pop-in 0.3s ease-out forwards; }
     .bola-e-gk { background: linear-gradient(135deg, rgba(255,255,255,0.95) 50%, rgba(220,53,69,0.9) 50%) !important; font-size: 3rem !important; opacity: 1 !important; border: 4px solid var(--ouro) !important; animation: pop-in 0.3s ease-out forwards; }
@@ -76,7 +99,7 @@
     
     .batedor-card.selected { border-color: var(--ouro); background: var(--ouro-escuro); color: white; transform: translateY(-3px); box-shadow: 0 5px 15px rgba(207, 181, 59, 0.4); }
     .batedor-card.selected .ovr { color: white; }
-    .batedor-card.used { opacity: 0.3; filter: grayscale(100%); pointer-events: none; }
+    .batedor-card.used { opacity: 0.3; filter: grayscale(100%); pointer-events: none; border-color: #222; background: #111; }
 
     /* =========================================
        BOTÃO FLUTUANTE (FAB) DO PAINEL TÁTICO
@@ -84,18 +107,48 @@
     .fab-wrapper { position: fixed; bottom: 25%; right: 15px; display: flex; flex-direction: column-reverse; align-items: flex-end; gap: 12px; z-index: 100; }
     .fab-menu { display: flex; flex-direction: column; gap: 10px; opacity: 0; pointer-events: none; transform: translateY(20px); transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
     .fab-wrapper.active .fab-menu { opacity: 1; pointer-events: auto; transform: translateY(0); }
+    
     .fab-btn { width: 45px; height: 45px; border-radius: 50%; border: none; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.5); font-size: 1.2rem; cursor: pointer; }
     .fab-main { width: 55px; height: 55px; background: var(--ouro); color: #000; font-size: 1.5rem; transition: transform 0.3s ease; }
+    .fab-wrapper.active .fab-main { transform: rotate(45deg); }
     
     .emotes-row { display: flex; gap: 6px; background: rgba(0,0,0,0.7); padding: 5px; border-radius: 25px; border: 1px solid #444; }
     .emote-btn { background: none; border: none; font-size: 1.3rem; cursor: pointer; transition: transform 0.2s; }
     .emote-btn:hover { transform: scale(1.2); }
 
+    /* TELA DE FEEDBACK VISUAL */
     #feedback-overlay { position: absolute; inset: 0; background: radial-gradient(circle, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.95) 100%); z-index: 50; display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-    #feedback-text { font-size: clamp(3.5rem, 12vw, 6rem); font-weight: 900; text-transform: uppercase; margin: 0; font-style: italic; animation: pop-in 0.4s forwards; }
+    #feedback-text { font-size: clamp(3.5rem, 12vw, 6rem); font-weight: 900; text-transform: uppercase; margin: 0; font-style: italic; animation: pop-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
 </style>
 
-<!-- MODAL OLHEIRO -->
+<div class="modal fade" id="modalTutorial" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content bg-dark text-white border-0 shadow-lg" style="border-radius: 15px;">
+      <div class="modal-header border-bottom border-secondary">
+        <h4 class="modal-title fw-bold" style="color: var(--ouro);"><i class="fa-solid fa-clipboard-question"></i> Regras da Disputa</h4>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body pt-4 pb-4">
+        <ul class="list-unstyled">
+            <li class="mb-4 d-flex align-items-start">
+                <i class="fa-solid fa-star fs-3 text-warning me-3 mt-1"></i> 
+                <div><strong>A Batalha de OVR:</strong> Se o goleiro pular para o lado correto, a matemática define o lance. Maior OVR aumenta a chance de vitória.</div>
+            </li>
+            <li class="mb-4 d-flex align-items-start">
+                <i class="fa-solid fa-hand-pointer fs-3 text-success me-3 mt-1"></i> 
+                <div><strong>No Ataque:</strong> Ative um batedor no deck inferior e escolha o canto no gol.</div>
+            </li>
+            <li class="d-flex align-items-start">
+                <i class="fa-solid fa-hands fs-3 text-danger me-3 mt-1"></i> 
+                <div><strong>Na Defesa:</strong> O sistema posiciona o seu goleiro automaticamente. Analise o adversário e pule para o canto certo.</div>
+            </li>
+        </ul>
+        <button class="btn btn-warning w-100 fw-bold mt-3 py-2 text-dark text-uppercase letter-spacing-1" data-bs-dismiss="modal">Iniciar Partida</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="modal fade" id="modalOlheiro" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content bg-dark text-white border-info shadow-lg" style="border-radius: 15px; border-width: 2px;">
@@ -113,7 +166,6 @@
 
 <div class="container-fluid px-2 py-3">
     
-    <!-- TELA COMPLETA DE LA DÉCIMA E FIM DE JOGO -->
     <div id="tela-fim-jogo" class="arena-container text-white" style="display: none; background: linear-gradient(135deg, #0a0a0a, #1a1a1a); border: 4px solid var(--ouro); border-radius: 20px; padding: 40px 15px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.9); position: relative; overflow: hidden;">
         <div style="position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle, rgba(207,181,59,0.1) 0%, transparent 60%); pointer-events: none; animation: pop-in 2s infinite alternate;"></div>
 
@@ -145,10 +197,7 @@
         <a href="{% url 'duelos:listar_desafios' %}" class="btn btn-warning text-dark btn-lg fw-bold rounded-pill shadow-lg w-100 text-uppercase py-3 position-relative" style="z-index: 2;">Retornar ao Menu</a>
     </div>
 
-    <!-- ARENA PRINCIPAL -->
     <div id="arena-principal" class="arena-container">
-        
-        <!-- PLACAR -->
         <div class="placar-tv">
             <div class="placar-nome text-primary text-center">
                 <div class="text-truncate">{{ partida.jogador1.username }}</div>
@@ -156,7 +205,7 @@
             </div>
             <div class="placar-numeros text-center shadow-inner">
                 <span id="placar-num-j1">{{ partida.placar_j1 }}</span> 
-                <span class="text-muted mx-2">x</span> 
+                <span class="text-muted mx-2" style="font-size: 1.2rem;">x</span> 
                 <span id="placar-num-j2">{{ partida.placar_j2 }}</span>
             </div>
             <div class="placar-nome text-danger text-center">
@@ -168,19 +217,18 @@
         <div class="d-flex gap-2">
             <div class="narrador-box flex-grow-1">
                 <p id="mensagem-narrador" class="status-turno text-warning">Sincronizando...</p>
-                <!-- O texto abaixo agora será atualizado dinamicamente! -->
-                <p id="status-adversario" class="text-light small m-0 opacity-75">Aguarde o carregamento.</p>
+                <p id="status-adversario" class="status-sub">Aguarde o carregamento.</p>
             </div>
             <div class="narrador-box d-flex align-items-center justify-content-center" style="min-width: 70px; border-left-color: #dc3545;">
                 <span id="cronometro" class="fw-bold fs-3 text-danger">15</span>
             </div>
         </div>
 
-        <!-- ESTÁDIO -->
         <div class="stadium-bg" id="stadium-container">
             <div class="enemy-gk-badge" id="enemy-info" style="display: none;"></div>
             
-            <div id="display-emote-adv" style="position: absolute; top: 15%; right: 10%; font-size: 4rem; z-index: 60; display: none; pointer-events: none; animation: pop-in 0.3s forwards;"></div>
+            <div id="display-emote-adv" style="position: absolute; top: 15%; right: 10%; font-size: 4rem; z-index: 60; display: none; text-shadow: 0 4px 10px rgba(0,0,0,0.5); pointer-events: none; animation: pop-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;">
+            </div>
 
             <div id="feedback-overlay"><h1 id="feedback-text">GOL!</h1></div>
 
@@ -194,13 +242,11 @@
             </div>
         </div>
 
-        <!-- DECK GRID (Mobile Friendly) -->
         <div class="deck-container" id="bloco-escolher-batedor">
             <div class="d-flex justify-content-between align-items-center mb-2 px-1">
                 <span class="text-white small fw-bold text-uppercase"><i class="fa-solid fa-users text-warning me-1"></i> Elenco</span>
                 <span class="badge bg-secondary fw-bold" id="carta-ativa-nome">Seleção Pendente</span>
             </div>
-            
             <div class="deck-grid">
                 {% for batedor in meu_draft.batedores.all %}
                     <div class="batedor-card shadow-sm" id="card-{{ batedor.id }}" onclick="selecionarKicker({{ batedor.id }}, '{{ batedor.nome|escapejs }}')">
@@ -222,10 +268,8 @@
             <i class="fa-solid fa-flag"></i> Abandonar Partida
         </button>
 
-        <!-- MENU FLUTUANTE (FAB) COM BOLA DE FUTEBOL -->
         {% if partida.usa_poderes or partida.usa_olheiro or partida.usa_emotes %}
         <div class="fab-wrapper" id="fabMenu">
-            <!-- Botão Principal de Futebol -->
             <button class="fab-btn fab-main shadow" onclick="document.getElementById('fabMenu').classList.toggle('active')">
                 <i class="fa-solid fa-futbol"></i>
             </button>
@@ -254,7 +298,7 @@
             </div>
         </div>
         {% endif %}
-        
+
     </div>
 </div>
 
@@ -263,7 +307,6 @@
     const csrfToken = '{{ csrf_token }}';
     const souJ1 = {% if request.user == partida.jogador1 %}true{% else %}false{% endif %};
     
-    // Usando escapejs para prevenir que nomes com apóstrofo quebrem o código Javascript!
     const meuGoleiroNome = "{% if meu_draft.goleiro %}{{ meu_draft.goleiro.nome|escapejs }}{% else %}Goleiro{% endif %}";
     const meuGoleiroId = {% if meu_draft.goleiro %}{{ meu_draft.goleiro.id }}{% else %}null{% endif %};
     const advGoleiroNome = souJ1 ? 
@@ -280,6 +323,8 @@
     let batedoresUsados = JSON.parse(sessionStorage.getItem(`p_${partidaId}_cards`)) || [];
     let historicoJ1 = JSON.parse(sessionStorage.getItem(`p_${partidaId}_h1`)) || [];
     let historicoJ2 = JSON.parse(sessionStorage.getItem(`p_${partidaId}_h2`)) || [];
+
+    window.onload = () => { new bootstrap.Modal(document.getElementById('modalTutorial')).show(); };
 
     function carregarCartasUsadas() { 
         batedoresUsados.forEach(id => { 
@@ -333,7 +378,7 @@
         if(menu) menu.classList.remove('active');
     }
 
-    // Fecha o menu se clicar fora dele
+    // Fecha o menu se clicar em qualquer lugar fora dele
     document.addEventListener('click', function(event) {
         let fabWrapper = document.getElementById('fabMenu');
         if (fabWrapper && fabWrapper.classList.contains('active') && !fabWrapper.contains(event.target)) {
@@ -347,6 +392,7 @@
             headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
             body: JSON.stringify({ partida_id: partidaId, emoji: emoji })
         });
+        document.getElementById('mensagem-narrador').innerText = "Emote enviado!";
         fecharMenuFab();
     }
 
@@ -363,12 +409,12 @@
             if(data.sucesso) {
                 document.getElementById('texto-relatorio-olheiro').innerText = data.relatorio;
                 new bootstrap.Modal(document.getElementById('modalOlheiro')).show();
-                document.getElementById('btn-olheiro').style.filter = "grayscale(100%)";
+                document.getElementById('btn-olheiro').classList.replace('btn-info', 'btn-secondary');
             } else {
                 alert(data.mensagem);
                 document.getElementById('btn-olheiro').disabled = false;
             }
-        }).catch(err => console.error(err));
+        });
     }
 
     function abrirTaticas() {
@@ -383,14 +429,14 @@
         .then(data => {
             if(data.sucesso) {
                 document.getElementById('mensagem-narrador').innerText = "TÁTICA ATIVADA!";
-                document.getElementById('btn-poder').style.filter = "grayscale(100%)";
+                document.getElementById('btn-poder').classList.replace('btn-warning', 'btn-secondary');
                 document.body.style.boxShadow = "inset 0 0 50px rgba(255, 215, 0, 0.5)";
                 setTimeout(() => document.body.style.boxShadow = "none", 1000);
             } else {
                 alert(data.mensagem);
                 document.getElementById('btn-poder').disabled = false;
             }
-        }).catch(err => console.error(err));
+        });
     }
 
     function enviarAcao(zonaClicada) {
@@ -411,13 +457,14 @@
         document.querySelectorAll('.alvo-btn').forEach(btn => btn.classList.remove('alvo-ativo'));
         document.getElementById('mensagem-narrador').innerText = "AÇÃO REGISTRADA";
         document.getElementById('mensagem-narrador').style.color = "#28a745";
+        document.getElementById('status-adversario').innerText = "Aguardando posicionamento do oponente...";
         document.getElementById('trave-botoes').classList.add('alvo-bloqueado');
 
         fetch("{% url 'minijogo:api_enviar_acao' %}", {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
             body: JSON.stringify({ partida_id: partidaId, zona: zonaClicada, carta_id: cartaEscolhidaId })
-        }).catch(err => console.error(err));
+        });
     }
 
     function registrarBolinha(deQuem, foiGol) {
@@ -427,11 +474,20 @@
         renderizarBolinhas();
     }
 
+    function dispararShake() {
+        const stadium = document.getElementById('stadium-container');
+        stadium.classList.remove('shake-animation');
+        void stadium.offsetWidth; 
+        stadium.classList.add('shake-animation');
+        if (navigator.vibrate) navigator.vibrate(300);
+    }
+
     function rodarAnimacao(data, callbackFim) {
         animandoCena = true;
         clearInterval(timerInterval);
         document.getElementById('mensagem-narrador').innerText = "A CORRER PARA A BOLA...";
         document.getElementById('mensagem-narrador').style.color = "var(--ouro)";
+        document.getElementById('status-adversario').innerText = "Atenção máxima no estádio...";
 
         document.querySelectorAll('.alvo-btn').forEach(btn => { 
             btn.classList.remove('bola-aqui', 'gk-aqui', 'bola-e-gk', 'alvo-ativo'); 
@@ -443,7 +499,8 @@
 
         setTimeout(() => {
             if (data.ultimo_chute_zona === data.ultima_defesa_zona && zChute) {
-                zChute.classList.add('bola-e-gk'); zChute.innerHTML = '🧤⚽';
+                zChute.classList.add('bola-e-gk');
+                zChute.innerHTML = '🧤⚽';
             } else {
                 if(zChute) { zChute.classList.add('bola-aqui'); zChute.innerHTML = '⚽'; }
                 if(zDefesa) { zDefesa.classList.add('gk-aqui'); zDefesa.innerHTML = '🧤'; }
@@ -456,10 +513,10 @@
                 if (turnoReal === 'chutar') {
                     if (foiGol) { texto = data.ultimo_resultado === 'frango' ? 'PASSOU POR BAIXO!' : 'GOOOOOL!'; cor = 'gol_meu'; } 
                     else {
-                        if (data.ultimo_resultado === 'isolou') texto = 'ISOLOU!';
-                        else if (data.ultimo_resultado === 'trave') texto = 'NA TRAVE!';
-                        else if (data.ultimo_resultado === 'recuou') texto = 'RECUOU PRO GOLEIRO!';
-                        else texto = 'ESPALMOU!';
+                        if (data.ultimo_resultado === 'isolou') { texto = 'ISOLOU!'; }
+                        else if (data.ultimo_resultado === 'trave') { texto = 'NA TRAVE!'; dispararShake(); }
+                        else if (data.ultimo_resultado === 'recuou') { texto = 'RECUOU PRO GOLEIRO!'; }
+                        else { texto = 'ESPALMOU!'; }
                         cor = 'erro_meu';
                     }
                     registrarBolinha(souJ1 ? 'j1' : 'j2', foiGol);
@@ -467,20 +524,22 @@
                     if (foiGol) { texto = data.ultimo_resultado === 'frango' ? 'FRANGO!' : 'GOL DELE!'; cor = 'gol_adv'; } 
                     else {
                         if (data.ultimo_resultado === 'isolou') texto = 'ELE ISOLOU!';
-                        else if (data.ultimo_resultado === 'trave') texto = 'NA TRAVE!';
-                        else if (data.ultimo_resultado === 'recuou') texto = 'ELE RECUOU!';
+                        else if (data.ultimo_resultado === 'trave') { texto = 'NA TRAVE!'; dispararShake(); }
+                        else if (data.ultimo_resultado === 'recuou') { texto = 'ELE RECUOU!'; }
                         else texto = 'DEFENDEEEU!';
                         cor = 'defesa';
                     }
                     registrarBolinha(souJ1 ? 'j2' : 'j1', foiGol);
                 }
 
-                if(foiGol && navigator.vibrate) navigator.vibrate(300);
+                if(foiGol) dispararShake(); 
 
                 const overlay = document.getElementById('feedback-overlay');
                 const textEl = document.getElementById('feedback-text');
                 textEl.innerText = texto;
-                textEl.style.color = (cor === 'gol_meu') ? '#00ff00' : (cor === 'erro_meu' || cor === 'gol_adv') ? '#ff3333' : '#fff';
+                if(cor === 'gol_meu') { textEl.style.color = '#00ff00'; textEl.style.textShadow = '0 0 40px #00ff00'; }
+                else if (cor === 'erro_meu' || cor === 'gol_adv') { textEl.style.color = '#ff3333'; textEl.style.textShadow = '0 0 40px #ff3333'; }
+                else { textEl.style.color = '#fff'; textEl.style.textShadow = '0 0 40px #fff'; }
                 overlay.style.display = 'flex';
 
                 setTimeout(() => {
@@ -489,24 +548,24 @@
                     if(zDefesa) { zDefesa.classList.remove('gk-aqui', 'bola-e-gk'); zDefesa.innerHTML = zDefesa.dataset.text; }
                     animandoCena = false;
                     callbackFim();
-                }, 2500); 
+                }, 2800); 
 
-            }, 1000); 
-        }, 600); 
+            }, 1200); 
+        }, 800); 
     }
 
     function mostrarTelaFinal(data) {
         document.getElementById('arena-principal').style.display = 'none';
         document.getElementById('tela-fim-jogo').style.display = 'block';
-
+        
         document.getElementById('placar-final-j1').innerText = data.placar_j1;
         document.getElementById('placar-final-j2').innerText = data.placar_j2;
         document.getElementById('nome-vencedor').innerText = data.vencedor_nome || data.vencedor;
-
+        
         let streak = data.vencedor_streak || 0;
         document.getElementById('num-streak').innerText = streak;
         document.getElementById('barra-streak').style.width = (streak * 10) + "%";
-
+        
         if (streak >= 10) {
             document.getElementById('texto-lenda').innerHTML = "<i class='fa-solid fa-crown'></i> ALCANÇASTE LA DÉCIMA!";
             document.getElementById('texto-lenda').classList.add('text-warning');
@@ -519,8 +578,10 @@
         document.getElementById('placar-num-j1').innerText = data.placar_j1;
         document.getElementById('placar-num-j2').innerText = data.placar_j2;
 
-        turnoReal = data.meu_turno; papelAtual = data.meu_turno;
-        acaoTravada = false; cartaEscolhidaId = null; 
+        turnoReal = data.meu_turno;
+        papelAtual = data.meu_turno;
+        acaoTravada = false; 
+        cartaEscolhidaId = null; 
         
         document.getElementById('trave-botoes').classList.remove('alvo-bloqueado');
         document.querySelectorAll('.batedor-card').forEach(c => c.classList.remove('selected'));
@@ -531,22 +592,25 @@
         iniciarCronometro();
 
         if (papelAtual === 'chutar') {
+            // Regra da Morte Súbita: Descansar os batedores
             if (batedoresUsados.length >= 6) {
                 batedoresUsados = [];
                 sessionStorage.setItem(`p_${partidaId}_cards`, JSON.stringify(batedoresUsados));
                 document.querySelectorAll('.batedor-card').forEach(c => c.classList.remove('used'));
+                document.getElementById('status-adversario').innerText = "Morte Súbita! O teu plantel descansou para cobrar novamente.";
+            } else {
+                document.getElementById('status-adversario').innerText = "Habilita um batedor para libertar a baliza.";
             }
-            // Atualiza os textos para tirar a impressão de "Sincronizando"
-            document.getElementById('status-adversario').innerText = "Escolhe um batedor e chuta pro Gol!";
+
             document.getElementById('mensagem-narrador').innerText = "TUA VEZ DE BATER";
             document.getElementById('mensagem-narrador').style.color = "#28a745";
             document.getElementById('bloco-escolher-batedor').style.opacity = "1";
             document.getElementById('enemy-info').innerText = `Oponente: ${advGoleiroNome}`;
             document.getElementById('enemy-info').style.display = "block";
         } else if (papelAtual === 'defender') {
-            document.getElementById('status-adversario').innerText = `Teu Guarda-redes: ${meuGoleiroNome}`;
             document.getElementById('mensagem-narrador').innerText = "TUA VEZ DE DEFENDER";
             document.getElementById('mensagem-narrador').style.color = "#dc3545";
+            document.getElementById('status-adversario').innerText = `Teu Guarda-redes: ${meuGoleiroNome}`;
             document.getElementById('bloco-escolher-batedor').style.opacity = "0.3"; 
             document.getElementById('enemy-info').style.display = "none"; 
         }
@@ -558,6 +622,8 @@
         fetch(`/minijogo/api/partida/${partidaId}/status/`)
         .then(response => response.json())
         .then(data => {
+            
+            // --- LÓGICA DOS EMOTES AO VIVO ---
             if (data.emote_adversario) {
                 const emoteDiv = document.getElementById('display-emote-adv');
                 emoteDiv.innerText = data.emote_adversario;
@@ -565,13 +631,17 @@
                 if (navigator.vibrate) navigator.vibrate(100);
                 setTimeout(() => { emoteDiv.style.display = 'none'; }, 3000);
             }
+            // ----------------------------------
 
             if (data.fase === 'finalizado') {
                 if (!fimDeJogoProcessado) {
                     fimDeJogoProcessado = true;
                     acaoTravada = true; clearInterval(timerInterval); document.getElementById('trave-botoes').classList.add('alvo-bloqueado');
-                    if (turnoReal !== null && data.ultimo_resultado) { rodarAnimacao(data, () => { mostrarTelaFinal(data); }); } 
-                    else { mostrarTelaFinal(data); }
+                    if (turnoReal !== null && data.ultimo_resultado) {
+                        rodarAnimacao(data, () => { mostrarTelaFinal(data); });
+                    } else {
+                        mostrarTelaFinal(data);
+                    }
                 }
                 return;
             }
@@ -581,11 +651,11 @@
             } else if (turnoReal !== data.meu_turno && data.meu_turno !== 'aguardando') {
                 atualizarInterfaceTurno(data);
             }
-        }).catch(err => console.error("Erro no radar:", err));
+        });
     }
 
     function desistirPartida() {
-        if(confirm("Confirmar desistência? A vitória será dada ao oponente.")) {
+        if(confirm("Confirmar desistência? A vitória será concedida ao adversário.")) {
             fetch("{% url 'minijogo:api_desistir' %}", { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken }, body: JSON.stringify({ partida_id: partidaId })
             }).then(() => window.location.href = "{% url 'duelos:listar_desafios' %}");
         }

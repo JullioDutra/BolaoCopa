@@ -102,7 +102,7 @@
     .batedor-card.used { opacity: 0.3; filter: grayscale(100%); pointer-events: none; border-color: #222; background: #111; }
 
     /* =========================================
-       BOTÃO FLUTUANTE (FAB) DO PAINEL TÁTICO
+       BOTÃO FLUTUANTE (FAB) COM BOLA
        ========================================= */
     .fab-wrapper { position: fixed; bottom: 25%; right: 15px; display: flex; flex-direction: column-reverse; align-items: flex-end; gap: 12px; z-index: 100; }
     .fab-menu { display: flex; flex-direction: column; gap: 10px; opacity: 0; pointer-events: none; transform: translateY(20px); transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
@@ -110,17 +110,14 @@
     
     .fab-btn { width: 45px; height: 45px; border-radius: 50%; border: none; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.5); font-size: 1.2rem; cursor: pointer; }
     .fab-main { width: 55px; height: 55px; background: var(--ouro); color: #000; font-size: 1.5rem; transition: transform 0.3s ease; }
-    .fab-wrapper.active .fab-main { transform: rotate(45deg); }
-    
-    .emotes-row { display: flex; gap: 6px; background: rgba(0,0,0,0.7); padding: 5px; border-radius: 25px; border: 1px solid #444; }
-    .emote-btn { background: none; border: none; font-size: 1.3rem; cursor: pointer; transition: transform 0.2s; }
-    .emote-btn:hover { transform: scale(1.2); }
+    .fab-wrapper.active .fab-main { transform: rotate(180deg); } /* Gira a bola */
 
     /* TELA DE FEEDBACK VISUAL */
     #feedback-overlay { position: absolute; inset: 0; background: radial-gradient(circle, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.95) 100%); z-index: 50; display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
     #feedback-text { font-size: clamp(3.5rem, 12vw, 6rem); font-weight: 900; text-transform: uppercase; margin: 0; font-style: italic; animation: pop-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
 </style>
 
+<!-- MODAL DE INSTRUÇÕES -->
 <div class="modal fade" id="modalTutorial" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content bg-dark text-white border-0 shadow-lg" style="border-radius: 15px;">
@@ -149,6 +146,7 @@
   </div>
 </div>
 
+<!-- MODAL DO OLHEIRO -->
 <div class="modal fade" id="modalOlheiro" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content bg-dark text-white border-info shadow-lg" style="border-radius: 15px; border-width: 2px;">
@@ -166,6 +164,7 @@
 
 <div class="container-fluid px-2 py-3">
     
+    <!-- TELA DE FIM DE JOGO -->
     <div id="tela-fim-jogo" class="arena-container text-white" style="display: none; background: linear-gradient(135deg, #0a0a0a, #1a1a1a); border: 4px solid var(--ouro); border-radius: 20px; padding: 40px 15px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.9); position: relative; overflow: hidden;">
         <div style="position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle, rgba(207,181,59,0.1) 0%, transparent 60%); pointer-events: none; animation: pop-in 2s infinite alternate;"></div>
 
@@ -197,7 +196,9 @@
         <a href="{% url 'duelos:listar_desafios' %}" class="btn btn-warning text-dark btn-lg fw-bold rounded-pill shadow-lg w-100 text-uppercase py-3 position-relative" style="z-index: 2;">Retornar ao Menu</a>
     </div>
 
+    <!-- ARENA PRINCIPAL -->
     <div id="arena-principal" class="arena-container">
+        <!-- PLACAR -->
         <div class="placar-tv">
             <div class="placar-nome text-primary text-center">
                 <div class="text-truncate">{{ partida.jogador1.username }}</div>
@@ -224,11 +225,9 @@
             </div>
         </div>
 
+        <!-- ESTÁDIO -->
         <div class="stadium-bg" id="stadium-container">
             <div class="enemy-gk-badge" id="enemy-info" style="display: none;"></div>
-            
-            <div id="display-emote-adv" style="position: absolute; top: 15%; right: 10%; font-size: 4rem; z-index: 60; display: none; text-shadow: 0 4px 10px rgba(0,0,0,0.5); pointer-events: none; animation: pop-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;">
-            </div>
 
             <div id="feedback-overlay"><h1 id="feedback-text">GOL!</h1></div>
 
@@ -242,6 +241,21 @@
             </div>
         </div>
 
+        <!-- MENU FLUTUANTE (FAB) COM BOLA DE FUTEBOL - APENAS OLHEIRO -->
+        {% if partida.usa_olheiro %}
+        <div class="fab-wrapper" id="fabMenu">
+            <button class="fab-btn fab-main shadow" onclick="document.getElementById('fabMenu').classList.toggle('active')">
+                <i class="fa-solid fa-futbol"></i>
+            </button>
+            <div class="fab-menu">
+                <button id="btn-olheiro" class="fab-btn bg-info text-dark border border-2 border-dark" onclick="abrirOlheiro()" title="Olheiro">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </button>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- DECK GRID (3x2) -->
         <div class="deck-container" id="bloco-escolher-batedor">
             <div class="d-flex justify-content-between align-items-center mb-2 px-1">
                 <span class="text-white small fw-bold text-uppercase"><i class="fa-solid fa-users text-warning me-1"></i> Elenco</span>
@@ -249,14 +263,14 @@
             </div>
             <div class="deck-grid">
                 {% for batedor in meu_draft.batedores.all %}
-                    <div class="batedor-card shadow-sm" id="card-{{ batedor.id }}" onclick="selecionarKicker({{ batedor.id }}, '{{ batedor.nome|escapejs }}')">
+                    <div class="batedor-card shadow-sm" id="card-{{ batedor.id }}" onclick="selecionarKicker({{ batedor.id }}, '{{ batedor.nome }}')">
                         <span class="ovr">{{ batedor.over }}</span>
                         <span class="nome">{{ batedor.nome }}</span>
                     </div>
                 {% endfor %}
                 
                 {% if meu_draft.goleiro %}
-                <div class="batedor-card shadow-sm border-danger" id="card-{{ meu_draft.goleiro.id }}" onclick="selecionarKicker({{ meu_draft.goleiro.id }}, '{{ meu_draft.goleiro.nome|escapejs }}')">
+                <div class="batedor-card shadow-sm border-danger" id="card-{{ meu_draft.goleiro.id }}" onclick="selecionarKicker({{ meu_draft.goleiro.id }}, '{{ meu_draft.goleiro.nome }}')">
                     <span class="ovr text-danger">{{ meu_draft.goleiro.over }}</span>
                     <span class="nome">{{ meu_draft.goleiro.nome }} (GK)</span>
                 </div>
@@ -267,38 +281,6 @@
         <button class="btn btn-link text-danger btn-sm w-100 mt-1 fw-bold text-decoration-none" onclick="desistirPartida()">
             <i class="fa-solid fa-flag"></i> Abandonar Partida
         </button>
-
-        {% if partida.usa_poderes or partida.usa_olheiro or partida.usa_emotes %}
-        <div class="fab-wrapper" id="fabMenu">
-            <button class="fab-btn fab-main shadow" onclick="document.getElementById('fabMenu').classList.toggle('active')">
-                <i class="fa-solid fa-futbol"></i>
-            </button>
-            
-            <div class="fab-menu">
-                {% if partida.usa_poderes %}
-                <button id="btn-poder" class="fab-btn bg-warning text-dark border border-2 border-dark" onclick="abrirTaticas()" title="Carta Tática">
-                    <i class="fa-solid fa-bolt"></i>
-                </button>
-                {% endif %}
-                
-                {% if partida.usa_olheiro %}
-                <button id="btn-olheiro" class="fab-btn bg-info text-dark border border-2 border-dark" onclick="abrirOlheiro()" title="Olheiro">
-                    <i class="fa-solid fa-magnifying-glass"></i>
-                </button>
-                {% endif %}
-                
-                {% if partida.usa_emotes %}
-                <div class="emotes-row">
-                    <button class="emote-btn" onclick="enviarEmote('🥶')">🥶</button>
-                    <button class="emote-btn" onclick="enviarEmote('🤫')">🤫</button>
-                    <button class="emote-btn" onclick="enviarEmote('🧤')">🧤</button>
-                    <button class="emote-btn" onclick="enviarEmote('⚽')">⚽</button>
-                </div>
-                {% endif %}
-            </div>
-        </div>
-        {% endif %}
-
     </div>
 </div>
 
@@ -307,11 +289,11 @@
     const csrfToken = '{{ csrf_token }}';
     const souJ1 = {% if request.user == partida.jogador1 %}true{% else %}false{% endif %};
     
-    const meuGoleiroNome = "{% if meu_draft.goleiro %}{{ meu_draft.goleiro.nome|escapejs }}{% else %}Goleiro{% endif %}";
+    const meuGoleiroNome = "{% if meu_draft.goleiro %}{{ meu_draft.goleiro.nome }}{% else %}Goleiro{% endif %}";
     const meuGoleiroId = {% if meu_draft.goleiro %}{{ meu_draft.goleiro.id }}{% else %}null{% endif %};
     const advGoleiroNome = souJ1 ? 
-        "{% if partida.draft_j2 %}{{ partida.draft_j2.goleiro.nome|escapejs }} (OVR {{ partida.draft_j2.goleiro.over }}){% else %}Aguardando...{% endif %}" : 
-        "{% if partida.draft_j1 %}{{ partida.draft_j1.goleiro.nome|escapejs }} (OVR {{ partida.draft_j1.goleiro.over }}){% endif %}";
+        "{% if partida.draft_j2 %}{{ partida.draft_j2.goleiro.nome }} (OVR {{ partida.draft_j2.goleiro.over }}){% else %}Aguardando...{% endif %}" : 
+        "{% if partida.draft_j1 %}{{ partida.draft_j1.goleiro.nome }} (OVR {{ partida.draft_j1.goleiro.over }}){% endif %}";
 
     let turnoReal = null; 
     let acaoTravada = true; 
@@ -370,30 +352,9 @@
         document.querySelectorAll('.alvo-btn').forEach(btn => btn.classList.add('alvo-ativo'));
     }
 
-    // ==========================================
-    // FUNÇÕES DO MENU FLUTUANTE (FAB)
-    // ==========================================
     function fecharMenuFab() {
         let menu = document.getElementById('fabMenu');
         if(menu) menu.classList.remove('active');
-    }
-
-    // Fecha o menu se clicar em qualquer lugar fora dele
-    document.addEventListener('click', function(event) {
-        let fabWrapper = document.getElementById('fabMenu');
-        if (fabWrapper && fabWrapper.classList.contains('active') && !fabWrapper.contains(event.target)) {
-            fabWrapper.classList.remove('active');
-        }
-    });
-
-    function enviarEmote(emoji) {
-        fetch("{% url 'minijogo:api_enviar_emote' %}", {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
-            body: JSON.stringify({ partida_id: partidaId, emoji: emoji })
-        });
-        document.getElementById('mensagem-narrador').innerText = "Emote enviado!";
-        fecharMenuFab();
     }
 
     function abrirOlheiro() {
@@ -409,32 +370,10 @@
             if(data.sucesso) {
                 document.getElementById('texto-relatorio-olheiro').innerText = data.relatorio;
                 new bootstrap.Modal(document.getElementById('modalOlheiro')).show();
-                document.getElementById('btn-olheiro').classList.replace('btn-info', 'btn-secondary');
+                document.getElementById('btn-olheiro').style.filter = "grayscale(100%)";
             } else {
                 alert(data.mensagem);
                 document.getElementById('btn-olheiro').disabled = false;
-            }
-        });
-    }
-
-    function abrirTaticas() {
-        document.getElementById('btn-poder').disabled = true;
-        fecharMenuFab();
-        fetch("{% url 'minijogo:api_usar_tatica' %}", {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
-            body: JSON.stringify({ partida_id: partidaId })
-        })
-        .then(res => res.json())
-        .then(data => {
-            if(data.sucesso) {
-                document.getElementById('mensagem-narrador').innerText = "TÁTICA ATIVADA!";
-                document.getElementById('btn-poder').classList.replace('btn-warning', 'btn-secondary');
-                document.body.style.boxShadow = "inset 0 0 50px rgba(255, 215, 0, 0.5)";
-                setTimeout(() => document.body.style.boxShadow = "none", 1000);
-            } else {
-                alert(data.mensagem);
-                document.getElementById('btn-poder').disabled = false;
             }
         });
     }
@@ -592,7 +531,6 @@
         iniciarCronometro();
 
         if (papelAtual === 'chutar') {
-            // Regra da Morte Súbita: Descansar os batedores
             if (batedoresUsados.length >= 6) {
                 batedoresUsados = [];
                 sessionStorage.setItem(`p_${partidaId}_cards`, JSON.stringify(batedoresUsados));
@@ -623,16 +561,6 @@
         .then(response => response.json())
         .then(data => {
             
-            // --- LÓGICA DOS EMOTES AO VIVO ---
-            if (data.emote_adversario) {
-                const emoteDiv = document.getElementById('display-emote-adv');
-                emoteDiv.innerText = data.emote_adversario;
-                emoteDiv.style.display = 'block';
-                if (navigator.vibrate) navigator.vibrate(100);
-                setTimeout(() => { emoteDiv.style.display = 'none'; }, 3000);
-            }
-            // ----------------------------------
-
             if (data.fase === 'finalizado') {
                 if (!fimDeJogoProcessado) {
                     fimDeJogoProcessado = true;

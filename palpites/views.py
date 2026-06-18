@@ -157,7 +157,7 @@ def ranking_geral(request):
         
         # Se você criou um campo booleano no model Palpite chamado 'is_maior_pontuador',
         # você poderia contar assim:
-        # maior_pontuador=Count('id', filter=Q(is_maior_pontuador=True)),
+        maior_pontuador=Count('id', filter=Q(is_maior_pontuador=True)),
         
     ).order_by('-total_pontos')
         

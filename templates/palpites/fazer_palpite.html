@@ -3,15 +3,15 @@
 
 {% block content %}
 <style>
-    /* Estilização focada nas caixas de placar para visualização perfeita no celular */
+    /* COMPORTAMENTO MOBILE (Padrão) */
     .caixa-placar input {
-        font-size: 2.5rem !important; 
+        font-size: 1.8rem !important; 
         font-weight: 900 !important;  
-        height: 70px;
-        width: 70px !important; /* Ajustado para 70px para caber 100% em telas minúsculas */
+        height: 55px;
+        width: 50px !important; /* Mais fino no celular para caber perfeitamente */
         text-align: center;
         border: 2px solid #dee2e6;
-        border-radius: 16px;
+        border-radius: 12px;
         color: var(--verde-escuro, #1a1a1a);
         background-color: #f8f9fa;
         box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
@@ -19,14 +19,32 @@
         transition: all 0.2s ease-in-out;
     }
     
+    .team-logo-palpite {
+        max-height: 45px; /* Escudo menor no celular */
+        object-fit: contain;
+    }
+
+    /* COMPORTAMENTO TABLET E DESKTOP */
+    @media (min-width: 576px) {
+        .caixa-placar input {
+            height: 70px;
+            width: 70px !important;
+            font-size: 2.5rem !important;
+            border-radius: 16px;
+        }
+        .team-logo-palpite {
+            max-height: 65px; /* Escudo volta ao tamanho normal */
+        }
+    }
+    
     .caixa-placar input:focus {
-        border-color: #198754; /* Verde sucesso do Bootstrap */
+        border-color: #198754; 
         background-color: #ffffff;
         box-shadow: 0 0 0 4px rgba(25, 135, 84, 0.2);
         outline: none;
     }
 
-    /* Esconde as setinhas nativas de aumentar/diminuir número para não cobrir o texto */
+    /* Esconde setinhas nativas do tipo number */
     .caixa-placar input[type=number]::-webkit-inner-spin-button, 
     .caixa-placar input[type=number]::-webkit-outer-spin-button { 
         -webkit-appearance: none; 
@@ -35,16 +53,11 @@
     .caixa-placar input[type=number] {
         -moz-appearance: textfield;
     }
-    
-    .team-logo-palpite {
-        max-height: 65px;
-        object-fit: contain;
-    }
 </style>
 
 <div class="row justify-content-center align-items-center min-vh-75 mt-4 mb-5 px-2">
     <div class="col-12 col-md-8 col-lg-7">
-        <div class="card card-clean p-4 p-md-5 shadow-lg border-0 rounded-4 bg-white text-center">
+        <div class="card card-clean p-3 p-sm-4 p-md-5 shadow-lg border-0 rounded-4 bg-white text-center">
             
             <!-- CABEÇALHO CONDICIONAL -->
             {% if palpite_existente %}
@@ -78,49 +91,49 @@
             <form method="POST">
                 {% csrf_token %}
                 
-                <!-- ÁREA DO PLACAR (GRID RESPONSIVO) -->
-                <div class="row align-items-center justify-content-center mb-4 g-2">
+                <!-- ÁREA DO PLACAR (FLEXBOX MILIMÉTRICO) -->
+                <div class="d-flex flex-row align-items-center justify-content-between mb-4 w-100">
                     
-                    <!-- Time da Casa -->
-                    <div class="col-4 text-center">
+                    <!-- Time da Casa (Ocupa 30% da tela) -->
+                    <div class="d-flex flex-column align-items-center text-center" style="width: 30%;">
                         {% if jogo.escudo_casa %}
                             <img src="{{ jogo.escudo_casa.url }}" class="img-fluid mb-2 team-logo-palpite">
                         {% else %}
-                            <div class="bg-light rounded-circle mx-auto mb-2 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
-                                <i class="fa-solid fa-shield-halved text-muted fs-3"></i>
+                            <div class="bg-light rounded-circle mb-2 d-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
+                                <i class="fa-solid fa-shield-halved text-muted fs-5"></i>
                             </div>
                         {% endif %}
-                        <h6 class="fw-bold text-truncate mb-0 px-1" title="{{ jogo.time_casa }}">{{ jogo.time_casa }}</h6>
+                        <h6 class="fw-bold text-truncate w-100 mb-0 px-1" style="font-size: 0.85rem;" title="{{ jogo.time_casa }}">{{ jogo.time_casa }}</h6>
                     </div>
                     
-                    <!-- Campos de Gols -->
-                    <div class="col-4 d-flex justify-content-center align-items-center gap-2">
+                    <!-- Campos de Gols (Ocupa 40% da tela) -->
+                    <div class="d-flex flex-row justify-content-center align-items-center gap-1 gap-sm-3" style="width: 40%;">
                         <div class="caixa-placar">
                             {{ form.gols_casa }}
                         </div>
                         
-                        <span class="fw-bold text-muted fs-5">X</span>
+                        <span class="fw-bold text-muted fs-6 fs-sm-5 mx-1">X</span>
                         
                         <div class="caixa-placar">
                             {{ form.gols_fora }}
                         </div>
                     </div>
                     
-                    <!-- Time de Fora -->
-                    <div class="col-4 text-center">
+                    <!-- Time de Fora (Ocupa 30% da tela) -->
+                    <div class="d-flex flex-column align-items-center text-center" style="width: 30%;">
                         {% if jogo.escudo_fora %}
                             <img src="{{ jogo.escudo_fora.url }}" class="img-fluid mb-2 team-logo-palpite">
                         {% else %}
-                            <div class="bg-light rounded-circle mx-auto mb-2 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
-                                <i class="fa-solid fa-shield-halved text-muted fs-3"></i>
+                            <div class="bg-light rounded-circle mb-2 d-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
+                                <i class="fa-solid fa-shield-halved text-muted fs-5"></i>
                             </div>
                         {% endif %}
-                        <h6 class="fw-bold text-truncate mb-0 px-1" title="{{ jogo.time_fora }}">{{ jogo.time_fora }}</h6>
+                        <h6 class="fw-bold text-truncate w-100 mb-0 px-1" style="font-size: 0.85rem;" title="{{ jogo.time_fora }}">{{ jogo.time_fora }}</h6>
                     </div>
                     
                 </div>
 
-                <!-- ERROS DO FORMULÁRIO (Caso o usuário digite algo inválido) -->
+                <!-- ERROS DO FORMULÁRIO -->
                 {% if form.errors %}
                     <div class="alert alert-danger rounded-3 py-2 small shadow-sm text-start">
                         <i class="fa-solid fa-triangle-exclamation"></i> Verifique os valores inseridos.

@@ -1,19 +1,20 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Acesso - Cartolândia{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center mt-4 mb-5">
-    <div class="col-md-6 col-lg-5">
+<div class="row justify-content-center align-items-center min-vh-100 mt-3 mb-5 px-2">
+    <div class="col-12 col-sm-10 col-md-8 col-lg-5">
         
-        <ul class="nav nav-pills nav-justified mb-4 bg-light p-1 rounded-3" id="pills-tab" role="tablist">
+        <ul class="nav nav-pills nav-justified mb-4 bg-white shadow-sm p-1 rounded-pill border" id="pills-tab" role="tablist">
             <li class="nav-item" role="presentation">
-                <button class="nav-link {% if active_tab == 'login' %}active{% endif %} fw-bold py-2 rounded-3" id="pills-login-tab" data-bs-toggle="pill" data-bs-target="#pills-login" type="button" role="tab" aria-controls="pills-login" aria-selected="{% if active_tab == 'login' %}true{% endif %}">
+                <button class="nav-link {% if active_tab == 'login' %}active{% endif %} fw-bold py-2 rounded-pill" id="pills-login-tab" data-bs-toggle="pill" data-bs-target="#pills-login" type="button" role="tab" aria-controls="pills-login" aria-selected="{% if active_tab == 'login' %}true{% endif %}">
                     <i class="fa-solid fa-right-to-bracket"></i> Entrar
                 </button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link {% if active_tab == 'registro' %}active{% endif %} fw-bold py-2 rounded-3" id="pills-registro-tab" data-bs-toggle="pill" data-bs-target="#pills-registro" type="button" role="tab" aria-controls="pills-registro" aria-selected="{% if active_tab == 'registro' %}true{% endif %}">
+                <button class="nav-link {% if active_tab == 'registro' %}active{% endif %} fw-bold py-2 rounded-pill" id="pills-registro-tab" data-bs-toggle="pill" data-bs-target="#pills-registro" type="button" role="tab" aria-controls="pills-registro" aria-selected="{% if active_tab == 'registro' %}true{% endif %}">
                     <i class="fa-solid fa-user-plus"></i> Criar Conta
                 </button>
             </li>
@@ -22,70 +23,113 @@
         <div class="tab-content" id="pills-tabContent">
             
             <div class="tab-pane fade {% if active_tab == 'login' %}show active{% endif %}" id="pills-login" role="tabpanel" aria-labelledby="pills-login-tab">
-                <div class="card card-clean p-4 shadow border-0 rounded-4">
-                    <h4 class="fw-bold text-center mb-3" style="color: var(--verde-escuro);">Bem-vindo de Volta!</h4>
+                <div class="card card-clean p-4 shadow-lg border-0 rounded-4 bg-white">
+                    <div class="text-center mb-4">
+                        <h4 class="fw-bold mb-1" style="color: var(--verde-escuro);">Vestiário</h4>
+                        <p class="text-muted small">Faça login para escalar seu time!</p>
+                    </div>
                     
-                    <form method="POST" class="django-form mt-2">
+                    <form method="POST" class="django-form">
                         {% csrf_token %}
                         <input type="hidden" name="action" value="login">
                         
                         {% for field in form_login %}
-                            <p>
-                                {{ field.label_tag }}
-                                {% if field.name == 'username' %}
-                                    <input type="text" name="{{ field.html_name }}" class="form-control form-control-lg" placeholder="Nome de usuário ou E-mail" required>
-                                {% else %}
-                                    <input type="password" name="{{ field.html_name }}" class="form-control form-control-lg" placeholder="Sua senha secreta" required>
+                            <div class="mb-3">
+                                <div class="input-group input-group-lg shadow-sm rounded-3">
+                                    {% if field.name == 'username' %}
+                                        <span class="input-group-text bg-light border-end-0 text-success"><i class="fa-solid fa-user"></i></span>
+                                        <input type="text" name="{{ field.html_name }}" class="form-control border-start-0 bg-light" placeholder="Usuário ou E-mail" required>
+                                    {% else %}
+                                        <span class="input-group-text bg-light border-end-0 text-success"><i class="fa-solid fa-lock"></i></span>
+                                        <input type="password" name="{{ field.html_name }}" class="form-control border-start-0 bg-light" placeholder="Sua senha secreta" required>
+                                    {% endif %}
+                                </div>
+                                {% if field.errors %}
+                                    <div class="text-danger small mt-1"><i class="fa-solid fa-circle-exclamation"></i> {{ field.errors|striptags }}</div>
                                 {% endif %}
-                                {{ field.errors }}
-                            </p>
+                            </div>
                         {% endfor %}
                         
-                        <div class="text-end mb-3">
-                            <a href="{% url 'password_reset' %}" class="text-decoration-none text-muted small fw-bold">
+                        <div class="text-end mb-4">
+                            <a href="{% url 'password_reset' %}" class="text-decoration-none text-success small fw-bold">
                                 <i class="fa-solid fa-unlock-keyhole"></i> Esqueceu a senha?
                             </a>
                         </div>
                         
-                        <button type="submit" class="btn btn-principal w-100 btn-lg mt-3 fw-bold shadow-sm">
-                            <i class="fa-solid fa-circle-check"></i> Acessar Painel
+                        <button type="submit" class="btn btn-success w-100 btn-lg fw-bold shadow rounded-pill text-uppercase" style="letter-spacing: 0.5px;">
+                            <i class="fa-solid fa-futbol"></i> Entrar em Campo
                         </button>
                     </form>
+
+                    <div class="text-center mt-4 pt-3 border-top">
+                        {% if logo_url %}
+                            <img src="{% static logo_url %}" alt="Logo Cartolândia" class="img-fluid" style="max-height: 40px; opacity: 0.8;">
+                        {% else %}
+                            <div class="d-flex align-items-center justify-content-center text-muted gap-2 small">
+                                <i class="fa-solid fa-shield-halved fa-lg text-success"></i>
+                                <span class="fw-bold text-uppercase tracking-wider" style="font-size: 0.8rem; letter-spacing: 1px;">Cartolândia</span>
+                            </div>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
 
             <div class="tab-pane fade {% if active_tab == 'registro' %}show active{% endif %}" id="pills-registro" role="tabpanel" aria-labelledby="pills-registro-tab">
-                <div class="card card-clean p-4 shadow border-0 rounded-4">
-                    <h4 class="fw-bold text-center mb-3" style="color: var(--verde-escuro);">Cadastre-se Grátis</h4>
+                <div class="card card-clean p-4 shadow-lg border-0 rounded-4 bg-white">
+                    <div class="text-center mb-4">
+                        <h4 class="fw-bold mb-1" style="color: var(--verde-escuro);">Novo Contrato</h4>
+                        <p class="text-muted small">Assine com a Cartolândia agora grátis</p>
+                    </div>
                     
-                    <form method="POST" class="django-form mt-2">
+                    <form method="POST" class="django-form">
                         {% csrf_token %}
                         <input type="hidden" name="action" value="registro">
                         
                         {% for field in form_registro %}
-                            <p>
-                                {{ field.label_tag }}
-                                {% if field.name == 'username' %}
-                                    <input type="text" name="{{ field.html_name }}" class="form-control form-control-lg" placeholder="Ex: jandira_10" required>
-                                {% elif field.name == 'email' %}
-                                    <input type="email" name="{{ field.html_name }}" class="form-control form-control-lg" placeholder="Ex: nome@provedor.com" required>
-                                {% elif 'senha' in field.name or 'password' in field.name %}
-                                    <input type="password" name="{{ field.html_name }}" class="form-control form-control-lg" placeholder="Crie uma senha forte" required>
-                                {% else %}
-                                    <input type="text" name="{{ field.html_name }}" class="form-control form-control-lg" required>
-                                {% endif %}
+                            <div class="mb-3">
+                                <div class="input-group input-group-lg shadow-sm rounded-3">
+                                    {% if field.name == 'username' %}
+                                        <span class="input-group-text bg-light border-end-0 text-success"><i class="fa-solid fa-at"></i></span>
+                                        <input type="text" name="{{ field.html_name }}" class="form-control border-start-0 bg-light" placeholder="Ex: jandira_10" required>
+                                    {% elif field.name == 'email' %}
+                                        <span class="input-group-text bg-light border-end-0 text-success"><i class="fa-solid fa-envelope"></i></span>
+                                        <input type="email" name="{{ field.html_name }}" class="form-control border-start-0 bg-light" placeholder="Ex: nome@provedor.com" required>
+                                    {% elif 'senha' in field.name or 'password' in field.name %}
+                                        <span class="input-group-text bg-light border-end-0 text-success"><i class="fa-solid fa-shield-halved"></i></span>
+                                        <input type="password" name="{{ field.html_name }}" class="form-control border-start-0 bg-light" placeholder="Crie uma senha forte" required>
+                                    {% else %}
+                                        <span class="input-group-text bg-light border-end-0 text-success"><i class="fa-solid fa-pen"></i></span>
+                                        <input type="text" name="{{ field.html_name }}" class="form-control border-start-0 bg-light" placeholder="{{ field.label }}" required>
+                                    {% endif %}
+                                </div>
                                 
                                 {% if field.help_text %}
-                                    <small class="form-text text-muted d-block mt-1" style="font-size: 0.75rem;">{{ field.help_text }}</small>
+                                    <small class="form-text text-muted d-block mt-1 px-2" style="font-size: 0.75rem;">
+                                        <i class="fa-solid fa-circle-info"></i> {{ field.help_text }}
+                                    </small>
                                 {% endif %}
-                                {{ field.errors }}
-                            </p>
+                                
+                                {% if field.errors %}
+                                    <div class="text-danger small mt-1"><i class="fa-solid fa-circle-exclamation"></i> {{ field.errors|striptags }}</div>
+                                {% endif %}
+                            </div>
                         {% endfor %}
                         
-                        <button type="submit" class="btn btn-success w-100 btn-lg mt-3 fw-bold shadow-sm">
-                            <i class="fa-solid fa-user-check"></i> Finalizar Cadastro
+                        <button type="submit" class="btn btn-primary w-100 btn-lg mt-2 fw-bold shadow rounded-pill text-uppercase" style="letter-spacing: 0.5px;">
+                            <i class="fa-solid fa-file-signature"></i> Assinar Contrato
                         </button>
                     </form>
+
+                    <div class="text-center mt-4 pt-3 border-top">
+                        {% if logo_url %}
+                            <img src="{% static logo_url %}" alt="Logo Cartolândia" class="img-fluid" style="max-height: 40px; opacity: 0.8;">
+                        {% else %}
+                            <div class="d-flex align-items-center justify-content-center text-muted gap-2 small">
+                                <i class="fa-solid fa-shield-halved fa-lg text-success"></i>
+                                <span class="fw-bold text-uppercase tracking-wider" style="font-size: 0.8rem; letter-spacing: 1px;">Cartolândia</span>
+                            </div>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
 

@@ -2,139 +2,311 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
     <title>{% block title %}Cartolândia{% endblock %}</title>
     
+    <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     
+    <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
         :root {
-            --verde-escuro: #1b5e20;
-            --verde-campo: #2e7d32;
-            --dourado: #ffc107;
+            --verde-escuro: #0a3d10; /* Tom mais profundo e moderno */
+            --verde-campo: #1b5e20;
+            --verde-claro: #2e7d32;
+            --dourado: #cfb53b;
+            --fundo-app: #f4f7f6;
         }
+        
         body {
-            background-color: #f4f6f9;
+            background-color: var(--fundo-app);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
         }
+
+        /* Botões Globais */
         .btn-principal {
+            background-color: var(--verde-campo);
+            color: white;
+            transition: all 0.2s ease;
+        }
+        .btn-principal:hover {
+            background-color: var(--verde-escuro);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        /* Estilos de Cards Globais */
+        .card-clean {
+            border-radius: 16px;
+            border: none;
+            background-color: #ffffff;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+        }
+
+        /* Navbar Customizada */
+        .navbar-custom {
+            background: linear-gradient(135deg, var(--verde-escuro), var(--verde-campo));
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .nav-link {
+            font-weight: 600;
+            letter-spacing: 0.3px;
+            transition: color 0.2s ease;
+        }
+        .nav-link:hover {
+            color: var(--dourado) !important;
+        }
+
+        /* Chip da Carteira */
+        .wallet-chip {
+            background-color: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50rem;
+            padding: 0.4rem 1rem;
+            color: white;
+            font-weight: 700;
+            transition: all 0.2s;
+        }
+        .wallet-chip:hover {
+            background-color: rgba(255, 255, 255, 0.25);
+            color: white;
+        }
+
+        /* Ajustes do Offcanvas (Menu Mobile) */
+        .offcanvas-custom {
             background-color: var(--verde-escuro);
             color: white;
         }
-        .btn-principal:hover {
-            background-color: var(--verde-campo);
-            color: white;
+        .offcanvas-custom .nav-link {
+            color: rgba(255,255,255,0.85);
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            font-size: 1.1rem;
         }
-        .card-clean {
-            border-radius: 12px;
-            border: none;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        .offcanvas-custom .nav-link:hover, .offcanvas-custom .nav-link.active {
+            background-color: rgba(255,255,255,0.05);
+            color: var(--dourado) !important;
+            border-left: 4px solid var(--dourado);
         }
     </style>
 </head>
 <body>
 
-    <nav class="navbar navbar-expand-lg navbar-dark shadow-sm" style="background-color: var(--verde-escuro);">
+    <!-- ========================================== -->
+    <!-- NAVBAR TOP (DESKTOP & MOBILE HEADER)       -->
+    <!-- ========================================== -->
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom sticky-top">
         <div class="container">
-            <a class="navbar-brand fw-bold fs-4" href="{% url 'dashboard' %}">
-                <i class="fa-solid fa-trophy text-warning"></i> Cartolândia
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
             
-            <div class="collapse navbar-collapse" id="navbarNav">
-                {% if user.is_authenticated %}
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'dashboard' %}"><i class="fa-solid fa-house"></i> Início</a>
-                    </li>
-                    
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="convocacaoDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fa-solid fa-clipboard-list"></i> Convocação
-                        </a>
-                        <ul class="dropdown-menu shadow border-0" aria-labelledby="convocacaoDropdown">
-                            <li>
-                                <a class="dropdown-item fw-bold" href="{% url 'convocacao:montar_selecao' %}">
-                                    <i class="fa-solid fa-shirt text-success me-2"></i> Minha Seleção
-                                </a>
-                            </li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li>
-                                <a class="dropdown-item" href="{% url 'convocacao:ranking_convocacao' %}">
-                                    <i class="fa-solid fa-medal text-warning me-2"></i> Ranking Geral
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item" href="{% url 'convocacao:mais_escalados' %}">
-                                    <i class="fa-solid fa-chart-line text-primary me-2"></i> Mais Escalados
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
+            <!-- Botão Menu Mobile (Hamburguer) -->
+            <button class="navbar-toggler border-0 shadow-none px-1" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileMenu" aria-controls="mobileMenu">
+                <i class="fa-solid fa-bars fs-3 text-white"></i>
+            </button>
 
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'palpites:listar_jogos' %}"><i class="fa-regular fa-futbol"></i> Jogos</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'duelos:listar_desafios' %}"><i class="fa-solid fa-khanda"></i> Arena X1</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'palpites:ranking_geral' %}"><i class="fa-solid fa-medal"></i> Ranking</a>
-                    </li>
-                </ul>
-                
-                <ul class="navbar-nav align-items-center">
-                    {% if user.carteira %}
-                    <li class="nav-item me-3">
-                        <a href="{% url 'pagamentos:extrato' %}" class="btn btn-sm btn-light fw-bold text-success shadow-sm">
-                            <i class="fa-solid fa-wallet"></i> Saldo: R$ {{ user.carteira.saldo|default:"0.00" }}
-                        </a>
-                    </li>
-                    {% endif %}
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle fw-bold text-white" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
-                            <i class="fa-solid fa-user-circle fs-5"></i> {{ user.first_name|default:user.username }}
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end shadow border-0">
-                            <li>
-                                <a class="dropdown-item text-danger fw-bold" href="{% url 'logout' %}">
-                                    <i class="fa-solid fa-right-from-bracket"></i> Sair
+            <!-- Logo -->
+            <a class="navbar-brand fw-bold fs-4 mx-auto mx-lg-0 tracking-wider" href="{% url 'core:dashboard' %}">
+                <i class="fa-solid fa-trophy" style="color: var(--dourado);"></i> Cartolândia
+            </a>
+
+            <!-- Ícone de Carteira Rápida no Mobile (Fica à direita) -->
+            {% if user.is_authenticated and user.carteira %}
+                <div class="d-lg-none">
+                    <a href="{% url 'pagamentos:extrato' %}" class="text-decoration-none text-white fw-bold">
+                        <i class="fa-solid fa-wallet text-success"></i>
+                        <span class="small ms-1">{{ user.carteira.saldo|default:"0,00" }}</span>
+                    </a>
+                </div>
+            {% elif not user.is_authenticated %}
+                <div class="d-lg-none">
+                    <a href="{% url 'login' %}" class="text-white"><i class="fa-solid fa-right-to-bracket fs-4"></i></a>
+                </div>
+            {% endif %}
+            
+            <!-- Menu Desktop -->
+            <div class="collapse navbar-collapse" id="navbarNavDesktop">
+                {% if user.is_authenticated %}
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-4 gap-1">
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="{% url 'core:dashboard' %}"><i class="fa-solid fa-house opacity-75 me-1"></i> Início</a>
+                        </li>
+                        
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle text-white" href="#" id="convocacaoDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fa-solid fa-clipboard-list opacity-75 me-1"></i> Convocação
+                            </a>
+                            <ul class="dropdown-menu shadow border-0 rounded-3 mt-2" aria-labelledby="convocacaoDropdown">
+                                <li>
+                                    <a class="dropdown-item fw-bold py-2" href="{% url 'convocacao:montar_selecao' %}">
+                                        <i class="fa-solid fa-shirt text-success me-2"></i> Minha Seleção
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item py-2" href="{% url 'convocacao:ranking_convocacao' %}">
+                                        <i class="fa-solid fa-medal text-warning me-2"></i> Ranking da Convocação
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item py-2" href="{% url 'convocacao:mais_escalados' %}">
+                                        <i class="fa-solid fa-chart-line text-primary me-2"></i> Mais Escalados
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="{% url 'palpites:listar_jogos' %}"><i class="fa-regular fa-futbol opacity-75 me-1"></i> Bolão</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="{% url 'duelos:listar_desafios' %}"><i class="fa-solid fa-khanda opacity-75 me-1"></i> Arena X1</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="{% url 'palpites:ranking_geral' %}"><i class="fa-solid fa-ranking-star opacity-75 me-1"></i> Geral</a>
+                        </li>
+                        
+                        <!-- NOVO BOTÃO: Oscar / Melhores do Ano -->
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'palpites:indicar_oscar' %}" style="color: #ffeaa7;">
+                                <i class="fa-solid fa-award me-1"></i> Melhores do Ano
+                            </a>
+                        </li>
+                    </ul>
+                    
+                    <ul class="navbar-nav align-items-center gap-3">
+                        {% if user.carteira %}
+                            <li class="nav-item">
+                                <a href="{% url 'pagamentos:extrato' %}" class="text-decoration-none wallet-chip shadow-sm">
+                                    <i class="fa-solid fa-wallet text-success me-1"></i> R$ {{ user.carteira.saldo|default:"0,00" }}
                                 </a>
                             </li>
-                        </ul>
-                    </li>
-                </ul>
+                        {% endif %}
+                        
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle fw-bold text-white d-flex align-items-center gap-2" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                                <div class="bg-white bg-opacity-25 rounded-circle d-flex justify-content-center align-items-center" style="width: 32px; height: 32px;">
+                                    <i class="fa-solid fa-user text-white"></i>
+                                </div>
+                                {{ user.first_name|default:user.username }}
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3 mt-2">
+                                <li>
+                                    <a class="dropdown-item text-danger fw-bold py-2" href="{% url 'logout' %}">
+                                        <i class="fa-solid fa-right-from-bracket me-2"></i> Sair do Vestiário
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
                 {% else %}
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link btn btn-warning text-dark fw-bold px-4 rounded-pill" href="{% url 'login' %}">Entrar / Cadastrar</a>
-                    </li>
-                </ul>
+                    <ul class="navbar-nav ms-auto">
+                        <li class="nav-item">
+                            <a class="btn btn-warning text-dark fw-bold px-4 rounded-pill shadow-sm" href="{% url 'login' %}">
+                                <i class="fa-solid fa-right-to-bracket me-1"></i> Entrar / Cadastrar
+                            </a>
+                        </li>
+                    </ul>
                 {% endif %}
             </div>
         </div>
     </nav>
 
+    <!-- ========================================== -->
+    <!-- MENU MOBILE (OFFCANVAS)                    -->
+    <!-- ========================================== -->
+    {% if user.is_authenticated %}
+    <div class="offcanvas offcanvas-start offcanvas-custom d-lg-none shadow-lg" tabindex="-1" id="mobileMenu" aria-labelledby="mobileMenuLabel">
+        <div class="offcanvas-header border-bottom border-light border-opacity-10 py-4">
+            <div class="d-flex align-items-center gap-3">
+                <div class="bg-white bg-opacity-10 rounded-circle d-flex justify-content-center align-items-center" style="width: 50px; height: 50px;">
+                    <i class="fa-solid fa-user fs-3 text-white"></i>
+                </div>
+                <div>
+                    <h5 class="offcanvas-title fw-bold mb-0" id="mobileMenuLabel">{{ user.first_name|default:user.username }}</h5>
+                    <a href="{% url 'pagamentos:extrato' %}" class="text-decoration-none text-success small fw-bold">
+                        <i class="fa-solid fa-wallet"></i> Saldo: R$ {{ user.carteira.saldo|default:"0,00" }}
+                    </a>
+                </div>
+            </div>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        
+        <div class="offcanvas-body p-0 d-flex flex-column">
+            <ul class="navbar-nav mb-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'core:dashboard' %}"><i class="fa-solid fa-house fa-fw opacity-75 me-2"></i> Início</a>
+                </li>
+                
+                <li class="nav-item px-3 py-2 text-uppercase small text-white-50 fw-bold tracking-wider mt-3">
+                    Meu Time
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'convocacao:montar_selecao' %}"><i class="fa-solid fa-shirt fa-fw text-success opacity-75 me-2"></i> Escalar Seleção</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'convocacao:ranking_convocacao' %}"><i class="fa-solid fa-users fa-fw opacity-75 me-2"></i> Ranking Convocação</a>
+                </li>
+
+                <li class="nav-item px-3 py-2 text-uppercase small text-white-50 fw-bold tracking-wider mt-3">
+                    Competições
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'palpites:listar_jogos' %}"><i class="fa-regular fa-futbol fa-fw opacity-75 me-2"></i> Bolão de Jogos</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'duelos:listar_desafios' %}"><i class="fa-solid fa-khanda fa-fw opacity-75 me-2"></i> Arena do X1</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'palpites:ranking_geral' %}"><i class="fa-solid fa-ranking-star fa-fw opacity-75 me-2"></i> Classificação Geral</a>
+                </li>
+                
+                <li class="nav-item px-3 py-2 text-uppercase small text-white-50 fw-bold tracking-wider mt-3">
+                    Especiais
+                </li>
+                <!-- NOVO BOTÃO NO MOBILE -->
+                <li class="nav-item">
+                    <a class="nav-link text-warning" href="{% url 'palpites:indicar_oscar' %}">
+                        <i class="fa-solid fa-award fa-fw me-2"></i> Melhores do Ano
+                    </a>
+                </li>
+            </ul>
+            
+            <div class="p-3 border-top border-light border-opacity-10 mt-auto">
+                <a class="btn btn-danger w-100 fw-bold rounded-pill shadow-sm" href="{% url 'logout' %}">
+                    <i class="fa-solid fa-right-from-bracket"></i> Sair do App
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ========================================== -->
+    <!-- MENSAGENS E ALERTAS DO DJANGO              -->
+    <!-- ========================================== -->
     <div class="container mt-3">
         {% if messages %}
             {% for message in messages %}
-                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show shadow-sm text-center" role="alert">
-                    <i class="fa-solid fa-circle-info"></i> {{ message }}
+                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show shadow-sm d-flex align-items-center rounded-4 border-0" role="alert" style="border-left: 5px solid {% if message.tags == 'error' %}#dc3545{% elif message.tags == 'success' %}#198754{% else %}#0dcaf0{% endif %} !important;">
+                    <i class="fa-solid {% if message.tags == 'error' %}fa-triangle-exclamation text-danger{% elif message.tags == 'success' %}fa-circle-check text-success{% else %}fa-circle-info text-info{% endif %} fs-4 me-3"></i>
+                    <div class="fw-bold text-dark">{{ message }}</div>
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             {% endfor %}
         {% endif %}
     </div>
 
-    <div class="container mt-4 mb-5">
+    <!-- ========================================== -->
+    <!-- CONTEÚDO PRINCIPAL (BLOCK CONTENT)         -->
+    <!-- ========================================== -->
+    <div class="container mt-3 mb-5 pb-4">
         {% block content %}
         {% endblock %}
     </div>
 
+    <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

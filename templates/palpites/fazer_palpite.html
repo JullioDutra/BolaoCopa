@@ -5,21 +5,24 @@
 <style>
     /* Estilização focada nas caixas de placar para visualização perfeita no celular */
     .caixa-placar input {
-        font-size: 2.5rem !important; /* Deixa o número gigante */
-        font-weight: 900 !important;  /* Deixa o número bem gordinho (bold) */
+        font-size: 2.5rem !important; 
+        font-weight: 900 !important;  
         height: 70px;
-        width: 80px !important;       /* Largura fixa para não esmagar no mobile */
+        width: 70px !important; /* Ajustado para 70px para caber 100% em telas minúsculas */
         text-align: center;
-        border: 3px solid var(--verde-escuro);
-        border-radius: 12px;
-        color: #1a1a1a;
-        box-shadow: inset 0 3px 6px rgba(0,0,0,0.1);
+        border: 2px solid #dee2e6;
+        border-radius: 16px;
+        color: var(--verde-escuro, #1a1a1a);
+        background-color: #f8f9fa;
+        box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
         padding: 0;
+        transition: all 0.2s ease-in-out;
     }
     
     .caixa-placar input:focus {
-        border-color: #f1c40f;
-        box-shadow: 0 0 10px rgba(241, 196, 15, 0.5);
+        border-color: #198754; /* Verde sucesso do Bootstrap */
+        background-color: #ffffff;
+        box-shadow: 0 0 0 4px rgba(25, 135, 84, 0.2);
         outline: none;
     }
 
@@ -32,67 +35,116 @@
     .caixa-placar input[type=number] {
         -moz-appearance: textfield;
     }
+    
+    .team-logo-palpite {
+        max-height: 65px;
+        object-fit: contain;
+    }
 </style>
 
-<div class="row justify-content-center mt-5">
-    <div class="col-md-7">
-        <div class="card card-clean p-4 shadow-sm text-center">
+<div class="row justify-content-center align-items-center min-vh-75 mt-4 mb-5 px-2">
+    <div class="col-12 col-md-8 col-lg-7">
+        <div class="card card-clean p-4 p-md-5 shadow-lg border-0 rounded-4 bg-white text-center">
             
+            <!-- CABEÇALHO CONDICIONAL -->
             {% if palpite_existente %}
-                <h3 class="fw-bold mb-3 text-primary"><i class="fa-solid fa-pen"></i> Editar Palpite</h3>
-                <div class="alert alert-info py-2">
-                    Você já palpitou: <strong>{{ palpite_existente.gols_casa }} x {{ palpite_existente.gols_fora }}</strong> (Modo {{ palpite_existente.modalidade|title }}). Atualize abaixo se desejar.
+                <div class="mb-4">
+                    <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-2 border border-primary mb-3 shadow-sm">
+                        <i class="fa-solid fa-pen-to-square"></i> Editando Palpite
+                    </span>
+                    <p class="text-muted small mb-0">
+                        Você já palpitou: <strong class="text-dark fs-6">{{ palpite_existente.gols_casa }} x {{ palpite_existente.gols_fora }}</strong>
+                    </p>
+                    <p class="text-muted small mb-0">
+                        Modo <span class="fw-bold">{{ palpite_existente.modalidade|title }}</span>. Altere abaixo se desejar.
+                    </p>
                 </div>
             {% else %}
-                <h3 class="fw-bold mb-3" style="color: var(--verde-escuro);"><i class="fa-solid fa-futbol"></i> Novo Palpite</h3>
+                <div class="mb-4">
+                    <h3 class="fw-bold mb-1" style="color: var(--verde-escuro);">
+                        <i class="fa-solid fa-futbol text-success"></i> Novo Palpite
+                    </h3>
+                    <p class="text-muted small">Qual será o placar desse jogão?</p>
+                </div>
             {% endif %}
             
-            <p class="text-muted mb-4">
-                <span class="badge bg-light text-dark border">
-                    📅 {{ jogo.data_hora|date:"d/m/Y às H:i" }}
+            <!-- DATA DO JOGO -->
+            <div class="mb-4">
+                <span class="badge bg-light text-secondary border rounded-pill px-3 py-2 shadow-sm">
+                    <i class="fa-regular fa-calendar-days text-success"></i> {{ jogo.data_hora|date:"d/m/Y às H:i" }}
                 </span>
-            </p>
+            </div>
 
             <form method="POST">
                 {% csrf_token %}
                 
-                <div class="d-flex justify-content-center align-items-center mb-5">
+                <!-- ÁREA DO PLACAR (GRID RESPONSIVO) -->
+                <div class="row align-items-center justify-content-center mb-4 g-2">
                     
-                    <div class="text-end" style="flex: 1;">
-                        {% if jogo.escudo_casa %}<img src="{{ jogo.escudo_casa.url }}" width="50" class="mb-2 d-block ms-auto">{% endif %}
-                        <h5 class="fw-bold mb-0 text-truncate" title="{{ jogo.time_casa }}">{{ jogo.time_casa }}</h5>
+                    <!-- Time da Casa -->
+                    <div class="col-4 text-center">
+                        {% if jogo.escudo_casa %}
+                            <img src="{{ jogo.escudo_casa.url }}" class="img-fluid mb-2 team-logo-palpite">
+                        {% else %}
+                            <div class="bg-light rounded-circle mx-auto mb-2 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                                <i class="fa-solid fa-shield-halved text-muted fs-3"></i>
+                            </div>
+                        {% endif %}
+                        <h6 class="fw-bold text-truncate mb-0 px-1" title="{{ jogo.time_casa }}">{{ jogo.time_casa }}</h6>
                     </div>
                     
-                    <div class="caixa-placar mx-2">
-                        {{ form.gols_casa }}
+                    <!-- Campos de Gols -->
+                    <div class="col-4 d-flex justify-content-center align-items-center gap-2">
+                        <div class="caixa-placar">
+                            {{ form.gols_casa }}
+                        </div>
+                        
+                        <span class="fw-bold text-muted fs-5">X</span>
+                        
+                        <div class="caixa-placar">
+                            {{ form.gols_fora }}
+                        </div>
                     </div>
                     
-                    <h4 class="text-muted mb-0 fw-bold fs-3">X</h4>
-                    
-                    <div class="caixa-placar mx-2">
-                        {{ form.gols_fora }}
-                    </div>
-                    
-                    <div class="text-start" style="flex: 1;">
-                        {% if jogo.escudo_fora %}<img src="{{ jogo.escudo_fora.url }}" width="50" class="mb-2 d-block me-auto">{% endif %}
-                        <h5 class="fw-bold mb-0 text-truncate" title="{{ jogo.time_fora }}">{{ jogo.time_fora }}</h5>
+                    <!-- Time de Fora -->
+                    <div class="col-4 text-center">
+                        {% if jogo.escudo_fora %}
+                            <img src="{{ jogo.escudo_fora.url }}" class="img-fluid mb-2 team-logo-palpite">
+                        {% else %}
+                            <div class="bg-light rounded-circle mx-auto mb-2 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                                <i class="fa-solid fa-shield-halved text-muted fs-3"></i>
+                            </div>
+                        {% endif %}
+                        <h6 class="fw-bold text-truncate mb-0 px-1" title="{{ jogo.time_fora }}">{{ jogo.time_fora }}</h6>
                     </div>
                     
                 </div>
 
-                <div class="d-flex justify-content-center flex-wrap gap-3 mt-4 pt-3 border-top">
-                    <button type="submit" name="tipo_aposta" value="resenha" class="btn btn-outline-secondary btn-lg px-4 shadow-sm fw-bold">
-                        {% if palpite_existente %}Atualizar como Resenha{% else %}Salvar na Resenha (Grátis){% endif %}
+                <!-- ERROS DO FORMULÁRIO (Caso o usuário digite algo inválido) -->
+                {% if form.errors %}
+                    <div class="alert alert-danger rounded-3 py-2 small shadow-sm text-start">
+                        <i class="fa-solid fa-triangle-exclamation"></i> Verifique os valores inseridos.
+                    </div>
+                {% endif %}
+
+                <!-- BOTÕES DE AÇÃO -->
+                <div class="d-grid gap-3 d-md-flex justify-content-md-center mt-4 pt-4 border-top">
+                    <button type="submit" name="tipo_aposta" value="resenha" class="btn btn-outline-secondary btn-lg rounded-pill shadow-sm fw-bold px-4">
+                        <i class="fa-regular fa-face-laugh-squint"></i>
+                        {% if palpite_existente %} Atualizar Resenha{% else %} Palpite Resenha (Grátis){% endif %}
                     </button>
                     
-                    <button type="submit" name="tipo_aposta" value="pago" class="btn btn-success btn-lg px-4 shadow fw-bold">
-                        {% if palpite_existente %}Atualizar Valendo Prêmio{% else %}Valendo Prêmio (R$ 10,00){% endif %}
+                    <button type="submit" name="tipo_aposta" value="pago" class="btn btn-success btn-lg rounded-pill shadow fw-bold px-4 text-uppercase" style="letter-spacing: 0.5px;">
+                        <i class="fa-solid fa-sack-dollar text-warning"></i>
+                        {% if palpite_existente %} Atualizar Cota{% else %} Valendo R$ 10,00{% endif %}
                     </button>
                 </div>
             </form>
             
-            <div class="mt-4">
-                <a href="{% url 'palpites:listar_jogos' %}" class="text-muted text-decoration-none fw-bold">← Voltar para a lista</a>
+            <div class="mt-4 pt-2">
+                <a href="{% url 'palpites:listar_jogos' %}" class="btn btn-link text-muted text-decoration-none fw-bold small">
+                    <i class="fa-solid fa-arrow-left me-1"></i> Voltar para a lista de jogos
+                </a>
             </div>
             
         </div>

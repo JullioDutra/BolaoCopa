@@ -3,104 +3,149 @@
 {% block title %}Painel - Cartolândia{% endblock %}
 
 {% block content %}
-<div class="alert shadow-sm border-0 mb-4 d-flex flex-column flex-md-row justify-content-between align-items-center" 
-     style="background-color: #f1f8e9; border-left: 5px solid var(--verde-escuro) !important;">
-    <div class="mb-3 mb-md-0">
-        <h5 class="mb-1 fw-bold" style="color: var(--verde-escuro);">
-            <i class="fa-solid fa-wallet me-2"></i>Saldo: R$ {{ user.carteira.saldo|default:"0,00" }}
-        </h5>
-        <a href="{% url 'pagamentos:extrato' %}" class="text-decoration-none small fw-bold text-muted">
-            <i class="fa-solid fa-list-ul"></i> Ver Extrato Completo
-        </a>
-    </div>
-    <div class="d-flex gap-2">
-        <a href="{% url 'pagamentos:solicitar_saque' %}" class="btn btn-outline-danger btn-sm fw-bold px-3">
-            <i class="fa-solid fa-money-bill-transfer"></i> Sacar
-        </a>
-        <a href="{% url 'pagamentos:solicitar_deposito' %}" class="btn btn-success btn-sm fw-bold px-4">
-            <i class="fa-solid fa-plus"></i> Adicionar Saldo
-        </a>
-    </div>
-</div>
+<!-- Estilos para dar o "Tapa de Qualidade" na interface -->
+<style>
+    .card-action { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+    .card-action:hover { transform: translateY(-5px); box-shadow: 0 1rem 3rem rgba(0,0,0,.175)!important; }
+    .pulse-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background-color: #ff4d4d; animation: pulse 1.5s infinite; vertical-align: middle; }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 77, 77, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(255, 77, 77, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 77, 77, 0); } }
+    .scoreboard-font { font-family: 'Courier New', Courier, monospace; letter-spacing: 1px; text-shadow: 1px 1px 2px rgba(0,0,0,0.4); }
+</style>
 
-<div class="row mb-4 g-3">
-    <div class="col-md-6">
-        <div class="card bg-dark text-white text-center p-3 shadow-sm border-0 rounded-4 h-100" 
-             style="background: linear-gradient(45deg, #1b5e20, #2e7d32);">
-            <h6 class="fw-bold text-warning small mb-2">
-                <i class="fa-solid fa-lock me-1"></i> MERCADO DE CONVOCAÇÃO FECHA EM:
-            </h6>
-            <div id="timer-convocacao" class="fs-4 fw-bold font-monospace">--:--:--:--</div>
+<!-- Alerta de Caixa (Carteira) -->
+<div class="card shadow-sm border-0 mb-4 rounded-4" style="background-color: #f8fcf8; border-left: 6px solid var(--verde-escuro) !important;">
+    <div class="card-body d-flex flex-column flex-md-row justify-content-between align-items-center p-3 p-md-4">
+        <div class="mb-3 mb-md-0 text-center text-md-start w-100">
+            <p class="text-muted small fw-bold mb-1 text-uppercase tracking-wider">Departamento Financeiro</p>
+            <h4 class="mb-1 fw-bold" style="color: var(--verde-escuro);">
+                <i class="fa-solid fa-wallet text-success me-2"></i>R$ {{ user.carteira.saldo|default:"0,00" }}
+            </h4>
+            <a href="{% url 'pagamentos:extrato' %}" class="text-decoration-none small fw-bold text-success">
+                <i class="fa-solid fa-clock-rotate-left"></i> Ver Histórico
+            </a>
         </div>
-    </div>
-
-    <div class="col-md-6">
-        <div class="card bg-dark text-white text-center p-3 shadow-sm border-0 rounded-4 h-100" 
-             style="background: linear-gradient(45deg, #0d47a1, #1565c0);">
-            {% if proximo_jogo %}
-                <h6 class="fw-bold text-info small mb-2">
-                    <i class="fa-solid fa-stopwatch me-1"></i> PALPITES ({{ proximo_jogo.time_casa }} x {{ proximo_jogo.time_fora }}) ENCERRAM EM:
-                </h6>
-                <div id="timer-jogo" class="fs-4 fw-bold font-monospace" 
-                     data-limite="{{ proximo_jogo.data_hora|date:'c' }}">--:--:--:--</div>
-            {% else %}
-                <h6 class="fw-bold text-info small mb-2">PRÓXIMO JOGO</h6>
-                <div class="fs-6 mt-1">Nenhum jogo agendado no momento.</div>
-            {% endif %}
+        <div class="d-flex flex-column flex-sm-row gap-2 w-100 justify-content-md-end">
+            <a href="{% url 'pagamentos:solicitar_saque' %}" class="btn btn-outline-danger fw-bold rounded-pill px-4">
+                <i class="fa-solid fa-money-bill-transfer"></i> Sacar
+            </a>
+            <a href="{% url 'pagamentos:solicitar_deposito' %}" class="btn btn-success fw-bold rounded-pill px-4 shadow-sm">
+                <i class="fa-solid fa-coins"></i> Depositar
+            </a>
         </div>
     </div>
 </div>
 
-<div class="row mb-4">
+<!-- Saudação do Manager -->
+<div class="row mb-3 mt-2 px-2">
     <div class="col-12">
-        <h3 class="fw-bold" style="color: var(--verde-escuro);">Olá, {{ user.first_name|default:user.username }}!</h3>
-        <p class="text-muted">Acompanhe seu desempenho e gerencie seus palpites.</p>
+        <h3 class="fw-bold mb-1" style="color: var(--verde-escuro);">Fala, Craque {{ user.first_name|default:user.username }}! <i class="fa-regular fa-hand-peace text-warning"></i></h3>
+        <p class="text-muted">Administre seu elenco, faça seus palpites e mostre quem manda na temporada.</p>
     </div>
 </div>
 
-<div class="row">
-    <div class="col-md-4 mb-4">
-        <div class="card card-clean h-100 text-center p-4 shadow-sm border-0">
-            <div class="card-body d-flex flex-column">
+<!-- Telões de Estádio (Timers) -->
+<div class="row mb-4 g-3">
+    <!-- Timer Convocação -->
+    <div class="col-12 col-lg-6">
+        <div class="card text-white p-4 shadow border-0 rounded-4 h-100 position-relative overflow-hidden" 
+             style="background: linear-gradient(135deg, #1b5e20, #0a3d10);">
+            <div class="position-absolute opacity-25" style="top: -20px; right: -20px;">
+                <i class="fa-solid fa-users-viewfinder" style="font-size: 8rem;"></i>
+            </div>
+            <div class="position-relative z-index-1">
+                <h6 class="fw-bold text-warning small mb-2 text-uppercase tracking-wider">
+                    <span class="pulse-dot me-1"></span> Janela de Transferências
+                </h6>
+                <p class="small text-white-50 mb-2">Convocação fecha em:</p>
+                <div id="timer-convocacao" class="fs-2 fw-bold scoreboard-font text-warning">--:--:--:--</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Timer Próximo Jogo -->
+    <div class="col-12 col-lg-6">
+        <div class="card text-white p-4 shadow border-0 rounded-4 h-100 position-relative overflow-hidden" 
+             style="background: linear-gradient(135deg, #0d47a1, #002171);">
+            <div class="position-absolute opacity-25" style="top: -20px; right: -20px;">
+                <i class="fa-solid fa-stopwatch" style="font-size: 8rem;"></i>
+            </div>
+            <div class="position-relative z-index-1">
+                {% if proximo_jogo %}
+                    <h6 class="fw-bold text-info small mb-2 text-uppercase tracking-wider">
+                        <span class="pulse-dot me-1"></span> Bolão: {{ proximo_jogo.time_casa }} x {{ proximo_jogo.time_fora }}
+                    </h6>
+                    <p class="small text-white-50 mb-2">Apostas encerram em:</p>
+                    <div id="timer-jogo" class="fs-2 fw-bold scoreboard-font text-info" 
+                         data-limite="{{ proximo_jogo.data_hora|date:'c' }}">--:--:--:--</div>
+                {% else %}
+                    <h6 class="fw-bold text-info small mb-2 text-uppercase tracking-wider">
+                        <i class="fa-solid fa-calendar-check me-1"></i> Fim de Papo
+                    </h6>
+                    <p class="small text-white-50 mb-2">Próximo Jogo</p>
+                    <div class="fs-5 mt-1 fw-bold">Sem jogos na agenda.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Opções de Jogo (Cards) -->
+<div class="row g-4 mb-5">
+    <!-- Convocação -->
+    <div class="col-12 col-md-4">
+        <div class="card card-action card-clean h-100 text-center p-4 shadow-sm border-0 rounded-4">
+            <div class="card-body d-flex flex-column p-0">
                 <div class="mb-3">
-                    <i class="fa-solid fa-clipboard-list text-success" style="font-size: 3rem;"></i>
+                    <div class="bg-success bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                        <i class="fa-solid fa-shirt text-success" style="font-size: 2.5rem;"></i>
+                    </div>
                 </div>
-                <h4 class="fw-bold">Convocação</h4>
-                <p class="text-muted small">Escale seus 26 jogadores. Edição livre até 17/05.</p>
+                <h5 class="fw-bold" style="color: var(--verde-escuro);">Meu Elenco</h5>
+                <p class="text-muted small mb-4">Escale seus 26 jogadores. Edição livre até 17/05.</p>
                 <div class="mt-auto">
-                    <a href="{% url 'convocacao:montar_selecao' %}" class="btn btn-principal w-100 fw-bold">Escalar Seleção</a>
+                    <a href="{% url 'convocacao:montar_selecao' %}" class="btn btn-success w-100 fw-bold rounded-pill shadow-sm text-uppercase" style="letter-spacing: 0.5px;">
+                        Escalar Seleção
+                    </a>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="col-md-4 mb-4">
-        <div class="card card-clean h-100 text-center p-4 shadow-sm border-0">
-            <div class="card-body d-flex flex-column">
+    <!-- Bolão -->
+    <div class="col-12 col-md-4">
+        <div class="card card-action card-clean h-100 text-center p-4 shadow-sm border-0 rounded-4">
+            <div class="card-body d-flex flex-column p-0">
                 <div class="mb-3">
-                    <i class="fa-regular fa-futbol text-success" style="font-size: 3rem;"></i>
+                    <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                        <i class="fa-regular fa-futbol text-primary" style="font-size: 2.5rem;"></i>
+                    </div>
                 </div>
-                <h4 class="fw-bold">Bolão de Jogos</h4>
-                <!-- Texto alterado para 1h -->
-                <p class="text-muted small">Palpite nos placares. Bloqueio 1h antes do jogo.</p>
+                <h5 class="fw-bold" style="color: var(--verde-escuro);">Bolão</h5>
+                <p class="text-muted small mb-4">Palpite nos placares. Bloqueio 1h antes do jogo.</p>
                 <div class="mt-auto">
-                    <a href="{% url 'palpites:listar_jogos' %}" class="btn btn-outline-success w-100 fw-bold">Dar Palpites</a>
+                    <a href="{% url 'palpites:listar_jogos' %}" class="btn btn-outline-primary w-100 fw-bold rounded-pill text-uppercase" style="letter-spacing: 0.5px;">
+                        Dar Palpites
+                    </a>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="col-md-4 mb-4">
-        <div class="card card-clean h-100 text-center p-4 shadow-sm border-0 border-top border-warning border-4">
-            <div class="card-body d-flex flex-column">
+    <!-- Ranking -->
+    <div class="col-12 col-md-4">
+        <div class="card card-action card-clean h-100 text-center p-4 shadow-sm border-0 rounded-4" style="border-top: 5px solid #ffc107 !important;">
+            <div class="card-body d-flex flex-column p-0">
                 <div class="mb-3">
-                    <i class="fa-solid fa-trophy text-warning" style="font-size: 3rem;"></i>
+                    <div class="bg-warning bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                        <i class="fa-solid fa-trophy text-warning" style="font-size: 2.5rem;"></i>
+                    </div>
                 </div>
-                <h4 class="fw-bold">Ranking Geral</h4>
-                <p class="text-muted small">Veja quem está liderando a corrida pelo prêmio.</p>
+                <h5 class="fw-bold" style="color: var(--verde-escuro);">Ranking Geral</h5>
+                <p class="text-muted small mb-4">Veja quem está liderando a corrida pela taça.</p>
                 <div class="mt-auto">
-                    <!-- URL mantida, já apontando perfeitamente para 'palpites:ranking_geral' -->
-                    <a href="{% url 'palpites:ranking_geral' %}" class="btn btn-warning text-dark w-100 fw-bold">Ver Classificação</a>
+                    <a href="{% url 'palpites:ranking_geral' %}" class="btn btn-warning text-dark w-100 fw-bold rounded-pill shadow-sm text-uppercase" style="letter-spacing: 0.5px;">
+                        Ver Tabela
+                    </a>
                 </div>
             </div>
         </div>
@@ -120,7 +165,7 @@
         const timerJogoElement = document.getElementById("timer-jogo");
         if (timerJogoElement) {
             const gameDateStr = timerJogoElement.getAttribute("data-limite");
-            // Matemática ajustada: 60 minutos * 60 segundos * 1000 ms = 1 hora (antes era 24 horas)
+            // Matemática ajustada: 60 minutos * 60 segundos * 1000 ms = 1 hora
             const deadlineJogo = new Date(gameDateStr).getTime() - (60 * 60 * 1000);
             renderTime(deadlineJogo - now, "timer-jogo");
         }
@@ -131,7 +176,7 @@
         if (!element) return;
 
         if (diff <= 0) {
-            element.innerHTML = "<span class='text-danger'>FECHADO</span>";
+            element.innerHTML = "<span class='text-danger opacity-75'><i class='fa-solid fa-lock'></i> MERCADO FECHADO</span>";
             return;
         }
 
@@ -140,7 +185,7 @@
         const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0');
         const s = Math.floor((diff % (1000 * 60)) / 1000).toString().padStart(2, '0');
 
-        element.innerHTML = `${d}d : ${h}h : ${m}m : ${s}s`;
+        element.innerHTML = `${d}<span class="fs-6 opacity-50">D</span> : ${h}<span class="fs-6 opacity-50">H</span> : ${m}<span class="fs-6 opacity-50">M</span> : ${s}<span class="fs-6 opacity-50">S</span>`;
     }
 
     setInterval(updateTimers, 1000);

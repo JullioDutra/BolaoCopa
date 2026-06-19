@@ -3,74 +3,148 @@
 {% block title %}Ranking Global - Cartolândia{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center mt-4">
-    <div class="col-md-10">
-        <div class="card card-clean p-3 p-md-4">
-            <h2 class="fw-bold text-center mb-4" style="color: var(--verde-escuro);">🏆 Tabela do Campeonato</h2>
-            
+<style>
+    /* Estilos para a tabela do ranking */
+    .table-ranking th, .table-ranking td {
+        vertical-align: middle !important;
+    }
+    
+    .podium-1 { color: #FFD700; text-shadow: 0 2px 4px rgba(255, 215, 0, 0.3); }
+    .podium-2 { color: #C0C0C0; text-shadow: 0 2px 4px rgba(192, 192, 192, 0.3); }
+    .podium-3 { color: #CD7F32; text-shadow: 0 2px 4px rgba(205, 127, 50, 0.3); }
+    
+    .linha-destaque {
+        background-color: rgba(25, 135, 84, 0.05) !important;
+        border-left: 4px solid var(--verde-escuro) !important;
+    }
+</style>
+
+<div class="row justify-content-center mt-4 mb-5 px-2">
+    <div class="col-12 col-md-10 col-lg-8">
+        
+        <div class="text-center mb-4">
+            <h2 class="fw-bold mb-1" style="color: var(--verde-escuro);">
+                <i class="fa-solid fa-trophy text-warning"></i> Classificação Geral
+            </h2>
+            <p class="text-muted small">Corrida pelo título da temporada. Cada ponto conta!</p>
+        </div>
+
+        <div class="card card-clean shadow-lg border-0 rounded-4 overflow-hidden">
             <div class="table-responsive">
-                <table class="table table-hover table-sm align-middle text-center">
-                    <thead class="table-dark">
+                <table class="table table-hover table-ranking align-middle text-center mb-0">
+                    <thead class="bg-light text-muted small text-uppercase" style="letter-spacing: 0.5px; border-bottom: 2px solid #dee2e6;">
                         <tr>
-                            <th scope="col" class="text-start px-2">Pos</th>
-                            <th scope="col" class="text-start">Jogador</th>
-                            <th scope="col" title="Total de Pontos">PTS</th>
-                            <th scope="col" title="Acertou o Placar Cheio (15 pts)">AP</th>
-                            <th scope="col" title="Acertou Vencedor/Empate (5 pts)">AV</th>
-                            <th scope="col" title="Maior Pontuador da Rodada (5 pts)">MP</th>
+                            <th scope="col" class="text-center px-3 py-3" style="width: 15%;">Pos</th>
+                            <th scope="col" class="text-start py-3" style="width: 45%;">Manager</th>
+                            <th scope="col" title="Total de Pontos" class="py-3 text-dark fw-bold" style="width: 20%;">PTS</th>
+                            <th scope="col" title="Acertou o Placar Cheio" class="py-3 d-none d-sm-table-cell">AP</th>
+                            <th scope="col" title="Acertou Vencedor/Empate" class="py-3 d-none d-sm-table-cell">AV</th>
+                            <th scope="col" title="Maior Pontuador da Rodada" class="py-3 d-none d-sm-table-cell">MP</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody class="border-top-0">
                         {% for posicao in ranking %}
-                        <tr>
-                            <th scope="row" class="text-start px-2 text-nowrap">
-                                {% if forloop.counter == 1 %}🥇 1º
-                                {% elif forloop.counter == 2 %}🥈 2º
-                                {% elif forloop.counter == 3 %}🥉 3º
-                                {% else %}{{ forloop.counter }}º{% endif %}
+                        
+                        <tr class="{% if posicao.usuario__username == request.user.username %}linha-destaque{% endif %}">
+                            
+                            <th scope="row" class="text-center px-2">
+                                {% if forloop.counter == 1 %}
+                                    <i class="fa-solid fa-medal fs-3 podium-1" title="1º Lugar"></i>
+                                {% elif forloop.counter == 2 %}
+                                    <i class="fa-solid fa-medal fs-4 podium-2" title="2º Lugar"></i>
+                                {% elif forloop.counter == 3 %}
+                                    <i class="fa-solid fa-medal fs-5 podium-3" title="3º Lugar"></i>
+                                {% else %}
+                                    <span class="fw-bold text-muted fs-6">{{ forloop.counter }}º</span>
+                                {% endif %}
                             </th>
                             
-                            <td class="text-start fw-bold">
-                                <!-- Mostra o primeiro nome. Se não existir, mostra o username -->
-                                {{ posicao.usuario__first_name|default:posicao.usuario__username|title }}
+                            <td class="text-start">
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-secondary bg-opacity-10 rounded-circle d-flex justify-content-center align-items-center me-2 me-sm-3 shadow-sm" style="width: 35px; height: 35px;">
+                                        <i class="fa-solid fa-user-tie text-secondary small"></i>
+                                    </div>
+                                    <div>
+                                        <span class="fw-bold text-dark d-block" style="line-height: 1.2;">
+                                            {{ posicao.usuario__first_name|default:posicao.usuario__username|title }}
+                                        </span>
+                                        {% if posicao.usuario__username == request.user.username %}
+                                            <span class="badge bg-success rounded-pill" style="font-size: 0.6rem;">Você</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
                             </td>
                             
-                            <!-- Pontuação Total -->
-                            <td class="fw-bold fs-5 text-success text-nowrap">
+                            <td class="fw-black fs-5 text-success" style="font-family: 'Courier New', Courier, monospace;">
                                 {{ posicao.total_pontos|default:"0" }}
                             </td>
                             
-                            <!-- Estatísticas Detalhadas -->
-                            <td class="text-nowrap">{{ posicao.acertos_placar|default:"0" }}</td>
-                            <td class="text-nowrap">{{ posicao.acertos_vencedor|default:"0" }}</td>
-                            <td class="text-nowrap">{{ posicao.maior_pontuador|default:"0" }}</td>
+                            <td class="text-muted fw-bold d-none d-sm-table-cell">{{ posicao.acertos_placar|default:"0" }}</td>
+                            <td class="text-muted fw-bold d-none d-sm-table-cell">{{ posicao.acertos_vencedor|default:"0" }}</td>
+                            <td class="text-muted fw-bold d-none d-sm-table-cell">{{ posicao.maior_pontuador|default:"0" }}</td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="6" class="text-center text-muted py-4">Nenhum palpite finalizado ainda.</td>
+                            <td colspan="6" class="text-center py-5">
+                                <i class="fa-solid fa-ranking-star text-muted opacity-50 mb-3" style="font-size: 3rem;"></i>
+                                <h5 class="fw-bold text-dark">Ranking em Construção</h5>
+                                <p class="text-muted small mb-0">Nenhum palpite foi finalizado ainda. A tabela está zerada!</p>
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
-
-            <!-- Legenda Explicativa -->
-            <div class="mt-4 pt-3 border-top text-muted small">
-                <h6 class="fw-bold mb-3">Entenda a Pontuação:</h6>
-                <div class="row g-2">
-                    <div class="col-12 col-md-4">
-                        <strong>AP (Acertou o Placar):</strong> 15 pts
-                    </div>
-                    <div class="col-12 col-md-4">
-                        <strong>AV (Acertou Vencedor/Empate):</strong> 5 pts
-                    </div>
-                    <div class="col-12 col-md-4">
-                        <strong>MP (Maior Pontuador):</strong> 5 pts extras
-                    </div>
-                </div>
+            
+            <div class="d-block d-sm-none text-center bg-light p-2 border-top">
+                <span class="small text-muted fst-italic"><i class="fa-solid fa-mobile-screen-button"></i> Gire a tela para ver os acertos detalhados</span>
             </div>
 
         </div>
+
+        <div class="mt-4 pt-3 mb-5">
+            <h6 class="fw-bold mb-3 text-muted text-uppercase" style="font-size: 0.8rem; letter-spacing: 1px;">
+                <i class="fa-solid fa-circle-info me-1"></i> Entenda a Pontuação:
+            </h6>
+            <div class="row g-2">
+                <div class="col-12 col-md-4">
+                    <div class="card bg-white border-0 shadow-sm rounded-3 p-3 h-100 d-flex flex-row align-items-center">
+                        <div class="bg-success bg-opacity-10 rounded-circle d-flex justify-content-center align-items-center me-3" style="width: 40px; height: 40px; min-width: 40px;">
+                            <i class="fa-solid fa-bullseye text-success"></i>
+                        </div>
+                        <div>
+                            <span class="fw-bold text-dark d-block">AP (Placar Exato)</span>
+                            <span class="small text-muted">Ganha <strong class="text-success">15 pts</strong></span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-12 col-md-4">
+                    <div class="card bg-white border-0 shadow-sm rounded-3 p-3 h-100 d-flex flex-row align-items-center">
+                        <div class="bg-primary bg-opacity-10 rounded-circle d-flex justify-content-center align-items-center me-3" style="width: 40px; height: 40px; min-width: 40px;">
+                            <i class="fa-solid fa-check-double text-primary"></i>
+                        </div>
+                        <div>
+                            <span class="fw-bold text-dark d-block">AV (Vencedor/Empate)</span>
+                            <span class="small text-muted">Ganha <strong class="text-primary">5 pts</strong></span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-12 col-md-4">
+                    <div class="card bg-white border-0 shadow-sm rounded-3 p-3 h-100 d-flex flex-row align-items-center">
+                        <div class="bg-warning bg-opacity-10 rounded-circle d-flex justify-content-center align-items-center me-3" style="width: 40px; height: 40px; min-width: 40px;">
+                            <i class="fa-solid fa-star text-warning"></i>
+                        </div>
+                        <div>
+                            <span class="fw-bold text-dark d-block">MP (Maior Pontuador)</span>
+                            <span class="small text-muted">Bônus de <strong class="text-warning">5 pts</strong></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 </div>
 {% endblock %}

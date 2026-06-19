@@ -5,6 +5,7 @@ from accounts import views as accounts_views
 from django.contrib.auth import views as auth_views
 from django.conf import settings
 from django.conf.urls.static import static
+from django.views.generic import RedirectView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -34,6 +35,7 @@ urlpatterns = [
     path('minijogo/', include('minijogo.urls')),
     path('pagamentos/', include('pagamentos.urls')),
     path('duelos/', include('duelos.urls')),
+    path('favicon.ico', RedirectView.as_view(url='/static/media/logo.png', permanent=True)),
 ]
 
 

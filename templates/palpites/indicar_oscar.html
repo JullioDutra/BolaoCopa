@@ -4,32 +4,34 @@
 
 {% block content %}
 <style>
-    /* TEMA BOLEIRO DE GALA */
-    body {
+    /* TEMA BOLEIRO DE GALA - Fundo escuro com brilho sutil */
+    .body-oscar {
         background-color: #121212;
-        background-image: radial-gradient(circle at center, #222 0%, #050505 100%);
+        background-image: radial-gradient(circle at center top, #2a2a2a 0%, #121212 100%);
+        border-radius: 24px; /* Arredondamento para encaixar no container branco do base.html */
+        padding-top: 1rem;
+        box-shadow: inset 0 0 50px rgba(0,0,0,0.5);
     }
     
     .oscar-header {
         text-align: center;
-        padding: 30px 15px;
-        margin-bottom: 10px;
+        padding: 30px 15px 20px;
     }
     
     .titulo-ouro {
         color: #d4af37;
         font-weight: 900;
         text-transform: uppercase;
-        letter-spacing: 3px;
-        text-shadow: 0 4px 10px rgba(212, 175, 55, 0.4);
-        font-size: 2.8rem;
+        letter-spacing: 2px;
+        text-shadow: 0 4px 15px rgba(212, 175, 55, 0.5);
+        font-size: 2.5rem;
     }
 
     .card-vestiario {
-        background: linear-gradient(145deg, #1a1a1a 0%, #2a2a2a 100%);
-        border: 2px solid #d4af37;
+        background: linear-gradient(145deg, #1e1e1e 0%, #121212 100%);
+        border: 2px solid rgba(212, 175, 55, 0.6);
         border-radius: 20px;
-        box-shadow: 0 15px 35px rgba(0,0,0,0.8), inset 0 0 20px rgba(212,175,55,0.05);
+        box-shadow: 0 15px 35px rgba(0,0,0,0.6), inset 0 0 20px rgba(212,175,55,0.05);
     }
 
     .label-boleiro {
@@ -37,16 +39,16 @@
         font-weight: 800;
         text-transform: uppercase;
         letter-spacing: 1px;
-        font-size: 0.95rem;
-        margin-bottom: 10px;
+        font-size: 0.9rem;
+        margin-bottom: 8px;
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 8px;
     }
 
     .input-boleiro {
         background-color: #0a0a0a !important;
-        border: 1px solid #444 !important;
+        border: 1px solid #333 !important;
         color: #fff !important;
         border-radius: 12px !important;
         padding: 15px !important;
@@ -55,27 +57,32 @@
 
     .input-boleiro:focus {
         border-color: #d4af37 !important;
-        box-shadow: 0 0 15px rgba(212, 175, 55, 0.4) !important;
+        box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.25) !important;
+        background-color: #111 !important;
     }
     
-    /* Customiza o select para não ficar branco no padrão do navegador */
+    .input-boleiro::placeholder {
+        color: rgba(255, 255, 255, 0.3);
+    }
+    
+    /* Customiza a setinha do select dourada */
     select.input-boleiro {
         background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 5'%3E%3Cpath fill='%23d4af37' d='M2 0L0 2h4zm0 5L0 3h4z'/%3E%3C/svg%3E") !important;
     }
 
     /* O Termômetro da Resenha */
     .termometro-box {
-        background: rgba(0,0,0,0.6);
-        border-radius: 15px;
-        padding: 25px 20px;
-        border: 1px dashed #555;
+        background: rgba(0,0,0,0.4);
+        border-radius: 16px;
+        padding: 20px;
+        border: 1px dashed rgba(212, 175, 55, 0.3);
     }
     
     .range-boleiro {
         -webkit-appearance: none;
         width: 100%;
-        height: 12px;
-        border-radius: 6px;
+        height: 10px;
+        border-radius: 5px;
         background: linear-gradient(90deg, #198754 0%, #ffc107 50%, #dc3545 100%);
         outline: none;
         margin: 15px 0;
@@ -84,69 +91,75 @@
     .range-boleiro::-webkit-slider-thumb {
         -webkit-appearance: none;
         appearance: none;
-        width: 30px;
-        height: 30px;
+        width: 28px;
+        height: 28px;
         border-radius: 50%;
         background: #fff;
         border: 4px solid #d4af37;
         cursor: pointer;
         box-shadow: 0 0 10px rgba(0,0,0,0.8);
+        transition: transform 0.1s;
+    }
+    .range-boleiro::-webkit-slider-thumb:active {
+        transform: scale(1.1);
     }
 
     .btn-chutar {
         background: linear-gradient(135deg, #d4af37 0%, #b5952f 100%);
-        color: #000;
+        color: #121212;
         font-weight: 900;
-        font-size: 1.3rem;
+        font-size: 1.2rem;
         text-transform: uppercase;
-        letter-spacing: 2px;
+        letter-spacing: 1.5px;
         border: none;
-        border-radius: 50px;
-        padding: 18px 30px;
-        transition: all 0.3s;
-        box-shadow: 0 8px 20px rgba(212, 175, 55, 0.4);
+        border-radius: 50rem;
+        padding: 16px 30px;
+        transition: all 0.2s;
+        box-shadow: 0 8px 20px rgba(212, 175, 55, 0.3);
     }
 
     .btn-chutar:hover {
         transform: translateY(-3px);
-        box-shadow: 0 12px 25px rgba(212, 175, 55, 0.6);
+        box-shadow: 0 12px 25px rgba(212, 175, 55, 0.5);
         background: linear-gradient(135deg, #eadd7a 0%, #d4af37 100%);
     }
 
     .alerta-var {
-        background-color: #198754;
-        color: white;
-        border: 2px solid #20c997;
-        border-radius: 12px;
+        background-color: rgba(25, 135, 84, 0.15);
+        color: #20c997;
+        border: 1px solid #198754;
+        border-radius: 16px;
         font-weight: bold;
     }
 
     /* MAGIA MOBILE */
     @media (max-width: 768px) {
-        .titulo-ouro { font-size: 2rem; letter-spacing: 1px; }
-        .oscar-header { padding: 15px 10px; }
-        .card-vestiario { padding: 25px 15px !important; border-radius: 15px; }
-        .btn-chutar { font-size: 1.1rem; padding: 15px 20px; }
+        .titulo-ouro { font-size: 1.8rem; letter-spacing: 1px; }
+        .oscar-header { padding: 20px 10px 10px; }
+        .card-vestiario { padding: 20px !important; border-radius: 16px; }
+        .btn-chutar { font-size: 1.1rem; padding: 15px; }
+        .body-oscar { border-radius: 16px; }
     }
 </style>
 
-<div class="container pb-5">
+<div class="body-oscar pb-5 mb-5 px-2">
     <div class="oscar-header">
-        <i class="fa-solid fa-trophy mb-3" style="font-size: 4rem; color: #d4af37; filter: drop-shadow(0 0 15px rgba(212,175,55,0.6));"></i>
+        <i class="fa-solid fa-trophy mb-3" style="font-size: 3.5rem; color: #d4af37; filter: drop-shadow(0 0 15px rgba(212,175,55,0.6));"></i>
         <h1 class="titulo-ouro">Oscar da Cartolândia</h1>
-        <p class="text-light opacity-75 fs-5 mt-2 px-3">
-            <i class="fa-solid fa-microphone-lines"></i> O tribunal da resenha tá on! Dedure aqui as maiores cravadas, zicas ou pérolas do ano.
+        <p class="text-white-50 fs-6 mt-2 px-3 mx-auto" style="max-width: 600px;">
+            <i class="fa-solid fa-microphone-lines text-warning"></i> O tribunal da resenha tá on! Dedure aqui as maiores cravadas, zicas ou pérolas do ano.
         </p>
     </div>
 
     <div class="row justify-content-center">
-        <div class="col-md-9 col-lg-7">
+        <div class="col-12 col-md-10 col-lg-7">
             
             {% if messages %}
                 {% for msg in messages %}
-                <div class="alert alerta-var text-center shadow-lg fs-5 mb-4 p-3 alert-dismissible fade show" role="alert">
-                    <i class="fa-solid fa-desktop fs-4 mb-2 d-block"></i> VAR analisou: <strong>{{ msg }}</strong>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
+                <div class="alert alerta-var text-center shadow-lg mb-4 p-3 alert-dismissible fade show d-flex align-items-center justify-content-center flex-column" role="alert">
+                    <i class="fa-solid fa-desktop fs-3 mb-2 text-success"></i> 
+                    <span>VAR analisou: <strong>{{ msg }}</strong></span>
+                    <button type="button" class="btn-close btn-close-white opacity-50" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
                 {% endfor %}
             {% endif %}
@@ -156,8 +169,8 @@
                     {% csrf_token %}
                     
                     <div class="mb-4">
-                        <label class="label-boleiro"><i class="fa-solid fa-tags fs-4"></i> Abre o jogo, qual foi o lance?</label>
-                        <select name="categoria" class="form-select input-boleiro fs-5" required>
+                        <label class="label-boleiro"><i class="fa-solid fa-tags"></i> Abre o jogo, qual foi o lance?</label>
+                        <select name="categoria" class="form-select input-boleiro" required>
                             <option value="" disabled selected>Seleciona a categoria do bagre...</option>
                             <option value="perola">💩 Pérola (Falou a maior asneira do ano)</option>
                             <option value="cravacao">🎯 Nostradamus (Cravou o impossível)</option>
@@ -167,35 +180,35 @@
                     </div>
 
                     <div class="mb-4">
-                        <label class="label-boleiro"><i class="fa-solid fa-user-pen fs-4"></i> Quem foi o filósofo?</label>
-                        <input type="text" name="autor" class="form-control input-boleiro fs-5" placeholder="Ex: Zé da Manga, Joãozinho..." required>
+                        <label class="label-boleiro"><i class="fa-solid fa-user-pen"></i> Quem foi o filósofo?</label>
+                        <input type="text" name="autor" class="form-control input-boleiro" placeholder="Ex: Zé da Manga, Joãozinho..." required>
                     </div>
 
                     <div class="mb-4">
-                        <label class="label-boleiro"><i class="fa-solid fa-quote-left fs-4"></i> Abre aspas!</label>
-                        <textarea name="fala" class="form-control input-boleiro fs-5" rows="3" placeholder="O que o abençoado teve a coragem de dizer?" required></textarea>
+                        <label class="label-boleiro"><i class="fa-solid fa-quote-left"></i> Abre aspas!</label>
+                        <textarea name="fala" class="form-control input-boleiro" rows="3" placeholder="O que o abençoado teve a coragem de dizer?" required></textarea>
                     </div>
 
                     <div class="mb-4 termometro-box shadow-sm">
-                        <label class="label-boleiro d-flex justify-content-between w-100 mb-0">
-                            <span><i class="fa-solid fa-temperature-half fs-4"></i> Termômetro da Resenha</span>
-                            <span id="nivel-valor" class="badge bg-warning text-dark fs-5 rounded-pill px-3 py-1 border border-dark shadow-sm">Nível 5</span>
-                        </label>
+                        <div class="d-flex justify-content-between align-items-center w-100 mb-2">
+                            <label class="label-boleiro mb-0"><i class="fa-solid fa-temperature-half"></i> Termômetro da Resenha</label>
+                            <span id="nivel-valor" class="badge bg-warning text-dark fs-6 rounded-pill px-3 py-1 shadow-sm">Nível 5</span>
+                        </div>
                         <input type="range" name="nivel" class="range-boleiro" min="1" max="10" value="5" id="sliderNivel" oninput="document.getElementById('nivel-valor').innerText = 'Nível ' + this.value">
-                        <div class="d-flex justify-content-between text-muted small mt-2 fw-bold text-uppercase" style="font-size: 0.75rem;">
-                            <span><i class="fa-solid fa-face-meh"></i> Erro bobo</span>
-                            <span>Caso de Internação <i class="fa-solid fa-ambulance"></i></span>
+                        <div class="d-flex justify-content-between text-white-50 small mt-2 fw-bold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px;">
+                            <span><i class="fa-solid fa-face-meh text-success"></i> Erro bobo</span>
+                            <span>Internação <i class="fa-solid fa-ambulance text-danger"></i></span>
                         </div>
                     </div>
 
                     <div class="mb-5">
-                        <label class="label-boleiro"><i class="fa-solid fa-camera fs-4"></i> Provas pro VAR (Opcional)</label>
-                        <p class="text-light opacity-50 small mb-3 lh-sm">Lembrou daquele print cabuloso do WhatsApp ou Twitter? Anexa aqui pra não ter "mas veja bem" depois.</p>
+                        <label class="label-boleiro"><i class="fa-solid fa-camera"></i> Provas pro VAR (Opcional)</label>
+                        <p class="text-white-50 small mb-2 lh-sm" style="font-size: 0.8rem;">Lembrou daquele print cabuloso do WhatsApp? Anexa aqui pra não ter "mas veja bem" depois.</p>
                         <input type="file" name="print_prova" class="form-control input-boleiro" accept="image/*">
                     </div>
 
-                    <div class="text-center">
-                        <button type="submit" class="btn-chutar w-100">
+                    <div class="text-center mt-2">
+                        <button type="submit" class="btn-chutar w-100 shadow-lg">
                             <i class="fa-solid fa-paper-plane me-2"></i> Mandar pra súmula
                         </button>
                     </div>

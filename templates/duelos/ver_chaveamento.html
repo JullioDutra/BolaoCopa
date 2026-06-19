@@ -1,133 +1,245 @@
 {% extends 'base.html' %}
 
-{% block title %}Chaveamento: {{ campeonato.nome }}{% endblock %}
+{% block title %}Árvore do Torneio: {{ campeonato.nome }} - Cartolândia{% endblock %}
 
 {% block content %}
 <style>
-    /* Estilos da Árvore de Chaveamento */
+    /* ========================================== */
+    /* ESTILOS PREMIUM DO CHAVEAMENTO DA COPA     */
+    /* ========================================== */
+    .bracket-wrapper {
+        background: radial-gradient(circle at top right, #0a1f0d 0%, #050505 80%);
+        border-radius: 20px;
+        padding: 30px 20px;
+        box-shadow: inset 0 0 40px rgba(0,0,0,0.8), 0 10px 30px rgba(0,0,0,0.05);
+        border: 1px solid #1a1a1a;
+        position: relative;
+    }
+
     .bracket-container {
         display: flex;
         flex-direction: row;
-        overflow-x: auto; /* Permite rolar no celular */
-        padding: 20px 0;
-        gap: 30px;
-        min-height: 600px;
+        overflow-x: auto;
+        gap: 50px;
+        align-items: center;
+        padding-bottom: 25px;
+        min-height: 550px;
+        scroll-behavior: smooth;
+        -webkit-overflow-scrolling: touch;
     }
+
+    /* Scrollbar Customizada (Estilo App) */
+    .bracket-container::-webkit-scrollbar { height: 8px; }
+    .bracket-container::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); border-radius: 10px; }
+    .bracket-container::-webkit-scrollbar-thumb { background: linear-gradient(90deg, #cfb53b, #b5952f); border-radius: 10px; }
+
     .bracket-col {
         display: flex;
         flex-direction: column;
-        justify-content: space-around; /* Centraliza e distribui os jogos nas colunas afuniladas */
-        min-width: 260px;
-        gap: 15px;
-    }
-    .match-card {
-        background: #fff;
-        border: 2px solid #e9ecef;
-        border-radius: 10px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-        overflow: hidden;
+        justify-content: space-around;
+        height: 100%;
+        gap: 30px;
+        min-width: 280px;
         position: relative;
     }
-    .match-player {
-        padding: 10px 15px;
-        border-bottom: 1px solid #f1f1f1;
+
+    /* Conectores Visuais (Setas entre Colunas) */
+    .bracket-col:not(:last-child)::after {
+        content: "\f101";
+        font-family: "FontAwesome", "Font Awesome 6 Free";
+        font-weight: 900;
+        position: absolute;
+        right: -35px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 1.5rem;
+        color: rgba(255, 255, 255, 0.15);
+    }
+
+    /* Animação do Campeão */
+    .champion-card {
+        background: linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(0,0,0,0.9) 100%);
+        border: 2px solid #cfb53b;
+        border-radius: 16px;
+        padding: 25px 20px;
+        text-align: center;
+        margin-top: 30px;
+        animation: glowGold 2s infinite alternate;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    @keyframes glowGold {
+        from { box-shadow: 0 0 10px rgba(207, 181, 59, 0.2); }
+        to { box-shadow: 0 0 30px rgba(207, 181, 59, 0.6); transform: scale(1.02); }
+    }
+
+    /* Sobrescrita de estilos para o include do match_card manter o Dark Mode impecável */
+    .matchup, .match-card {
+        background: #151515 !important;
+        border: 1px solid #333 !important;
+        border-radius: 14px !important;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.5) !important;
+        overflow: hidden;
+        position: relative;
+        transition: transform 0.3s ease, border-color 0.3s ease;
+    }
+    .matchup:hover, .match-card:hover { 
+        transform: translateY(-4px); 
+        border-color: #cfb53b !important; 
+    }
+    .matchup-player, .match-player {
+        padding: 12px 16px !important;
+        border-bottom: 1px solid #222 !important;
+        font-weight: 700;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        font-weight: 600;
-        height: 45px;
+        color: #e0e0e0 !important;
+        background: transparent !important;
+        font-size: 0.95rem;
     }
-    .match-player:last-child {
-        border-bottom: none;
+    .matchup-player:last-child, .match-player:last-child {
+        border-bottom: none !important;
     }
-    .player-winner {
-        background-color: #e8f5e9;
-        color: #198754;
+    .winner, .player-winner { 
+        background-color: rgba(25, 135, 84, 0.15) !important; 
+        color: #20c997 !important; 
+        border-left: 4px solid #198754 !important;
     }
-    .player-loser {
-        color: #adb5bd;
-        text-decoration: line-through;
+    .loser, .player-loser { 
+        color: #666 !important; 
+        text-decoration: line-through; 
+        border-left: 4px solid transparent !important;
     }
-    .match-action {
-        background-color: #f8f9fa;
-        padding: 8px;
-        text-align: center;
-        border-top: 2px solid #e9ecef;
+
+    /* Swipe Mobile */
+    .swipe-indicator { display: none; animation: swipeAnim 2s infinite; }
+    @keyframes swipeAnim {
+        0% { transform: translateX(0); opacity: 0.5; }
+        50% { transform: translateX(10px); opacity: 1; }
+        100% { transform: translateX(0); opacity: 0.5; }
+    }
+    
+    @media (max-width: 768px) {
+        .swipe-indicator { display: inline-block; }
+        .bracket-wrapper { padding: 20px 10px; border-radius: 16px; }
     }
 </style>
 
-<div class="row mt-4 mb-2">
+<div class="row mt-4 mb-4 px-2">
     <div class="col-12 text-center">
-        <h2 class="fw-bold text-dark"><i class="fa-solid fa-sitemap text-primary"></i> Árvore do Torneio</h2>
-        <p class="text-muted fs-5 mb-1">{{ campeonato.nome }}</p>
-        <span class="badge bg-dark mb-3">{{ campeonato.get_status_display }}</span>
-        <br>
-        <a href="{% url 'duelos:listar_desafios' %}" class="btn btn-outline-secondary btn-sm rounded-pill mt-2">
-            <i class="fa-solid fa-arrow-left"></i> Voltar à Arena
-        </a>
+        <!-- Título do Torneio -->
+        <h2 class="fw-bold mb-1" style="color: var(--verde-escuro);">
+            <i class="fa-solid fa-sitemap text-success"></i> Árvore do Torneio
+        </h2>
+        <h5 class="text-muted fw-bold">{{ campeonato.nome }}</h5>
         
-        <!-- Botão oculto para o Admin voltar e poder resetar caso esteja em andamento -->
-        {% if campeonato.admin == request.user and campeonato.status == 'andamento' %}
-            <a href="{% url 'duelos:painel_campeonato' campeonato.id %}" class="btn btn-danger btn-sm rounded-pill mt-2 ms-2 shadow-sm">
-                <i class="fa-solid fa-gears"></i> Painel VAR
+        <div class="mt-2 mb-3">
+            <span class="badge bg-dark rounded-pill px-3 py-2 text-uppercase shadow-sm" style="letter-spacing: 1px;">
+                Status: {{ campeonato.get_status_display }}
+            </span>
+        </div>
+        
+        <!-- Botões de Ação -->
+        <div class="d-flex flex-wrap justify-content-center gap-2 mt-3">
+            <a href="{% url 'duelos:listar_desafios' %}" class="btn btn-outline-secondary fw-bold rounded-pill px-4 shadow-sm">
+                <i class="fa-solid fa-arrow-left me-1"></i> Voltar à Arena
             </a>
-        {% endif %}
+            
+            <!-- Botão oculto para o Admin voltar e poder resetar caso esteja em andamento -->
+            {% if campeonato.admin == request.user and campeonato.status == 'andamento' %}
+                <a href="{% url 'duelos:painel_campeonato' campeonato.id %}" class="btn btn-danger fw-bold rounded-pill px-4 shadow-sm">
+                    <i class="fa-solid fa-desktop me-1"></i> Painel VAR
+                </a>
+            {% endif %}
+        </div>
+
+        <!-- Indicador Mobile -->
+        <p class="text-muted small mt-3 d-md-none swipe-indicator fw-bold text-success">
+            <i class="fa-solid fa-left-right me-1"></i> Deslize para ver as chaves
+        </p>
     </div>
 </div>
 
-<div class="row">
+<div class="row px-2 mb-5">
     <div class="col-12">
-        <div class="bracket-container shadow-inner p-4 bg-light rounded-4 border">
-            
-            <!-- COLUNA: OITAVAS DE FINAL -->
-            {% if fases.oitavas %}
-            <div class="bracket-col">
-                <h5 class="text-center text-muted fw-bold mb-3">Oitavas de Final</h5>
-                {% for confronto in fases.oitavas %}
-                    {% include 'duelos/includes/match_card.html' with confronto=confronto %}
-                {% endfor %}
-            </div>
-            {% endif %}
-
-            <!-- COLUNA: QUARTAS DE FINAL -->
-            {% if fases.quartas %}
-            <div class="bracket-col">
-                <h5 class="text-center text-muted fw-bold mb-3">Quartas de Final</h5>
-                {% for confronto in fases.quartas %}
-                    {% include 'duelos/includes/match_card.html' with confronto=confronto %}
-                {% endfor %}
-            </div>
-            {% endif %}
-
-            <!-- COLUNA: SEMIFINAL -->
-            {% if fases.semi %}
-            <div class="bracket-col">
-                <h5 class="text-center text-muted fw-bold mb-3">Semifinal</h5>
-                {% for confronto in fases.semi %}
-                    {% include 'duelos/includes/match_card.html' with confronto=confronto %}
-                {% endfor %}
-            </div>
-            {% endif %}
-
-            <!-- COLUNA: FINAL -->
-            {% if fases.final %}
-            <div class="bracket-col">
-                <h5 class="text-center text-warning fw-bold mb-3"><i class="fa-solid fa-trophy"></i> Grande Final</h5>
-                {% for confronto in fases.final %}
-                    {% include 'duelos/includes/match_card.html' with confronto=confronto %}
-                {% endfor %}
+        <div class="bracket-wrapper">
+            <div class="bracket-container">
                 
-                <!-- Troféu do Campeão (Blindado para só aparecer se houver vencedor) -->
-                {% if campeonato.status == 'finalizado' and fases.final.0.vencedor %}
-                    <div class="text-center mt-4">
-                        <i class="fa-solid fa-star text-warning fs-1 mb-2"></i>
-                        <h4 class="text-success fw-bold">CAMPEÃO!</h4>
-                        <p class="fs-5 fw-bold text-dark">{{ fases.final.0.vencedor.first_name|default:fases.final.0.vencedor.username }}</p>
+                <!-- COLUNA: OITAVAS DE FINAL -->
+                {% if fases.oitavas %}
+                <div class="bracket-col">
+                    <div class="text-center mb-4">
+                        <span class="badge bg-light bg-opacity-10 text-white border border-light border-opacity-25 rounded-pill px-3 py-2 fw-bold text-uppercase" style="letter-spacing: 1px;">
+                            Oitavas de Final
+                        </span>
                     </div>
+                    {% for confronto in fases.oitavas %}
+                        {% include 'duelos/includes/match_card.html' with confronto=confronto %}
+                    {% endfor %}
+                </div>
                 {% endif %}
-            </div>
-            {% endif %}
 
+                <!-- COLUNA: QUARTAS DE FINAL -->
+                {% if fases.quartas %}
+                <div class="bracket-col">
+                    <div class="text-center mb-4">
+                        <span class="badge bg-secondary bg-opacity-25 text-white border border-secondary border-opacity-50 rounded-pill px-3 py-2 fw-bold text-uppercase" style="letter-spacing: 1px;">
+                            Quartas de Final
+                        </span>
+                    </div>
+                    {% for confronto in fases.quartas %}
+                        {% include 'duelos/includes/match_card.html' with confronto=confronto %}
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <!-- COLUNA: SEMIFINAL -->
+                {% if fases.semi %}
+                <div class="bracket-col">
+                    <div class="text-center mb-4">
+                        <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-50 rounded-pill px-3 py-2 fw-bold text-uppercase" style="letter-spacing: 1px;">
+                            Semifinal
+                        </span>
+                    </div>
+                    {% for confronto in fases.semi %}
+                        {% include 'duelos/includes/match_card.html' with confronto=confronto %}
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <!-- COLUNA: FINAL E CAMPEÃO -->
+                {% if fases.final %}
+                <div class="bracket-col">
+                    <div class="text-center mb-4">
+                        <span class="badge bg-warning bg-opacity-10 text-warning border border-warning rounded-pill px-4 py-2 fw-bold text-uppercase shadow-sm" style="letter-spacing: 1px; box-shadow: 0 0 15px rgba(255, 193, 7, 0.2) !important;">
+                            <i class="fa-solid fa-trophy"></i> Grande Final
+                        </span>
+                    </div>
+                    {% for confronto in fases.final %}
+                        {% include 'duelos/includes/match_card.html' with confronto=confronto %}
+                    {% endfor %}
+                    
+                    <!-- Troféu do Campeão -->
+                    {% if campeonato.status == 'finalizado' and fases.final.0.vencedor %}
+                        <div class="champion-card">
+                            <!-- Efeito de brilho de fundo -->
+                            <div class="position-absolute top-50 start-50 translate-middle w-100 h-100" style="background: radial-gradient(circle, rgba(212,175,55,0.2) 0%, transparent 70%); z-index: 0;"></div>
+                            
+                            <div class="position-relative" style="z-index: 1;">
+                                <i class="fa-solid fa-crown text-warning mb-2" style="font-size: 3.5rem; filter: drop-shadow(0 0 10px rgba(212,175,55,0.8));"></i>
+                                <h5 class="text-white text-uppercase tracking-wider fw-bold mb-1" style="letter-spacing: 2px;">Campeão</h5>
+                                <h3 class="fw-black mb-0" style="color: #d4af37;">
+                                    {{ fases.final.0.vencedor.first_name|default:fases.final.0.vencedor.username }}
+                                </h3>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+            </div>
         </div>
     </div>
 </div>

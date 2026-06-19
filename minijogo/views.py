@@ -84,17 +84,34 @@ def tela_draft(request):
 
 @login_required
 def lobby_batalha(request):
-    """ Coloca o jogador na fila e procura um adversário """
+    """ Coloca o jogador na fila ou puxa o convite pendente """
     draft = MeuDraft.objects.filter(usuario=request.user, status='ativo').last()
     if not draft:
         return redirect('minijogo:tela_draft')
         
+    # 💥 CORREÇÃO 2: Se ele acabou de vir do Draft, resgata a sala do amigo!
+    convite_id = request.session.pop('convite_pendente', None)
+    if convite_id:
+        partida_convite = PartidaPenalti.objects.filter(id=convite_id, fase='aguardando').first()
+        if partida_convite and partida_convite.jogador1 != request.user:
+            partida_convite.jogador2 = request.user
+            partida_convite.draft_j2 = draft
+            partida_convite.fase = '5_cobrancas'
+            
+            if partida_convite.moeda_sorteio == 'j1':
+                partida_convite.turno_batedor = partida_convite.jogador1
+            else:
+                partida_convite.turno_batedor = partida_convite.jogador2
+            
+            partida_convite.save()
+            return redirect('minijogo:tela_jogo', partida_id=partida_convite.id)
+
+    # ... (AQUI CONTINUA O SEU CÓDIGO NORMAL DE PROCURAR PARTIDA) ...
     partida_atual = PartidaPenalti.objects.filter(
         (Q(jogador1=request.user) | Q(jogador2=request.user)) & 
         ~Q(fase='finalizado')
     ).first()
     
-    # 💥 CORREÇÃO 1: Impede que o jogador entre na tela de jogo sozinho!
     if partida_atual:
         if partida_atual.fase == 'aguardando':
             return render(request, 'minijogo/esperando_adversario.html', {'partida': partida_atual})
@@ -103,7 +120,6 @@ def lobby_batalha(request):
     partida_aguardando = PartidaPenalti.objects.filter(fase='aguardando').exclude(jogador1=request.user).first()
     
     if partida_aguardando:
-        # Achou adversário! Entra na partida
         partida_aguardando.jogador2 = request.user
         partida_aguardando.draft_j2 = draft
         partida_aguardando.fase = '5_cobrancas'
@@ -116,7 +132,6 @@ def lobby_batalha(request):
         partida_aguardando.save()
         return redirect('minijogo:tela_jogo', partida_id=partida_aguardando.id)
     else:
-        # Nova sala
         quem_comeca = random.choice(['j1', 'j2'])
         usa_poderes = request.session.get('usa_poderes', True)
         usa_olheiro = request.session.get('usa_olheiro', True)
@@ -140,8 +155,9 @@ def aceitar_convite(request, partida_id):
     partida = get_object_or_404(PartidaPenalti, id=partida_id)
     draft = MeuDraft.objects.filter(usuario=request.user, status='ativo').last()
     
-    # Se não tem time, vai pro draft. O draft devolve pro lobby, e o lobby pesca ele pro jogo!
+    # 💥 CORREÇÃO 1: Salva o ID da sala na memória antes de mandar pro Draft!
     if not draft:
+        request.session['convite_pendente'] = partida_id
         return redirect('minijogo:tela_draft')
     
     if partida.fase == 'aguardando' and partida.jogador1 != request.user:
@@ -149,7 +165,7 @@ def aceitar_convite(request, partida_id):
         partida.draft_j2 = draft
         partida.fase = '5_cobrancas'
         
-        # 💥 CORREÇÃO 2: O convite agora respeita o cara-ou-coroa da sala!
+        # Respeita o cara-ou-coroa
         if partida.moeda_sorteio == 'j1':
             partida.turno_batedor = partida.jogador1
         else:

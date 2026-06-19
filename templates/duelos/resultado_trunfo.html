@@ -3,26 +3,130 @@
 {% block title %}Fim de Jogo - Super Trunfo{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center mt-5">
-    <div class="col-md-6 text-center">
-        <div class="card p-5 shadow border-0 rounded-4 {% if eh_campeao %}border-success bg-success text-white{% else %}border-danger bg-danger text-white{% endif %}" style="border-width: 5px !important;">
-            
-            {% if eh_campeao %}
-                <i class="fa-solid fa-trophy mb-3 text-warning" style="font-size: 5rem;"></i>
-                <h1 class="fw-bold text-warning">VITÓRIA!</h1>
-                <p class="fs-4">Você roubou todas as cartas e aniquilou seu adversário!</p>
-            {% else %}
-                <i class="fa-solid fa-skull-crossbones mb-3" style="font-size: 5rem;"></i>
-                <h1 class="fw-bold">DERROTA...</h1>
-                <p class="fs-4">Você ficou sem cartas. O {{ campeao.username }} passou o trator!</p>
-            {% endif %}
+<style>
+    /* ========================================== */
+    /* ESTILOS DE VITÓRIA (GLÓRIA)                */
+    /* ========================================== */
+    .win-card {
+        background: linear-gradient(135deg, #1b5e20 0%, #0a290d 100%);
+        border: 3px solid #cfb53b !important;
+        box-shadow: 0 15px 40px rgba(207, 181, 59, 0.3), inset 0 0 40px rgba(207, 181, 59, 0.15);
+    }
+    
+    .trophy-glow {
+        font-size: 6rem;
+        color: #cfb53b;
+        filter: drop-shadow(0 0 25px rgba(207,181,59,0.8));
+        animation: floatGold 2.5s ease-in-out infinite;
+    }
 
-            <hr class="my-4 text-white opacity-50">
+    .title-win {
+        color: #cfb53b;
+        font-weight: 900;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        text-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    }
+
+    @keyframes floatGold {
+        0% { transform: translateY(0px); }
+        50% { transform: translateY(-15px) scale(1.05); }
+        100% { transform: translateY(0px); }
+    }
+
+    /* ========================================== */
+    /* ESTILOS DE DERROTA (GAME OVER)             */
+    /* ========================================== */
+    .lose-card {
+        background: linear-gradient(135deg, #4a0e17 0%, #120204 100%);
+        border: 3px solid #dc3545 !important;
+        box-shadow: 0 15px 40px rgba(220, 53, 69, 0.4), inset 0 0 40px rgba(220, 53, 69, 0.15);
+    }
+
+    .skull-glow {
+        font-size: 6rem;
+        color: #ff4d4d;
+        filter: drop-shadow(0 0 20px rgba(220,53,69,0.7));
+        animation: pulseRed 2s infinite;
+    }
+
+    .title-lose {
+        color: #ff4d4d;
+        font-weight: 900;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        text-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    }
+
+    @keyframes pulseRed {
+        0% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.05); opacity: 0.8; }
+        100% { transform: scale(1); opacity: 1; }
+    }
+
+    /* ========================================== */
+    /* ESTILOS GERAIS DA TELA                     */
+    /* ========================================== */
+    .btn-return {
+        transition: all 0.2s ease;
+        letter-spacing: 1px;
+    }
+    .btn-return:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(255,255,255,0.2);
+    }
+    
+    @media (max-width: 576px) {
+        .trophy-glow, .skull-glow { font-size: 4.5rem; }
+        .title-win, .title-lose { font-size: 2rem; }
+    }
+</style>
+
+<div class="row justify-content-center align-items-center min-vh-75 mt-4 mb-5 px-2">
+    <div class="col-12 col-md-8 col-lg-6 text-center">
+        
+        {% if eh_campeao %}
+            <!-- CARTÃO DE VITÓRIA -->
+            <div class="card win-card p-4 p-md-5 rounded-4 text-white position-relative overflow-hidden">
+                <!-- Efeito visual de luz de fundo -->
+                <div class="position-absolute top-50 start-50 translate-middle w-100 h-100 opacity-25" style="background: radial-gradient(circle, #cfb53b 0%, transparent 60%); z-index: 0;"></div>
+                
+                <div class="position-relative" style="z-index: 1;">
+                    <i class="fa-solid fa-trophy trophy-glow mb-4"></i>
+                    <h1 class="title-win mb-2">O Rei da Mesa!</h1>
+                    <span class="badge bg-warning text-dark fs-6 rounded-pill mb-4 px-4 py-2 shadow-sm"><i class="fa-solid fa-star"></i> Vitória Absoluta</span>
+                    
+                    <p class="fs-5 lh-sm text-white-50">
+                        Você roubou todas as cartas, limpou o baralho e <strong>aniqulou</strong> o seu adversário!
+                    </p>
+                </div>
+        {% else %}
+            <!-- CARTÃO DE DERROTA -->
+            <div class="card lose-card p-4 p-md-5 rounded-4 text-white position-relative overflow-hidden">
+                <!-- Efeito visual de luz de fundo -->
+                <div class="position-absolute top-50 start-50 translate-middle w-100 h-100 opacity-25" style="background: radial-gradient(circle, #dc3545 0%, transparent 60%); z-index: 0;"></div>
+                
+                <div class="position-relative" style="z-index: 1;">
+                    <i class="fa-solid fa-skull-crossbones skull-glow mb-4"></i>
+                    <h1 class="title-lose mb-2">Fim de Jogo!</h1>
+                    <span class="badge bg-danger text-white fs-6 rounded-pill mb-4 px-4 py-2 shadow-sm"><i class="fa-solid fa-battery-empty"></i> Zero Cartas</span>
+                    
+                    <p class="fs-5 lh-sm text-white-50">
+                        O <strong class="text-warning text-uppercase">{{ campeao.first_name|default:campeao.username|title }}</strong> passou o trator e te mandou de volta pro vestiário mais cedo.
+                    </p>
+                </div>
+        {% endif %}
+
+            <!-- SEPARADOR E BOTÃO (Comum para ambos os cartões) -->
+            <hr class="my-4 border-light opacity-25 position-relative" style="z-index: 1;">
             
-            <a href="{% url 'duelos:listar_desafios' %}" class="btn btn-light btn-lg fw-bold rounded-pill text-dark px-5">
-                <i class="fa-solid fa-rotate-left"></i> Voltar para a Arena
-            </a>
+            <div class="position-relative" style="z-index: 1;">
+                <a href="{% url 'duelos:listar_desafios' %}" class="btn btn-light btn-lg btn-return fw-bold rounded-pill text-dark px-4 py-3 w-100 text-uppercase shadow">
+                    <i class="fa-solid fa-arrow-rotate-left me-2"></i> Voltar para a Arena
+                </a>
+            </div>
         </div>
+        
     </div>
 </div>
 {% endblock %}

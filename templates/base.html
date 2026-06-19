@@ -8,9 +8,12 @@
     <title>{% block title %}Cartolândia{% endblock %}</title>
     
     <!-- ========================================== -->
-    <!-- CONFIGURAÇÕES DE PWA (APP NATIVO)          -->
+    <!-- CONFIGURAÇÕES DE PWA E ÍCONES              -->
     <!-- ========================================== -->
     {% load static %}
+    <!-- Favicon (Ícone da aba do navegador) -->
+    <link rel="icon" href="{% static 'media/logo.png' %}" type="image/png">
+    
     <!-- Link para o arquivo de Manifesto -->
     <link rel="manifest" href="{% static 'manifest.json' %}">
     
@@ -128,9 +131,9 @@
                 <i class="fa-solid fa-bars fs-3 text-white"></i>
             </button>
 
-            <!-- Logo (Rota Corrigida) -->
-            <a class="navbar-brand fw-bold fs-4 mx-auto mx-lg-0 tracking-wider" href="{% url 'dashboard' %}">
-                <i class="fa-solid fa-trophy" style="color: var(--dourado);"></i> Cartolândia
+            <!-- Logo Real Renderizada -->
+            <a class="navbar-brand fw-bold fs-4 mx-auto mx-lg-0 tracking-wider d-flex align-items-center" href="{% url 'dashboard' %}">
+                <img src="{% static 'media/logo.png' %}" alt="Logo" width="32" height="32" class="me-2 object-fit-contain"> Cartolândia
             </a>
 
             <!-- Ícone de Carteira Rápida no Mobile (Fica à direita) -->
@@ -151,7 +154,6 @@
             <div class="collapse navbar-collapse" id="navbarNavDesktop">
                 {% if user.is_authenticated %}
                     <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-4 gap-1">
-                        <!-- Rota Corrigida -->
                         <li class="nav-item">
                             <a class="nav-link text-white" href="{% url 'dashboard' %}"><i class="fa-solid fa-house opacity-75 me-1"></i> Início</a>
                         </li>
@@ -258,7 +260,6 @@
         
         <div class="offcanvas-body p-0 d-flex flex-column">
             <ul class="navbar-nav mb-auto">
-                <!-- Rota Corrigida -->
                 <li class="nav-item">
                     <a class="nav-link" href="{% url 'dashboard' %}"><i class="fa-solid fa-house fa-fw opacity-75 me-2"></i> Início</a>
                 </li>
@@ -296,10 +297,20 @@
                 </li>
             </ul>
             
-            <div class="p-3 border-top border-light border-opacity-10 mt-auto">
-                <a class="btn btn-danger w-100 fw-bold rounded-pill shadow-sm" href="{% url 'logout' %}">
-                    <i class="fa-solid fa-right-from-bracket"></i> Sair do App
-                </a>
+            <div class="mt-auto border-top border-light border-opacity-10">
+                
+                <!-- BOTÃO DE INSTALAR O APP (PWA) -->
+                <div class="px-3 pt-3 d-none" id="divInstalarApp">
+                    <button id="btnInstalarApp" class="btn btn-warning w-100 fw-bold rounded-pill shadow-sm text-dark">
+                        <i class="fa-solid fa-download me-1"></i> Instalar Aplicativo
+                    </button>
+                </div>
+
+                <div class="p-3">
+                    <a class="btn btn-danger w-100 fw-bold rounded-pill shadow-sm" href="{% url 'logout' %}">
+                        <i class="fa-solid fa-right-from-bracket"></i> Sair do App
+                    </a>
+                </div>
             </div>
         </div>
     </div>
@@ -332,17 +343,56 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <!-- ========================================== -->
-    <!-- SCRIPT DO PWA (SERVICE WORKER REGISTRATION)-->
+    <!-- SCRIPT DO PWA E BOTÃO DE INSTALAÇÃO        -->
     <!-- ========================================== -->
     <script>
+        // 1. Registra o Service Worker
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                // Certifique-se de ter o arquivo sw.js criado na raiz da sua pasta de estáticos
                 navigator.serviceWorker.register("{% static 'sw.js' %}")
-                    .then(reg => console.log('Service Worker registrado com sucesso! PWA Ativado.'))
+                    .then(reg => console.log('Service Worker registrado com sucesso!'))
                     .catch(err => console.log('Erro ao registrar Service Worker:', err));
             });
         }
+
+        // 2. Lógica do botão de Instalação (Aparece apenas se suportado)
+        let deferredPrompt;
+        const divInstalar = document.getElementById('divInstalarApp');
+        const btnInstalar = document.getElementById('btnInstalarApp');
+
+        // Se o App já estiver instalado, esconde a div
+        if (window.matchMedia('(display-mode: standalone)').matches) {
+            if(divInstalar) divInstalar.classList.add('d-none');
+        }
+
+        // Intercepta a chamada nativa do navegador
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            // Revela nosso botão personalizado dourado
+            if(divInstalar) divInstalar.classList.remove('d-none');
+        });
+
+        // Evento de clique no botão "Instalar Aplicativo"
+        if(btnInstalar) {
+            btnInstalar.addEventListener('click', async () => {
+                if (deferredPrompt !== null) {
+                    divInstalar.classList.add('d-none');
+                    deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    if (outcome === 'accepted') {
+                        console.log('O usuário instalou o PWA!');
+                    }
+                    deferredPrompt = null;
+                }
+            });
+        }
+
+        // Quando a instalação terminar, limpa a tela
+        window.addEventListener('appinstalled', () => {
+            if(divInstalar) divInstalar.classList.add('d-none');
+            deferredPrompt = null;
+        });
     </script>
 </body>
 </html>

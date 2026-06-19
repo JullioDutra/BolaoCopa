@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+
+{% block title %}Ao Vivo - Match Day{% endblock %}
+
+{% block content %}
+<style>
+    body { background-color: #0a0a0a; color: #fff; }
+    
+    .placar-box {
+        background: linear-gradient(180deg, #1a1a1a 0%, #111 100%);
+        border: 1px solid #333;
+        border-radius: 12px;
+        padding: 20px;
+    }
+    
+    .console-narracao {
+        background-color: #000;
+        border: 1px solid #222;
+        border-radius: 12px;
+        height: 400px;
+        overflow-y: auto;
+        padding: 20px;
+        font-family: 'Courier New', Courier, monospace;
+    }
+    
+    .linha-log { margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px dashed #222; }
+    .linha-destaque { color: #cfb53b; font-weight: bold; }
+    .minuto-tag { color: #888; font-size: 0.8rem; margin-right: 10px; }
+    
+    .painel-acao {
+        background: rgba(207, 181, 59, 0.1);
+        border: 1px solid #cfb53b;
+        border-radius: 12px;
+        display: none; /* Oculto por padrão */
+    }
+</style>
+
+<div class="container py-4">
+    <div class="placar-box text-center mb-4 shadow-lg">
+        <h6 class="text-uppercase text-white-50 mb-3" id="status-jogo">Aguardando Início</h6>
+        <div class="d-flex justify-content-center align-items-center gap-4">
+            <h3 class="fw-bold m-0 text-uppercase w-25 text-end">{{ partida.clube_casa.sigla }}</h3>
+            <div class="bg-black px-4 py-2 rounded-3 border border-secondary">
+                <h1 class="fw-bold m-0" style="letter-spacing: 5px;">
+                    <span id="gols-casa">{{ partida.gols_casa }}</span> - <span id="gols-fora">{{ partida.gols_fora }}</span>
+                </h1>
+            </div>
+            <h3 class="fw-bold m-0 text-uppercase w-25 text-start">{{ partida.clube_fora.sigla }}</h3>
+        </div>
+        <h4 class="mt-3 text-warning fw-bold"><span id="minuto-visor">0</span>'</h4>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="console-narracao shadow" id="caixa-logs">
+                <div class="text-center text-white-50 mt-5">Sincronizando transmissão ao vivo...</div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="painel-acao p-4 shadow-lg h-100" id="painel-decisao">
+                <div class="text-center mb-4">
+                    <h5 class="fw-bold text-warning text-uppercase mb-1">A Bola Sobrou pra Você!</h5>
+                    <p class="small text-white-50 m-0">Tome uma decisão rápida.</p>
+                    <h1 class="display-4 fw-bold text-danger mt-2 mb-0" id="cronometro">10</h1>
+                </div>
+                
+                <div class="d-grid gap-3" id="botoes-acao">
+                    </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const partidaId = {{ partida.id }};
+    const csrfToken = '{{ csrf_token }}';
+    let logProcessados = 0;
+    let timerInterativo = null;
+
+    function atualizarTelaAoVivo() {
+        fetch(`/carreira/api/match/${partidaId}/sync/`)
+        .then(res => res.json())
+        .then(data => {
+            // Atualiza Placar e Relógio
+            document.getElementById('gols-casa').innerText = data.placar_casa;
+            document.getElementById('gols-fora').innerText = data.placar_fora;
+            document.getElementById('minuto-visor').innerText = data.minuto;
+            
+            let statusTexto = "EM ANDAMENTO";
+            if (data.status === 'finalizada') statusTexto = "FIM DE JOGO";
+            else if (data.status === 'agendada') statusTexto = "AQUECIMENTO";
+            document.getElementById('status-jogo').innerText = statusTexto;
+
+            // Renderiza novos logs
+            const caixaLogs = document.getElementById('caixa-logs');
+            if (data.log.length > logProcessados) {
+                if(logProcessados === 0) caixaLogs.innerHTML = ''; // Limpa o "Sincronizando..."
+                
+                for(let i = logProcessados; i < data.log.length; i++) {
+                    const linha = data.log[i];
+                    const div = document.createElement('div');
+                    div.className = 'linha-log';
+                    
+                    let classeDestaque = linha.destaque ? 'linha-destaque' : 'text-white-50';
+                    div.innerHTML = `<span class="minuto-tag">[${linha.minuto}']</span> <span class="${classeDestaque}">${linha.texto}</span>`;
+                    caixaLogs.appendChild(div);
+                }
+                logProcessados = data.log.length;
+                caixaLogs.scrollTop = caixaLogs.scrollHeight; // Auto-scroll para o fim
+            }
+
+            // Gerencia o Painel Interativo
+            const painel = document.getElementById('painel-decisao');
+            const boxBotoes = document.getElementById('botoes-acao');
+            const visorCronometro = document.getElementById('cronometro');
+
+            if (data.minha_vez && data.opcoes) {
+                painel.style.display = 'block';
+                visorCronometro.innerText = data.segundos_restantes;
+                
+                // Se os botões não foram criados ainda para este lance
+                if (boxBotoes.innerHTML === '') {
+                    Object.entries(data.opcoes).forEach(([chave, texto]) => {
+                        boxBotoes.innerHTML += `
+                            <button class="btn btn-outline-warning fw-bold text-uppercase p-3" onclick="enviarAcao('${chave}')">
+                                ${texto}
+                            </button>
+                        `;
+                    });
+                }
+            } else {
+                painel.style.display = 'none';
+                boxBotoes.innerHTML = '';
+            }
+        });
+    }
+
+    function enviarAcao(escolha) {
+        document.getElementById('painel-decisao').style.display = 'none';
+        document.getElementById('botoes-acao').innerHTML = '';
+        
+        fetch(`/carreira/api/match/${partidaId}/acao/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+            body: JSON.stringify({ escolha: escolha })
+        });
+        
+        // Chama a sincronização imediatamente para ver o resultado mais rápido
+        setTimeout(atualizarTelaAoVivo, 500);
+    }
+
+    // Polling a cada 2.5 segundos para manter a tela viva
+    setInterval(atualizarTelaAoVivo, 2500);
+    atualizarTelaAoVivo();
+</script>
+{% endblock %}

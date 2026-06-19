@@ -32,12 +32,17 @@ ALLOWED_HOSTS = ['*']
 # Application definition
 
 INSTALLED_APPS = [
+    # JAZZMIN DEVE SER O PRIMEIRO DA LISTA!
+    'jazzmin',
+    
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    
+    # Seus Apps
     'core',
     'accounts',
     'bolao',
@@ -64,7 +69,7 @@ ROOT_URLCONF = 'bolao_cartolandia.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'templates')], # <-- ATERE AQUI
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -126,12 +131,19 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = '/static/'
+
+# Diretório para encontrar o manifest.json, sw.js e a logo do PWA localmente
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static_files'), # Crie esta pasta na raiz do projeto
+]
+
+# Diretório onde o collectstatic vai jogar tudo (útil para o PythonAnywhere)
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+
 
 # Arquivos de Upload (Fotos, Escudos)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-
 
 LOGIN_URL = 'login'
 
@@ -139,14 +151,59 @@ LOGIN_URL = 'login'
 X_FRAME_OPTIONS = 'SAMEORIGIN'
 
 
+# Email Configs
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-
 EMAIL_HOST = 'smtp.gmail.com'
-
 EMAIL_PORT = 585
-
 EMAIL_USE_TLS = True
-
 EMAIL_HOST_USER = 'jullio.dutra1@gmail.com'
-
 EMAIL_HOST_PASSWORD = 'uwdj zucn mnip gdqu'
+
+
+# ==========================================
+# JAZZMIN SETTINGS (ADMIN PROFISSIONAL)
+# ==========================================
+JAZZMIN_SETTINGS = {
+    "site_title": "Cartolândia Admin",
+    "site_header": "Cartolândia",
+    "site_brand": "Cartolândia",
+    "welcome_sign": "Bem-vindo ao Painel da Cartolândia",
+    
+    # Caminho da logo (certifique-se de ter 'media/logo.png' na pasta estática)
+    "site_logo": "media/logo.png",
+    
+    # Links rápidos no topo do painel
+    "topmenu_links": [
+        {"name": "Início", "url": "admin:index", "permissions": ["auth.view_user"]},
+        {"name": "Ver Site", "url": "/"},
+    ],
+    
+    "show_sidebar": True,
+    "navigation_expanded": True,
+    "hide_apps": [],
+    "hide_models": [],
+    
+    # Tema limpo e moderno
+    "theme": "flatly",
+    "dark_mode_theme": "darkly",
+}
+
+JAZZMIN_UI_TWEAKS = {
+    "navbar_small_text": False,
+    "brand_small_text": False,
+    "brand_colour": "navbar-success",
+    "accent": "accent-success",
+    "navbar": "navbar-success navbar-dark",
+    "no_navbar_border": False,
+    "navbar_fixed": False,
+    "layout_boxed": False,
+    "footer_fixed": False,
+    "sidebar_fixed": False,
+    "sidebar": "sidebar-dark-success",
+    "sidebar_nav_small_text": False,
+    "sidebar_disable_expand": False,
+    "sidebar_nav_child_indent": True,
+    "sidebar_nav_compact_style": False,
+    "sidebar_nav_legacy_style": False,
+    "sidebar_nav_flat_style": False,
+}

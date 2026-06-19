@@ -1,0 +1,24 @@
+{
+  "name": "Cartolândia - O Maior Bolão",
+  "short_name": "Cartolândia",
+  "description": "Aplicativo oficial de bolões, convocações e duelos X1.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f4f7f6",
+  "theme_color": "#0a3d10",
+  "icons": [
+    {
+      "src": "/static/media/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/media/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

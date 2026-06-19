@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Vestiário - {{ clube.nome }} {% endblock %}
+
+{% block content %}
+<style>
+    :root {
+        --dark-bg: #0a0a0a;
+        --dark-surface: #111111;
+        --gold-premium: #cfb53b;
+    }
+
+    body { background-color: var(--dark-bg); color: #ffffff; }
+
+    .glass-card {
+        background: rgba(17, 17, 17, 0.9);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    }
+
+    .player-row {
+        background: #1a1a1a;
+        border: 1px solid #222;
+        border-radius: 8px;
+        transition: all 0.2s;
+    }
+
+    .player-row:hover {
+        border-color: var(--gold-premium);
+        background: #222;
+    }
+
+    .is-me {
+        border-left: 4px solid var(--gold-premium);
+        background: rgba(207, 181, 59, 0.1);
+    }
+
+    .ovr-badge {
+        font-size: 1.2rem;
+        font-weight: 900;
+        color: var(--gold-premium);
+    }
+</style>
+
+<div class="container py-4">
+    
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-uppercase m-0" style="color: var(--gold-premium);">Vestiário: {{ clube.nome }}</h2>
+            <p class="text-white-50 text-uppercase small m-0">Prancheta Tática do Treinador (4-4-2)</p>
+        </div>
+        <a href="{% url 'carreira:dashboard' %}" class="btn btn-outline-light text-uppercase fw-bold small"><i class="fa-solid fa-arrow-left"></i> Voltar</a>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-12">
+            <div class="glass-card p-4">
+                <h5 class="text-white-50 text-uppercase small fw-bold mb-4 border-bottom border-secondary pb-2">11 Titulares</h5>
+                
+                <div class="d-flex flex-column gap-2">
+                    {% for posicao in escalacao %}
+                        <div class="player-row d-flex align-items-center justify-content-between p-3 {% if posicao.jogador_titular == avatar %}is-me{% endif %}">
+                            
+                            <div class="d-flex align-items-center gap-3">
+                                <span class="badge bg-dark border border-secondary text-white-50" style="width: 50px;">{{ posicao.posicao_campo }}</span>
+                                
+                                <div>
+                                    {% if posicao.jogador_titular %}
+                                        <!-- Jogador Real -->
+                                        <h6 class="fw-bold text-uppercase m-0 text-white">{{ posicao.jogador_titular.nome_camisa }} {% if posicao.jogador_titular == avatar %}<span class="badge bg-warning text-dark ms-2 small">VOCÊ</span>{% endif %}</h6>
+                                        <small class="text-info text-uppercase" style="font-size: 0.7rem;"><i class="fa-solid fa-user"></i> Avatar Real</small>
+                                    {% else %}
+                                        <!-- Bot Genérico -->
+                                        <h6 class="fw-bold text-uppercase m-0 text-muted">{{ posicao.bot_nome }}</h6>
+                                        <small class="text-secondary text-uppercase" style="font-size: 0.7rem;"><i class="fa-solid fa-robot"></i> Categoria de Base</small>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="ovr-badge">
+                                {% if posicao.jogador_titular %}
+                                    {{ posicao.jogador_titular.ovr_calculado }}
+                                {% else %}
+                                    {{ posicao.bot_ovr }}
+                                {% endif %}
+                            </div>
+
+                        </div>
+                    {% endfor %}
+                </div>
+
+                {% if not avatar in escalacao.all %}
+                <div class="alert alert-danger mt-4 bg-transparent border-danger text-center">
+                    <h6 class="fw-bold text-uppercase m-0 text-danger"><i class="fa-solid fa-bench-tree"></i> Você está no banco de reservas!</h6>
+                    <small class="text-white-50">Treine mais duro e melhore sua nota para convencer o treinador.</small>
+                </div>
+                {% endif %}
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

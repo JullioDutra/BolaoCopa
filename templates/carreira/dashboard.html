@@ -1,0 +1,246 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Centro de Treinamento - Cartolândia{% endblock %}
+
+{% block content %}
+<style>
+    :root {
+        --dark-bg: #0a0a0a;
+        --dark-surface: #111111;
+        --gold-premium: #cfb53b;
+    }
+
+    body {
+        background-color: var(--dark-bg);
+        color: #ffffff;
+    }
+
+    .glass-card {
+        background: rgba(17, 17, 17, 0.9);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        padding: 20px;
+    }
+
+    .stat-bar-bg {
+        background-color: #222;
+        border-radius: 6px;
+        height: 10px;
+        width: 100%;
+        overflow: hidden;
+        margin-top: 5px;
+    }
+
+    .stat-bar-fill {
+        height: 100%;
+        background-color: var(--gold-premium);
+        transition: width 0.5s ease;
+    }
+
+    .btn-treino {
+        background-color: #1a1a1a;
+        border: 1px solid #333;
+        color: #fff;
+        border-radius: 8px;
+        padding: 15px;
+        text-align: left;
+        transition: all 0.2s;
+    }
+
+    .btn-treino:hover:not(:disabled) {
+        border-color: var(--gold-premium);
+        background-color: #222;
+        transform: translateY(-2px);
+    }
+
+    .btn-treino:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+</style>
+
+<div class="container py-4">
+    <div class="row mb-4 align-items-center">
+        <div class="col-md-6">
+            <h2 class="fw-bold text-uppercase m-0" style="color: var(--gold-premium);">{{ clube.nome|default:"Sem Clube" }}</h2>
+            <p class="text-white-50 text-uppercase small m-0">Temporada Atual - Fase de Preparação</p>
+        </div>
+        <div class="col-md-6 text-md-end mt-3 mt-md-0">
+            <div class="d-inline-block glass-card py-2 px-4 text-center me-2">
+                <span class="d-block text-white-50 small text-uppercase fw-bold">Saldo Bancário</span>
+                <span class="fw-bold fs-5 text-success">$ {{ avatar.saldo_bancario }}</span>
+            </div>
+            <div class="d-inline-block glass-card py-2 px-4 text-center border-warning">
+                <span class="d-block text-white-50 small text-uppercase fw-bold">Energia (AP)</span>
+                <span class="fw-bold fs-5 text-warning" id="ap-display">{{ avatar.pontos_acao_diarios }} / 1</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <div class="glass-card text-center mb-4">
+                <h5 class="text-white-50 text-uppercase small fw-bold">Seu Avatar</h5>
+                <h1 class="fw-bold m-0" style="font-size: 4rem; color: var(--gold-premium);" id="ovr-display">{{ avatar.ovr_calculado }}</h1>
+                <span class="badge bg-dark border border-secondary text-uppercase">{{ avatar.get_arquetipo_display }}</span>
+                <h4 class="fw-bold text-uppercase mt-3">{{ avatar.nome_camisa }}</h4>
+                <p class="text-white-50 small">Idade: {{ avatar.idade_atual }} anos</p>
+            </div>
+
+            <div class="glass-card">
+                <h6 class="text-white-50 text-uppercase small fw-bold mb-3">Atributos Técnicos</h6>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between small fw-bold text-uppercase">
+                        <span>Físico</span>
+                        <span id="val-fisico">{{ avatar.fisico }}</span>
+                    </div>
+                    <div class="stat-bar-bg"><div class="stat-bar-fill" id="bar-fisico" style="width: {{ avatar.fisico }}%;"></div></div>
+                </div>
+
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between small fw-bold text-uppercase">
+                        <span>Técnica</span>
+                        <span id="val-tecnica">{{ avatar.tecnica }}</span>
+                    </div>
+                    <div class="stat-bar-bg"><div class="stat-bar-fill" id="bar-tecnica" style="width: {{ avatar.tecnica }}%;"></div></div>
+                </div>
+
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between small fw-bold text-uppercase">
+                        <span>Inteligência</span>
+                        <span id="val-inteligencia">{{ avatar.inteligencia }}</span>
+                    </div>
+                    <div class="stat-bar-bg"><div class="stat-bar-fill" id="bar-inteligencia" style="width: {{ avatar.inteligencia }}%;"></div></div>
+                </div>
+
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between small fw-bold text-uppercase">
+                        <span>Mídia (Fama)</span>
+                        <span id="val-midia">{{ avatar.media_fama }}</span>
+                    </div>
+                    <div class="stat-bar-bg"><div class="stat-bar-fill bg-info" id="bar-midia" style="width: {{ avatar.media_fama }}%;"></div></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="glass-card h-100">
+                <h5 class="text-white-50 text-uppercase small fw-bold mb-4">Rotina de Treinamento</h5>
+                <p class="text-muted small">Escolha uma atividade para evoluir hoje. Você possui <strong class="text-warning"><span id="ap-text">{{ avatar.pontos_acao_diarios }}</span> ponto(s)</strong> de ação.</p>
+
+                <div class="d-flex flex-column gap-3 mt-4">
+                    <button class="btn btn-treino w-100 d-flex justify-content-between align-items-center" onclick="executarTreino('fisico')" {% if avatar.pontos_acao_diarios <= 0 %}disabled{% endif %}>
+                        <div>
+                            <span class="fw-bold d-block text-uppercase">Treino Físico (Academia)</span>
+                            <small class="text-white-50">Melhora estamina e reduz risco de lesões.</small>
+                        </div>
+                        <i class="fa-solid fa-dumbbell fs-4 text-secondary"></i>
+                    </button>
+
+                    <button class="btn btn-treino w-100 d-flex justify-content-between align-items-center" onclick="executarTreino('tecnico')" {% if avatar.pontos_acao_diarios <= 0 %}disabled{% endif %}>
+                        <div>
+                            <span class="fw-bold d-block text-uppercase">Treino Técnico (Fundamentos)</span>
+                            <small class="text-white-50">Aprimora passes, finalizações e controle de bola.</small>
+                        </div>
+                        <i class="fa-solid fa-futbol fs-4 text-secondary"></i>
+                    </button>
+
+                    <button class="btn btn-treino w-100 d-flex justify-content-between align-items-center" onclick="executarTreino('tatico')" {% if avatar.pontos_acao_diarios <= 0 %}disabled{% endif %}>
+                        <div>
+                            <span class="fw-bold d-block text-uppercase">Estudo Tático (Prancheta)</span>
+                            <small class="text-white-50">Aumenta inteligência de jogo e posicionamento.</small>
+                        </div>
+                        <i class="fa-solid fa-chess-knight fs-4 text-secondary"></i>
+                    </button>
+
+                    <button class="btn btn-treino w-100 d-flex justify-content-between align-items-center" onclick="executarTreino('midia')" {% if avatar.pontos_acao_diarios <= 0 %}disabled{% endif %}>
+                        <div>
+                            <span class="fw-bold d-block text-uppercase">Gestão de Imagem (Coletiva)</span>
+                            <small class="text-white-50">Atrai atenção de patrocinadores e outros clubes.</small>
+                        </div>
+                        <i class="fa-solid fa-camera fs-4 text-info"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Dilema (RPG) -->
+<div class="modal fade" id="modalDilema" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content glass-card" style="border: 2px solid #800080; box-shadow: 0 0 30px rgba(128, 0, 128, 0.4);">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-bold text-uppercase" style="color: #d896ff;"><i class="fa-solid fa-triangle-exclamation"></i> Evento Inesperado</h5>
+      </div>
+      <div class="modal-body text-center py-4">
+        <h4 id="dilema-titulo" class="fw-bold mb-3 text-white">Título</h4>
+        <p id="dilema-desc" class="text-white-50">Descrição do evento...</p>
+        
+        <div class="d-grid gap-3 mt-4">
+            <button class="btn btn-outline-light text-start p-3 rounded-3" onclick="responderDilema('opcao_A')">
+                <span class="fw-bold d-block mb-1" style="color: var(--gold-premium);">Opção A</span>
+                <span id="dilema-opt-a" class="small text-white">Texto da Opção A</span>
+            </button>
+            <button class="btn btn-outline-light text-start p-3 rounded-3" onclick="responderDilema('opcao_B')">
+                <span class="fw-bold d-block mb-1" style="color: var(--gold-premium);">Opção B</span>
+                <span id="dilema-opt-b" class="small text-white">Texto da Opção B</span>
+            </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+    function executarTreino(tipo) {
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const botoes = document.querySelectorAll('.btn-treino');
+        
+        // Desabilita botões preventivamente
+        botoes.forEach(btn => btn.disabled = true);
+
+        fetch("{% url 'carreira:api_treinar' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({ tipo: tipo })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.sucesso) {
+                const info = data.dados;
+                document.getElementById('ap-display').innerText = `${info.ap_restante} / 1`;
+                document.getElementById('ap-text').innerText = info.ap_restante;
+                document.getElementById('ovr-display').innerText = info.novo_ovr;
+                
+                let attrBase = info.atributo_treinado;
+                let valorAtualizado = parseInt(document.getElementById(`val-${attrBase}`).innerText) + info.valor_ganho;
+                document.getElementById(`val-${attrBase}`).innerText = valorAtualizado;
+                document.getElementById(`bar-${attrBase}`).style.width = `${valorAtualizado}%`;
+
+                // Verifica se a IA gerou um dilema
+                if (data.tem_dilema) {
+                    abrirModalDilema(data.dilema_dados);
+                } else {
+                    if (info.ap_restante > 0) botoes.forEach(btn => btn.disabled = false);
+                }
+            } else {
+                alert(data.mensagem);
+                botoes.forEach(btn => btn.disabled = false);
+            }
+        })
+        .catch(error => {
+            console.error("Erro na comunicação:", error);
+            alert("Erro ao processar o treinamento.");
+            botoes.forEach(btn => btn.disabled = false);
+        });
+    }
+</script>
+{% csrf_token %}
+{% endblock %}

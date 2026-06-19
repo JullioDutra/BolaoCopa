@@ -3,75 +3,206 @@
 
 {% block content %}
 <style>
+    /* ========================================== */
+    /* ESTILOS PREMIUM DO CHAVEAMENTO             */
+    /* ========================================== */
+    
     .bracket-wrapper {
-        background: url('https://www.transparenttextures.com/patterns/stardust.png'), linear-gradient(135deg, #1b5e20 0%, #2e7d32 100%);
-        border-radius: 12px;
-        padding: 20px;
-        box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+        background: radial-gradient(circle at top right, #113a17 0%, #050505 70%);
+        border-radius: 20px;
+        padding: 30px 20px;
+        box-shadow: inset 0 0 40px rgba(0,0,0,0.8), 0 10px 30px rgba(0,0,0,0.1);
+        border: 1px solid #1a1a1a;
+        position: relative;
     }
+
     .bracket-container {
         display: flex;
         flex-direction: row;
         overflow-x: auto;
-        gap: 50px;
+        gap: 60px;
         align-items: center;
-        padding-bottom: 20px;
-        min-height: 400px;
+        padding-bottom: 25px;
+        min-height: 450px;
+        /* Scroll suave */
+        scroll-behavior: smooth;
+        -webkit-overflow-scrolling: touch;
     }
+
+    /* Scrollbar Customizada (Estilo App) */
+    .bracket-container::-webkit-scrollbar {
+        height: 8px;
+    }
+    .bracket-container::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 10px;
+    }
+    .bracket-container::-webkit-scrollbar-thumb {
+        background: linear-gradient(90deg, #cfb53b, #b5952f);
+        border-radius: 10px;
+    }
+
     .bracket-column {
         display: flex;
         flex-direction: column;
         justify-content: space-around;
         height: 100%;
-        gap: 30px;
-        min-width: 240px;
-    }
-    .matchup {
-        background: white;
-        border: 3px solid #e0e0e0;
-        border-radius: 8px;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-        overflow: hidden;
+        gap: 35px;
+        min-width: 280px; /* Mais largo para caber os nomes bonitos */
         position: relative;
     }
-    .matchup.active { border-color: #ffc107; box-shadow: 0 0 15px rgba(255, 193, 7, 0.5); }
+
+    /* Linhas Conectoras Visuais (Setas) entre colunas */
+    .bracket-column:not(:last-child)::after {
+        content: "\f101"; /* Ícone de seta dupla do FontAwesome */
+        font-family: "FontAwesome", "Font Awesome 6 Free";
+        font-weight: 900;
+        position: absolute;
+        right: -45px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 1.5rem;
+        color: rgba(255, 255, 255, 0.15);
+    }
+
+    /* ========================================== */
+    /* SOBRESCRITA DO INCLUDE (MATCH_CARD.HTML)   */
+    /* Transforma os cards antigos em Dark Mode   */
+    /* ========================================== */
+    
+    .matchup {
+        background: #151515 !important;
+        border: 1px solid #333 !important;
+        border-radius: 14px !important;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.5) !important;
+        overflow: hidden;
+        position: relative;
+        transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .matchup:hover { 
+        transform: translateY(-4px); 
+        border-color: #cfb53b !important; 
+        box-shadow: 0 12px 25px rgba(207, 181, 59, 0.2) !important;
+    }
+    
+    .matchup.active { 
+        border-color: #cfb53b !important; 
+        box-shadow: 0 0 15px rgba(207, 181, 59, 0.4) !important; 
+    }
+    
     .matchup-player {
-        padding: 10px 15px;
-        border-bottom: 1px solid #eee;
-        font-weight: bold;
+        padding: 12px 16px !important;
+        border-bottom: 1px solid #222 !important;
+        font-weight: 700;
         display: flex;
         justify-content: space-between;
         align-items: center;
+        color: #e0e0e0;
+        font-size: 0.95rem;
+        transition: background 0.2s;
     }
-    .matchup-player:last-child { border-bottom: none; }
-    .winner { background-color: #d4edda; color: #155724; }
-    .loser { background-color: #f8d7da; color: #721c24; text-decoration: line-through; opacity: 0.6; }
-    .bye { font-style: italic; color: #aaa; font-weight: normal; }
     
+    .matchup-player:last-child { 
+        border-bottom: none !important; 
+    }
+    
+    /* Vencedores e Perdedores */
+    .winner { 
+        background-color: rgba(25, 135, 84, 0.15) !important; 
+        color: #20c997 !important; 
+        border-left: 4px solid #198754 !important;
+        padding-left: 12px !important;
+    }
+    
+    .loser { 
+        background-color: transparent !important; 
+        color: #666 !important; 
+        text-decoration: line-through; 
+        opacity: 0.7; 
+        border-left: 4px solid transparent !important;
+        padding-left: 12px !important;
+    }
+    
+    .bye { 
+        font-style: italic; 
+        color: #555 !important; 
+        font-weight: normal; 
+    }
+    
+    /* Botão de Jogar do Include */
     .btn-play {
         display: block;
         width: 100%;
         text-align: center;
-        background: #ffc107;
-        color: #000;
-        font-weight: bold;
-        padding: 8px 0;
+        background: linear-gradient(135deg, #d4af37 0%, #b5952f 100%) !important;
+        color: #121212 !important;
+        font-weight: 900 !important;
+        padding: 10px 0 !important;
         text-decoration: none;
         text-transform: uppercase;
+        letter-spacing: 1px;
         font-size: 0.85rem;
+        transition: filter 0.2s;
     }
-    .btn-play:hover { background: #e0a800; color: black; }
-    .wo-badge { background: #e9ecef; color: #6c757d; font-size: 0.75rem; text-align: center; padding: 5px; font-weight: bold; }
+    
+    .btn-play:hover { 
+        filter: brightness(1.2); 
+        color: #000 !important;
+    }
+    
+    .wo-badge { 
+        background: #222 !important; 
+        color: #888 !important; 
+        font-size: 0.75rem; 
+        text-align: center; 
+        padding: 8px !important; 
+        font-weight: bold; 
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    /* Animação de Swipe para Mobile */
+    .swipe-indicator {
+        display: none;
+        animation: swipeAnim 2s infinite;
+    }
+    
+    @keyframes swipeAnim {
+        0% { transform: translateX(0); opacity: 0.5; }
+        50% { transform: translateX(10px); opacity: 1; }
+        100% { transform: translateX(0); opacity: 0.5; }
+    }
+
+    @media (max-width: 768px) {
+        .swipe-indicator {
+            display: inline-block;
+        }
+        .bracket-wrapper {
+            padding: 20px 15px;
+            border-radius: 16px;
+        }
+    }
 </style>
 
-<div class="row mt-4 mb-3">
+<div class="row mt-4 mb-4 px-2">
     <div class="col-12 text-center">
-        <h2 class="fw-bold text-dark"><i class="fa-solid fa-sitemap text-success"></i> Chaveamento Oficial</h2>
-        <h5 class="text-muted">{{ campeonato.nome }}</h5>
+        <!-- Título do Torneio -->
+        <div class="d-inline-block bg-white shadow-sm border rounded-pill px-4 py-2 mb-3">
+            <h5 class="m-0 fw-bold text-muted text-uppercase tracking-wider" style="font-size: 0.85rem;">
+                <i class="fa-solid fa-sitemap text-success me-1"></i> Copa Oficial
+            </h5>
+        </div>
+        <h2 class="fw-bold mb-1" style="color: var(--verde-escuro);">{{ campeonato.nome }}</h2>
+        
+        <!-- Indicador Mobile -->
+        <p class="text-muted small mt-2 d-md-none swipe-indicator fw-bold text-success">
+            <i class="fa-solid fa-left-right me-1"></i> Deslize para ver as chaves
+        </p>
     </div>
 </div>
 
-<div class="row">
+<div class="row px-2 mb-5">
     <div class="col-12">
         <div class="bracket-wrapper">
             <div class="bracket-container">
@@ -79,7 +210,11 @@
                 <!-- COLUNA QUARTAS DE FINAL -->
                 {% if fases.quartas %}
                 <div class="bracket-column">
-                    <h5 class="text-center text-white fw-bold mb-4">Quartas de Final</h5>
+                    <div class="text-center mb-4">
+                        <span class="badge bg-secondary bg-opacity-25 text-white border border-secondary border-opacity-50 rounded-pill px-3 py-2 fw-bold text-uppercase" style="letter-spacing: 1px;">
+                            Quartas de Final
+                        </span>
+                    </div>
                     {% for c in fases.quartas %}
                         {% include "duelos/includes/match_card.html" with confronto=c %}
                     {% endfor %}
@@ -89,7 +224,11 @@
                 <!-- COLUNA SEMIFINAL -->
                 {% if fases.semi %}
                 <div class="bracket-column">
-                    <h5 class="text-center text-white fw-bold mb-4">Semifinal</h5>
+                    <div class="text-center mb-4">
+                        <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-50 rounded-pill px-3 py-2 fw-bold text-uppercase" style="letter-spacing: 1px;">
+                            Semifinal
+                        </span>
+                    </div>
                     {% for c in fases.semi %}
                         {% include "duelos/includes/match_card.html" with confronto=c %}
                     {% endfor %}
@@ -99,7 +238,11 @@
                 <!-- COLUNA GRANDE FINAL -->
                 {% if fases.final %}
                 <div class="bracket-column">
-                    <h5 class="text-center text-warning fw-bold mb-4"><i class="fa-solid fa-trophy"></i> Grande Final</h5>
+                    <div class="text-center mb-4">
+                        <span class="badge bg-warning bg-opacity-10 text-warning border border-warning rounded-pill px-4 py-2 fw-bold text-uppercase shadow-sm" style="letter-spacing: 1px; box-shadow: 0 0 15px rgba(255, 193, 7, 0.2) !important;">
+                            <i class="fa-solid fa-trophy"></i> Grande Final
+                        </span>
+                    </div>
                     {% for c in fases.final %}
                         {% include "duelos/includes/match_card.html" with confronto=c %}
                     {% endfor %}
@@ -107,6 +250,15 @@
                 {% endif %}
                 
             </div>
+        </div>
+        
+        <!-- Legenda Inferior -->
+        <div class="text-center mt-3">
+            <p class="text-muted small fw-bold">
+                <i class="fa-solid fa-circle text-success me-1" style="font-size: 0.5rem;"></i> Vencedor Avança
+                <span class="mx-2">|</span>
+                <i class="fa-solid fa-lock text-secondary me-1" style="font-size: 0.6rem;"></i> Partida Fechada
+            </p>
         </div>
     </div>
 </div>

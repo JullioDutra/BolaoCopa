@@ -2,10 +2,31 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
+    <!-- Viewport ajustado para comportamento nativo de App (impede zoom de pinça) -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
     <title>{% block title %}Cartolândia{% endblock %}</title>
     
+    <!-- ========================================== -->
+    <!-- CONFIGURAÇÕES DE PWA (APP NATIVO)          -->
+    <!-- ========================================== -->
+    {% load static %}
+    <!-- Link para o arquivo de Manifesto -->
+    <link rel="manifest" href="{% static 'manifest.json' %}">
+    
+    <!-- Cor da barra de status do celular (Android) -->
+    <meta name="theme-color" content="#0a3d10">
+    
+    <!-- Ícone que aparecerá na tela inicial do iOS/Android -->
+    <link rel="apple-touch-icon" href="{% static 'media/logo.png' %}">
+    
+    <!-- Diz à Apple que é um App -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <!-- Estilo da barra superior no iPhone -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <!-- Nome que fica embaixo do ícone no iPhone -->
+    <meta name="apple-mobile-web-app-title" content="Cartolândia">
+
     <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     
@@ -309,5 +330,19 @@
 
     <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- ========================================== -->
+    <!-- SCRIPT DO PWA (SERVICE WORKER REGISTRATION)-->
+    <!-- ========================================== -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                // Certifique-se de ter o arquivo sw.js criado na raiz da sua pasta de estáticos
+                navigator.serviceWorker.register("{% static 'sw.js' %}")
+                    .then(reg => console.log('Service Worker registrado com sucesso! PWA Ativado.'))
+                    .catch(err => console.log('Erro ao registrar Service Worker:', err));
+            });
+        }
+    </script>
 </body>
 </html>

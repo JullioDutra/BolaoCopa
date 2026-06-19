@@ -3,115 +3,229 @@
 {% block title %}Placar Final - Mini Fanáticos{% endblock %}
 
 {% block content %}
-<div class="row mt-5 mb-4 text-center">
-    <div class="col-12">
-        <h1 class="fw-bold text-dark text-uppercase mb-1"><i class="fa-solid fa-flag-checkered text-dark"></i> Fim de Jogo!</h1>
-        <p class="text-muted fs-4">Confira o resultado do Mini Fanáticos 2v2</p>
+<style>
+    /* Banners de Vitória */
+    .win-banner-primary {
+        background: linear-gradient(135deg, #0d47a1 0%, #002171 100%);
+        border: 2px solid #64b5f6;
+        box-shadow: 0 10px 30px rgba(13, 71, 161, 0.4);
+        color: white;
+    }
+    
+    .win-banner-danger {
+        background: linear-gradient(135deg, #b71c1c 0%, #7f0000 100%);
+        border: 2px solid #ef9a9a;
+        box-shadow: 0 10px 30px rgba(183, 28, 28, 0.4);
+        color: white;
+    }
 
-        <!-- Anúncio do Campeão -->
-        <div class="mt-4 mb-5">
+    .win-banner-empate {
+        background: linear-gradient(135deg, #424242 0%, #212121 100%);
+        border: 2px solid #9e9e9e;
+        box-shadow: 0 10px 30px rgba(66, 66, 66, 0.4);
+        color: white;
+    }
+
+    /* Brilho no Card do Time Vencedor */
+    .card-winner-glow-primary {
+        box-shadow: 0 0 25px rgba(13, 110, 253, 0.3) !important;
+        border-color: #0d6efd !important;
+    }
+    
+    .card-winner-glow-danger {
+        box-shadow: 0 0 25px rgba(220, 53, 69, 0.3) !important;
+        border-color: #dc3545 !important;
+    }
+
+    /* Emblema VS centralizado */
+    .vs-badge {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #1a1a1a, #000000);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 900;
+        font-size: 1.2rem;
+        font-style: italic;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        border: 2px solid #adb5bd;
+        z-index: 10;
+    }
+
+    /* Estatísticas individuais */
+    .stat-pill {
+        background-color: #fff;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 10px 15px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: transform 0.2s;
+    }
+    .stat-pill:hover {
+        transform: translateX(5px);
+    }
+</style>
+
+<div class="row mt-4 mb-3 px-2 text-center">
+    <div class="col-12">
+        <h2 class="fw-bold text-dark text-uppercase mb-1 tracking-wider" style="letter-spacing: 1px;">
+            <i class="fa-solid fa-flag-checkered text-success"></i> Fim de Jogo
+        </h2>
+        <p class="text-muted small">Confira a súmula final do racha 2v2</p>
+
+        <!-- ========================================== -->
+        <!-- ANÚNCIO DO CAMPEÃO                         -->
+        <!-- ========================================== -->
+        <div class="mt-4 mb-5 mx-auto" style="max-width: 650px;">
             {% if vencedor == 'Empate' %}
-                <div class="alert alert-secondary display-6 fw-bold border-0 shadow-sm mx-auto" style="max-width: 600px;">
-                    <i class="fa-solid fa-handshake"></i> Empate Absoluto!
+                <div class="card win-banner-empate py-4 px-3 rounded-4 text-center">
+                    <i class="fa-solid fa-handshake mb-3 text-secondary" style="font-size: 4rem;"></i>
+                    <h2 class="fw-black text-uppercase mb-1 tracking-wider">Empate Absoluto!</h2>
+                    <p class="mb-0 text-white-50">Foi um jogo pegado, ninguém conseguiu abrir vantagem.</p>
+                </div>
+            {% elif vencedor == 'A' %}
+                <div class="card win-banner-primary py-4 px-3 rounded-4 text-center position-relative overflow-hidden">
+                    <div class="position-absolute top-50 start-50 translate-middle w-100 h-100 opacity-25" style="background: radial-gradient(circle, #64b5f6 0%, transparent 60%); z-index: 0;"></div>
+                    <div class="position-relative" style="z-index: 1;">
+                        <i class="fa-solid fa-trophy fa-bounce text-warning mb-3" style="font-size: 4rem; filter: drop-shadow(0 0 15px rgba(255,193,7,0.6));"></i>
+                        <h2 class="fw-black text-uppercase mb-1 tracking-wider text-warning">Vitória do Time Azul!</h2>
+                        <p class="mb-0 text-white-50 fs-6 mt-2 fw-bold">{{ motivo }}</p>
+                    </div>
                 </div>
             {% else %}
-                <div class="alert {% if vencedor == 'A' %}alert-success{% else %}alert-danger{% endif %} border-0 shadow py-4 mx-auto" style="max-width: 600px;">
-                    <i class="fa-solid fa-trophy fa-bounce text-warning mb-2" style="font-size: 4rem;"></i>
-                    <h2 class="fw-bold text-uppercase mb-0">Vitória da Dupla {{ vencedor }}!</h2>
-                    <p class="mb-0 fs-5 mt-2 fw-bold opacity-75">{{ motivo }}</p>
+                <div class="card win-banner-danger py-4 px-3 rounded-4 text-center position-relative overflow-hidden">
+                    <div class="position-absolute top-50 start-50 translate-middle w-100 h-100 opacity-25" style="background: radial-gradient(circle, #ef9a9a 0%, transparent 60%); z-index: 0;"></div>
+                    <div class="position-relative" style="z-index: 1;">
+                        <i class="fa-solid fa-trophy fa-bounce text-warning mb-3" style="font-size: 4rem; filter: drop-shadow(0 0 15px rgba(255,193,7,0.6));"></i>
+                        <h2 class="fw-black text-uppercase mb-1 tracking-wider text-warning">Vitória do Time Vermelho!</h2>
+                        <p class="mb-0 text-white-50 fs-6 mt-2 fw-bold">{{ motivo }}</p>
+                    </div>
                 </div>
             {% endif %}
         </div>
     </div>
 </div>
 
-<div class="row justify-content-center">
-    <!-- RESULTADO DUPLA A -->
-    <div class="col-md-5 mb-4">
-        <div class="card card-clean border-0 shadow-lg rounded-4 h-100 {% if vencedor == 'A' %}border border-success border-4{% endif %}" style="border-top: 5px solid var(--bs-success) !important;">
-            <div class="card-header bg-white text-center py-3 border-0">
-                <h3 class="fw-bold text-success mb-0">Dupla A</h3>
-                <span class="badge bg-secondary mt-1">{{ partida.clube_dupla_a.nome }}</span>
+<!-- ========================================== -->
+<!-- PLACAR DAS DUPLAS                          -->
+<!-- ========================================== -->
+<div class="row justify-content-center position-relative g-4 px-2 mb-5">
+    
+    <!-- EMBLEMA VS (Visível sobreposto apenas no Desktop) -->
+    <div class="position-absolute top-50 start-50 translate-middle d-none d-lg-flex justify-content-center align-items-center" style="width: 50px; height: 50px; z-index: 10;">
+        <div class="vs-badge">VS</div>
+    </div>
+
+    <!-- RESULTADO TIME AZUL (A) -->
+    <div class="col-12 col-lg-5">
+        <div class="card card-clean border-0 shadow-sm rounded-4 h-100 {% if vencedor == 'A' %}card-winner-glow-primary border-primary border-2{% else %}border-top border-primary border-4{% endif %}">
+            
+            <div class="card-header bg-transparent text-center pt-4 border-0">
+                <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-2" style="width: 60px; height: 60px;">
+                    <i class="fa-solid fa-shirt text-primary fs-2"></i>
+                </div>
+                <h4 class="fw-bold text-primary mb-1 text-uppercase tracking-wider">Time Azul</h4>
+                <span class="badge bg-secondary rounded-pill px-3 shadow-sm"><i class="fa-solid fa-shield-halved me-1"></i> {{ partida.clube_dupla_a.nome }}</span>
             </div>
             
-            <div class="card-body px-4 pb-4 text-center">
-                <div class="row text-center mb-4">
-                    <div class="col-6 border-end">
-                        <p class="text-muted mb-0 small text-uppercase">Pontos</p>
-                        <h2 class="fw-bold text-dark mb-0">{{ pontos_a }}</h2>
+            <div class="card-body px-4 pb-4">
+                <!-- Visão Geral -->
+                <div class="row text-center mb-4 bg-light rounded-4 py-3 mx-1 shadow-sm border">
+                    <div class="col-6 border-end border-secondary border-opacity-25">
+                        <span class="text-muted d-block small text-uppercase fw-bold mb-1">Pontos</span>
+                        <h2 class="fw-black text-dark mb-0" style="font-family: 'Courier New', Courier, monospace;">{{ pontos_a }}</h2>
                     </div>
                     <div class="col-6">
-                        <p class="text-muted mb-0 small text-uppercase">Tempo Total</p>
-                        <h3 class="fw-bold text-danger mb-0">{{ tempo_a|floatformat:2 }}s</h3>
+                        <span class="text-muted d-block small text-uppercase fw-bold mb-1">Tempo Total</span>
+                        <h3 class="fw-black text-danger mb-0" style="font-family: 'Courier New', Courier, monospace;">{{ tempo_a|floatformat:2 }}s</h3>
                     </div>
                 </div>
 
-                <hr class="text-muted opacity-25">
-                <h6 class="text-muted text-start mb-3 fw-bold text-uppercase small">Desempenho Individual</h6>
+                <hr class="text-muted opacity-10 mb-4">
+                <h6 class="text-primary text-uppercase fw-bold small mb-3"><i class="fa-solid fa-ranking-star me-1"></i> Desempenho Individual</h6>
                 
-                <div class="d-flex flex-column gap-2 text-start">
+                <!-- Súmula dos Jogadores -->
+                <div class="d-flex flex-column gap-2">
                     {% for p in jogadores_a %}
-                        <div class="bg-light rounded-3 p-3 border border-success border-opacity-25 d-flex justify-content-between align-items-center">
-                            <span class="fw-bold"><i class="fa-solid fa-user text-success"></i> {{ p.jogador.first_name|default:p.jogador.username }}</span>
-                            <div class="text-end">
-                                <span class="badge bg-dark">{{ p.pontos }} pts</span>
-                                <span class="badge bg-danger"><i class="fa-solid fa-stopwatch"></i> {{ p.tempo_gasto_segundos|floatformat:1 }}s</span>
+                        <div class="stat-pill border-primary border-opacity-25 bg-primary bg-opacity-10">
+                            <span class="fw-bold text-dark text-truncate pe-2">
+                                <i class="fa-solid fa-user-check text-primary me-2"></i> {{ p.jogador.first_name|default:p.jogador.username }}
+                            </span>
+                            <div class="text-end text-nowrap">
+                                <span class="badge bg-dark rounded-pill px-2 py-1 shadow-sm">{{ p.pontos }} pts</span>
+                                <span class="badge bg-danger rounded-pill px-2 py-1 shadow-sm ms-1"><i class="fa-solid fa-stopwatch"></i> {{ p.tempo_gasto_segundos|floatformat:1 }}s</span>
                             </div>
                         </div>
                     {% endfor %}
                 </div>
             </div>
+            
         </div>
     </div>
 
-    <!-- O "VS" NO MEIO -->
-    <div class="col-md-2 d-flex align-items-center justify-content-center mb-4">
-        <h1 class="fw-bold text-muted opacity-25 display-1">X</h1>
+    <!-- EMBLEMA VS MOBILE (Divisor no celular) -->
+    <div class="col-12 d-lg-none d-flex justify-content-center py-1">
+        <div class="vs-badge">VS</div>
     </div>
 
-    <!-- RESULTADO DUPLA B -->
-    <div class="col-md-5 mb-4">
-        <div class="card card-clean border-0 shadow-lg rounded-4 h-100 {% if vencedor == 'B' %}border border-danger border-4{% endif %}" style="border-top: 5px solid var(--bs-danger) !important;">
-            <div class="card-header bg-white text-center py-3 border-0">
-                <h3 class="fw-bold text-danger mb-0">Dupla B</h3>
-                <span class="badge bg-secondary mt-1">{{ partida.clube_dupla_b.nome }}</span>
+    <!-- RESULTADO TIME VERMELHO (B) -->
+    <div class="col-12 col-lg-5">
+        <div class="card card-clean border-0 shadow-sm rounded-4 h-100 {% if vencedor == 'B' %}card-winner-glow-danger border-danger border-2{% else %}border-top border-danger border-4{% endif %}">
+            
+            <div class="card-header bg-transparent text-center pt-4 border-0">
+                <div class="bg-danger bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-2" style="width: 60px; height: 60px;">
+                    <i class="fa-solid fa-shirt text-danger fs-2"></i>
+                </div>
+                <h4 class="fw-bold text-danger mb-1 text-uppercase tracking-wider">Time Vermelho</h4>
+                <span class="badge bg-secondary rounded-pill px-3 shadow-sm"><i class="fa-solid fa-shield-halved me-1"></i> {{ partida.clube_dupla_b.nome }}</span>
             </div>
             
-            <div class="card-body px-4 pb-4 text-center">
-                <div class="row text-center mb-4">
-                    <div class="col-6 border-end">
-                        <p class="text-muted mb-0 small text-uppercase">Pontos</p>
-                        <h2 class="fw-bold text-dark mb-0">{{ pontos_b }}</h2>
+            <div class="card-body px-4 pb-4">
+                <!-- Visão Geral -->
+                <div class="row text-center mb-4 bg-light rounded-4 py-3 mx-1 shadow-sm border">
+                    <div class="col-6 border-end border-secondary border-opacity-25">
+                        <span class="text-muted d-block small text-uppercase fw-bold mb-1">Pontos</span>
+                        <h2 class="fw-black text-dark mb-0" style="font-family: 'Courier New', Courier, monospace;">{{ pontos_b }}</h2>
                     </div>
                     <div class="col-6">
-                        <p class="text-muted mb-0 small text-uppercase">Tempo Total</p>
-                        <h3 class="fw-bold text-danger mb-0">{{ tempo_b|floatformat:2 }}s</h3>
+                        <span class="text-muted d-block small text-uppercase fw-bold mb-1">Tempo Total</span>
+                        <h3 class="fw-black text-danger mb-0" style="font-family: 'Courier New', Courier, monospace;">{{ tempo_b|floatformat:2 }}s</h3>
                     </div>
                 </div>
 
-                <hr class="text-muted opacity-25">
-                <h6 class="text-muted text-start mb-3 fw-bold text-uppercase small">Desempenho Individual</h6>
+                <hr class="text-muted opacity-10 mb-4">
+                <h6 class="text-danger text-uppercase fw-bold small mb-3"><i class="fa-solid fa-ranking-star me-1"></i> Desempenho Individual</h6>
                 
-                <div class="d-flex flex-column gap-2 text-start">
+                <!-- Súmula dos Jogadores -->
+                <div class="d-flex flex-column gap-2">
                     {% for p in jogadores_b %}
-                        <div class="bg-light rounded-3 p-3 border border-danger border-opacity-25 d-flex justify-content-between align-items-center">
-                            <span class="fw-bold"><i class="fa-solid fa-user text-danger"></i> {{ p.jogador.first_name|default:p.jogador.username }}</span>
-                            <div class="text-end">
-                                <span class="badge bg-dark">{{ p.pontos }} pts</span>
-                                <span class="badge bg-danger"><i class="fa-solid fa-stopwatch"></i> {{ p.tempo_gasto_segundos|floatformat:1 }}s</span>
+                        <div class="stat-pill border-danger border-opacity-25 bg-danger bg-opacity-10">
+                            <span class="fw-bold text-dark text-truncate pe-2">
+                                <i class="fa-solid fa-user-check text-danger me-2"></i> {{ p.jogador.first_name|default:p.jogador.username }}
+                            </span>
+                            <div class="text-end text-nowrap">
+                                <span class="badge bg-dark rounded-pill px-2 py-1 shadow-sm">{{ p.pontos }} pts</span>
+                                <span class="badge bg-danger rounded-pill px-2 py-1 shadow-sm ms-1"><i class="fa-solid fa-stopwatch"></i> {{ p.tempo_gasto_segundos|floatformat:1 }}s</span>
                             </div>
                         </div>
                     {% endfor %}
                 </div>
             </div>
+            
         </div>
     </div>
 </div>
 
-<div class="row mt-4 mb-5">
+<!-- Rodapé de Ação -->
+<div class="row mt-2 mb-5 px-2">
     <div class="col-12 text-center">
-        <a href="{% url 'duelos:listar_desafios' %}" class="btn btn-primary btn-lg fw-bold rounded-pill shadow px-5">
-            <i class="fa-solid fa-house"></i> Voltar para a Arena
+        <a href="{% url 'duelos:listar_desafios' %}" class="btn btn-outline-secondary btn-lg fw-bold rounded-pill shadow-sm px-5 text-uppercase tracking-wider" style="letter-spacing: 1px;">
+            <i class="fa-solid fa-rotate-left me-1"></i> Voltar para a Arena
         </a>
     </div>
 </div>

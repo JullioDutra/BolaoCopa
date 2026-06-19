@@ -3,112 +3,129 @@
 {% block title %}Vestiário - Cartolândia{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center mt-5 mb-5">
-    <div class="col-md-8 col-lg-7">
-        <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+<style>
+    /* Animação do "Pulso" para o visitante */
+    .waiting-pulse {
+        animation: pulseShadow 2s infinite;
+        border-radius: 50%;
+    }
+    @keyframes pulseShadow {
+        0% { box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.7); }
+        70% { box-shadow: 0 0 0 15px rgba(255, 193, 7, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(255, 193, 7, 0); }
+    }
+
+    .card-vestiario-header {
+        background: linear-gradient(135deg, #0a3d10 0%, #1b5e20 100%);
+        border: none;
+    }
+
+    .vs-divider {
+        font-size: 1.5rem;
+        font-weight: 900;
+        color: #adb5bd;
+    }
+</style>
+
+<div class="row justify-content-center mt-4 mb-5 px-2">
+    <div class="col-12 col-md-8 col-lg-6">
+        <div class="card card-clean shadow-lg border-0 rounded-4 overflow-hidden">
             
             <!-- HEADER DA SALA -->
-            <div class="card-header bg-dark text-white text-center py-4 border-0" style="border-bottom: 5px solid var(--verde-escuro) !important;">
+            <div class="card-header card-vestiario-header text-white text-center py-4">
                 <h3 class="fw-bold mb-0">
-                    <i class="fa-solid fa-door-closed text-success"></i> Vestiário da Partida
+                    <i class="fa-solid fa-door-closed text-success me-2"></i> Vestiário da Partida
                 </h3>
-                <p class="text-white-50 mb-0 mt-1 small">Aqueça as canelas, o jogo já vai começar!</p>
+                <p class="text-white-50 mb-0 mt-1 small text-uppercase" style="letter-spacing: 1px;">Aqueça as canelas, o jogo já vai começar!</p>
             </div>
 
-            <div class="card-body p-5 bg-white">
+            <div class="card-body p-4 p-md-5 bg-white">
                 
                 <!-- PAINEL MANDANTE X VISITANTE -->
-                <div class="row align-items-center text-center mb-5">
+                <div class="row align-items-center text-center g-3 mb-5">
                     
-                    <!-- Mandante (Criador da Sala) -->
+                    <!-- Mandante -->
                     <div class="col-5">
                         <div class="position-relative d-inline-block mb-3">
-                            <i class="fa-solid fa-shield-halved fa-5x text-success"></i>
-                            <i class="fa-solid fa-check-circle text-white position-absolute bottom-0 end-0 fs-3 bg-success rounded-circle"></i>
+                            <div class="bg-success bg-opacity-10 p-3 rounded-circle">
+                                <i class="fa-solid fa-shield-halved fa-3x text-success"></i>
+                            </div>
+                            <i class="fa-solid fa-check-circle text-white position-absolute bottom-0 end-0 fs-4 bg-success rounded-circle border border-white border-2"></i>
                         </div>
-                        <h4 class="fw-bold text-dark text-truncate">{{ partida.jogador_criador.first_name|default:partida.jogador_criador.username }}</h4>
-                        <span class="badge bg-success rounded-pill px-3 py-2 shadow-sm">Mandante</span>
+                        <h6 class="fw-bold text-dark text-truncate mb-0">{{ partida.jogador_criador.first_name|default:partida.jogador_criador.username }}</h6>
+                        <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 mt-1">MANDANTE</span>
                     </div>
 
-                    <!-- VS / Bola Girando -->
+                    <!-- Bola Girando -->
                     <div class="col-2">
                         <div class="d-flex flex-column align-items-center justify-content-center">
-                            <h2 class="fw-bold text-muted mb-2">X</h2>
-                            <i class="fa-solid fa-futbol fa-spin fa-3x text-dark" style="--fa-animation-duration: 2.5s;"></i>
+                            <h3 class="fw-black text-muted mb-2">X</h3>
+                            <i class="fa-solid fa-futbol fa-spin text-dark" style="font-size: 1.8rem; --fa-animation-duration: 2.5s;"></i>
                         </div>
                     </div>
 
-                    <!-- Visitante (Adversário Aguardando) -->
+                    <!-- Visitante -->
                     <div class="col-5">
                         <div class="position-relative d-inline-block mb-3">
-                            <i class="fa-solid fa-user-astronaut fa-5x text-secondary opacity-50"></i>
-                            <div class="spinner-grow text-warning position-absolute bottom-0 end-0" style="width: 1.5rem; height: 1.5rem;" role="status">
-                                <span class="visually-hidden">Loading...</span>
+                            <div class="bg-secondary bg-opacity-10 p-3 rounded-circle waiting-pulse">
+                                <i class="fa-solid fa-user-astronaut fa-3x text-muted opacity-50"></i>
                             </div>
+                            <div class="spinner-grow text-warning position-absolute bottom-0 end-0" style="width: 1rem; height: 1rem;" role="status"></div>
                         </div>
-                        <h4 class="fw-bold text-muted fst-italic text-truncate">Aguardando...</h4>
-                        <span class="badge bg-secondary rounded-pill px-3 py-2 shadow-sm opacity-75">Visitante</span>
+                        <h6 class="fw-bold text-muted fst-italic text-truncate mb-0">Aguardando...</h6>
+                        <span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill px-3 mt-1">VISITANTE</span>
                     </div>
                 </div>
 
                 <hr class="text-muted opacity-25 my-4">
 
-                <!-- ÁREA DE LÓGICA (CAMPEONATO OU X1 RAIZ) -->
+                <!-- ÁREA DE LÓGICA -->
                 <div class="text-center">
                     {% if eh_campeonato %}
-                        <!-- MODO CAMPEONATO -->
-                        <div class="bg-light rounded-4 p-4 border border-warning border-2 border-dashed">
+                        <div class="bg-warning bg-opacity-10 rounded-4 p-4 border border-warning border-2 border-dashed shadow-sm">
                             <i class="fa-solid fa-trophy text-warning fs-1 mb-3"></i>
-                            <h4 class="fw-bold text-dark">Jogo de Campeonato!</h4>
-                            <p class="text-muted fs-5 mb-0">
-                                Seu adversário vai entrar direto pelo painel de chaves. 
-                                Fique na espera que a bola rola automaticamente.
+                            <h5 class="fw-bold text-dark">Jogo de Campeonato!</h5>
+                            <p class="text-muted small mb-0">
+                                Seu adversário entrará via chaveamento. 
+                                Fique atento, o jogo inicia automaticamente assim que ele chegar!
                             </p>
                         </div>
                     {% else %}
-                        <!-- MODO X1 RAIZ -->
-                        <div class="bg-light rounded-4 p-4">
+                        <div class="bg-light rounded-4 p-4 border border-secondary border-opacity-25 shadow-sm">
                             <i class="fa-solid fa-link text-primary fs-2 mb-3"></i>
-                            <h4 class="fw-bold text-dark">Convide o Desafiante</h4>
-                            <p class="text-muted mb-3">Copie o link abaixo e mande no WhatsApp do seu adversário.</p>
+                            <h5 class="fw-bold text-dark mb-1">Convide o Desafiante</h5>
+                            <p class="text-muted small mb-3">Copie e envie o link abaixo:</p>
                             
-                            <div class="input-group input-group-lg mx-auto" style="max-width: 500px;">
-                                <input type="text" id="linkConvite" class="form-control bg-white border-secondary text-muted" value="{{ link_convite }}" readonly>
+                            <div class="input-group input-group-lg shadow-sm rounded-3">
+                                <input type="text" id="linkConvite" class="form-control bg-white border-end-0 text-muted" value="{{ link_convite }}" readonly>
                                 <button class="btn btn-success px-4 fw-bold shadow-sm" type="button" onclick="copiarLink()" id="btnCopiar">
-                                    <i class="fa-solid fa-copy"></i> Copiar
+                                    <i class="fa-solid fa-copy"></i>
                                 </button>
                             </div>
                         </div>
                     {% endif %}
                 </div>
-
             </div>
             
-            <!-- FOOTER COM BOTÃO DE CANCELAR -->
-            <div class="card-footer bg-light text-center py-4 border-top">
+            <!-- FOOTER -->
+            <div class="card-footer bg-light text-center py-4 border-0">
                 <a href="{% url 'duelos:listar_desafios' %}" class="btn btn-outline-danger fw-bold rounded-pill shadow-sm px-4 py-2">
-                    <i class="fa-solid fa-door-open"></i> Sair do Vestiário
+                    <i class="fa-solid fa-door-open me-1"></i> Sair do Vestiário
                 </a>
             </div>
-            
         </div>
     </div>
 </div>
 
 <script>
-    // Função de copiar o link (Usada apenas no X1 Raiz)
     function copiarLink() {
         var copyText = document.getElementById("linkConvite");
         if(copyText) {
-            copyText.select();
-            copyText.setSelectionRange(0, 99999);
             navigator.clipboard.writeText(copyText.value);
-            
             var btn = document.getElementById("btnCopiar");
             var originalHtml = btn.innerHTML;
-            btn.innerHTML = '<i class="fa-solid fa-check"></i> Copiado!';
+            btn.innerHTML = '<i class="fa-solid fa-check"></i>';
             btn.classList.replace('btn-success', 'btn-dark');
-            
             setTimeout(function() {
                 btn.innerHTML = originalHtml;
                 btn.classList.replace('btn-dark', 'btn-success');
@@ -122,10 +139,9 @@
         .then(response => response.json())
         .then(data => {
             if (data.comecou) {
-                // O adversário chegou! Redireciona os dois para a partida na hora
                 window.location.href = "{% url 'duelos:tela_jogo' partida.id %}";
             }
         });
-    }, 2000); // Checa a cada 2 segundos
+    }, 2000); 
 </script>
 {% endblock %}

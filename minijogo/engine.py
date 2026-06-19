@@ -188,6 +188,16 @@ def processar_cobranca(partida):
         partida.chutes_na_rodada = 0
         partida.rodada_atual += 1
 
+    # NOVIDADE: Salva a zona chutada no perfil do batedor para o Olheiro
+    if partida.chute_zona and partida.chute_zona != 'timeout':
+        draft_batedor = partida.draft_j1 if partida.turno_batedor == partida.jogador1 else partida.draft_j2
+        if draft_batedor:
+            # 💥 PREVENÇÃO DE CRASH: Se o banco estava vazio/nulo, transforma em string
+            if draft_batedor.historico_chutes is None:
+                draft_batedor.historico_chutes = ""
+            draft_batedor.historico_chutes += f"{partida.chute_zona},"
+            draft_batedor.save()
+
     verificar_fim_de_jogo(partida)
     partida.save()
 

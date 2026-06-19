@@ -4,41 +4,50 @@
 
 {% block content %}
 <style>
-    body {
-        background-color: #050505;
-        background-image: linear-gradient(rgba(0, 255, 0, 0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0, 255, 0, 0.03) 1px, transparent 1px);
+    /* ISOLAMENTO DE ESCOPO: Mantém o tema escuro apenas dentro da cabine */
+    .var-room-container {
+        background-color: #0a0a0a;
+        background-image: linear-gradient(rgba(13, 202, 240, 0.05) 1px, transparent 1px),
+                          linear-gradient(90deg, rgba(13, 202, 240, 0.05) 1px, transparent 1px);
         background-size: 30px 30px;
-        color: white;
+        border-radius: 20px;
+        box-shadow: inset 0 0 50px rgba(0,0,0,0.8);
+        border: 1px solid #1a1a1a;
     }
     
+    /* O Monitor Central */
     .var-monitor {
         background: #000;
-        border: 4px solid #333;
-        border-radius: 15px;
-        box-shadow: 0 0 30px rgba(13, 202, 240, 0.2);
-        padding: 15px;
+        border: 4px solid #222;
+        border-radius: 16px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.6), inset 0 0 20px rgba(13, 202, 240, 0.1);
+        padding: 12px;
         position: relative;
+        overflow: hidden;
     }
 
+    /* Tag de Gravação Piscante */
     .var-badge {
         position: absolute;
-        top: 25px;
-        left: 25px;
-        background: rgba(0,0,0,0.8);
+        top: 20px;
+        left: 20px;
+        background: rgba(0,0,0,0.85);
         color: #fff;
-        padding: 5px 15px;
+        padding: 4px 12px;
         border: 2px solid #0dcaf0;
         font-weight: 900;
         letter-spacing: 2px;
-        border-radius: 5px;
-        animation: rec-blink 2s infinite;
+        font-size: 0.85rem;
+        border-radius: 6px;
+        animation: rec-blink 1.5s infinite;
+        z-index: 10;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.5);
     }
 
     @keyframes rec-blink {
-        0% { border-color: #0dcaf0; color: #fff; }
+        0% { border-color: #0dcaf0; color: #0dcaf0; }
         50% { border-color: #dc3545; color: #dc3545; }
-        100% { border-color: #0dcaf0; color: #fff; }
+        100% { border-color: #0dcaf0; color: #0dcaf0; }
     }
 
     .midia-lance {
@@ -46,119 +55,171 @@
         max-height: 400px;
         object-fit: contain;
         border-radius: 8px;
+        background-color: #111;
     }
 
+    /* Botões de Múltipla Escolha */
     .btn-decisao {
-        font-size: 1.1rem;
-        font-weight: bold;
-        padding: 15px;
-        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        width: 100%;
+        font-size: 1rem;
+        font-weight: 600;
+        padding: 12px 16px;
+        border-radius: 16px;
         text-align: left;
-        transition: all 0.2s;
-        border: 2px solid #444;
-        background-color: #1a1a1a;
-        color: #fff;
+        transition: all 0.2s ease;
+        border: 2px solid #2a2a2a;
+        background-color: #151515;
+        color: #e0e0e0;
+        line-height: 1.3;
     }
 
     .btn-decisao:hover:not(:disabled) {
         border-color: #0dcaf0;
-        background-color: #000;
-        transform: scale(1.02);
+        background-color: rgba(13, 202, 240, 0.1);
+        color: #fff;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(13, 202, 240, 0.2);
     }
     
     .opcao-letra {
-        display: inline-block;
-        background: #333;
-        width: 35px;
-        height: 35px;
-        text-align: center;
-        line-height: 35px;
-        border-radius: 5px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        background: #222;
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
         margin-right: 15px;
         color: #0dcaf0;
+        font-weight: 900;
+        font-size: 1.2rem;
+        border: 1px solid #333;
+        transition: all 0.2s ease;
+    }
+
+    .btn-decisao:hover:not(:disabled) .opcao-letra {
+        background: #0dcaf0;
+        color: #000;
+        border-color: #0dcaf0;
+    }
+
+    /* Alertas Dark Mode */
+    .alert-var-custom {
+        border-radius: 12px;
+        border-width: 2px;
     }
 </style>
 
-<div class="container mt-4 mb-5">
+<div class="var-room-container mt-4 mb-5 p-3 p-md-4">
     
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <a href="{% url 'duelos:hub_var' %}" class="btn btn-outline-light"><i class="fa-solid fa-arrow-left"></i> Voltar ao Hub</a>
-        <h3 class="fw-bold text-info m-0 text-uppercase">Cabine de Vídeo</h3>
+    <!-- Cabeçalho de Navegação -->
+    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-center mb-4 gap-3">
+        <h3 class="fw-bold text-info m-0 text-uppercase tracking-wider">
+            <i class="fa-solid fa-video me-2"></i> Cabine de Vídeo
+        </h3>
+        <a href="{% url 'duelos:hub_var' %}" class="btn btn-outline-light rounded-pill px-4 fw-bold shadow-sm">
+            <i class="fa-solid fa-arrow-left me-1"></i> Voltar ao Hub
+        </a>
     </div>
 
     <!-- MENSAGENS DE ACERTO/ERRO -->
     {% if messages %}
         {% for msg in messages %}
-        <div class="alert {% if msg.tags == 'error' %}alert-danger{% else %}alert-success{% endif %} text-center fw-bold fs-5 shadow-lg alert-dismissible fade show">
+        <div class="alert {% if msg.tags == 'error' %}alert-danger border-danger text-danger{% else %}alert-success border-success text-success{% endif %} bg-dark alert-var-custom text-center fw-bold fs-6 shadow-lg alert-dismissible fade show d-flex align-items-center justify-content-center">
+            <i class="fa-solid {% if msg.tags == 'error' %}fa-circle-xmark{% else %}fa-circle-check{% endif %} fs-4 me-2"></i>
             {{ msg }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            <button type="button" class="btn-close btn-close-white opacity-50" data-bs-dismiss="alert"></button>
         </div>
         {% endfor %}
     {% endif %}
 
-    <div class="row">
-        <!-- O MONITOR DO VAR -->
-        <div class="col-lg-7 mb-4">
-            <div class="var-monitor">
-                <div class="var-badge">VAR</div>
+    <div class="row g-4">
+        <!-- ========================================== -->
+        <!-- O MONITOR DO VAR                           -->
+        <!-- ========================================== -->
+        <div class="col-lg-7">
+            <div class="var-monitor h-100 d-flex flex-column">
+                <div class="var-badge"><i class="fa-solid fa-circle text-danger me-1" style="font-size: 0.6rem;"></i> VAR</div>
                 
-                {% if lance.midia %}
-                    <img src="{{ lance.midia.url }}" alt="Lance VAR" class="midia-lance">
-                {% else %}
-                    <div class="d-flex align-items-center justify-content-center bg-dark" style="height: 300px;">
-                        <span class="text-muted"><i class="fa-solid fa-image-slash fs-1"></i> Imagem Indisponível</span>
-                    </div>
-                {% endif %}
+                <div class="position-relative text-center flex-grow-1 d-flex flex-column justify-content-center">
+                    {% if lance.midia %}
+                        <img src="{{ lance.midia.url }}" alt="Lance VAR" class="midia-lance shadow-sm">
+                    {% else %}
+                        <div class="d-flex flex-column align-items-center justify-content-center bg-dark rounded-3" style="min-height: 250px;">
+                            <i class="fa-solid fa-image-slash text-muted opacity-25 mb-3" style="font-size: 4rem;"></i>
+                            <span class="text-muted fw-bold">Nenhuma mídia anexada a este lance.</span>
+                        </div>
+                    {% endif %}
+                </div>
                 
-                <div class="mt-4 p-3 bg-dark rounded border border-secondary">
-                    <h5 class="fw-bold text-white mb-2">{{ lance.titulo }}</h5>
-                    <p class="text-light opacity-75 m-0 lh-sm">{{ lance.descricao }}</p>
+                <div class="mt-3 p-3 bg-dark rounded-3 border border-secondary border-opacity-50">
+                    <h5 class="fw-bold text-white mb-2"><i class="fa-solid fa-file-contract text-info me-2"></i> {{ lance.titulo }}</h5>
+                    <p class="text-white-50 small m-0 lh-base">{{ lance.descricao }}</p>
                 </div>
             </div>
         </div>
 
-        <!-- PAINEL DE CONTROLE (BOTÕES) -->
+        <!-- ========================================== -->
+        <!-- PAINEL DE CONTROLE (MÚLTIPLA ESCOLHA)      -->
+        <!-- ========================================== -->
         <div class="col-lg-5">
-            <div class="bg-dark p-4 rounded-4 border border-secondary h-100">
-                <h4 class="fw-bold text-center mb-4 border-bottom border-secondary pb-3"><i class="fa-solid fa-gavel"></i> Qual a sua marcação?</h4>
+            <div class="bg-dark p-4 rounded-4 border border-secondary border-opacity-50 h-100 d-flex flex-column shadow-sm">
+                
+                <h5 class="fw-bold text-center text-white mb-4 border-bottom border-secondary border-opacity-50 pb-3">
+                    <i class="fa-solid fa-gavel text-info"></i> Qual a sua marcação?
+                </h5>
 
                 <!-- SE ELE AINDA NÃO JOGOU -->
                 {% if not palpite %}
-                    <form method="POST">
+                    <form method="POST" class="mt-2">
                         {% csrf_token %}
                         <div class="d-grid gap-3">
                             <button type="submit" name="decisao" value="A" class="btn btn-decisao">
-                                <span class="opcao-letra">A</span> {{ lance.opcao_a }}
+                                <span class="opcao-letra">A</span> 
+                                <span>{{ lance.opcao_a }}</span>
                             </button>
                             <button type="submit" name="decisao" value="B" class="btn btn-decisao">
-                                <span class="opcao-letra">B</span> {{ lance.opcao_b }}
+                                <span class="opcao-letra">B</span> 
+                                <span>{{ lance.opcao_b }}</span>
                             </button>
                             <button type="submit" name="decisao" value="C" class="btn btn-decisao">
-                                <span class="opcao-letra">C</span> {{ lance.opcao_c }}
+                                <span class="opcao-letra">C</span> 
+                                <span>{{ lance.opcao_c }}</span>
                             </button>
                             <button type="submit" name="decisao" value="D" class="btn btn-decisao">
-                                <span class="opcao-letra">D</span> {{ lance.opcao_d }}
+                                <span class="opcao-letra">D</span> 
+                                <span>{{ lance.opcao_d }}</span>
                             </button>
                         </div>
                     </form>
                 
                 <!-- SE ELE JÁ JOGOU (MOSTRA O GABARITO) -->
                 {% else %}
-                    <div class="text-center mb-4">
+                    <div class="text-center mb-4 mt-2">
                         {% if palpite.acertou %}
-                            <i class="fa-solid fa-check-circle text-success" style="font-size: 5rem;"></i>
-                            <h3 class="text-success fw-bold mt-2">MARCAÇÃO CORRETA!</h3>
+                            <div class="bg-success bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 100px; height: 100px;">
+                                <i class="fa-solid fa-check text-success" style="font-size: 4rem;"></i>
+                            </div>
+                            <h3 class="text-success fw-bold">MARCAÇÃO CORRETA!</h3>
+                            <p class="text-white-50">Você teve visão de águia neste lance.</p>
                         {% else %}
-                            <i class="fa-solid fa-times-circle text-danger" style="font-size: 5rem;"></i>
-                            <h3 class="text-danger fw-bold mt-2">ERROU FEIO!</h3>
-                            <p class="text-white mt-2">Sua escolha: <strong>Opção {{ palpite.resposta_escolhida }}</strong></p>
+                            <div class="bg-danger bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 100px; height: 100px;">
+                                <i class="fa-solid fa-xmark text-danger" style="font-size: 4rem;"></i>
+                            </div>
+                            <h3 class="text-danger fw-bold">ERROU FEIO!</h3>
+                            <p class="text-white mt-2 mb-0">Sua escolha: <span class="badge bg-secondary fs-6 rounded-pill px-3 py-2 ms-1">Opção {{ palpite.resposta_escolhida }}</span></p>
                         {% endif %}
                     </div>
 
-                    <div class="alert alert-info bg-opacity-10 border-info text-start p-3">
-                        <h6 class="fw-bold text-info text-uppercase mb-2"><i class="fa-solid fa-book"></i> A Regra Oficial:</h6>
-                        <p class="text-white mb-2">A marcação correta é a <strong>Opção {{ lance.resposta_correta }}</strong>.</p>
-                        <p class="text-light opacity-75 small m-0 fst-italic">{{ lance.justificativa }}</p>
+                    <div class="alert bg-info bg-opacity-10 border border-info border-opacity-50 text-start p-4 rounded-4 mt-auto">
+                        <h6 class="fw-bold text-info text-uppercase mb-3" style="letter-spacing: 1px;">
+                            <i class="fa-solid fa-book-open"></i> A Regra Oficial:
+                        </h6>
+                        <p class="text-white mb-2 fs-6">A marcação correta é a <span class="badge bg-info text-dark ms-1">Opção {{ lance.resposta_correta }}</span></p>
+                        <p class="text-white-50 small m-0 lh-base fst-italic">"{{ lance.justificativa }}"</p>
                     </div>
                 {% endif %}
             </div>

@@ -4,208 +4,310 @@
 
 {% block content %}
 <style>
-    /* Truque CSS: Se a caixa de vencedores não possuir nenhuma badge (ninguém acertou), altera o estilo para cinza */
+    /* Transições e Animações dos Cards */
+    .card-action { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+    .card-action:hover { transform: translateY(-3px); box-shadow: 0 0.5rem 1rem rgba(0,0,0,.15)!important; }
+    
+    /* Padronização dos Escudos na Arena */
+    .team-logo-arena { max-height: 55px; width: auto; object-fit: contain; }
+
+    /* Truque CSS: Se a caixa de vencedores não possuir nenhuma badge, altera para o estado "Sem Vencedores" */
     .caixa-vencedores:not(:has(.badge)) {
         background-color: #f8f9fa !important;
         border-color: #dee2e6 !important;
         text-align: center !important;
+        padding: 1rem !important;
     }
     .caixa-vencedores:not(:has(.badge))::after {
-        content: "Ninguém cravou o placar exato!";
+        content: "\f071  Ninguém cravou o placar exato!";
+        font-family: "FontAwesome", "Font Awesome 6 Free"; /* Garante renderização do ícone FA */
         display: block;
         color: #6c757d;
         font-weight: bold;
-        font-size: 0.875em;
-        margin-top: 5px;
-        margin-bottom: 5px;
+        font-size: 0.85rem;
     }
     .caixa-vencedores:not(:has(.badge)) .titulo-vencedores {
         display: none !important;
     }
+
+    /* Estilo do Toggle Switch estilo App */
+    .toggle-app-container {
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        padding: 0.5rem 1rem;
+        border-radius: 50rem;
+        display: inline-flex;
+        align-items: center;
+    }
 </style>
 
-<div class="row mt-4 mb-4">
-    <div class="col-12 text-center">
-        <h2 class="fw-bold" style="color: var(--verde-escuro);"><i class="fa-regular fa-futbol"></i> Arena de Palpites</h2>
-        <p class="text-muted mb-2">Apostas e edições encerram exatamente <strong>1 hora antes</strong> do apito inicial.</p>
+<!-- ========================================== -->
+<!-- CABEÇALHO DA ARENA                         -->
+<!-- ========================================== -->
+<div class="row mt-4 mb-4 px-2">
+    <div class="col-12 text-center text-md-start d-md-flex justify-content-between align-items-center">
+        <div class="mb-3 mb-md-0">
+            <h2 class="fw-bold mb-1" style="color: var(--verde-escuro);">
+                <i class="fa-regular fa-futbol text-success"></i> Arena de Palpites
+            </h2>
+            <p class="text-muted small mb-0">
+                Apostas e edições encerram exatamente <strong>1 hora antes</strong> do apito inicial.
+            </p>
+        </div>
         
         <!-- Switch para ocultar jogos encerrados -->
-        <div class="form-check form-switch d-inline-flex align-items-center mt-2">
-            <input class="form-check-input me-2 mt-0" type="checkbox" id="toggleEncerrados" style="cursor: pointer;">
-            <label class="form-check-label text-muted fw-bold" for="toggleEncerrados" style="cursor: pointer;">
-                Ocultar jogos encerrados
-            </label>
+        <div class="toggle-app-container shadow-sm mt-2 mt-md-0">
+            <div class="form-check form-switch m-0 d-flex align-items-center gap-2">
+                <input class="form-check-input mt-0" type="checkbox" id="toggleEncerrados" style="cursor: pointer; width: 2.5em; height: 1.25em;">
+                <label class="form-check-label text-muted fw-bold small text-uppercase" for="toggleEncerrados" style="cursor: pointer; letter-spacing: 0.5px;">
+                    Ocultar Encerrados
+                </label>
+            </div>
         </div>
     </div>
 </div>
 
-<div class="row">
-    <div class="col-lg-8">
+<div class="row px-2">
+    <!-- ========================================== -->
+    <!-- COLUNA PRINCIPAL: LISTA DE JOGOS           -->
+    <!-- ========================================== -->
+    <div class="col-12 col-lg-8">
         <div class="row row-cols-1 row-cols-md-2 g-4 mb-5">
             {% for jogo in jogos %}
-            <!-- Adicionada a classe 'jogo-encerrado' dinamicamente -->
-            <div class="col {% if jogo.finalizado %}jogo-encerrado{% endif %}">
-                <div class="card card-clean h-100 shadow-sm border-0 {% if not jogo.aceita_palpite %}bg-light{% endif %}">
+                <!-- A classe 'jogo-encerrado' é usada no Javascript -->
+                <div class="col {% if jogo.finalizado %}jogo-encerrado{% endif %}">
                     
-                    <div class="card-header bg-transparent border-0 pt-3 pb-0 text-center">
-                        <span class="badge {% if jogo.aceita_palpite %}bg-success{% else %}bg-danger{% endif %} rounded-pill px-3 py-2">
-                            <i class="fa-regular fa-calendar"></i> {{ jogo.data_hora|date:"d/m/Y às H:i" }}
-                        </span>
-                    </div>
-                    
-                    <div class="card-body text-center mt-3">
-                        <div class="d-flex justify-content-between align-items-center mb-4 px-2">
-                            <div class="w-40 text-center">
-                                {% if jogo.escudo_casa %}
-                                    <img src="{{ jogo.escudo_casa.url }}" alt="{{ jogo.time_casa }}" width="50" height="50" class="mb-2 object-fit-contain">
-                                {% endif %}
-                                <h6 class="fw-bold mb-0 text-truncate" title="{{ jogo.time_casa }}">{{ jogo.time_casa }}</h6>
-                            </div>
-                            
-                            <div class="w-20"><span class="fs-4 fw-bold text-muted">X</span></div>
-                            
-                            <div class="w-40 text-center">
-                                {% if jogo.escudo_fora %}
-                                    <img src="{{ jogo.escudo_fora.url }}" alt="{{ jogo.time_fora }}" width="50" height="50" class="mb-2 object-fit-contain">
-                                {% endif %}
-                                <h6 class="fw-bold mb-0 text-truncate" title="{{ jogo.time_fora }}">{{ jogo.time_fora }}</h6>
-                            </div>
-                        </div>
-
-                        {% if jogo.meu_palpite %}
-                            <div class="p-2 rounded-3 mb-3 {% if jogo.meu_palpite.modalidade == 'pago' %}bg-success text-white{% else %}bg-secondary text-white{% endif %}">
-                                <small class="d-block mb-1">Seu Palpite ({{ jogo.meu_palpite.modalidade|title }}):</small>
-                                <h4 class="fw-bold mb-0">{{ jogo.meu_palpite.gols_casa }} x {{ jogo.meu_palpite.gols_fora }}</h4>
-                            </div>
-                            {% if jogo.finalizado %}
-                                <p class="text-success fw-bold mb-0"><i class="fa-solid fa-star text-warning"></i> Pontos ganhos: {{ jogo.meu_palpite.pontuacao_obtida }}</p>
-                            {% endif %}
-                        {% else %}
-                            <p class="text-muted small mb-3">Você ainda não palpitou neste jogo.</p>
-                        {% endif %}
-
-                        <button type="button" class="btn btn-sm btn-outline-secondary fw-bold mt-2 rounded-pill px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#modalPalpites{{ jogo.id }}">
-                            <i class="fa-regular fa-eye"></i> Ver Palpites da Galera
-                        </button>
-                    </div>
-                    
-                    <div class="card-footer bg-transparent border-0 pb-4 text-center">
-                        {% if jogo.finalizado %}
-                            <span class="fw-bold text-success"><i class="fa-solid fa-check-double"></i> Jogo Finalizado</span>
-                            <br>
-                            <small class="text-muted">Placar Real: {{ jogo.gols_casa_real }} x {{ jogo.gols_fora_real }}</small>
-                            
-                            <!-- Lógica para mostrar todos os acertadores diretamente pelo HTML -->
-                            <div class="mt-3 p-2 bg-success bg-opacity-10 border border-success border-opacity-25 rounded-3 text-start caixa-vencedores">
-                                <small class="fw-bold text-success d-block mb-2 titulo-vencedores"><i class="fa-solid fa-trophy"></i> Cravaram o Placar:</small>
-                                {% for palpite in jogo.palpites.all %}
-                                    {% if palpite.pontuacao_obtida == 15 %}
-                                        <span class="badge bg-success me-1 mb-1 fs-6 shadow-sm"><i class="fa-solid fa-crown text-warning"></i> {{ palpite.usuario.first_name|default:palpite.usuario.username }}</span>
-                                    {% endif %}
-                                {% endfor %}
-                            </div>
+                    <div class="card card-action card-clean h-100 shadow-sm border-0 rounded-4 {% if not jogo.aceita_palpite %}bg-light{% endif %}">
                         
-                        {% elif jogo.aceita_palpite %}
-                            {% if jogo.meu_palpite %}
-                                <a href="{% url 'palpites:fazer_palpite' jogo.id %}" class="btn btn-outline-primary w-100 fw-bold mt-2">
-                                    <i class="fa-solid fa-pen"></i> Editar Palpite
-                                </a>
-                            {% else %}
-                                <a href="{% url 'palpites:fazer_palpite' jogo.id %}" class="btn btn-principal w-100 fw-bold mt-2">
-                                    <i class="fa-solid fa-plus"></i> Fazer Palpite
-                                </a>
-                            {% endif %}
-                            
-                        {% else %}
-                            <button class="btn btn-secondary w-100 fw-bold mt-2" disabled>
-                                <i class="fa-solid fa-lock"></i> Palpites Encerrados
-                            </button>
-                            <small class="text-danger d-block mt-2"><i class="fa-solid fa-clock"></i> Falta menos de 1h</small>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-
-            <div class="modal fade" id="modalPalpites{{ jogo.id }}" tabindex="-1" aria-labelledby="modalPalpitesLabel{{ jogo.id }}" aria-hidden="true">
-                <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-                    <div class="modal-content border-0 shadow-lg rounded-4">
-                        <div class="modal-header bg-light border-0">
-                            <h5 class="modal-title fw-bold" id="modalPalpitesLabel{{ jogo.id }}" style="color: var(--verde-escuro);">
-                                <i class="fa-solid fa-users-viewfinder"></i> Palpites da Galera
-                            </h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        <!-- Header do Card: Data e Status -->
+                        <div class="card-header bg-transparent border-0 pt-3 pb-0 text-center">
+                            <span class="badge {% if jogo.aceita_palpite %}bg-success{% else %}bg-danger opacity-75{% endif %} rounded-pill px-3 py-2 shadow-sm">
+                                <i class="fa-regular fa-calendar-days"></i> {{ jogo.data_hora|date:"d/m/Y às H:i" }}
+                            </span>
                         </div>
-                        <div class="modal-body p-0">
-                            <div class="text-center p-3 bg-white border-bottom">
-                                <h6 class="fw-bold mb-0">{{ jogo.time_casa }} x {{ jogo.time_fora }}</h6>
+                        
+                        <!-- Corpo do Card: Times e Placar -->
+                        <div class="card-body text-center mt-2 px-3">
+                            <div class="d-flex justify-content-center align-items-center mb-4">
+                                <!-- Time da Casa -->
+                                <div class="text-center" style="flex: 1; min-width: 0;">
+                                    {% if jogo.escudo_casa %}
+                                        <img src="{{ jogo.escudo_casa.url }}" alt="{{ jogo.time_casa }}" class="mb-2 team-logo-arena">
+                                    {% else %}
+                                        <div class="bg-secondary bg-opacity-10 rounded-circle mx-auto mb-2 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                            <i class="fa-solid fa-shield-halved text-muted fs-4"></i>
+                                        </div>
+                                    {% endif %}
+                                    <h6 class="fw-bold mb-0 text-truncate px-1" title="{{ jogo.time_casa }}">{{ jogo.time_casa }}</h6>
+                                </div>
+                                
+                                <!-- O "X" Central -->
+                                <div class="px-2">
+                                    <span class="fs-4 fw-black text-muted opacity-50">X</span>
+                                </div>
+                                
+                                <!-- Time de Fora -->
+                                <div class="text-center" style="flex: 1; min-width: 0;">
+                                    {% if jogo.escudo_fora %}
+                                        <img src="{{ jogo.escudo_fora.url }}" alt="{{ jogo.time_fora }}" class="mb-2 team-logo-arena">
+                                    {% else %}
+                                        <div class="bg-secondary bg-opacity-10 rounded-circle mx-auto mb-2 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                            <i class="fa-solid fa-shield-halved text-muted fs-4"></i>
+                                        </div>
+                                    {% endif %}
+                                    <h6 class="fw-bold mb-0 text-truncate px-1" title="{{ jogo.time_fora }}">{{ jogo.time_fora }}</h6>
+                                </div>
                             </div>
-                            
-                            <ul class="list-group list-group-flush">
-                                {% for palpite in jogo.palpites.all %}
-                                    <li class="list-group-item d-flex justify-content-between align-items-center py-3">
-                                        <div>
-                                            <strong class="text-dark">{{ palpite.usuario.first_name|default:palpite.usuario.username }}</strong>
-                                            <br>
-                                            <span class="badge {% if palpite.modalidade == 'pago' %}bg-success{% else %}bg-secondary{% endif %} mt-1" style="font-size: 0.7rem;">
-                                                {% if palpite.modalidade == 'pago' %}Valendo Prêmio{% else %}Modo Resenha{% endif %}
-                                            </span>
+
+                            <!-- "Ticket" com o Palpite do Usuário -->
+                            {% if jogo.meu_palpite %}
+                                <div class="p-3 rounded-4 mb-3 position-relative shadow-sm {% if jogo.meu_palpite.modalidade == 'pago' %}bg-success text-white{% else %}bg-secondary text-white{% endif %}" style="border: 2px dashed rgba(255,255,255,0.4);">
+                                    <span class="d-block mb-1 text-uppercase fw-bold" style="font-size: 0.65rem; letter-spacing: 1px; opacity: 0.9;">
+                                        Seu Palpite ({{ jogo.meu_palpite.modalidade|title }})
+                                    </span>
+                                    <h3 class="fw-bold mb-0 tracking-wider">{{ jogo.meu_palpite.gols_casa }} x {{ jogo.meu_palpite.gols_fora }}</h3>
+                                    
+                                    {% if jogo.finalizado %}
+                                        <div class="mt-2 pt-2 border-top border-light border-opacity-25">
+                                            <p class="fw-bold mb-0" style="color: #ffeaa7;">
+                                                <i class="fa-solid fa-star"></i> Pontos ganhos: {{ jogo.meu_palpite.pontuacao_obtida }}
+                                            </p>
                                         </div>
-                                        <div class="text-end">
-                                            <span class="fw-bold fs-4 bg-light px-3 py-1 rounded-3 border">{{ palpite.gols_casa }} x {{ palpite.gols_fora }}</span>
-                                        </div>
-                                    </li>
-                                {% empty %}
-                                    <li class="list-group-item text-center text-muted py-5">
-                                        <i class="fa-solid fa-ghost fs-3 mb-2"></i><br>
-                                        Ninguém palpitou neste jogo ainda.
-                                    </li>
-                                {% endfor %}
-                            </ul>
+                                    {% endif %}
+                                </div>
+                            {% else %}
+                                <div class="p-3 rounded-4 mb-3 bg-light border border-dashed">
+                                    <p class="text-muted small mb-0 fw-bold"><i class="fa-solid fa-pen-nib me-1"></i> Você ainda não palpitou.</p>
+                                </div>
+                            {% endif %}
+
+                            <!-- Botão Ver Galera -->
+                            <button type="button" class="btn btn-sm btn-outline-secondary fw-bold rounded-pill px-4 shadow-sm w-100" data-bs-toggle="modal" data-bs-target="#modalPalpites{{ jogo.id }}">
+                                <i class="fa-regular fa-eye"></i> Ver Palpites da Galera
+                            </button>
                         </div>
-                        <div class="modal-footer bg-light border-0">
-                            <button type="button" class="btn btn-secondary fw-bold" data-bs-dismiss="modal">Fechar</button>
+                        
+                        <!-- Footer do Card: Ações ou Placar Real -->
+                        <div class="card-footer bg-transparent border-0 pb-4 text-center px-3">
+                            {% if jogo.finalizado %}
+                                <div class="bg-light rounded-4 p-3 border">
+                                    <span class="fw-bold text-success d-block mb-1 text-uppercase" style="font-size: 0.8rem; letter-spacing: 1px;">
+                                        <i class="fa-solid fa-check-double"></i> Jogo Finalizado
+                                    </span>
+                                    <h5 class="text-dark fw-bold mb-0">Placar Real: {{ jogo.gols_casa_real }} x {{ jogo.gols_fora_real }}</h5>
+                                </div>
+                                
+                                <!-- Lógica dos Acertadores -->
+                                <div class="mt-3 p-3 bg-success bg-opacity-10 border border-success border-opacity-25 rounded-4 text-start caixa-vencedores shadow-sm">
+                                    <small class="fw-bold text-success d-block mb-2 text-uppercase titulo-vencedores" style="font-size: 0.75rem; letter-spacing: 0.5px;">
+                                        <i class="fa-solid fa-trophy"></i> Cravaram o Placar:
+                                    </small>
+                                    
+                                    <div>
+                                        {% for palpite in jogo.palpites.all %}
+                                            {% if palpite.pontuacao_obtida == 15 %}
+                                                <span class="badge bg-success me-1 mb-1 fs-6 shadow-sm py-2 px-3 rounded-pill">
+                                                    <i class="fa-solid fa-crown text-warning me-1"></i> {{ palpite.usuario.first_name|default:palpite.usuario.username }}
+                                                </span>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            
+                            {% elif jogo.aceita_palpite %}
+                                {% if jogo.meu_palpite %}
+                                    <a href="{% url 'palpites:fazer_palpite' jogo.id %}" class="btn btn-outline-primary w-100 fw-bold rounded-pill shadow-sm">
+                                        <i class="fa-solid fa-pen-to-square"></i> Editar Palpite
+                                    </a>
+                                {% else %}
+                                    <a href="{% url 'palpites:fazer_palpite' jogo.id %}" class="btn btn-success w-100 fw-bold rounded-pill shadow-sm text-uppercase" style="letter-spacing: 0.5px;">
+                                        <i class="fa-solid fa-check-circle"></i> Fazer Palpite
+                                    </a>
+                                {% endif %}
+                                
+                            {% else %}
+                                <button class="btn btn-secondary w-100 fw-bold rounded-pill shadow-sm opacity-75" disabled>
+                                    <i class="fa-solid fa-lock"></i> Palpites Encerrados
+                                </button>
+                                <small class="text-danger fw-bold d-block mt-2">
+                                    <i class="fa-solid fa-stopwatch pulse-dot"></i> A bola já vai rolar!
+                                </small>
+                            {% endif %}
                         </div>
                     </div>
+
+                    <!-- ========================================== -->
+                    <!-- MODAL: PALPITES DA GALERA                  -->
+                    <!-- ========================================== -->
+                    <div class="modal fade" id="modalPalpites{{ jogo.id }}" tabindex="-1" aria-labelledby="modalPalpitesLabel{{ jogo.id }}" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+                            <div class="modal-content border-0 shadow-lg rounded-4">
+                                <div class="modal-header bg-light border-bottom border-opacity-10 p-4">
+                                    <h5 class="modal-title fw-bold" id="modalPalpitesLabel{{ jogo.id }}" style="color: var(--verde-escuro);">
+                                        <i class="fa-solid fa-users-viewfinder text-success"></i> Palpites da Galera
+                                    </h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                
+                                <div class="modal-body p-0">
+                                    <div class="text-center p-3 bg-white border-bottom shadow-sm">
+                                        <h6 class="fw-bold mb-0 text-muted">{{ jogo.time_casa }} x {{ jogo.time_fora }}</h6>
+                                    </div>
+                                    
+                                    <ul class="list-group list-group-flush">
+                                        {% for palpite in jogo.palpites.all %}
+                                            <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4 border-bottom border-light">
+                                                <div>
+                                                    <strong class="text-dark fs-6">{{ palpite.usuario.first_name|default:palpite.usuario.username }}</strong>
+                                                    <br>
+                                                    <span class="badge {% if palpite.modalidade == 'pago' %}bg-success bg-opacity-10 text-success border border-success{% else %}bg-secondary bg-opacity-10 text-secondary border border-secondary{% endif %} mt-1 rounded-pill px-2">
+                                                        {% if palpite.modalidade == 'pago' %}
+                                                            <i class="fa-solid fa-sack-dollar"></i> Valendo Prêmio
+                                                        {% else %}
+                                                            <i class="fa-regular fa-face-laugh-squint"></i> Modo Resenha
+                                                        {% endif %}
+                                                    </span>
+                                                </div>
+                                                <div class="text-end">
+                                                    <span class="fw-bold fs-4 bg-light px-3 py-2 rounded-3 border text-dark shadow-sm">
+                                                        {{ palpite.gols_casa }} <span class="text-muted fs-6 mx-1">x</span> {{ palpite.gols_fora }}
+                                                    </span>
+                                                </div>
+                                            </li>
+                                        {% empty %}
+                                            <li class="list-group-item text-center text-muted py-5 border-0">
+                                                <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+                                                    <i class="fa-solid fa-ghost text-muted opacity-50 fs-1"></i>
+                                                </div>
+                                                <h6 class="fw-bold">O silêncio do estádio...</h6>
+                                                <p class="mb-0 small">Ninguém palpitou neste jogo ainda.</p>
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                                
+                                <div class="modal-footer bg-light border-0 p-3">
+                                    <button type="button" class="btn btn-secondary fw-bold rounded-pill px-4 w-100" data-bs-dismiss="modal">Fechar</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
-            </div>
             {% empty %}
-            <div class="col-12 text-center mt-5">
-                <h4 class="text-muted"><i class="fa-solid fa-ghost"></i> Nenhum jogo cadastrado no momento.</h4>
-            </div>
+                <div class="col-12 text-center py-5">
+                    <div class="bg-light border border-dashed rounded-4 p-5 mx-auto shadow-sm" style="max-width: 600px;">
+                        <i class="fa-solid fa-calendar-xmark text-muted opacity-50 mb-3" style="font-size: 3rem;"></i>
+                        <h4 class="fw-bold text-dark">Agenda Vazia</h4>
+                        <p class="text-muted mb-0">Nenhum jogo foi cadastrado para essa rodada ainda. Avise o Professor!</p>
+                    </div>
+                </div>
             {% endfor %}
         </div>
     </div>
 
-    <div class="col-lg-4">
-        <div class="card card-clean border-0 shadow-sm p-4 sticky-top" style="top: 20px;">
-            <h4 class="fw-bold text-center mb-4" style="color: var(--verde-escuro);">Participantes Ativos</h4>
+    <!-- ========================================== -->
+    <!-- COLUNA LATERAL: PARTICIPANTES ATIVOS       -->
+    <!-- ========================================== -->
+    <div class="col-12 col-lg-4 mb-5">
+        <div class="card card-clean border-0 shadow-sm rounded-4 p-4 sticky-top" style="top: 20px;">
+            <div class="text-center mb-4">
+                <h4 class="fw-bold mb-1" style="color: var(--verde-escuro);">Tabela de Inscritos</h4>
+                <p class="text-muted small mb-0">Veja quem já carimbou o passaporte</p>
+            </div>
             
+            <!-- Lista: Valendo Prêmio -->
             <div class="mb-4">
-                <h6 class="fw-bold text-success border-bottom pb-2 mb-3">
-                    <i class="fa-solid fa-trophy text-warning"></i> Valendo Prêmio (R$ 10)
+                <h6 class="fw-bold text-success border-bottom border-success border-opacity-25 pb-2 mb-3 text-uppercase" style="font-size: 0.85rem; letter-spacing: 1px;">
+                    <i class="fa-solid fa-trophy text-warning me-1"></i> Valendo Prêmio (R$ 10)
                 </h6>
-                <ul class="list-group list-group-flush">
+                <ul class="list-group list-group-flush gap-1">
                     {% for jogador in jogadores_pago %}
-                        <li class="list-group-item bg-transparent px-0 border-0 py-1 fw-bold text-dark">
-                            <i class="fa-solid fa-user-check text-success me-2"></i> {{ jogador.first_name|default:jogador.username }}
+                        <li class="list-group-item bg-success bg-opacity-10 border-0 rounded-3 py-2 px-3 fw-bold text-dark d-flex align-items-center shadow-sm">
+                            <i class="fa-solid fa-circle-check text-success me-2"></i> {{ jogador.first_name|default:jogador.username }}
                         </li>
                     {% empty %}
-                        <li class="list-group-item text-muted small bg-transparent px-0 border-0">Nenhum participante ainda.</li>
+                        <li class="list-group-item text-muted small bg-transparent px-2 border-0 fst-italic">
+                            Nenhum apostador oficial ainda.
+                        </li>
                     {% endfor %}
                 </ul>
             </div>
 
+            <!-- Lista: Modo Resenha -->
             <div>
-                <h6 class="fw-bold text-secondary border-bottom pb-2 mb-3">
-                    <i class="fa-solid fa-face-laugh-squint"></i> Modo Resenha (Grátis)
+                <h6 class="fw-bold text-secondary border-bottom border-secondary border-opacity-25 pb-2 mb-3 text-uppercase" style="font-size: 0.85rem; letter-spacing: 1px;">
+                    <i class="fa-solid fa-face-laugh-squint text-secondary me-1"></i> Modo Resenha (Grátis)
                 </h6>
-                <ul class="list-group list-group-flush">
+                <ul class="list-group list-group-flush gap-1">
                     {% for jogador in jogadores_resenha %}
-                        <li class="list-group-item bg-transparent px-0 border-0 py-1 text-muted">
-                            <i class="fa-solid fa-user text-secondary me-2"></i> {{ jogador.first_name|default:jogador.username }}
+                        <li class="list-group-item bg-light border-0 rounded-3 py-2 px-3 text-muted fw-bold d-flex align-items-center">
+                            <i class="fa-solid fa-user-pen text-secondary me-2"></i> {{ jogador.first_name|default:jogador.username }}
                         </li>
                     {% empty %}
-                        <li class="list-group-item text-muted small bg-transparent px-0 border-0">Nenhum participante ainda.</li>
+                        <li class="list-group-item text-muted small bg-transparent px-2 border-0 fst-italic">
+                            Ninguém na resenha ainda.
+                        </li>
                     {% endfor %}
                 </ul>
             </div>
@@ -219,24 +321,30 @@
         const toggle = document.getElementById('toggleEncerrados');
         const jogosEncerrados = document.querySelectorAll('.jogo-encerrado');
 
-        // Verifica se o usuário já tinha marcado para ocultar antes (salvo no navegador)
+        // Verifica se o usuário já tinha marcado para ocultar antes (salvo no navegador localmente)
         const hideEncerrados = localStorage.getItem('ocultarJogosEncerrados') === 'true';
         
-        // Aplica o estado inicial
+        // Aplica o estado inicial da interface e da renderização
         if (hideEncerrados) {
             toggle.checked = true;
             jogosEncerrados.forEach(el => el.style.display = 'none');
         }
 
-        // Fica ouvindo as mudanças no switch
+        // Fica ouvindo as mudanças no switch para alternar entre as visões
         toggle.addEventListener('change', function() {
             if (this.checked) {
-                // Ocultar
-                jogosEncerrados.forEach(el => el.style.display = 'none');
+                // Ocultar da tela
+                jogosEncerrados.forEach(el => {
+                    el.style.opacity = '0';
+                    setTimeout(() => el.style.display = 'none', 200);
+                });
                 localStorage.setItem('ocultarJogosEncerrados', 'true');
             } else {
-                // Mostrar
-                jogosEncerrados.forEach(el => el.style.display = ''); 
+                // Mostrar na tela
+                jogosEncerrados.forEach(el => {
+                    el.style.display = '';
+                    setTimeout(() => el.style.opacity = '1', 50);
+                }); 
                 localStorage.setItem('ocultarJogosEncerrados', 'false');
             }
         });

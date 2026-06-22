@@ -293,6 +293,7 @@
     let turnoReal = null; 
     let acaoTravada = true; 
     let papelAtual = 'aguardando'; 
+    let ultimoPapel = null; // <- VARIÁVEL ADICIONADA AQUI
     let cartaEscolhidaId = null;
     let fimDeJogoProcessado = false;
     let animandoCena = false; 
@@ -461,7 +462,8 @@
                 let texto = ""; let cor = "";
                 let foiGol = ['gol', 'frango'].includes(data.ultimo_resultado);
 
-                if (turnoReal === 'chutar') {
+                // <- CORREÇÃO: USANDO A NOVA VARIÁVEL
+                if (ultimoPapel === 'chutar') {
                     if (foiGol) { texto = data.ultimo_resultado === 'frango' ? 'PASSOU POR BAIXO!' : 'GOOOOOL!'; cor = 'gol_meu'; } 
                     else {
                         if (data.ultimo_resultado === 'isolou') { texto = 'ISOLOU!'; }
@@ -471,7 +473,7 @@
                         cor = 'erro_meu';
                     }
                     registrarBolinha(souJ1 ? 'j1' : 'j2', foiGol);
-                } else if (turnoReal === 'defender') {
+                } else if (ultimoPapel === 'defender') {
                     if (foiGol) { texto = data.ultimo_resultado === 'frango' ? 'FRANGO!' : 'GOL DELE!'; cor = 'gol_adv'; } 
                     else {
                         if (data.ultimo_resultado === 'isolou') texto = 'ELE ISOLOU!';
@@ -532,6 +534,12 @@
 
         turnoReal = data.meu_turno;
         papelAtual = data.meu_turno;
+        
+        // <- CORREÇÃO: GRAVANDO O PAPEL PARA A ANIMAÇÃO
+        if (data.meu_turno !== 'aguardando') {
+            ultimoPapel = data.meu_turno;
+        }
+
         cartaEscolhidaId = null; 
 
         document.getElementById('trave-botoes').classList.remove('alvo-bloqueado');

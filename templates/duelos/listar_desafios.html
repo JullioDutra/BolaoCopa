@@ -104,18 +104,15 @@
         </div>
     </div>
 
-    <!-- NOVO JOGO: Draft X1 Pênaltis (EM MANUTENÇÃO) -->
+    <!-- Card: Draft X1 Pênaltis -->
     <div class="col-12 col-md-6 col-lg-4">
-        <div class="card card-clean h-100 text-center p-4 shadow-sm border-0 border-top border-4 border-secondary rounded-4 position-relative" style="background: linear-gradient(145deg, #f8f9fa, #e9ecef); opacity: 0.9;">
-            <!-- Badge de Manutenção -->
-            <span class="badge bg-secondary position-absolute top-0 end-0 m-3 shadow-sm rounded-pill">
-                <i class="fa-solid fa-screwdriver-wrench"></i> Em Manutenção
-            </span>
-
+        <div class="card card-action card-clean h-100 text-center p-4 shadow-sm border-0 border-top border-4 border-warning rounded-4">
             <div class="mb-3 mt-2">
-                <i class="fa-solid fa-futbol text-secondary" style="font-size: 3.5rem; opacity: 0.3;"></i>
+                <div class="bg-warning bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                    <i class="fa-solid fa-futbol text-warning" style="font-size: 2.5rem;"></i>
+                </div>
             </div>
-            <h4 class="fw-bold text-muted">Draft X1 Pênaltis</h4>
+            <h4 class="fw-bold">Draft X1 Pênaltis</h4>
             <p class="text-muted small mb-3">
                 Sorteio insano! Escale seus 5 batedores lendários e 1 goleiro, e decida tudo na marca da cal.
             </p>
@@ -138,8 +135,8 @@
             </div>
             
             <div class="mt-auto d-flex flex-column gap-2 pt-2">
-                <button type="button" class="btn btn-secondary w-100 fw-bold shadow-sm rounded-pill" disabled>
-                    <i class="fa-solid fa-lock"></i> Aguarde...
+                <button type="button" class="btn btn-warning w-100 fw-bold shadow-sm rounded-pill text-dark text-uppercase letter-spacing-1" data-bs-toggle="modal" data-bs-target="#modalConfigPenaltis">
+                    <i class="fa-solid fa-play"></i> Iniciar Draft
                 </button>
                 <a href="{% url 'minijogo:ranking_x1' %}" class="btn btn-outline-secondary text-dark w-100 fw-bold shadow-sm rounded-pill border-2">
                     <i class="fa-solid fa-ranking-star"></i> Ver Hall da Fama
@@ -148,7 +145,7 @@
         </div>
     </div>
 
-    <!-- Card Super Trunfo (EM MANUTENÇÃO) -->
+    <!-- Card: Super Trunfo (EM MANUTENÇÃO) -->
     <div class="col-12 col-md-6 col-lg-4">
         <div class="card card-clean h-100 text-center p-4 shadow-sm border-0 border-top border-4 border-secondary rounded-4 position-relative" style="background: linear-gradient(145deg, #f8f9fa, #e9ecef); opacity: 0.9;">
             <!-- Badge de Manutenção -->

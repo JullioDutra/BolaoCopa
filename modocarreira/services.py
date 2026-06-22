@@ -1,14 +1,99 @@
 import random
 from django.db import transaction
-from .models import Avatar, Clube, ServidorConfig, PartidaMundo, EscalacaoPosicao
+from .models import Avatar, Clube, ServidorConfig, PartidaMundo, EscalacaoPosicao, ConflitoVestiario
 import json
-# import google.generativeai as genai
+import google.generativeai as genai
 from django.conf import settings
 from django.utils import timezone
 from datetime import timedelta
 
 
+# Configuração da API (Coloque sua chave no settings.py ou variável de ambiente)
 # genai.configure(api_key=settings.GEMINI_API_KEY)
+
+def checar_gatilho_dilema():
+    """ 30% de chance de gerar um dilema após o treino """
+    return random.randint(1, 100) <= 30
+
+def gerar_dilema_ia(avatar):
+    """
+    Chama a IA Generativa para criar um dilema único baseado no contexto do Avatar.
+    Possui um Fallback seguro para evitar quebras no PythonAnywhere.
+    """
+    clube_nome = avatar.clube_atual.nome if avatar.clube_atual else "clube de várzea"
+    
+    prompt = f"""
+    Você é o mestre de um RPG de futebol. Crie um evento aleatório (dilema) que aconteceu hoje com o jogador {avatar.nome_camisa}, que tem {avatar.idade_atual} anos e joga como {avatar.get_arquetipo_display()} no {clube_nome}.
+    O evento deve ser realista, curto e focado em bastidores (imprensa, vestiário, noitada, torcida).
+    
+    Você DEVE retornar APENAS um JSON válido. Nenhuma palavra a mais, sem formatação markdown (```json).
+    Use EXATAMENTE esta estrutura:
+    {{
+        "titulo": "Título Curto",
+        "descricao": "A história de até 3 linhas.",
+        "opcao_A": {{
+            "texto": "Ação focada na mídia/fama.",
+            "consequencia_tipo": "media_fama",
+            "consequencia_valor": 5,
+            "penalidade_tipo": "moral",
+            "penalidade_valor": -5
+        }},
+        "opcao_B": {{
+            "texto": "Ação focada no grupo/treino.",
+            "consequencia_tipo": "moral",
+            "consequencia_valor": 5,
+            "penalidade_tipo": "media_fama",
+            "penalidade_valor": -2
+        }}
+    }}
+    """
+    
+    try:
+        # Configura o modelo para forçar saída em JSON (O Gemini 1.5 Flash é o mais rápido e barato)
+        model = genai.GenerativeModel('gemini-1.5-flash', generation_config={"response_mime_type": "application/json"})
+        response = model.generate_content(prompt)
+        
+        # Converte a resposta em dicionário Python
+        dilema_dict = json.loads(response.text)
+        return dilema_dict
+        
+    except Exception as e:
+        # PLANO B: Se a API der Timeout, limite de cota ou erro no PythonAnywhere, joga um dilema padrão.
+        print(f"Erro na IA Generativa: {e}")
+        return {
+            "titulo": "Fofoca de Corredor",
+            "descricao": f"Vazou um boato de que {avatar.nome_camisa} está forçando uma saída do {clube_nome}. A torcida está cobrando explicações nas redes sociais.",
+            "opcao_A": {
+                "texto": "Fazer uma live alimentando o boato.",
+                "consequencia_tipo": "media_fama",
+                "consequencia_valor": 5,
+                "penalidade_tipo": "moral",
+                "penalidade_valor": -10
+            },
+            "opcao_B": {
+                "texto": "Beijar o escudo no próximo treino.",
+                "consequencia_tipo": "moral",
+                "consequencia_valor": 8,
+                "penalidade_tipo": "media_fama",
+                "penalidade_valor": -2
+            }
+        }
+
+def resolver_dilema(avatar, opcao_escolhida_dict):
+    """ Aplica os buffs e debuffs da escolha do jogador """
+    attr_ganho = opcao_escolhida_dict['consequencia_tipo']
+    valor_ganho = opcao_escolhida_dict['consequencia_valor']
+    if hasattr(avatar, attr_ganho):
+        setattr(avatar, attr_ganho, min(getattr(avatar, attr_ganho) + valor_ganho, 99))
+
+    attr_perda = opcao_escolhida_dict['penalidade_tipo']
+    valor_perda = opcao_escolhida_dict['penalidade_valor'] # Já vem negativo
+    if hasattr(avatar, attr_perda):
+        setattr(avatar, attr_perda, max(getattr(avatar, attr_perda) + valor_perda, 1))
+
+    avatar.save()
+
+
 
 def calcular_dna_inicial(arquetipo):
     """ Define os status base dependendo do estilo de jogo """

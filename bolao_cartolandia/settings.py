@@ -207,3 +207,6 @@ JAZZMIN_UI_TWEAKS = {
     "sidebar_nav_legacy_style": False,
     "sidebar_nav_flat_style": False,
 }
+
+# Chave secreta para o Cronjob externo bater no servidor
+CRON_SECRET_TOKEN = os.environ.get('CRON_SECRET_TOKEN', '3yrktOdann3sqSCRUoVqzCnBZER3zMo5AHHOLi')

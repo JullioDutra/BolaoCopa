@@ -86,10 +86,13 @@ def tela_draft(request):
 def lobby_batalha(request):
     """ Coloca o jogador na fila ou puxa o convite pendente """
     draft = MeuDraft.objects.filter(usuario=request.user, status='ativo').last()
-    if not draft:
+    
+    # VERIFICAÇÃO RÍGIDA: Tem draft? Ele está completo com 5 batedores e 1 goleiro?
+    draft_completo = draft and draft.batedores.count() == 5 and draft.goleiro is not None
+    if not draft_completo:
         return redirect('minijogo:tela_draft')
         
-    # 💥 CORREÇÃO 2: Se ele acabou de vir do Draft, resgata a sala do amigo!
+    # CORREÇÃO 2: Se ele acabou de vir do Draft, resgata a sala do amigo!
     convite_id = request.session.pop('convite_pendente', None)
     if convite_id:
         partida_convite = PartidaPenalti.objects.filter(id=convite_id, fase='aguardando').first()
@@ -106,7 +109,7 @@ def lobby_batalha(request):
             partida_convite.save()
             return redirect('minijogo:tela_jogo', partida_id=partida_convite.id)
 
-    # ... (AQUI CONTINUA O SEU CÓDIGO NORMAL DE PROCURAR PARTIDA) ...
+    # AQUI CONTINUA O SEU CÓDIGO NORMAL DE PROCURAR PARTIDA
     partida_atual = PartidaPenalti.objects.filter(
         (Q(jogador1=request.user) | Q(jogador2=request.user)) & 
         ~Q(fase='finalizado')
@@ -148,15 +151,15 @@ def lobby_batalha(request):
         )
         return render(request, 'minijogo/esperando_adversario.html', {'partida': nova_partida})
 
-
 @login_required
 def aceitar_convite(request, partida_id):
     """ Coloca o amigo na sala de pênaltis através do link """
     partida = get_object_or_404(PartidaPenalti, id=partida_id)
     draft = MeuDraft.objects.filter(usuario=request.user, status='ativo').last()
     
-    # 💥 CORREÇÃO 1: Salva o ID da sala na memória antes de mandar pro Draft!
-    if not draft:
+    # VERIFICAÇÃO RÍGIDA APLICADA NO CONVITE TAMBÉM
+    draft_completo = draft and draft.batedores.count() == 5 and draft.goleiro is not None
+    if not draft_completo:
         request.session['convite_pendente'] = partida_id
         return redirect('minijogo:tela_draft')
     
@@ -174,7 +177,6 @@ def aceitar_convite(request, partida_id):
         partida.save()
         
     return redirect('minijogo:tela_jogo', partida_id=partida.id)
-    
     
 @login_required
 def tela_jogo(request, partida_id):

@@ -2,13 +2,26 @@ import json
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
-from .services import criar_avatar_peneira, processar_treino, checar_gatilho_dilema, gerar_dilema_ia, resolver_dilema, processar_tique_partida, resolver_acao_jogador
 from .models import Avatar, Clube, EscalacaoPosicao
-from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404
 from django.utils.dateformat import format
 from .models import PartidaMundo
+from django.conf import settings
+from django.utils import timezone
+import logging
+from .services import (
+    escalar_time_titular, 
+    encerrar_partida_e_processar_stats,
+    executar_virada_de_temporada,
+    criar_avatar_peneira,
+    processar_treino,
+    checar_gatilho_dilema,
+    gerar_dilema_ia,
+    resolver_dilema,
+    processar_tique_partida,
+    resolver_acao_jogador
+)
 
 
 
@@ -227,3 +240,67 @@ def api_acao_lance(request, partida_id):
             return JsonResponse({'sucesso': True})
             
         return JsonResponse({'sucesso': False, 'mensagem': 'Tempo esgotado ou ação inválida.'})
+
+
+logger = logging.getLogger(__name__)
+
+def api_cron_engine(request, token):
+    """
+    Webhook seguro para ser chamado por um serviço externo (ex: cron-job.org).
+    Gere todas as automações do jogo baseado na hora do dia.
+    """
+    if token != settings.CRON_SECRET_TOKEN:
+        return JsonResponse({'sucesso': False, 'mensagem': 'Acesso não autorizado.'}, status=403)
+
+    agora = timezone.now()
+    acoes_realizadas = []
+
+    try:
+        # ==========================================
+        # ROTINA 1: RESET DIÁRIO (Ex: Meia-noite UTC)
+        # ==========================================
+        # Esta rotina dá +1 Ponto de Ação a toda a gente.
+        # No PythonAnywhere gratuito, também pode configurar isto no separador "Tasks" para rodar 1x ao dia.
+        if agora.hour == 0 and agora.minute < 10: 
+            # Evita rodar duas vezes se o cron bater várias vezes na mesma hora
+            Avatar.objects.update(pontos_acao_diarios=1)
+            acoes_realizadas.append("Reset Diário de AP concluído.")
+
+        # ==========================================
+        # ROTINA 2: IA DO TREINADOR (Pré-Jogo)
+        # ==========================================
+        # Roda 1 hora antes do jogo (Ex: Jogos às 20h00, logo roda às 19h00)
+        if agora.hour == 19:
+            clubes = Clube.objects.all()
+            for clube in clubes:
+                escalar_time_titular(clube)
+            acoes_realizadas.append("IA de Escalação executada para todos os clubes.")
+
+        # ==========================================
+        # ROTINA 3: APITO FINAL E CONSEQUÊNCIAS
+        # ==========================================
+        # Roda após a janela de jogo (Ex: 21h00)
+        if agora.hour == 21:
+            partidas_pendentes = PartidaMundo.objects.filter(status='andamento', minuto_atual__gte=90)
+            for partida in partidas_pendentes:
+                partida.status = 'finalizada'
+                partida.save()
+                encerrar_partida_e_processar_stats(partida)
+            acoes_realizadas.append(f"{partidas_pendentes.count()} partidas encerradas. XP e lesões calculados.")
+
+        # ==========================================
+        # ROTINA 4: VIRADA DE TEMPORADA
+        # ==========================================
+        # Para evitar acidentes com o cron, sugiro que esta seja disparada manualmente por si 
+        # através de um botão no Django Admin ou num painel de "Super Administrador", 
+        # em vez de depender apenas do relógio.
+
+        return JsonResponse({
+            'sucesso': True, 
+            'hora_servidor': agora.isoformat(),
+            'acoes': acoes_realizadas if acoes_realizadas else ["Nenhuma ação agendada para esta hora."]
+        })
+
+    except Exception as e:
+        logger.error(f"Erro no Cron Engine: {e}")
+        return JsonResponse({'sucesso': False, 'erro': str(e)}, status=500)

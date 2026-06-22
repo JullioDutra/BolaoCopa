@@ -15,5 +15,7 @@ urlpatterns = [
     path('api/match/<int:partida_id>/sync/', views.api_sync_partida, name='api_sync_partida'),
     path('api/match/<int:partida_id>/acao/', views.api_acao_lance, name='api_acao_lance'),
 
+    path('api/engine/cron/<str:token>/', views.api_cron_engine, name='api_cron_engine'),
+
 
 ]

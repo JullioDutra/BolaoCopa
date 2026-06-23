@@ -70,6 +70,10 @@ def tela_draft(request):
         
     # Se o draft já está totalmente completo (5 de linha + 1 goleiro)
     if draft.elenco_sorteado is None and draft.batedores.count() == 5 and draft.goleiro is not None:
+        campeonato_confronto_id = request.session.pop('campeonato_penalti_pendente', None)
+        if campeonato_confronto_id:
+            # Devolve ele direto para a sala do campeonato!
+            return redirect('duelos:iniciar_jogo_campeonato', confronto_id=campeonato_confronto_id)
         return redirect('minijogo:lobby')
 
     context = {

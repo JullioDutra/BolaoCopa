@@ -142,8 +142,15 @@ class ConfrontoCampeonato(models.Model):
         ('wo', 'Vencedor por W.O.'),
     )
 
+    TIPO_JOGO_CHOICES = (
+        ('duelo', 'Duelo de Cartas'),
+        ('penaltis', 'X1 Pênaltis'),
+    )
+
     campeonato = models.ForeignKey(Campeonato, on_delete=models.CASCADE, related_name='confrontos')
     fase = models.CharField(max_length=20, choices=FASES_CHOICES)
+    tipo_jogo = models.CharField(max_length=20, choices=TIPO_JOGO_CHOICES, default='duelo')
+    partida_penalti_vinculada = models.ForeignKey('minijogo.PartidaPenalti', on_delete=models.SET_NULL, null=True, blank=True)
     
     # Jogadores da chave
     jogador1 = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='confrontos_como_j1')

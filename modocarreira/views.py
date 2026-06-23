@@ -257,19 +257,15 @@ def api_cron_engine(request, token):
 
     try:
         # ==========================================
-        # ROTINA 1: RESET DIÁRIO (Ex: Meia-noite UTC)
+        # ROTINA 1: RESET DIÁRIO (Meia-noite)
         # ==========================================
-        # Esta rotina dá +1 Ponto de Ação a toda a gente.
-        # No PythonAnywhere gratuito, também pode configurar isto no separador "Tasks" para rodar 1x ao dia.
         if agora.hour == 0 and agora.minute < 10: 
-            # Evita rodar duas vezes se o cron bater várias vezes na mesma hora
             Avatar.objects.update(pontos_acao_diarios=1)
             acoes_realizadas.append("Reset Diário de AP concluído.")
 
         # ==========================================
-        # ROTINA 2: IA DO TREINADOR (Pré-Jogo)
+        # ROTINA 2: IA DO TREINADOR (Pré-Jogo às 19h)
         # ==========================================
-        # Roda 1 hora antes do jogo (Ex: Jogos às 20h00, logo roda às 19h00)
         if agora.hour == 19:
             clubes = Clube.objects.all()
             for clube in clubes:
@@ -277,9 +273,26 @@ def api_cron_engine(request, token):
             acoes_realizadas.append("IA de Escalação executada para todos os clubes.")
 
         # ==========================================
-        # ROTINA 3: APITO FINAL E CONSEQUÊNCIAS
+        # ROTINA 2.5: O APITO INICIAL (Começa os jogos às 20h)
         # ==========================================
-        # Roda após a janela de jogo (Ex: 21h00)
+        if agora.hour == 20:
+            # Pega todos os jogos que foram agendados mas ainda não começaram
+            partidas = PartidaMundo.objects.filter(status='agendada')
+            
+            contagem = 0
+            for partida in partidas:
+                partida.status = 'andamento'
+                # Insere a primeira linha na tela do Match Day
+                partida.adicionar_log("BOLA ROLANDO! O árbitro autoriza o início da partida no metaverso.", destaque=True)
+                partida.save()
+                contagem += 1
+                
+            if contagem > 0:
+                acoes_realizadas.append(f"{contagem} partidas iniciadas com sucesso (Apito Inicial).")
+
+        # ==========================================
+        # ROTINA 3: APITO FINAL E CONSEQUÊNCIAS (Pós-Jogo às 21h)
+        # ==========================================
         if agora.hour == 21:
             partidas_pendentes = PartidaMundo.objects.filter(status='andamento', minuto_atual__gte=90)
             for partida in partidas_pendentes:
@@ -287,13 +300,6 @@ def api_cron_engine(request, token):
                 partida.save()
                 encerrar_partida_e_processar_stats(partida)
             acoes_realizadas.append(f"{partidas_pendentes.count()} partidas encerradas. XP e lesões calculados.")
-
-        # ==========================================
-        # ROTINA 4: VIRADA DE TEMPORADA
-        # ==========================================
-        # Para evitar acidentes com o cron, sugiro que esta seja disparada manualmente por si 
-        # através de um botão no Django Admin ou num painel de "Super Administrador", 
-        # em vez de depender apenas do relógio.
 
         return JsonResponse({
             'sucesso': True, 

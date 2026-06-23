@@ -3,7 +3,6 @@
 {% block title %}Árvore do Torneio: {{ campeonato.nome }} - Cartolândia{% endblock %}
 
 {% block content %}
-<!-- Biblioteca para tirar a foto da tabela -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
 <style>
@@ -155,7 +154,6 @@
 
 <div class="row mt-4 mb-4 px-2">
     <div class="col-12 text-center">
-        <!-- Título do Torneio -->
         <h2 class="fw-bold mb-1" style="color: var(--verde-escuro);">
             <i class="fa-solid fa-sitemap text-success"></i> Árvore do Torneio
         </h2>
@@ -167,13 +165,11 @@
             </span>
         </div>
         
-        <!-- Botões de Ação -->
         <div class="d-flex flex-wrap justify-content-center gap-2 mt-3">
             <a href="{% url 'duelos:listar_desafios' %}" class="btn btn-outline-secondary fw-bold rounded-pill px-4 shadow-sm">
                 <i class="fa-solid fa-arrow-left me-1"></i> Voltar
             </a>
             
-            <!-- 💥 BOTÃO DE COMPARTILHAR ADICIONADO AQUI -->
             <button onclick="baixarChaveamento(event)" class="btn btn-primary fw-bold rounded-pill px-4 shadow-sm">
                 <i class="fa-solid fa-camera-retro me-1"></i> Compartilhar Tabela
             </button>
@@ -185,7 +181,6 @@
             {% endif %}
         </div>
 
-        <!-- Indicador Mobile -->
         <p class="text-muted small mt-3 d-md-none swipe-indicator fw-bold text-success">
             <i class="fa-solid fa-left-right me-1"></i> Deslize para ver as chaves
         </p>
@@ -194,13 +189,11 @@
 
 <div class="row px-2 mb-5">
     <div class="col-12">
-        <!-- 💥 ID ADICIONADO AQUI PARA A FOTO -->
         <div class="bracket-wrapper" id="area-chaveamento">
             <i class="fa-solid fa-trophy watermark"></i>
             
             <div class="bracket-container">
                 
-                <!-- COLUNA: OITAVAS DE FINAL -->
                 {% if fases.oitavas %}
                 <div class="bracket-col">
                     <div class="text-center mb-4">
@@ -209,13 +202,11 @@
                         </span>
                     </div>
                     {% for confronto in fases.oitavas %}
-                        <!-- Chama o novo nome -->
                         {% include 'duelos/includes/bracket_card.html' with confronto=confronto %}
                     {% endfor %}
                 </div>
                 {% endif %}
 
-                <!-- COLUNA: QUARTAS DE FINAL -->
                 {% if fases.quartas %}
                 <div class="bracket-col">
                     <div class="text-center mb-4">
@@ -229,7 +220,6 @@
                 </div>
                 {% endif %}
 
-                <!-- COLUNA: SEMIFINAL -->
                 {% if fases.semi %}
                 <div class="bracket-col">
                     <div class="text-center mb-4">
@@ -243,7 +233,6 @@
                 </div>
                 {% endif %}
 
-                <!-- COLUNA: FINAL E CAMPEÃO -->
                 {% if fases.final %}
                 <div class="bracket-col">
                     <div class="text-center mb-4">
@@ -255,10 +244,8 @@
                         {% include 'duelos/includes/bracket_card.html' with confronto=confronto %}
                     {% endfor %}
                     
-                    <!-- Troféu do Campeão -->
                     {% if campeonato.status == 'finalizado' and fases.final.0.vencedor %}
                         <div class="champion-card">
-                            <!-- Efeito de brilho de fundo -->
                             <div class="position-absolute top-50 start-50 translate-middle w-100 h-100" style="background: radial-gradient(circle, rgba(212,175,55,0.2) 0%, transparent 70%); z-index: 0;"></div>
                             
                             <div class="position-relative" style="z-index: 1;">
@@ -278,30 +265,44 @@
     </div>
 </div>
 
-<!-- Lógica de Exportação do Chaveamento -->
 <script>
 function baixarChaveamento(event) {
     const btn = event.currentTarget;
     const originalText = btn.innerHTML;
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Gerando...';
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Gerando Imagem...';
     btn.disabled = true;
 
-    // Esconde os botões "JOGAR" para a foto ficar limpa
+    // 1. Esconde os botões "JOGAR" para a foto ficar limpa
     const botoesJogar = document.querySelectorAll('.capture-hide');
     botoesJogar.forEach(b => b.style.display = 'none');
 
     const area = document.getElementById('area-chaveamento');
+    const container = area.querySelector('.bracket-container');
 
-    // Tira a foto
+    // 2. SALVA O ESTILO ORIGINAL PARA DEVOLVER DEPOIS
+    const originalOverflow = container.style.overflowX;
+    const originalWidth = container.style.width;
+
+    // 3. TRUQUE DA CÂMERA: Expande a árvore toda para o Canvas conseguir enxergar até o final
+    container.style.overflowX = 'visible';
+    container.style.width = 'max-content';
+
+    // 4. Tira a foto usando a largura expandida
     html2canvas(area, {
-        backgroundColor: '#0a1f0d', // Fundo que combina com o seu dark mode
-        scale: 2
+        backgroundColor: '#0a1f0d',
+        scale: 2, // Deixa a imagem em alta definição
+        width: area.scrollWidth, // Pega toda a largura do ecrã esticado
+        windowWidth: area.scrollWidth
     }).then(canvas => {
-        // Devolve os botões
+        // 5. DEVOLVE O ECRÃ AO NORMAL PARA O JOGADOR
+        container.style.overflowX = originalOverflow;
+        container.style.width = originalWidth;
+        
         botoesJogar.forEach(b => b.style.display = 'block');
         btn.innerHTML = originalText;
         btn.disabled = false;
 
+        // 6. Transforma a imagem em ficheiro e partilha
         canvas.toBlob(blob => {
             const file = new File([blob], 'chaveamento_{{ campeonato.nome|slugify }}.png', { type: 'image/png' });
 

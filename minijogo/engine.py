@@ -255,3 +255,14 @@ def encerrar_partida(partida, vencedor):
             draft_vencedor.status = 'campeao'
             
         draft_vencedor.save()
+    try:
+        from duelos.models import ConfrontoCampeonato
+        from duelos.views import processar_avanco_fase
+        
+        # Procura se existe uma chave de campeonato ligada a esta partida de pênalti
+        confronto = ConfrontoCampeonato.objects.filter(partida_penalti_vinculada=partida).first()
+        if confronto and confronto.status != 'finalizado':
+            # Avança o vencedor na tabela!
+            processar_avanco_fase(confronto, vencedor)
+    except Exception as e:
+        print(f"Erro ao tentar avançar fase no campeonato: {e}")

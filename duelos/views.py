@@ -6,6 +6,7 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.utils import timezone
 from django.db.models import Q
+from minijogo.models import PartidaPenalti, MeuDraft
 from django.urls import reverse
 from django.core.cache import cache
 import time
@@ -339,18 +340,28 @@ def criar_campeonato(request):
         nome = request.POST.get('nome')
         dias_abertos = int(request.POST.get('dias', 1))
         
-        # Calcula a data limite somando os dias escolhidos
+        # 💥 CAPTURA QUAIS MODOS O ADMIN MARCOU NA TELA
+        permite_elencos = request.POST.get('permite_elencos') == 'on'
+        permite_trajetoria = request.POST.get('permite_trajetoria') == 'on'
+        permite_penaltis = request.POST.get('permite_penaltis') == 'on'
+        
+        # Validação: Pelo menos um modo precisa estar ativo
+        if not permite_elencos and not permite_trajetoria and not permite_penaltis:
+            messages.error(request, "Você precisa ativar pelo menos um modo de jogo para o torneio!")
+            return redirect('duelos:criar_campeonato')
+        
         data_limite = timezone.now() + timezone.timedelta(days=dias_abertos)
         
         campeonato = Campeonato.objects.create(
             nome=nome,
             admin=request.user,
-            data_limite_inscricao=data_limite
+            data_limite_inscricao=data_limite,
+            permite_elencos=permite_elencos,
+            permite_trajetoria=permite_trajetoria,
+            permite_penaltis=permite_penaltis
         )
         
-        # Inscreve o próprio criador automaticamente pra já ter 1 na lista
         InscricaoCampeonato.objects.create(campeonato=campeonato, jogador=request.user)
-        
         messages.success(request, f"Taça {nome} criada! Espalhe o link para a galera.")
         return redirect('duelos:painel_campeonato', campeonato_id=campeonato.id)
         
@@ -390,7 +401,7 @@ def painel_campeonato(request, campeonato_id):
 # ==========================================
 @login_required
 def gerar_chaveamento(request, campeonato_id):
-    """Sorteia e cria a tabela distribuindo os W.O.s corretamente para evitar 'Vazio vs Vazio'."""
+    """Sorteia a tabela e também QUAL MODO será jogado em cada confronto."""
     campeonato = get_object_or_404(Campeonato, id=campeonato_id, admin=request.user)
 
     if campeonato.status != 'inscricoes':
@@ -406,7 +417,6 @@ def gerar_chaveamento(request, campeonato_id):
         messages.error(request, "Falta quórum! Precisa de pelo menos 3 jogadores.")
         return redirect('duelos:painel_campeonato', campeonato_id=campeonato.id)
 
-    # Define o tamanho da chave baseado no número de jogadores
     if num_jogadores <= 4:
         fase_inicial = 'semi'
         vagas = 4
@@ -420,34 +430,45 @@ def gerar_chaveamento(request, campeonato_id):
         messages.error(request, "A capacidade máxima desta versão da Copa é de 16 jogadores!")
         return redirect('duelos:painel_campeonato', campeonato_id=campeonato.id)
 
+    # 💥 MONTA A LISTA DE MODOS PERMITIDOS NESTE CAMPEONATO
+    modos_disponiveis = []
+    if campeonato.permite_elencos or campeonato.permite_trajetoria:
+        modos_disponiveis.append('duelo')
+    if campeonato.permite_penaltis:
+        modos_disponiveis.append('penaltis')
+
     categorias_disponiveis = list(CategoriaDesafio.objects.all())
     
-    # ==============================================================
-    # 1. NOVA LÓGICA DE DISTRIBUIÇÃO (Fim do "Vazio vs Vazio")
-    # ==============================================================
     qtd_confrontos = vagas // 2
     pares = [{'j1': None, 'j2': None} for _ in range(qtd_confrontos)]
     
-    # Como as vagas sempre são "a próxima potência de 2" (ex: 9 a 16 inscritos pra 16 vagas),
-    # o número de inscritos SEMPRE é maior que a quantidade de confrontos iniciais (8).
-    # Isso garante que a primeira passada no 'for' preenche o j1 de TODOS os jogos!
     for i, jogador in enumerate(jogadores):
         if i < qtd_confrontos:
-            pares[i]['j1'] = jogador # Cabeças de chave
+            pares[i]['j1'] = jogador 
         else:
-            pares[i - qtd_confrontos]['j2'] = jogador # Adversários
+            pares[i - qtd_confrontos]['j2'] = jogador 
             
-    # Embaralha os confrontos para os W.O.s não ficarem todos concentrados no final da tabela
     random.shuffle(pares)
 
-    # ==============================================================
-    # 2. CRIAR OS CONFRONTOS NO BANCO
-    # ==============================================================
     ordem = 1
     for par in pares:
         j1 = par['j1']
         j2 = par['j2']
-        desafio = random.choice(categorias_disponiveis) if categorias_disponiveis else None
+        
+        # 💥 SORTEIA O MODO DAQUELA CHAVE ESPECÍFICA
+        tipo_sorteado = random.choice(modos_disponiveis) if modos_disponiveis else 'duelo'
+        
+        desafio = None
+        if tipo_sorteado == 'duelo' and categorias_disponiveis:
+            # Se permite os dois, sorteia. Se permite só um, filtra.
+            cat_filtradas = []
+            if campeonato.permite_elencos:
+                cat_filtradas.extend([c for c in categorias_disponiveis if c.tipo == 'elenco'])
+            if campeonato.permite_trajetoria:
+                cat_filtradas.extend([c for c in categorias_disponiveis if c.tipo == 'trajetoria'])
+            
+            if cat_filtradas:
+                desafio = random.choice(cat_filtradas)
 
         confronto = ConfrontoCampeonato.objects.create(
             campeonato=campeonato,
@@ -455,40 +476,32 @@ def gerar_chaveamento(request, campeonato_id):
             jogador1=j1,
             jogador2=j2,
             desafio_sorteado=desafio,
-            ordem_chave=ordem
+            ordem_chave=ordem,
+            tipo_jogo=tipo_sorteado # 👈 Salva o modo sorteado!
         )
 
-        # Regra do W.O.: Como não existe "Vazio vs Vazio", se faltar o j2, o j1 avança!
         if j1 and not j2:
             processar_avanco_fase(confronto, j1)
 
         ordem += 1
 
-    # ==============================================================
-    # 3. CONSTRUIR A ÁRVORE FUTURA PARA O DESIGN DA TELA
-    # ==============================================================
+    # Construir árvore futura...
     fases_arvore = []
-    if fase_inicial == 'oitavas':
-        fases_arvore = [('quartas', 4), ('semi', 2), ('final', 1)]
-    elif fase_inicial == 'quartas':
-        fases_arvore = [('semi', 2), ('final', 1)]
-    elif fase_inicial == 'semi':
-        fases_arvore = [('final', 1)]
+    if fase_inicial == 'oitavas': fases_arvore = [('quartas', 4), ('semi', 2), ('final', 1)]
+    elif fase_inicial == 'quartas': fases_arvore = [('semi', 2), ('final', 1)]
+    elif fase_inicial == 'semi': fases_arvore = [('final', 1)]
 
     for nome_fase, qtd_jogos in fases_arvore:
         for i in range(1, qtd_jogos + 1):
             ConfrontoCampeonato.objects.get_or_create(
-                campeonato=campeonato,
-                fase=nome_fase,
-                ordem_chave=i
+                campeonato=campeonato, fase=nome_fase, ordem_chave=i
             )
 
     campeonato.status = 'andamento'
     campeonato.save()
 
-    messages.success(request, "Sorteio realizado! A tabela está montada de forma justa.")
+    messages.success(request, "Sorteio realizado! Os modos de jogo foram distribuídos na tabela.")
     return redirect('duelos:ver_chaveamento', campeonato_id=campeonato.id)
-
 @login_required
 def ver_chaveamento(request, campeonato_id):
     """Página pública para os jogadores verem a árvore do torneio."""
@@ -563,64 +576,95 @@ def lobby_espera(request, partida_id):
 
 @login_required
 def iniciar_jogo_campeonato(request, confronto_id):
-    """Entrada da sala de jogo específica de uma chave do campeonato."""
+    """Encaminha os jogadores para o Duelo de Cartas ou para os Pênaltis."""
     confronto = get_object_or_404(ConfrontoCampeonato, id=confronto_id)
     
-    # Bloqueia se o jogo já acabou ou foi W.O.
     if confronto.status in ['finalizado', 'wo']:
         messages.warning(request, "Este confronto já está decidido!")
         return redirect('duelos:ver_chaveamento', campeonato_id=confronto.campeonato.id)
 
-    # 1. Se a partida ainda NÃO EXISTE, o PRIMEIRO jogador a clicar cria a sala e fica aguardando
-    if not confronto.partida_vinculada:
-        
-        # O VAR AVISA: Se essa chave (ex: Quartas, Semi) ainda não teve o desafio sorteado, sorteia agora!
-        if not confronto.desafio_sorteado:
-            categorias = list(CategoriaDesafio.objects.all())
-            if categorias:
-                confronto.desafio_sorteado = random.choice(categorias)
-                confronto.save()
-            else:
-                messages.error(request, "Nenhum desafio cadastrado no sistema!")
-                return redirect('duelos:ver_chaveamento', campeonato_id=confronto.campeonato.id)
+    j_criador = request.user
+    j_convidado = confronto.jogador2 if request.user == confronto.jogador1 else confronto.jogador1
 
-        # Quem clicou vira o "criador" (host) da sala
-        j_criador = request.user
-        j_convidado = confronto.jogador2 if request.user == confronto.jogador1 else confronto.jogador1
+    # ========================================================
+    # ROTA 1: A CHAVE É UM DUELO DE PÊNALTIS
+    # ========================================================
+    if confronto.tipo_jogo == 'penaltis':
+        # Exige que o jogador tenha um draft pronto!
+        draft = MeuDraft.objects.filter(usuario=request.user, status='ativo').last()
+        draft_completo = draft and draft.batedores.count() == 5 and draft.goleiro is not None
+        
+        if not draft_completo:
+            messages.info(request, "Atenção! Esta fase do campeonato será decidida nos pênaltis. Você precisa montar seu elenco primeiro.")
+            # Salva pra onde voltar após o draft
+            request.session['campeonato_penalti_pendente'] = confronto_id 
+            return redirect('minijogo:tela_draft')
 
-        partida = PartidaDuelo.objects.create(
-            categoria=confronto.desafio_sorteado,
-            jogador_criador=j_criador,
-            jogador_convidado=j_convidado,
-            turno_de=confronto.jogador1, # O jogador 1 da chave sempre tem a vantagem do primeiro palpite
-            status='aguardando' # <-- O CRONÔMETRO AINDA NÃO RODA
-        )
-        confronto.partida_vinculada = partida
-        confronto.status = 'andamento'
-        confronto.save()
-        
-        # Como ele foi o primeiro a chegar, vai pro vestiário (Lobby) esperar o outro
-        return redirect('duelos:lobby_espera', partida_id=partida.id)
-        
-    # 2. Se a partida JÁ EXISTE, significa que alguém já está lá esperando
+        # Se a partida ainda não foi criada, cria a sala de pênaltis
+        if not confronto.partida_penalti_vinculada:
+            partida_penalti = PartidaPenalti.objects.create(
+                jogador1=confronto.jogador1, # Mantém a ordem da chave
+                jogador2=confronto.jogador2,
+                draft_j1=draft if request.user == confronto.jogador1 else None,
+                draft_j2=draft if request.user == confronto.jogador2 else None,
+                fase='aguardando',
+                moeda_sorteio='j1',
+                usa_poderes=True, usa_olheiro=True, usa_emotes=True
+            )
+            confronto.partida_penalti_vinculada = partida_penalti
+            confronto.status = 'andamento'
+            confronto.save()
+            return redirect('minijogo:tela_jogo', partida_id=partida_penalti.id)
+        else:
+            # Se a partida já existe, o segundo jogador preenche sua vaga e libera o jogo
+            partida_penalti = confronto.partida_penalti_vinculada
+            if request.user == confronto.jogador2 and not partida_penalti.draft_j2:
+                partida_penalti.draft_j2 = draft
+                partida_penalti.fase = '5_cobrancas'
+                partida_penalti.turno_batedor = partida_penalti.jogador1
+                partida_penalti.save()
+            elif request.user == confronto.jogador1 and not partida_penalti.draft_j1:
+                partida_penalti.draft_j1 = draft
+                if partida_penalti.draft_j2: # Se o J2 já estava lá esperando
+                    partida_penalti.fase = '5_cobrancas'
+                    partida_penalti.turno_batedor = partida_penalti.jogador1
+                partida_penalti.save()
+                
+            return redirect('minijogo:tela_jogo', partida_id=partida_penalti.id)
+
+    # ========================================================
+    # ROTA 2: A CHAVE É UM DUELO NORMAL DE CARTAS (Elenco/Traj)
+    # ========================================================
     else:
-        partida = confronto.partida_vinculada
-        
-        # Se a partida está aguardando e quem clicou FOI O ADVERSÁRIO (O segundo a chegar)
-        if partida.status == 'aguardando' and request.user != partida.jogador_criador:
-            # Apita o árbitro! O segundo chegou, a bola rola agora.
-            partida.status = 'andamento'
-            partida.turno_iniciado_em = timezone.now()
-            partida.save()
-            return redirect('duelos:tela_jogo', partida_id=partida.id)
-            
-        # Se a partida está aguardando mas quem clicou foi o mesmo cara que criou (voltou na tela)
-        elif partida.status == 'aguardando' and request.user == partida.jogador_criador:
+        if not confronto.partida_vinculada:
+            if not confronto.desafio_sorteado:
+                # Fallback de segurança se falhou no sorteio
+                confronto.desafio_sorteado = CategoriaDesafio.objects.first()
+                confronto.save()
+
+            partida = PartidaDuelo.objects.create(
+                categoria=confronto.desafio_sorteado,
+                jogador_criador=j_criador,
+                jogador_convidado=j_convidado,
+                turno_de=confronto.jogador1,
+                status='aguardando'
+            )
+            confronto.partida_vinculada = partida
+            confronto.status = 'andamento'
+            confronto.save()
             return redirect('duelos:lobby_espera', partida_id=partida.id)
             
-        # Se a partida já está em andamento ou finalizada
         else:
-            return redirect('duelos:tela_jogo', partida_id=partida.id)
+            partida = confronto.partida_vinculada
+            if partida.status == 'aguardando' and request.user != partida.jogador_criador:
+                partida.status = 'andamento'
+                partida.turno_iniciado_em = timezone.now()
+                partida.save()
+                return redirect('duelos:tela_jogo', partida_id=partida.id)
+            elif partida.status == 'aguardando' and request.user == partida.jogador_criador:
+                return redirect('duelos:lobby_espera', partida_id=partida.id)
+            else:
+                return redirect('duelos:tela_jogo', partida_id=partida.id)
 
 # ------------------- LÓGICA DE RESETAR O CAMPEONATO -------------------
 @login_required

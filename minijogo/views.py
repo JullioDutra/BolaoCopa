@@ -228,14 +228,13 @@ def api_desistir(request):
         else:
             vencedor = partida.jogador1
             
-        # Aplica regras de fim de jogo
-        partida.fase = 'finalizado'
-        partida.vencedor = vencedor
+        
+        from .engine import encerrar_partida
+        encerrar_partida(partida, vencedor)
         partida.save()
         
         return JsonResponse({'sucesso': True})
     return JsonResponse({'sucesso': False})
-
 
 
 # ==========================================

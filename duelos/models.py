@@ -106,6 +106,9 @@ class Campeonato(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='inscricoes')
     codigo_convite = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     criado_em = models.DateTimeField(auto_now_add=True)
+    permite_elencos = models.BooleanField(default=True)
+    permite_trajetoria = models.BooleanField(default=True)
+    permite_penaltis = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.nome} - {self.get_status_display()}"

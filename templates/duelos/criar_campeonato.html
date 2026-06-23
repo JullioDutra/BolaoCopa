@@ -14,6 +14,11 @@
     .form-select.input-torneio:focus {
         border-left: 1px solid #ffc107 !important;
     }
+    
+    /* Customização dos Switches para bater com as cores dos jogos */
+    .switch-elencos:checked { background-color: #198754 !important; border-color: #198754 !important; }
+    .switch-trajetoria:checked { background-color: #0d6efd !important; border-color: #0d6efd !important; }
+    .switch-penaltis:checked { background-color: #ffc107 !important; border-color: #ffc107 !important; }
 </style>
 
 <div class="row justify-content-center align-items-center min-vh-75 mt-4 mb-5 px-2">
@@ -39,7 +44,7 @@
                     </div>
                 </div>
                 
-                <div class="mb-5">
+                <div class="mb-4">
                     <label class="fw-bold text-secondary small text-uppercase mb-2" style="letter-spacing: 0.5px;">Prazo de Inscrição</label>
                     <div class="input-group input-group-lg shadow-sm rounded-3">
                         <span class="input-group-text bg-light border-end-0 text-warning"><i class="fa-regular fa-clock"></i></span>
@@ -51,6 +56,38 @@
                     </div>
                     <small class="text-muted mt-2 d-block px-1">
                         <i class="fa-solid fa-circle-info text-warning"></i> Após o prazo, o chaveamento será gerado automaticamente com os inscritos.
+                    </small>
+                </div>
+
+                <!-- 💥 NOVA SEÇÃO: SELEÇÃO DOS MODOS DE JOGO -->
+                <div class="mb-5">
+                    <label class="fw-bold text-secondary small text-uppercase mb-2" style="letter-spacing: 0.5px;">Modos de Jogo do Torneio</label>
+                    <div class="card bg-light border-0 shadow-sm rounded-3 p-3">
+                        
+                        <div class="form-check form-switch fs-6 mb-3">
+                            <input class="form-check-input switch-elencos" type="checkbox" name="permite_elencos" id="permiteElencos" checked>
+                            <label class="form-check-label fw-bold ms-1 text-dark" for="permiteElencos">
+                                <i class="fa-solid fa-clipboard-list text-success"></i> Prancheta do Professor
+                            </label>
+                        </div>
+                        
+                        <div class="form-check form-switch fs-6 mb-3">
+                            <input class="form-check-input switch-trajetoria" type="checkbox" name="permite_trajetoria" id="permiteTrajetoria" checked>
+                            <label class="form-check-label fw-bold ms-1 text-dark" for="permiteTrajetoria">
+                                <i class="fa-solid fa-shoe-prints text-primary"></i> Carreira Misteriosa
+                            </label>
+                        </div>
+                        
+                        <div class="form-check form-switch fs-6">
+                            <input class="form-check-input switch-penaltis" type="checkbox" name="permite_penaltis" id="permitePenaltis" checked>
+                            <label class="form-check-label fw-bold ms-1 text-dark" for="permitePenaltis">
+                                <i class="fa-solid fa-futbol text-warning"></i> Draft X1 Pênaltis
+                            </label>
+                        </div>
+
+                    </div>
+                    <small class="text-muted mt-2 d-block px-1">
+                        <i class="fa-solid fa-shuffle text-warning"></i> O sistema sorteará um dos modos selecionados para cada chave.
                     </small>
                 </div>
                 

@@ -1,7 +1,5 @@
-<!-- Componente: bracket_card.html -->
 <div class="match-card">
     
-    <!-- Aviso do Modo de Jogo (Opcional, mas legal para o jogador saber se é Duelo ou Pênalti) -->
     <div class="text-center text-white-50" style="font-size: 0.65rem; padding: 2px 0; background: #111; border-bottom: 1px solid #333;">
         {% if confronto.tipo_jogo == 'penaltis' %}
             <i class="fa-solid fa-futbol text-warning"></i> Pênaltis
@@ -10,11 +8,10 @@
         {% endif %}
     </div>
 
-    <!-- Jogador 1 -->
     <div class="match-player {% if confronto.vencedor == confronto.jogador1 %}winner{% elif confronto.vencedor %}loser{% endif %}">
         <span class="player-name">
             {% if confronto.jogador1 %}
-                {{ confronto.jogador1.username }}
+                {{ confronto.jogador1.first_name|default:"Jogador" }}
             {% else %}
                 <span class="tbd">A definir</span>
             {% endif %}
@@ -22,11 +19,10 @@
         {% if confronto.vencedor == confronto.jogador1 %}<i class="fa-solid fa-check"></i>{% endif %}
     </div>
     
-    <!-- Jogador 2 -->
     <div class="match-player {% if confronto.vencedor == confronto.jogador2 %}winner{% elif confronto.vencedor %}loser{% endif %}">
         <span class="player-name">
             {% if confronto.jogador2 %}
-                {{ confronto.jogador2.username }}
+                {{ confronto.jogador2.first_name|default:"Jogador" }}
             {% else %}
                 <span class="tbd">A definir</span>
             {% endif %}
@@ -34,7 +30,6 @@
         {% if confronto.vencedor == confronto.jogador2 %}<i class="fa-solid fa-check"></i>{% endif %}
     </div>
 
-    <!-- Ações (Ficam Ocultas na hora da Foto pela classe 'capture-hide') -->
     {% if confronto.jogador1 and confronto.jogador2 and confronto.status != 'finalizado' %}
         {% if request.user == confronto.jogador1 or request.user == confronto.jogador2 %}
             <a href="{% url 'duelos:iniciar_jogo_campeonato' confronto.id %}" class="btn-play-card capture-hide">

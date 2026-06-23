@@ -3,6 +3,9 @@
 {% block title %}Árvore do Torneio: {{ campeonato.nome }} - Cartolândia{% endblock %}
 
 {% block content %}
+<!-- Biblioteca para tirar a foto da tabela -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
 <style>
     /* ========================================== */
     /* ESTILOS PREMIUM DO CHAVEAMENTO DA COPA     */
@@ -16,6 +19,18 @@
         position: relative;
     }
 
+    /* Marca d'água de fundo para a foto exportada */
+    .watermark {
+        position: absolute;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 15rem;
+        opacity: 0.03;
+        color: #cfb53b;
+        pointer-events: none;
+        z-index: 0;
+    }
+
     .bracket-container {
         display: flex;
         flex-direction: row;
@@ -26,6 +41,8 @@
         min-height: 550px;
         scroll-behavior: smooth;
         -webkit-overflow-scrolling: touch;
+        position: relative;
+        z-index: 1;
     }
 
     /* Scrollbar Customizada (Estilo App) */
@@ -74,7 +91,7 @@
         to { box-shadow: 0 0 30px rgba(207, 181, 59, 0.6); transform: scale(1.02); }
     }
 
-    /* Sobrescrita de estilos para o include do match_card manter o Dark Mode impecável */
+    /* Sobrescrita de estilos para o include do bracket_card manter o Dark Mode impecável */
     .matchup, .match-card {
         background: #151515 !important;
         border: 1px solid #333 !important;
@@ -112,6 +129,15 @@
         text-decoration: line-through; 
         border-left: 4px solid transparent !important;
     }
+    .tbd { color: #555; font-style: italic; }
+
+    /* Botão de Jogar do Card */
+    .btn-play-card {
+        display: block; width: 100%; text-align: center; background: #cfb53b; color: #000;
+        font-size: 0.75rem; font-weight: bold; padding: 6px 0; text-transform: uppercase;
+        text-decoration: none; transition: 0.2s;
+    }
+    .btn-play-card:hover { background: #e6c841; color: #000; }
 
     /* Swipe Mobile */
     .swipe-indicator { display: none; animation: swipeAnim 2s infinite; }
@@ -144,10 +170,14 @@
         <!-- Botões de Ação -->
         <div class="d-flex flex-wrap justify-content-center gap-2 mt-3">
             <a href="{% url 'duelos:listar_desafios' %}" class="btn btn-outline-secondary fw-bold rounded-pill px-4 shadow-sm">
-                <i class="fa-solid fa-arrow-left me-1"></i> Voltar à Arena
+                <i class="fa-solid fa-arrow-left me-1"></i> Voltar
             </a>
             
-            <!-- Botão oculto para o Admin voltar e poder resetar caso esteja em andamento -->
+            <!-- 💥 BOTÃO DE COMPARTILHAR ADICIONADO AQUI -->
+            <button onclick="baixarChaveamento(event)" class="btn btn-primary fw-bold rounded-pill px-4 shadow-sm">
+                <i class="fa-solid fa-camera-retro me-1"></i> Compartilhar Tabela
+            </button>
+            
             {% if campeonato.admin == request.user and campeonato.status == 'andamento' %}
                 <a href="{% url 'duelos:painel_campeonato' campeonato.id %}" class="btn btn-danger fw-bold rounded-pill px-4 shadow-sm">
                     <i class="fa-solid fa-desktop me-1"></i> Painel VAR
@@ -164,7 +194,10 @@
 
 <div class="row px-2 mb-5">
     <div class="col-12">
-        <div class="bracket-wrapper">
+        <!-- 💥 ID ADICIONADO AQUI PARA A FOTO -->
+        <div class="bracket-wrapper" id="area-chaveamento">
+            <i class="fa-solid fa-trophy watermark"></i>
+            
             <div class="bracket-container">
                 
                 <!-- COLUNA: OITAVAS DE FINAL -->
@@ -176,7 +209,8 @@
                         </span>
                     </div>
                     {% for confronto in fases.oitavas %}
-                        {% include 'duelos/includes/match_card.html' with confronto=confronto %}
+                        <!-- Chama o novo nome -->
+                        {% include 'duelos/includes/bracket_card.html' with confronto=confronto %}
                     {% endfor %}
                 </div>
                 {% endif %}
@@ -190,7 +224,7 @@
                         </span>
                     </div>
                     {% for confronto in fases.quartas %}
-                        {% include 'duelos/includes/match_card.html' with confronto=confronto %}
+                        {% include 'duelos/includes/bracket_card.html' with confronto=confronto %}
                     {% endfor %}
                 </div>
                 {% endif %}
@@ -204,7 +238,7 @@
                         </span>
                     </div>
                     {% for confronto in fases.semi %}
-                        {% include 'duelos/includes/match_card.html' with confronto=confronto %}
+                        {% include 'duelos/includes/bracket_card.html' with confronto=confronto %}
                     {% endfor %}
                 </div>
                 {% endif %}
@@ -218,7 +252,7 @@
                         </span>
                     </div>
                     {% for confronto in fases.final %}
-                        {% include 'duelos/includes/match_card.html' with confronto=confronto %}
+                        {% include 'duelos/includes/bracket_card.html' with confronto=confronto %}
                     {% endfor %}
                     
                     <!-- Troféu do Campeão -->
@@ -243,4 +277,48 @@
         </div>
     </div>
 </div>
+
+<!-- Lógica de Exportação do Chaveamento -->
+<script>
+function baixarChaveamento(event) {
+    const btn = event.currentTarget;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Gerando...';
+    btn.disabled = true;
+
+    // Esconde os botões "JOGAR" para a foto ficar limpa
+    const botoesJogar = document.querySelectorAll('.capture-hide');
+    botoesJogar.forEach(b => b.style.display = 'none');
+
+    const area = document.getElementById('area-chaveamento');
+
+    // Tira a foto
+    html2canvas(area, {
+        backgroundColor: '#0a1f0d', // Fundo que combina com o seu dark mode
+        scale: 2
+    }).then(canvas => {
+        // Devolve os botões
+        botoesJogar.forEach(b => b.style.display = 'block');
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+
+        canvas.toBlob(blob => {
+            const file = new File([blob], 'chaveamento_{{ campeonato.nome|slugify }}.png', { type: 'image/png' });
+
+            if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                navigator.share({
+                    title: 'Chaveamento - {{ campeonato.nome }}',
+                    text: 'Confira a tabela do torneio!',
+                    files: [file]
+                }).catch(err => console.log("Compartilhamento cancelado.", err));
+            } else {
+                const link = document.createElement('a');
+                link.download = 'chaveamento_{{ campeonato.nome|slugify }}.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            }
+        });
+    });
+}
+</script>
 {% endblock %}

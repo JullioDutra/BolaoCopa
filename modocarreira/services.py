@@ -551,3 +551,60 @@ def executar_virada_de_temporada():
     config.fase_mercado_aberto = True 
     config.save()
     return True
+
+def processar_substituicoes(partida):
+    """
+    Motor do 2º Tempo: Substitui Bots e Titulares cansados por Humanos do Banco.
+    Executado aos 60 e 75 minutos.
+    """
+    from .models import EscalacaoPosicao, Avatar
+    
+    houve_sub = False
+    for clube in [partida.clube_casa, partida.clube_fora]:
+        # 1. Quem são os Humanos que estão atualmente em campo?
+        titulares_ids = EscalacaoPosicao.objects.filter(
+            clube=clube, jogador_titular__isnull=False
+        ).values_list('jogador_titular_id', flat=True)
+        
+        # 2. Quem são os Humanos que estão no Banco (Saudáveis)?
+        reservas = list(Avatar.objects.filter(
+            clube_atual=clube, lesionado_rodadas_restantes=0
+        ).exclude(id__in=titulares_ids))
+        
+        if not reservas:
+            continue # Não há jogadores humanos no banco para entrar
+            
+        # Ordena o banco do melhor para o pior (OVR)
+        reservas.sort(key=lambda x: x.ovr_calculado, reverse=True)
+        
+        # 3. Quem deve sair? (Alvos)
+        # Prioridade 1: Tirar os Bots (para dar espaço aos jogadores reais)
+        alvos_bots = list(EscalacaoPosicao.objects.filter(clube=clube, jogador_titular__isnull=True))
+        
+        # Prioridade 2: Tirar Titulares Humanos Cansados (Físico menor que 50)
+        alvos_cansados = list(EscalacaoPosicao.objects.filter(
+            clube=clube, jogador_titular__fisico__lt=50
+        ).order_by('jogador_titular__fisico'))
+        
+        alvos_substituicao = alvos_bots + alvos_cansados
+        
+        # 4. Fazer a troca na Prancheta (Máximo de 2 substituições por minuto de pausa)
+        subs_feitas = 0
+        while reservas and alvos_substituicao and subs_feitas < 2:
+            reserva = reservas.pop(0)
+            alvo = alvos_substituicao.pop(0)
+            
+            nome_saindo = alvo.jogador_titular.nome_camisa if alvo.jogador_titular else alvo.bot_nome
+            
+            # Atualiza a posição no campo com o novo jogador
+            alvo.jogador_titular = reserva
+            alvo.bot_nome = "" # Apaga o nome do bot, caso fosse um bot
+            alvo.save()
+            
+            partida.adicionar_log(f"🔄 ALTERAÇÃO NO {clube.sigla}: Sai {nome_saindo}, entra {reserva.nome_camisa} com gás total!", destaque=False)
+            
+            houve_sub = True
+            subs_feitas += 1
+            
+    if houve_sub:
+        partida.save()

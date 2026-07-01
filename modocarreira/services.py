@@ -280,6 +280,7 @@ def processar_tique_partida(partida):
     if partida.status == 'finalizada': return
     agora = timezone.now()
 
+    # REGRA 1: TRATAR AFK
     if partida.jogador_esperado and partida.vencimento_lance:
         if agora > partida.vencimento_lance:
             partida.adicionar_log(f"{partida.jogador_esperado.nome_camisa} demorou muito para agir e perdeu a posse de bola!", destaque=True)
@@ -290,13 +291,20 @@ def processar_tique_partida(partida):
         else:
             return
 
+    # REGRA 2: AVANÇAR O RELÓGIO E SUBSTITUIÇÕES
     partida.minuto_atual += 5
+    
+    # === NOVO: CHAMA O TREINADOR NO 2º TEMPO ===
+    if partida.minuto_atual == 60 or partida.minuto_atual == 75:
+        processar_substituicoes(partida)
+        
     if partida.minuto_atual > 90:
         partida.status = 'finalizada'
         partida.adicionar_log("FIM DE JOGO! O árbitro aponta para o centro do campo.", destaque=True)
         partida.save()
         return
 
+    # REGRA 3: GERADOR DE LANCES CHAVE
     if random.randint(1, 100) <= 20:
         gerar_lance_chave(partida)
     else:

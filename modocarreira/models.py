@@ -180,6 +180,8 @@ class PartidaMundo(models.Model):
     jogador_esperado = models.ForeignKey(Avatar, on_delete=models.SET_NULL, null=True, blank=True, related_name='lances_pendentes')
     opcoes_lance = models.JSONField(null=True, blank=True)
     vencimento_lance = models.DateTimeField(null=True, blank=True)
+    # Dentro da classe PartidaMundo:
+    frases_narracao_ia = models.JSONField(default=list, blank=True)
 
     def adicionar_log(self, texto, destaque=False):
         """ Adiciona uma linha de texto à narração da partida """
@@ -262,3 +264,12 @@ class RegistroHistoricoCampeao(models.Model):
 
     def __str__(self):
         return f"Histórico {self.campeonato_nome} - Temporada {self.temporada}"
+
+class NoticiaJornal(models.Model):
+    temporada = models.IntegerField(default=1)
+    manchete = models.CharField(max_length=200)
+    corpo_texto = models.TextField()
+    data_publicacao = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.manchete

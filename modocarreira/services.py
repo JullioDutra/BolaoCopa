@@ -493,3 +493,66 @@ def resolver_acao_jogador(partida, avatar, escolha):
     partida.opcoes_lance = None
     partida.vencimento_lance = None
     partida.save()
+
+
+def encerrar_partida_e_processar_stats(partida):
+    from .models import EscalacaoPosicao
+    
+    titulares = EscalacaoPosicao.objects.filter(
+        clube__in=[partida.clube_casa, partida.clube_fora],
+        jogador_titular__isnull=False
+    )
+
+    vencedor = None
+    if partida.gols_casa > partida.gols_fora: vencedor = partida.clube_casa
+    elif partida.gols_fora > partida.gols_casa: vencedor = partida.clube_fora
+
+    for escalacao in titulares:
+        avatar = escalacao.jogador_titular
+        
+        # 1. CUSTO FÍSICO E LESÕES 
+        avatar.fisico = max(avatar.fisico - 15, 1) 
+        if avatar.fisico < 45:
+            chance_lesao = (45 - avatar.fisico) 
+            if random.randint(1, 100) <= chance_lesao:
+                avatar.lesionado_rodadas_restantes = random.randint(1, 3) 
+        
+        # 2. CÁLCULO DA NOTA (Rating)
+        nota = round(random.uniform(5.5, 7.5), 1)
+        if avatar.clube_atual == vencedor:
+            nota += round(random.uniform(1.0, 2.0), 1) 
+            
+        # 3. SETA DE MOMENTO E XP
+        if nota >= 8.0:
+            avatar.seta_momento = 2 
+            avatar.xp_disponivel += 50
+        elif nota < 6.0:
+            avatar.seta_momento = -2
+            avatar.xp_disponivel += 10
+        else:
+            avatar.seta_momento = 0 
+            avatar.xp_disponivel += 25
+            
+        # 4. A QUEBRA DO TETO (Milagre)
+        if avatar.ovr_calculado >= avatar.teto_potencial_oculto and nota >= 8.5:
+            avatar.teto_potencial_oculto += 2 
+            
+        # ==========================================
+        # 5. ECONOMIA: O PAGAMENTO (NOVO)
+        # ==========================================
+        # Utiliza 'salario_semanal' ou o nome exato que está no seu model Avatar
+        salario = getattr(avatar, 'salario_semanal', 1000) 
+        
+        # Lógica preparada para futuros patrocínios (pode expandir isto depois)
+        renda_extra_patrocinios = 0 
+        
+        # Bónus de Vitória (Bicho)
+        bicho = 0
+        if avatar.clube_atual == vencedor:
+            bicho = int(salario * 0.20) # Recebe +20% do salário se ganhar o jogo
+            
+        # O dinheiro entra na conta do jogador
+        avatar.saldo_bancario += (salario + renda_extra_patrocinios + bicho)
+
+        # Finalmente, guarda tudo na base de dados
+        avatar.save()

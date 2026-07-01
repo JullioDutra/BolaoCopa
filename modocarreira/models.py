@@ -93,6 +93,8 @@ class Avatar(models.Model):
     arquetipo = models.CharField(max_length=20, choices=ARQUETIPOS)
     posicao_preferida = models.CharField(max_length=2, choices=POSICOES_TATICAS)
     clube_atual = models.ForeignKey(Clube, on_delete=models.SET_NULL, null=True, blank=True, related_name='elenco_jogadores')
+    # Dentro da classe Avatar, por baixo do lesionado_rodadas_restantes:
+    descricao_lesao = models.CharField(max_length=255, null=True, blank=True)
     
     # Controle de Evolução (Teto Dinâmico)
     temporada_nascimento = models.IntegerField()

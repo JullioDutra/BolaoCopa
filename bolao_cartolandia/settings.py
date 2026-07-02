@@ -12,10 +12,13 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 from pathlib import Path
 import os
+from dotenv import load_dotenv # <-- ADICIONADO PARA LER O .ENV
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Carrega as variáveis de ambiente do ficheiro .env
+load_dotenv()
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
@@ -51,7 +54,8 @@ INSTALLED_APPS = [
     'pagamentos',
     'duelos',
     'draft',
-    'minijogo'
+    'minijogo',
+    'modocarreira', # <-- ADICIONADO O NOVO APP AQUI!
 ]
 
 MIDDLEWARE = [
@@ -207,6 +211,13 @@ JAZZMIN_UI_TWEAKS = {
     "sidebar_nav_legacy_style": False,
     "sidebar_nav_flat_style": False,
 }
+
+# ==========================================
+# CONFIGURAÇÕES DE API E CRON (CARREIRA)
+# ==========================================
+
+# Chave da API do Google Gemini (Lida do .env de forma segura)
+GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
 
 # Chave secreta para o Cronjob externo bater no servidor
 CRON_SECRET_TOKEN = os.environ.get('CRON_SECRET_TOKEN', '3yrktOdann3sqSCRUoVqzCnBZER3zMo5AHHOLi')

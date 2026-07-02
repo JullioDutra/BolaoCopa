@@ -7,7 +7,7 @@ from django.utils import timezone
 from django.conf import settings
 import google.generativeai as genai
 
-# Importação dos modelos (Certifique-se de que todos estes existem no seu models.py)
+# Importação dos modelos
 from .models import (
     Avatar, Clube, ServidorConfig, PartidaMundo, EscalacaoPosicao, 
     ConflitoVestiario, Campeonato, PropostaJanela, RegistroHistoricoCampeao, 
@@ -55,7 +55,7 @@ def gerar_dilema_ia(avatar):
         modelo = obter_modelo_gemini(formato_json=True)
         resposta = modelo.generate_content(prompt)
         return json.loads(resposta.text)
-    except Exception as e:
+    except Exception:
         return {
             "titulo": "Fofoca de Corredor",
             "descricao": f"Vazou um boato de que {avatar.nome_camisa} está forçando uma saída do {clube_nome}. A torcida está cobrando explicações.",
@@ -163,13 +163,15 @@ def criar_avatar_peneira(usuario, nome_camisa, arquetipo):
         usuario=usuario,
         nome_camisa=nome_camisa,
         arquetipo=arquetipo,
+        posicao_preferida='CM', # Adiciona um default ou derive do arquétipo depois
         clube_atual=clube_sorteado,
         temporada_nascimento=temporada,
         teto_potencial_oculto=teto,
         fisico=dna['fisico'],
         tecnica=dna['tecnica'],
         inteligencia=dna['inteligencia'],
-        media_fama=dna['midia']
+        media_fama=dna['midia'],
+        pontos_acao_diarios=1
     )
     return avatar
 
@@ -182,7 +184,7 @@ def checar_gatilho_dilema():
     return random.randint(1, 100) <= 30
 
 def processar_treino(avatar, tipo_treino):
-    if avatar.pontos_acao_diarios <= 0:
+    if getattr(avatar, 'pontos_acao_diarios', 0) <= 0:
         raise ValueError("Você não tem Pontos de Ação (Energia) suficientes hoje.")
 
     avatar.pontos_acao_diarios -= 1
@@ -276,11 +278,54 @@ def escalar_time_titular(clube):
     EscalacaoPosicao.objects.bulk_create(escalacao_salvar)
     return True
 
+def processar_substituicoes(partida):
+    """
+    Motor do 2º Tempo: Substitui Bots e Titulares cansados por Humanos do Banco.
+    Executado aos 60 e 75 minutos.
+    """
+    houve_sub = False
+    for clube in [partida.clube_casa, partida.clube_fora]:
+        titulares_ids = EscalacaoPosicao.objects.filter(
+            clube=clube, jogador_titular__isnull=False
+        ).values_list('jogador_titular_id', flat=True)
+        
+        reservas = list(Avatar.objects.filter(
+            clube_atual=clube, lesionado_rodadas_restantes=0
+        ).exclude(id__in=titulares_ids))
+        
+        if not reservas:
+            continue
+            
+        reservas.sort(key=lambda x: x.ovr_calculado, reverse=True)
+        
+        alvos_bots = list(EscalacaoPosicao.objects.filter(clube=clube, jogador_titular__isnull=True))
+        alvos_cansados = list(EscalacaoPosicao.objects.filter(
+            clube=clube, jogador_titular__fisico__lt=50
+        ).order_by('jogador_titular__fisico'))
+        
+        alvos_substituicao = alvos_bots + alvos_cansados
+        subs_feitas = 0
+        
+        while reservas and alvos_substituicao and subs_feitas < 2:
+            reserva = reservas.pop(0)
+            alvo = alvos_substituicao.pop(0)
+            nome_saindo = alvo.jogador_titular.nome_camisa if alvo.jogador_titular else alvo.bot_nome
+            
+            alvo.jogador_titular = reserva
+            alvo.bot_nome = ""
+            alvo.save()
+            
+            partida.adicionar_log(f"🔄 ALTERAÇÃO NO {clube.sigla}: Sai {nome_saindo}, entra {reserva.nome_camisa} com gás total!", destaque=False)
+            houve_sub = True
+            subs_feitas += 1
+            
+    if houve_sub:
+        partida.save()
+
 def processar_tique_partida(partida):
     if partida.status == 'finalizada': return
     agora = timezone.now()
 
-    # REGRA 1: TRATAR AFK
     if partida.jogador_esperado and partida.vencimento_lance:
         if agora > partida.vencimento_lance:
             partida.adicionar_log(f"{partida.jogador_esperado.nome_camisa} demorou muito para agir e perdeu a posse de bola!", destaque=True)
@@ -291,10 +336,8 @@ def processar_tique_partida(partida):
         else:
             return
 
-    # REGRA 2: AVANÇAR O RELÓGIO E SUBSTITUIÇÕES
     partida.minuto_atual += 5
     
-    # === NOVO: CHAMA O TREINADOR NO 2º TEMPO ===
     if partida.minuto_atual == 60 or partida.minuto_atual == 75:
         processar_substituicoes(partida)
         
@@ -304,11 +347,9 @@ def processar_tique_partida(partida):
         partida.save()
         return
 
-    # REGRA 3: GERADOR DE LANCES CHAVE
     if random.randint(1, 100) <= 20:
         gerar_lance_chave(partida)
     else:
-        # Puxa frase da IA gerada no apito inicial (fallback caso esteja vazio)
         frases = partida.frases_narracao_ia if partida.frases_narracao_ia else ["Bola rolando no meio campo..."]
         partida.adicionar_log(random.choice(frases))
         partida.save()
@@ -369,7 +410,7 @@ def encerrar_partida_e_processar_stats(partida):
     for escalacao in titulares:
         avatar = escalacao.jogador_titular
         
-        # 1. CUSTO FÍSICO E LESÕES (Com IA)
+        # 1. CUSTO FÍSICO E LESÕES 
         avatar.fisico = max(avatar.fisico - 15, 1) 
         if avatar.fisico < 45:
             chance_lesao = (45 - avatar.fisico) 
@@ -399,15 +440,14 @@ def encerrar_partida_e_processar_stats(partida):
         if avatar.ovr_calculado >= avatar.teto_potencial_oculto and nota >= 8.5:
             avatar.teto_potencial_oculto += 2 
             
-        # 5. ECONOMIA: O PAGAMENTO (Salários e Patrocínios)
-        salario = getattr(avatar, 'salario_semanal', 1000) 
+        # 5. ECONOMIA: O PAGAMENTO CORRIGIDO
+        salario = getattr(avatar, 'salario_rodada', 1000) 
         renda_extra_patrocinios = 0 
         bicho = int(salario * 0.20) if avatar.clube_atual == vencedor else 0
         avatar.saldo_bancario += (salario + renda_extra_patrocinios + bicho)
 
         avatar.save()
         
-    # Gera conflitos pós-jogo se houver base para isso
     gerar_treta_pos_jogo(partida)
 
 # ==========================================
@@ -415,8 +455,12 @@ def encerrar_partida_e_processar_stats(partida):
 # ==========================================
 
 def gerar_treta_pos_jogo(partida):
-    humanos_casa = list(Avatar.objects.filter(clube_atual=partida.clube_casa, vaga_titular__isnull=False))
-    humanos_fora = list(Avatar.objects.filter(clube_atual=partida.clube_fora, vaga_titular__isnull=False))
+    """ Versão Blindada: Busca os IDs para evitar problemas de reverse lookup """
+    titulares_casa_ids = EscalacaoPosicao.objects.filter(clube=partida.clube_casa, jogador_titular__isnull=False).values_list('jogador_titular_id', flat=True)
+    titulares_fora_ids = EscalacaoPosicao.objects.filter(clube=partida.clube_fora, jogador_titular__isnull=False).values_list('jogador_titular_id', flat=True)
+    
+    humanos_casa = list(Avatar.objects.filter(id__in=titulares_casa_ids))
+    humanos_fora = list(Avatar.objects.filter(id__in=titulares_fora_ids))
     
     times_tropecaram = []
     if partida.gols_casa < partida.gols_fora: times_tropecaram.append(humanos_casa)
@@ -437,7 +481,7 @@ def gerar_treta_pos_jogo(partida):
 
 def fazer_as_pazes(avatar, conflito_id):
     conflito = ConflitoVestiario.objects.get(id=conflito_id)
-    if avatar.pontos_acao_diarios <= 0:
+    if getattr(avatar, 'pontos_acao_diarios', 0) <= 0:
         raise ValueError("Você não tem Energia (AP) suficiente.")
         
     avatar.pontos_acao_diarios -= 1
@@ -482,7 +526,7 @@ def processar_resposta_proposta(proposta_id, avatar, acao):
     if acao == 'aceitar':
         proposta.status = 'concluida'
         avatar.clube_atual = proposta.clube_comprador
-        avatar.salario_semanal = proposta.salario_proposto
+        avatar.salario_rodada = proposta.salario_proposto # CORRIGIDO AQUI
         avatar.moral = 100 
         avatar.save()
         PropostaJanela.objects.filter(avatar=avatar, status='analise').exclude(id=proposta_id).update(status='vetada_jogador')
@@ -559,60 +603,3 @@ def executar_virada_de_temporada():
     config.fase_mercado_aberto = True 
     config.save()
     return True
-
-def processar_substituicoes(partida):
-    """
-    Motor do 2º Tempo: Substitui Bots e Titulares cansados por Humanos do Banco.
-    Executado aos 60 e 75 minutos.
-    """
-    from .models import EscalacaoPosicao, Avatar
-    
-    houve_sub = False
-    for clube in [partida.clube_casa, partida.clube_fora]:
-        # 1. Quem são os Humanos que estão atualmente em campo?
-        titulares_ids = EscalacaoPosicao.objects.filter(
-            clube=clube, jogador_titular__isnull=False
-        ).values_list('jogador_titular_id', flat=True)
-        
-        # 2. Quem são os Humanos que estão no Banco (Saudáveis)?
-        reservas = list(Avatar.objects.filter(
-            clube_atual=clube, lesionado_rodadas_restantes=0
-        ).exclude(id__in=titulares_ids))
-        
-        if not reservas:
-            continue # Não há jogadores humanos no banco para entrar
-            
-        # Ordena o banco do melhor para o pior (OVR)
-        reservas.sort(key=lambda x: x.ovr_calculado, reverse=True)
-        
-        # 3. Quem deve sair? (Alvos)
-        # Prioridade 1: Tirar os Bots (para dar espaço aos jogadores reais)
-        alvos_bots = list(EscalacaoPosicao.objects.filter(clube=clube, jogador_titular__isnull=True))
-        
-        # Prioridade 2: Tirar Titulares Humanos Cansados (Físico menor que 50)
-        alvos_cansados = list(EscalacaoPosicao.objects.filter(
-            clube=clube, jogador_titular__fisico__lt=50
-        ).order_by('jogador_titular__fisico'))
-        
-        alvos_substituicao = alvos_bots + alvos_cansados
-        
-        # 4. Fazer a troca na Prancheta (Máximo de 2 substituições por minuto de pausa)
-        subs_feitas = 0
-        while reservas and alvos_substituicao and subs_feitas < 2:
-            reserva = reservas.pop(0)
-            alvo = alvos_substituicao.pop(0)
-            
-            nome_saindo = alvo.jogador_titular.nome_camisa if alvo.jogador_titular else alvo.bot_nome
-            
-            # Atualiza a posição no campo com o novo jogador
-            alvo.jogador_titular = reserva
-            alvo.bot_nome = "" # Apaga o nome do bot, caso fosse um bot
-            alvo.save()
-            
-            partida.adicionar_log(f"🔄 ALTERAÇÃO NO {clube.sigla}: Sai {nome_saindo}, entra {reserva.nome_camisa} com gás total!", destaque=False)
-            
-            houve_sub = True
-            subs_feitas += 1
-            
-    if houve_sub:
-        partida.save()

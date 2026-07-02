@@ -29,14 +29,14 @@ urlpatterns = [
          name='password_reset_complete'),
     
     # Rotas dos seus aplicativos usando include
-    path('bolao/', include('bolao.urls')), # <--- ATUALIZE ESTA LINHA
+    path('bolao/', include('bolao.urls')), 
     path('convocacao/', include('convocacao.urls')),
     path('palpites/', include('palpites.urls')),
     path('minijogo/', include('minijogo.urls')),
     path('pagamentos/', include('pagamentos.urls')),
     path('duelos/', include('duelos.urls')),
     path('favicon.ico', RedirectView.as_view(url='/static/media/logo.png', permanent=True)),
-    path('carreira/', include('modocarreira.urls'))
+    path('carreira/', include('modocarreira.urls')),
 ]
 
 

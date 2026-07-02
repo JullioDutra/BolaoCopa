@@ -36,6 +36,7 @@ urlpatterns = [
     path('pagamentos/', include('pagamentos.urls')),
     path('duelos/', include('duelos.urls')),
     path('favicon.ico', RedirectView.as_view(url='/static/media/logo.png', permanent=True)),
+    path('carreira/', include('modocarreira.urls'))
 ]
 
 

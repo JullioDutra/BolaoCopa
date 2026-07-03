@@ -248,7 +248,7 @@
         logosDiv.innerHTML = htmlLogos;
 
         // 3. Dispara a requisição assíncrona para processamento do DNA no Servidor Django
-        fetch("{% url 'carreira:api_assinar_contrato' %}", {
+        fetch("{% url 'modocarreira:api_assinar_contrato' %}", {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

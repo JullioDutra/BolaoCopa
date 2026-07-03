@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Convocação da Seleção - Cartolândia{% endblock %}
+
+{% block content %}
+<style>
+    :root {
+        --dark-bg: #050505;
+        --gold-cbf: #cfb53b;
+        --green-cbf: #1b5e20;
+        --gold-glow: rgba(207, 181, 59, 0.3);
+    }
+
+    body { background-color: var(--dark-bg); color: #ffffff; }
+
+    .glass-card {
+        background: rgba(15, 15, 15, 0.9);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(207, 181, 59, 0.1);
+        border-radius: 14px;
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.8);
+        padding: 25px;
+    }
+
+    .cbf-header {
+        background: linear-gradient(135deg, #0d3a11 0%, #051a07 100%);
+        border: 1px solid var(--gold-cbf);
+        border-radius: 12px;
+        box-shadow: 0 0 20px var(--gold-glow);
+    }
+
+    /* CARD INDIVIDUAL DO CONVOCADO */
+    .convocado-card {
+        background: linear-gradient(135deg, #141414, #0a0a0a);
+        border: 1px solid #222;
+        border-radius: 10px;
+        transition: transform 0.2s, border-color 0.2s;
+    }
+
+    .convocado-card:hover {
+        transform: translateY(-3px);
+        border-color: var(--gold-cbf);
+        box-shadow: 0 5px 15px rgba(207, 181, 59, 0.15);
+    }
+
+    /* Destaque se o usuário logado for o convocado */
+    .is-me {
+        border: 2px solid var(--gold-cbf) !important;
+        background: linear-gradient(135deg, rgba(207, 181, 59, 0.15), #0f0f0f) !important;
+        box-shadow: 0 0 25px var(--gold-glow) !important;
+    }
+
+    .pos-indicator {
+        font-weight: 900;
+        color: var(--gold-cbf);
+        letter-spacing: 1px;
+        font-size: 0.85rem;
+    }
+
+    .ovr-badge {
+        background: #000;
+        border: 1px solid var(--gold-cbf);
+        color: var(--gold-cbf);
+        font-weight: 900;
+        border-radius: 6px;
+        padding: 4px 10px;
+        font-size: 1.1rem;
+    }
+</style>
+
+<div class="container py-4">
+    <!-- Botão Voltar -->
+    <div class="mb-3">
+        <a href="{% url 'modocarreira:dashboard' %}" class="btn btn-sm btn-outline-light rounded-pill px-3">
+            <i class="fa-solid fa-arrow-left"></i> Voltar ao Hub
+        </a>
+    </div>
+
+    <!-- Banner CBF Nacional -->
+    <div class="cbf-header p-4 p-md-5 text-center mb-5 position-relative overflow-hidden">
+        <div class="position-absolute top-50 start-50 translate-middle opacity-10" style="font-size: 12rem; color: #fff; pointer-events: none;">
+            <i class="fa-solid fa-star"></i>
+        </div>
+        <div class="position-relative z-index-1">
+            <span class="badge bg-warning text-dark text-uppercase fw-black px-3 py-1 mb-2" style="letter-spacing: 1px;">Oficial</span>
+            <h1 class="fw-black text-uppercase m-0" style="color: var(--gold-cbf); letter-spacing: 3px; font-size: 2.5rem;">Lista de Convocados</h1>
+            <p class="text-white-50 small text-uppercase m-0 mt-1" style="letter-spacing: 1px;">Os 26 escolhidos para defender a Seleção Nacional no Metaverso</p>
+        </div>
+    </div>
+
+    <!-- Status do Jogador -->
+    {% if convocado_oficial %}
+    <div class="glass-card mb-4 border-success text-center" style="background: linear-gradient(to right, rgba(76, 175, 80, 0.1), #0f0f0f);">
+        <i class="fa-solid fa-circle-check fs-1 text-success mb-2"></i>
+        <h3 class="fw-bold text-success text-uppercase">Você foi Convocado!</h3>
+        <p class="text-white-50 small m-0">Arrume as malas. Seu excelente OVR e alto índice de Mídia convenceram a comissão técnica.</p>
+    </div>
+    {% endif %}
+
+    <!-- Lista de Atletas -->
+    <div class="glass-card">
+        <div class="row g-3">
+            {% if convocados %}
+                {% for conv in convocados %}
+                <div class="col-md-6 col-xl-4">
+                    <div class="convocado-card p-3 d-flex align-items-center justify-content-between {% if conv == avatar %}is-me{% endif %}">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="text-center bg-dark rounded p-2 border border-secondary" style="min-width: 50px;">
+                                <span class="pos-indicator d-block text-uppercase">{{ conv.posicaofield|default:"JOG" }}</span>
+                            </div>
+                            <div>
+                                <h6 class="fw-bold m-0 text-uppercase text-truncate" style="max-width: 180px;">
+                                    {{ conv.nome_camisa }}
+                                    {% if conv == avatar %}
+                                        <span class="badge bg-warning text-dark ms-1" style="font-size: 0.55rem;">VOCÊ</span>
+                                    {% endif %}
+                                </h6>
+                                <small class="text-white-50 text-uppercase d-block text-truncate" style="font-size: 0.7rem; max-width: 180px;">
+                                    {{ conv.clube_atual.nome }}
+                                </small>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="ovr-badge">{{ conv.ovr_calculado }}</span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <!-- MOCK PARA DESTAQUE DE AMBIENTAÇÃO SE NÃO HOUVER CAMPOS CONFIGURADOS -->
+                <div class="text-center py-5">
+                    <i class="fa-solid fa-users-gear fs-1 text-muted mb-3"></i>
+                    <h5 class="text-white-50 text-uppercase">Nenhuma convocação ativa</h5>
+                    <p class="small text-muted">Aguardando a divulgação da lista oficial de atletas pelo treinador da Seleção.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -6,191 +6,282 @@
 {% block content %}
 <style>
     :root {
-        --dark-bg: #0a0a0a;
-        --dark-surface: #111111;
+        --dark-bg: #050505;
+        --dark-surface: #0f0f0f;
         --gold-premium: #cfb53b;
         --gold-glow: rgba(207, 181, 59, 0.4);
+        --neon-blue: #0dcaf0;
+        --neon-green: #198754;
     }
 
     body { background-color: var(--dark-bg); color: #ffffff; }
 
+    /* Efeito de Vidro Premium */
     .glass-card {
-        background: rgba(17, 17, 17, 0.9);
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        border-radius: 12px;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-        padding: 20px;
+        background: rgba(20, 20, 20, 0.7);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 16px;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+        padding: 24px;
+        position: relative;
+        overflow: hidden;
     }
 
+    /* Animações e Cards de Hub */
     .hub-card {
-        background: linear-gradient(135deg, #1a1a1a, #0d0d0d);
-        border: 1px solid #333;
-        border-radius: 12px;
-        transition: transform 0.2s, border-color 0.2s;
+        background: linear-gradient(135deg, #181818, #0a0a0a);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 14px;
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
         text-decoration: none;
         color: white;
         display: block;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .hub-card::before {
+        content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
+        background: linear-gradient(to right, transparent, rgba(255,255,255,0.05), transparent);
+        transform: skewX(-20deg); transition: 0.5s;
     }
 
     .hub-card:hover {
-        transform: translateY(-3px);
+        transform: translateY(-5px);
         border-color: var(--gold-premium);
         color: white;
-        box-shadow: 0 5px 15px rgba(207, 181, 59, 0.2);
+        box-shadow: 0 8px 25px rgba(207, 181, 59, 0.25);
     }
+    
+    .hub-card:hover::before { left: 150%; }
 
     .match-card {
-        background: linear-gradient(to right, #004d00, #0a0a0a);
+        background: linear-gradient(135deg, #002b00, #050505);
         border: 1px solid var(--gold-premium);
+        box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
     }
 
-    .stat-bar-bg { background-color: #222; border-radius: 6px; height: 10px; width: 100%; overflow: hidden; margin-top: 5px; }
-    .stat-bar-fill { height: 100%; background-color: var(--gold-premium); transition: width 0.5s ease; }
+    /* Barras de Atributos Modernas */
+    .stat-bar-bg { 
+        background-color: #1a1a1a; 
+        border-radius: 8px; 
+        height: 12px; 
+        width: 100%; 
+        overflow: hidden; 
+        margin-top: 6px;
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+    }
+    .stat-bar-fill { 
+        height: 100%; 
+        background: linear-gradient(90deg, #a68b2c, var(--gold-premium)); 
+        transition: width 0.8s cubic-bezier(0.22, 1, 0.36, 1); 
+        border-radius: 8px;
+    }
+    .stat-bar-fill.bg-info { background: linear-gradient(90deg, #087990, var(--neon-blue)) !important; }
 
+    /* Botões de Treinamento */
     .btn-treino {
-        background-color: #1a1a1a; border: 1px solid #333; color: #fff; border-radius: 8px; padding: 15px; text-align: left; transition: all 0.2s;
+        background: linear-gradient(to right, #111, #181818); 
+        border: 1px solid #333; 
+        color: #fff; 
+        border-radius: 12px; 
+        padding: 16px; 
+        text-align: left; 
+        transition: all 0.3s ease;
     }
-    .btn-treino:hover:not(:disabled) { border-color: var(--gold-premium); background-color: #222; transform: translateY(-2px); }
-    .btn-treino:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-treino:hover:not(:disabled) { 
+        border-color: var(--gold-premium); 
+        background: linear-gradient(to right, #181818, #222); 
+        transform: scale(1.02); 
+        box-shadow: 0 5px 15px rgba(207, 181, 59, 0.1);
+    }
+    .btn-treino:disabled { opacity: 0.4; filter: grayscale(100%); cursor: not-allowed; }
+
+    /* Painel do Jogador (Cartinha) */
+    .player-panel {
+        background: radial-gradient(circle at top right, rgba(207,181,59,0.15) 0%, transparent 60%);
+    }
+
+    /* Acesso Rápido */
+    .quick-access-btn {
+        border-radius: 10px;
+        font-weight: 800;
+        letter-spacing: 0.5px;
+        transition: all 0.2s;
+    }
 </style>
 
 <div class="container py-4">
+    
     <div class="row mb-4 align-items-center">
-        <div class="col-md-6">
-            <h2 class="fw-bold text-uppercase m-0" style="color: var(--gold-premium);">{{ clube.nome|default:"Sem Clube" }} <span class="badge bg-secondary ms-2">Série {{ clube.divisao }}</span></h2>
-            <p class="text-white-50 text-uppercase small m-0">Temporada Atual - Fase Regular</p>
+        <div class="col-md-6 mb-3 mb-md-0">
+            <h2 class="fw-black text-uppercase m-0" style="color: var(--gold-premium); letter-spacing: 1px;">
+                {{ clube.nome|default:"Sem Clube" }} 
+                <span class="badge bg-dark border border-secondary ms-2 align-middle" style="font-size: 0.5em; letter-spacing: 2px;">Série {{ clube.divisao }}</span>
+            </h2>
+            <p class="text-white-50 text-uppercase small m-0 mt-1" style="letter-spacing: 1px;">Temporada Atual - Fase Regular</p>
         </div>
-        <div class="col-md-6 text-md-end mt-3 mt-md-0">
-            <div class="d-inline-block glass-card py-2 px-4 text-center me-2">
-                <span class="d-block text-white-50 small text-uppercase fw-bold">Carteira</span>
-                <span class="fw-bold fs-5 text-success">$ {{ avatar.saldo_bancario }}</span>
-            </div>
-            <div class="d-inline-block glass-card py-2 px-4 text-center border-warning">
-                <span class="d-block text-white-50 small text-uppercase fw-bold">Energia (AP)</span>
-                <span class="fw-bold fs-5 text-warning" id="ap-display">{{ avatar.pontos_acao_diarios }} / 1</span>
+        <div class="col-md-6 text-md-end">
+            <div class="d-inline-flex gap-3">
+                <div class="glass-card py-2 px-4 text-center p-0 m-0" style="padding: 10px 20px !important;">
+                    <span class="d-block text-white-50 small text-uppercase fw-bold" style="font-size: 0.65rem;">Carteira</span>
+                    <span class="fw-bold fs-5 text-success">$ {{ avatar.saldo_bancario }}</span>
+                </div>
+                <div class="glass-card py-2 px-4 text-center border-warning p-0 m-0" style="padding: 10px 20px !important;">
+                    <span class="d-block text-white-50 small text-uppercase fw-bold" style="font-size: 0.65rem;">Energia (AP)</span>
+                    <span class="fw-bold fs-5 text-warning" id="ap-display">{{ avatar.pontos_acao_diarios }} / 1</span>
+                </div>
             </div>
         </div>
     </div>
 
+    <div class="d-flex flex-wrap gap-2 mb-4">
+        <a href="{% url 'modocarreira:tela_classificacao' %}" class="btn btn-outline-warning quick-access-btn flex-grow-1 py-2">
+            <i class="fa-solid fa-list-ol me-2"></i> Classificação
+        </a>
+        <a href="{% url 'modocarreira:tela_elencos' %}" class="btn btn-outline-info quick-access-btn flex-grow-1 py-2">
+            <i class="fa-solid fa-binoculars me-2"></i> Olheiro Global
+        </a>
+        <a href="{% url 'modocarreira:tela_selecao' %}" class="btn btn-outline-success quick-access-btn flex-grow-1 py-2">
+            <i class="fa-solid fa-star me-2"></i> Seleção Nacional
+        </a>
+    </div>
+
     <div class="row g-4">
         <div class="col-lg-5">
-            <div class="glass-card text-center mb-4 position-relative overflow-hidden">
-                <div class="position-absolute top-0 end-0 p-3 opacity-25">
-                    <i class="fa-solid fa-user-astronaut" style="font-size: 8rem;"></i>
+            <div class="glass-card player-panel text-center mb-4 border-warning">
+                <div class="position-absolute top-0 end-0 p-3 opacity-10" style="pointer-events: none;">
+                    <i class="fa-solid fa-bolt" style="font-size: 10rem;"></i>
                 </div>
-                <h5 class="text-white-50 text-uppercase small fw-bold">O Seu Craque</h5>
-                <h1 class="fw-bold m-0" style="font-size: 4rem; color: var(--gold-premium);" id="ovr-display">{{ avatar.ovr_calculado }}</h1>
-                <span class="badge bg-dark border border-secondary text-uppercase mb-2">{{ avatar.get_arquetipo_display }}</span>
-                <h4 class="fw-bold text-uppercase mt-2">{{ avatar.nome_camisa }}</h4>
-                <p class="text-white-50 small mb-0">Idade: {{ avatar.idade_atual }} anos | Salário: ${{ avatar.salario_rodada }}</p>
-                <div class="mt-3">
-                    <small class="text-info fw-bold"><i class="fa-solid fa-arrow-trend-up"></i> Teto Potencial: {{ avatar.teto_potencial_oculto }}</small>
+                <h6 class="text-white-50 text-uppercase small fw-bold mb-2">O Seu Craque</h6>
+                
+                <h1 class="fw-black m-0" style="font-size: 4.5rem; color: var(--gold-premium); line-height: 1;" id="ovr-display">{{ avatar.ovr_calculado }}</h1>
+                <span class="badge bg-dark border border-secondary text-uppercase mb-3 px-3 py-1">{{ avatar.get_arquetipo_display }}</span>
+                
+                <h4 class="fw-black text-uppercase m-0" style="letter-spacing: 1px;">{{ avatar.nome_camisa }}</h4>
+                <p class="text-white-50 small mt-1 mb-0">Idade: {{ avatar.idade_atual }} anos &bull; Salário: ${{ avatar.salario_rodada }}</p>
+                
+                <div class="mt-3 pt-3 border-top border-secondary border-opacity-25">
+                    <small class="text-info fw-bold text-uppercase" style="letter-spacing: 1px;">
+                        <i class="fa-solid fa-arrow-trend-up me-1"></i> Teto Potencial: {{ avatar.teto_potencial_oculto }}
+                    </small>
                 </div>
             </div>
 
             <div class="glass-card mb-4">
-                <h6 class="text-white-50 text-uppercase small fw-bold mb-3">Rotina de Treinamento</h6>
-                <div class="d-flex flex-column gap-2">
-                    <button class="btn btn-treino w-100 d-flex justify-content-between align-items-center p-3" onclick="executarTreino('fisico')" {% if avatar.pontos_acao_diarios <= 0 %}disabled{% endif %}>
-                        <div><span class="fw-bold d-block text-uppercase small">Físico (<span id="val-fisico">{{ avatar.fisico }}</span>)</span></div>
-                        <i class="fa-solid fa-dumbbell text-secondary"></i>
+                <h6 class="text-white-50 text-uppercase small fw-bold mb-3"><i class="fa-solid fa-stopwatch me-2"></i> Rotina de Treinamento</h6>
+                <div class="d-flex flex-column gap-3">
+                    
+                    <button class="btn btn-treino w-100 d-flex justify-content-between align-items-center" onclick="executarTreino('fisico')" {% if avatar.pontos_acao_diarios <= 0 %}disabled{% endif %}>
+                        <div class="flex-grow-1 pe-3">
+                            <span class="fw-bold d-block text-uppercase small mb-1">Físico (<span id="val-fisico">{{ avatar.fisico }}</span>)</span>
+                            <div class="stat-bar-bg"><div class="stat-bar-fill" id="bar-fisico" style="width: {{ avatar.fisico }}%;"></div></div>
+                        </div>
+                        <i class="fa-solid fa-dumbbell text-secondary fs-4"></i>
                     </button>
-                    <div class="stat-bar-bg mb-2"><div class="stat-bar-fill" id="bar-fisico" style="width: {{ avatar.fisico }}%;"></div></div>
 
-                    <button class="btn btn-treino w-100 d-flex justify-content-between align-items-center p-3" onclick="executarTreino('tecnico')" {% if avatar.pontos_acao_diarios <= 0 %}disabled{% endif %}>
-                        <div><span class="fw-bold d-block text-uppercase small">Técnico (<span id="val-tecnica">{{ avatar.tecnica }}</span>)</span></div>
-                        <i class="fa-solid fa-futbol text-secondary"></i>
+                    <button class="btn btn-treino w-100 d-flex justify-content-between align-items-center" onclick="executarTreino('tecnico')" {% if avatar.pontos_acao_diarios <= 0 %}disabled{% endif %}>
+                        <div class="flex-grow-1 pe-3">
+                            <span class="fw-bold d-block text-uppercase small mb-1">Técnico (<span id="val-tecnica">{{ avatar.tecnica }}</span>)</span>
+                            <div class="stat-bar-bg"><div class="stat-bar-fill" id="bar-tecnica" style="width: {{ avatar.tecnica }}%;"></div></div>
+                        </div>
+                        <i class="fa-solid fa-futbol text-secondary fs-4"></i>
                     </button>
-                    <div class="stat-bar-bg mb-2"><div class="stat-bar-fill" id="bar-tecnica" style="width: {{ avatar.tecnica }}%;"></div></div>
 
-                    <button class="btn btn-treino w-100 d-flex justify-content-between align-items-center p-3" onclick="executarTreino('tatico')" {% if avatar.pontos_acao_diarios <= 0 %}disabled{% endif %}>
-                        <div><span class="fw-bold d-block text-uppercase small">Tático (<span id="val-inteligencia">{{ avatar.inteligencia }}</span>)</span></div>
-                        <i class="fa-solid fa-chess-knight text-secondary"></i>
+                    <button class="btn btn-treino w-100 d-flex justify-content-between align-items-center" onclick="executarTreino('tatico')" {% if avatar.pontos_acao_diarios <= 0 %}disabled{% endif %}>
+                        <div class="flex-grow-1 pe-3">
+                            <span class="fw-bold d-block text-uppercase small mb-1">Tático (<span id="val-inteligencia">{{ avatar.inteligencia }}</span>)</span>
+                            <div class="stat-bar-bg"><div class="stat-bar-fill" id="bar-inteligencia" style="width: {{ avatar.inteligencia }}%;"></div></div>
+                        </div>
+                        <i class="fa-solid fa-chess-knight text-secondary fs-4"></i>
                     </button>
-                    <div class="stat-bar-bg mb-2"><div class="stat-bar-fill" id="bar-inteligencia" style="width: {{ avatar.inteligencia }}%;"></div></div>
 
-                    <button class="btn btn-treino w-100 d-flex justify-content-between align-items-center p-3" onclick="executarTreino('midia')" {% if avatar.pontos_acao_diarios <= 0 %}disabled{% endif %}>
-                        <div><span class="fw-bold d-block text-uppercase small">Mídia (<span id="val-media_fama">{{ avatar.media_fama }}</span>)</span></div>
-                        <i class="fa-solid fa-camera text-info"></i>
+                    <button class="btn btn-treino w-100 d-flex justify-content-between align-items-center" onclick="executarTreino('midia')" {% if avatar.pontos_acao_diarios <= 0 %}disabled{% endif %}>
+                        <div class="flex-grow-1 pe-3">
+                            <span class="fw-bold d-block text-uppercase small mb-1">Mídia (<span id="val-media_fama">{{ avatar.media_fama }}</span>)</span>
+                            <div class="stat-bar-bg"><div class="stat-bar-fill bg-info" id="bar-media_fama" style="width: {{ avatar.media_fama }}%;"></div></div>
+                        </div>
+                        <i class="fa-solid fa-camera text-info fs-4"></i>
                     </button>
-                    <div class="stat-bar-bg mb-2"><div class="stat-bar-fill bg-info" id="bar-media_fama" style="width: {{ avatar.media_fama }}%;"></div></div>
+                    
                 </div>
             </div>
         </div>
 
         <div class="col-lg-7">
             
-            <h5 class="text-white-50 text-uppercase small fw-bold mb-3">Agenda do Clube</h5>
+            <h6 class="text-white-50 text-uppercase small fw-bold mb-3"><i class="fa-regular fa-calendar-check me-2"></i> Próximo Compromisso</h6>
+            
             {% if proxima_partida %}
-            <div class="hub-card match-card p-4 mb-4 position-relative">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <span class="badge bg-warning text-dark text-uppercase fw-bold">{{ proxima_partida.campeonato.nome }}</span>
+            <div class="hub-card match-card p-4 mb-4 position-relative rounded-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <span class="badge bg-warning text-dark text-uppercase fw-bold px-3 py-2 shadow-sm">{{ proxima_partida.campeonato.nome }}</span>
                     {% if proxima_partida.status == 'andamento' %}
-                        <span class="badge bg-danger pulse-dot text-uppercase">Ao Vivo ({{ proxima_partida.minuto_atual }}')</span>
+                        <span class="badge bg-danger pulse-dot text-uppercase px-3 py-2 shadow-sm">Ao Vivo ({{ proxima_partida.minuto_atual }}')</span>
                     {% else %}
-                        <span class="text-white-50 small"><i class="fa-regular fa-clock"></i> Aguardando Apito Inicial</span>
+                        <span class="badge bg-dark border border-secondary text-white-50 px-3 py-2 text-uppercase"><i class="fa-regular fa-clock me-1"></i> Aguardando Apito Inicial</span>
                     {% endif %}
                 </div>
                 
-                <div class="d-flex justify-content-center align-items-center gap-4 my-4">
-                    <div class="text-center">
-                        <h3 class="fw-black m-0 text-uppercase">{{ proxima_partida.clube_casa.sigla }}</h3>
-                        <small class="text-white-50">CASA</small>
+                <div class="d-flex justify-content-center align-items-center gap-2 gap-md-4 my-4">
+                    <div class="text-center" style="flex: 1;">
+                        <h2 class="fw-black m-0 text-uppercase text-truncate">{{ proxima_partida.clube_casa.sigla }}</h2>
+                        <small class="text-white-50 fw-bold" style="letter-spacing: 2px;">CASA</small>
                     </div>
-                    <div class="fs-4 text-white-50 fw-bold">X</div>
-                    <div class="text-center">
-                        <h3 class="fw-black m-0 text-uppercase">{{ proxima_partida.clube_fora.sigla }}</h3>
-                        <small class="text-white-50">FORA</small>
+                    <div class="fs-3 text-white-50 fw-black px-2 px-md-4">X</div>
+                    <div class="text-center" style="flex: 1;">
+                        <h2 class="fw-black m-0 text-uppercase text-truncate">{{ proxima_partida.clube_fora.sigla }}</h2>
+                        <small class="text-white-50 fw-bold" style="letter-spacing: 2px;">FORA</small>
                     </div>
                 </div>
 
-                <a href="{% url 'modocarreira:tela_match_day' proxima_partida.id %}" class="btn btn-warning w-100 fw-bold text-dark text-uppercase">
-                    <i class="fa-solid fa-play me-2"></i> Ir para a Partida
+                <a href="{% url 'modocarreira:tela_match_day' proxima_partida.id %}" class="btn btn-warning w-100 fw-black text-dark text-uppercase py-3 rounded-3 shadow mt-2" style="letter-spacing: 1px;">
+                    <i class="fa-solid fa-play me-2"></i> Acessar Transmissão
                 </a>
             </div>
             {% else %}
-            <div class="hub-card p-4 mb-4 text-center border-secondary">
-                <i class="fa-solid fa-calendar-xmark fs-1 text-white-50 mb-3"></i>
-                <h5 class="fw-bold text-uppercase">Fim de Temporada</h5>
-                <p class="text-white-50 small m-0">Aguarde o sorteio do calendário da próxima época.</p>
+            <div class="hub-card p-5 mb-4 text-center border-secondary rounded-4 bg-dark bg-opacity-25">
+                <i class="fa-solid fa-calendar-xmark mb-3 opacity-25" style="font-size: 4rem;"></i>
+                <h5 class="fw-bold text-uppercase">Férias / Fim de Temporada</h5>
+                <p class="text-white-50 small m-0">Aguarde o sorteio do calendário da próxima época no metaverso.</p>
             </div>
             {% endif %}
 
-            <h5 class="text-white-50 text-uppercase small fw-bold mb-3">Instalações do Metaverso</h5>
+            <h6 class="text-white-50 text-uppercase small fw-bold mb-3 mt-2"><i class="fa-solid fa-building me-2"></i> Instalações do Clube</h6>
             <div class="row g-3">
-                
                 <div class="col-md-6">
-                    <a href="{% url 'modocarreira:tela_vestiario' %}" class="hub-card p-4 h-100">
-                        <i class="fa-solid fa-users fs-2 mb-3" style="color: #4CAF50;"></i>
-                        <h6 class="fw-bold text-uppercase mb-1">O Vestiário</h6>
-                        <p class="text-white-50 small m-0">Veja o elenco titular, gere intrigas ou faça as pazes.</p>
+                    <a href="{% url 'modocarreira:tela_vestiario' %}" class="hub-card p-4 h-100 text-center">
+                        <i class="fa-solid fa-users fs-1 mb-3" style="color: var(--neon-green);"></i>
+                        <h6 class="fw-bold text-uppercase mb-2">O Vestiário</h6>
+                        <p class="text-white-50 small m-0" style="font-size: 0.8rem;">Elenco titular e intrigas internas.</p>
                     </a>
                 </div>
 
                 <div class="col-md-6">
-                    <a href="{% url 'modocarreira:tela_mercado' %}" class="hub-card p-4 h-100">
-                        <i class="fa-solid fa-file-signature fs-2 mb-3" style="color: var(--gold-premium);"></i>
-                        <h6 class="fw-bold text-uppercase mb-1">Mercado da Bola</h6>
-                        <p class="text-white-50 small m-0">Consulte o seu passe e avalie propostas de transferência.</p>
+                    <a href="{% url 'modocarreira:tela_mercado' %}" class="hub-card p-4 h-100 text-center">
+                        <i class="fa-solid fa-file-signature fs-1 mb-3" style="color: var(--gold-premium);"></i>
+                        <h6 class="fw-bold text-uppercase mb-2">Mercado da Bola</h6>
+                        <p class="text-white-50 small m-0" style="font-size: 0.8rem;">Passe, finanças e transferências.</p>
                     </a>
                 </div>
 
                 <div class="col-md-6">
-                    <a href="{% url 'modocarreira:tela_social' %}" class="hub-card p-4 h-100">
-                        <i class="fa-solid fa-newspaper fs-2 mb-3" style="color: #2196F3;"></i>
-                        <h6 class="fw-bold text-uppercase mb-1">O Cartoleiro (Jornal)</h6>
-                        <p class="text-white-50 small m-0">Leia as manchetes, polémicas e fofocas do servidor.</p>
+                    <a href="{% url 'modocarreira:tela_social' %}" class="hub-card p-4 h-100 text-center">
+                        <i class="fa-solid fa-newspaper fs-1 mb-3" style="color: var(--neon-blue);"></i>
+                        <h6 class="fw-bold text-uppercase mb-2">O Cartoleiro</h6>
+                        <p class="text-white-50 small m-0" style="font-size: 0.8rem;">Imprensa, fofocas e RP.</p>
                     </a>
                 </div>
 
                 <div class="col-md-6">
-                    <a href="{% url 'modocarreira:tela_museu' %}" class="hub-card p-4 h-100">
-                        <i class="fa-solid fa-building-columns fs-2 mb-3" style="color: #9C27B0;"></i>
-                        <h6 class="fw-bold text-uppercase mb-1">Museu do Futebol</h6>
-                        <p class="text-white-50 small m-0">Classificações, artilheiros e a história das temporadas.</p>
+                    <a href="{% url 'modocarreira:tela_museu' %}" class="hub-card p-4 h-100 text-center">
+                        <i class="fa-solid fa-building-columns fs-1 mb-3" style="color: #9C27B0;"></i>
+                        <h6 class="fw-bold text-uppercase mb-2">Museu do Futebol</h6>
+                        <p class="text-white-50 small m-0" style="font-size: 0.8rem;">Títulos, prêmios e história.</p>
                     </a>
                 </div>
-
             </div>
 
         </div>
@@ -199,9 +290,11 @@
 
 <div class="modal fade" id="modalDilema" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content glass-card" style="border: 2px solid #800080;">
+    <div class="modal-content glass-card p-2" style="border: 2px solid #800080; box-shadow: 0 0 40px rgba(128, 0, 128, 0.4);">
       <div class="modal-header border-0 pb-0">
-        <h5 class="modal-title fw-bold text-uppercase" style="color: #d896ff;"><i class="fa-solid fa-triangle-exclamation"></i> Evento Inesperado</h5>
+        <h5 class="modal-title fw-black text-uppercase w-100 text-center" style="color: #d896ff; letter-spacing: 1px;">
+            <i class="fa-solid fa-triangle-exclamation mb-2 fs-2 d-block"></i> Evento Inesperado
+        </h5>
       </div>
       <div class="modal-body text-center py-4">
         <h4 id="dilema-titulo" class="fw-bold mb-3 text-white">Título</h4>

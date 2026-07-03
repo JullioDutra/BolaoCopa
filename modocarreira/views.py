@@ -11,7 +11,7 @@ from django.db.models import Q
 from .models import (
     Avatar, Clube, ServidorConfig, PartidaMundo, EscalacaoPosicao, 
     PropostaJanela, ConflitoVestiario, RegistroHistoricoCampeao, 
-    ConvocacaoSelecao, NoticiaJornal
+    ConvocacaoSelecao, NoticiaJornal, Campeonato
 )
 
 # Importação dos Serviços (A Regra de Negócio)

@@ -691,6 +691,12 @@
     <!-- REVEAL -->
     <div id="card-reveal">
         <div class="contrato-firmado">Contrato Firmado</div>
+
+        <div class="reveal-escudo-wrap" id="reveal-escudo-wrap" style="text-align:center;">
+            <img id="reveal-escudo-img" src="" alt="" style="display:none; width:48px; height:48px; object-fit:contain; filter:drop-shadow(0 2px 5px rgba(0,0,0,0.5)); margin:0 auto 10px;">
+            <i id="reveal-escudo-icon" class="fa-solid fa-shield-halved" style="display:none; font-size:2.2rem; color:var(--ink-faint); margin-bottom:10px;"></i>
+        </div>
+
         <h2 class="reveal-clube-nome" id="reveal-clube">---</h2>
 
         <div class="fut-card">
@@ -930,6 +936,18 @@
         document.getElementById('reveal-clube').innerText = data.clube_nome;
         document.getElementById('reveal-ovr').innerText = data.ovr_calculado;
         document.getElementById('reveal-posicao').innerText = posicaoExata;
+
+        const escudoImg = document.getElementById('reveal-escudo-img');
+        const escudoIcon = document.getElementById('reveal-escudo-icon');
+        if (data.clube_escudo_url) {
+            escudoImg.src = data.clube_escudo_url;
+            escudoImg.alt = data.clube_nome;
+            escudoImg.style.display = 'block';
+            escudoIcon.style.display = 'none';
+        } else {
+            escudoImg.style.display = 'none';
+            escudoIcon.style.display = 'block';
+        }
 
         const iconEl = document.getElementById('reveal-icon');
         iconEl.className = `fa-solid ${iconeClasse} fut-icon-bg`;

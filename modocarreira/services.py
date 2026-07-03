@@ -273,7 +273,9 @@ def gerar_calendario_liga(campeonato):
     PartidaMundo.objects.bulk_create(partidas_criadas)
 
 def escalar_time_titular(clube):
-    posicoes_taticas = ['GK', 'RB', 'CB', 'CB', 'LB', 'RM', 'CM', 'CM', 'LM', 'ST', 'ST']
+    # Apenas alteramos o array para que cada string seja 100% única
+    posicoes_taticas = ['GK', 'RB', 'CB1', 'CB2', 'LB', 'RM', 'CM1', 'CM2', 'LM', 'ST1', 'ST2']
+    
     elenco_real = list(Avatar.objects.filter(clube_atual=clube, lesionado_rodadas_restantes=0))
     elenco_real.sort(key=lambda x: x.ovr_calculado + (x.moral / 10), reverse=True)
     

@@ -175,20 +175,38 @@ def sortear_clube_peneira():
         return random.choice(clubes_disponiveis)
     return None
 
+# Mapa de fallback: se algum arquétipo chegar sem posição (ou com valor inválido),
+# usamos a primeira posição típica daquele arquétipo em vez de travar a criação.
+POSICOES_POR_ARQUETIPO = {
+    'paredao': ['GOL'],
+    'xerife': ['ZAG', 'VOL'],
+    'motorzinho': ['LD', 'LE', 'PE', 'PD'],
+    'maestro': ['MC', 'MEI'],
+    'matador': ['SA', 'CA'],
+}
+
+def resolver_posicao_preferida(arquetipo, posicao_preferida):
+    """ Valida a posição recebida do front-end; se vier vazia/errada, cai no default do arquétipo. """
+    posicoes_validas = POSICOES_POR_ARQUETIPO.get(arquetipo, [])
+    if posicao_preferida and posicao_preferida in posicoes_validas:
+        return posicao_preferida
+    return posicoes_validas[0] if posicoes_validas else 'CM'
+
 @transaction.atomic
-def criar_avatar_peneira(usuario, nome_camisa, arquetipo):
+def criar_avatar_peneira(usuario, nome_camisa, arquetipo, posicao_preferida=None):
     config = ServidorConfig.objects.first()
     temporada = config.temporada_atual if config else 1
     
     dna = calcular_dna_inicial(arquetipo)
     teto = calcular_teto_potencial()
     clube_sorteado = sortear_clube_peneira()
+    posicao_final = resolver_posicao_preferida(arquetipo, posicao_preferida)
     
     avatar = Avatar.objects.create(
         usuario=usuario,
         nome_camisa=nome_camisa,
         arquetipo=arquetipo,
-        posicao_preferida='CM', # Adiciona um default ou derive do arquétipo depois
+        posicao_preferida=posicao_final,
         clube_atual=clube_sorteado,
         temporada_nascimento=temporada,
         teto_potencial_oculto=teto,

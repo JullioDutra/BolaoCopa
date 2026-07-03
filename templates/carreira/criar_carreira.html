@@ -1,286 +1,893 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Início de Carreira - Cartolândia{% endblock %}
+{% block title %}A Peneira - Cartolândia{% endblock %}
 
 {% block content %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
 <style>
-    /* ESTILO CLEAN / PREMIUM (FC 24 AESTHETIC) */
     :root {
-        --dark-bg: #0a0a0a;
-        --dark-surface: #111111;
-        --gold-premium: #cfb53b;
-        --gold-glow: rgba(207, 181, 59, 0.4);
+        --bg-void: #06080c;
+        --bg-surface: #10141a;
+        --bg-surface-alt: #171c24;
+        --line: rgba(255,255,255,0.08);
+        --line-soft: rgba(255,255,255,0.04);
+        --gold: #d8b45c;
+        --gold-bright: #f2d98a;
+        --pitch: #1f8f5a;
+        --pitch-bright: #37c47f;
+        --rare: #5fd0e8;
+        --ink: #f6f4ef;
+        --ink-dim: #9099a6;
+        --ink-faint: #565e6b;
+        --danger: #ff5468;
+        --f-display: 'Anton', sans-serif;
+        --f-body: 'Manrope', sans-serif;
+        --f-mono: 'JetBrains Mono', monospace;
     }
 
     body {
-        background-color: var(--dark-bg);
-        color: #ffffff;
+        background: var(--bg-void);
+        color: var(--ink);
+        font-family: var(--f-body);
     }
 
-    .premium-card {
-        background: rgba(17, 17, 17, 0.85);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 16px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+    /* Textura sutil de campo (linhas diagonais quase invisíveis) */
+    .scout-shell {
+        position: relative;
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 28px 16px 80px;
+    }
+    .scout-shell::before {
+        content: "";
+        position: fixed; inset: 0; z-index: -1;
+        background:
+            repeating-linear-gradient(120deg, rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 1px, transparent 1px, transparent 68px),
+            radial-gradient(ellipse 900px 500px at 50% -10%, rgba(216,180,92,0.10), transparent 60%);
+        pointer-events: none;
     }
 
-    .premium-input {
-        background: #000 !important;
-        border: 1px solid #333 !important;
-        color: #fff !important;
-        font-weight: bold;
+    /* ===================== HEADER ===================== */
+    .scout-header { text-align: center; margin-bottom: 34px; }
+    .scout-eyebrow {
+        font-family: var(--f-mono);
+        font-size: 0.7rem;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        color: var(--gold);
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 14px;
+    }
+    .scout-eyebrow::before, .scout-eyebrow::after {
+        content: "";
+        width: 24px; height: 1px;
+        background: linear-gradient(90deg, transparent, var(--gold));
+    }
+    .scout-eyebrow::after { background: linear-gradient(90deg, var(--gold), transparent); }
+
+    .scout-title {
+        font-family: var(--f-display);
+        font-weight: 400;
+        font-size: clamp(2.4rem, 7vw, 4.2rem);
+        letter-spacing: 2px;
+        line-height: 0.95;
+        text-transform: uppercase;
+        margin: 0;
+        background: linear-gradient(180deg, #fff 10%, var(--gold-bright) 55%, var(--gold) 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    .scout-sub {
+        color: var(--ink-dim);
+        font-size: 0.92rem;
+        margin-top: 10px;
+        max-width: 480px;
+        margin-inline: auto;
+    }
+
+    /* ===================== PROGRESS RAIL ===================== */
+    .progress-rail {
+        display: flex;
+        justify-content: center;
+        gap: 6px;
+        margin: 0 auto 36px;
+        max-width: 520px;
+        overflow-x: auto;
+        padding-bottom: 4px;
+    }
+    .rail-step {
+        flex: 1;
+        min-width: 96px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid var(--line);
+        background: var(--bg-surface);
+        transition: border-color .25s, background .25s;
+    }
+    .rail-index {
+        font-family: var(--f-mono);
+        font-size: 0.68rem;
+        font-weight: 600;
+        color: var(--ink-faint);
+        width: 20px; height: 20px;
+        display: flex; align-items: center; justify-content: center;
+        border-radius: 5px;
+        border: 1px solid var(--line);
+        flex-shrink: 0;
+    }
+    .rail-label {
+        font-size: 0.66rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        color: var(--ink-faint);
+        white-space: nowrap;
+    }
+    .rail-step.active {
+        border-color: var(--gold);
+        background: linear-gradient(135deg, rgba(216,180,92,0.14), rgba(216,180,92,0.02));
+    }
+    .rail-step.active .rail-index { background: var(--gold); color: #10141a; border-color: var(--gold); }
+    .rail-step.active .rail-label { color: var(--gold-bright); }
+    .rail-step.done .rail-index { background: var(--pitch); color: #fff; border-color: var(--pitch); }
+    .rail-step.done .rail-label { color: var(--pitch-bright); }
+
+    /* ===================== GRID PRINCIPAL ===================== */
+    .scout-grid {
+        display: grid;
+        grid-template-columns: 1.35fr 1fr;
+        gap: 26px;
+        align-items: start;
+    }
+    @media (max-width: 900px) {
+        .scout-grid { grid-template-columns: 1fr; }
+        .scout-dossier-col { order: -1; }
+    }
+
+    .scout-panel {
+        background: var(--bg-surface);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 28px;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.45);
+    }
+    @media (max-width: 560px) { .scout-panel { padding: 20px 18px; } }
+
+    .step-panel { display: none; animation: fadeSlide .35s ease; }
+    .step-panel.active { display: block; }
+    @keyframes fadeSlide { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+    @media (prefers-reduced-motion: reduce) { .step-panel { animation: none; } }
+
+    .step-kicker {
+        font-family: var(--f-mono);
+        font-size: 0.68rem;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: var(--rare);
+        margin-bottom: 4px;
+    }
+    .step-heading {
+        font-family: var(--f-display);
+        font-weight: 400;
+        font-size: 1.6rem;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        margin: 0 0 6px;
+        color: var(--ink);
+    }
+    .step-desc { color: var(--ink-dim); font-size: 0.85rem; margin-bottom: 26px; }
+
+    /* ===================== INPUT ===================== */
+    .field-label {
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
         letter-spacing: 1px;
+        color: var(--ink-dim);
+        display: block;
+        margin-bottom: 10px;
     }
-    
-    .premium-input:focus {
-        border-color: var(--gold-premium) !important;
-        box-shadow: 0 0 10px var(--gold-glow) !important;
+    .scout-input {
+        width: 100%;
+        background: var(--bg-void);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        color: var(--ink);
+        font-family: var(--f-display);
+        font-size: 1.3rem;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        padding: 16px 18px;
+        transition: border-color .2s, box-shadow .2s;
+    }
+    .scout-input::placeholder { color: var(--ink-faint); font-family: var(--f-body); font-size: 0.95rem; text-transform: none; letter-spacing: normal; }
+    .scout-input:focus {
+        outline: none;
+        border-color: var(--rare);
+        box-shadow: 0 0 0 3px rgba(95,208,232,0.16);
+    }
+    .field-hint {
+        font-family: var(--f-mono);
+        font-size: 0.68rem;
+        color: var(--ink-faint);
+        margin-top: 8px;
     }
 
-    .arquetipo-label {
-        border: 2px solid #333;
-        border-radius: 12px;
-        padding: 15px;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        background: #1a1a1a;
-        text-align: center;
+    /* ===================== ARQUÉTIPOS ===================== */
+    .arquetipo-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
     }
-
-    .arquetipo-radio:checked + .arquetipo-label {
-        border-color: var(--gold-premium);
-        background: linear-gradient(135deg, #1a1a1a, #2a220a);
-        transform: translateY(-3px);
-        box-shadow: 0 5px 15px var(--gold-glow);
-    }
+    @media (max-width: 460px) { .arquetipo-grid { grid-template-columns: 1fr; } }
 
     .arquetipo-radio { display: none; }
-
-    /* ANIMAÇÃO DA ROLETA DE CLUBES */
-    #roleta-container {
-        display: none;
-        height: 150px;
+    .arquetipo-card {
+        display: block;
+        cursor: pointer;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: var(--bg-void);
+        padding: 16px;
+        transition: border-color .2s, background .2s, transform .2s;
         position: relative;
         overflow: hidden;
-        border-top: 1px solid rgba(207, 181, 59, 0.4);
-        border-bottom: 1px solid rgba(207, 181, 59, 0.4);
-        background: #050505;
+    }
+    .arquetipo-card:hover { border-color: rgba(216,180,92,0.4); transform: translateY(-2px); }
+    .arquetipo-radio:checked + .arquetipo-card {
+        border-color: var(--gold);
+        background: linear-gradient(150deg, rgba(216,180,92,0.13), rgba(216,180,92,0.02));
+        box-shadow: 0 8px 24px rgba(216,180,92,0.15);
+    }
+    .arquetipo-radio:focus-visible + .arquetipo-card { outline: 2px solid var(--rare); outline-offset: 2px; }
+
+    .arquetipo-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .arquetipo-icon {
+        width: 38px; height: 38px; border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        background: var(--bg-surface-alt); border: 1px solid var(--line);
+        font-size: 1rem; color: var(--ink-dim);
+    }
+    .arquetipo-radio:checked + .arquetipo-card .arquetipo-icon { color: var(--gold); border-color: var(--gold); }
+    .arquetipo-check {
+        width: 18px; height: 18px; border-radius: 50%;
+        border: 1px solid var(--line); flex-shrink: 0;
+    }
+    .arquetipo-radio:checked + .arquetipo-card .arquetipo-check {
+        border-color: var(--gold);
+        background: radial-gradient(circle, var(--gold) 40%, transparent 42%);
     }
 
+    .arquetipo-nome { font-weight: 800; text-transform: uppercase; font-size: 0.86rem; letter-spacing: 0.5px; margin: 0 0 3px; }
+    .arquetipo-desc { color: var(--ink-faint); font-size: 0.68rem; line-height: 1.4; margin: 0; }
+
+    /* ===================== NAV DE ETAPAS ===================== */
+    .step-nav { display: flex; gap: 10px; margin-top: 28px; }
+    .btn-scout {
+        font-family: var(--f-body);
+        font-weight: 700;
+        font-size: 0.82rem;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        border-radius: 10px;
+        border: 1px solid var(--line);
+        background: var(--bg-surface-alt);
+        color: var(--ink);
+        padding: 14px 22px;
+        cursor: pointer;
+        transition: all .2s;
+    }
+    .btn-scout:hover { border-color: var(--ink-dim); }
+    .btn-scout.primary {
+        flex: 1;
+        background: linear-gradient(135deg, var(--gold-bright), var(--gold));
+        border-color: var(--gold);
+        color: #14110a;
+    }
+    .btn-scout.primary:hover { filter: brightness(1.08); transform: translateY(-1px); }
+    .btn-scout.primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; filter: none; }
+    .btn-scout i { margin-right: 6px; }
+
+    /* ===================== RESUMO (ETAPA 3) ===================== */
+    .resumo-linha {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 14px 0; border-bottom: 1px solid var(--line-soft);
+    }
+    .resumo-linha:last-child { border-bottom: none; }
+    .resumo-chave { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1px; color: var(--ink-faint); }
+    .resumo-valor { font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--ink); font-family: var(--f-mono); font-size: 0.85rem; }
+
+    .aviso-clausula {
+        display: flex; gap: 10px; align-items: flex-start;
+        background: rgba(95,208,232,0.06);
+        border: 1px solid rgba(95,208,232,0.2);
+        border-radius: 10px;
+        padding: 12px 14px;
+        margin-top: 20px;
+        font-size: 0.74rem;
+        color: var(--ink-dim);
+    }
+    .aviso-clausula i { color: var(--rare); margin-top: 2px; }
+
+    /* ===================== DOSSIÊ (LIVE PREVIEW) ===================== */
+    .dossier-card {
+        position: sticky;
+        top: 20px;
+        background: linear-gradient(165deg, var(--bg-surface-alt), var(--bg-surface));
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 24px;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.45);
+    }
+    .dossier-tag {
+        font-family: var(--f-mono);
+        font-size: 0.62rem;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: var(--ink-faint);
+        display: flex; justify-content: space-between;
+        margin-bottom: 16px;
+    }
+    .dossier-tag .live-dot { color: var(--pitch-bright); }
+    .dossier-tag .live-dot::before {
+        content: "●"; margin-right: 5px;
+        animation: pulseDot 1.6s infinite;
+    }
+    @keyframes pulseDot { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+    @media (prefers-reduced-motion: reduce) { .dossier-tag .live-dot::before { animation: none; } }
+
+    .dossier-nome {
+        font-family: var(--f-display);
+        font-size: 1.5rem;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: var(--gold-bright);
+        min-height: 1.5em;
+        word-break: break-word;
+    }
+    .dossier-posicao {
+        display: inline-block;
+        font-family: var(--f-mono);
+        font-size: 0.68rem;
+        letter-spacing: 1px;
+        color: var(--ink-dim);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 3px 9px;
+        margin-top: 6px;
+        margin-bottom: 20px;
+    }
+
+    .radar-wrap { display: flex; justify-content: center; margin-bottom: 12px; }
+    .radar-svg text { font-family: var(--f-mono); font-size: 7px; fill: var(--ink-faint); }
+
+    .dossier-stats { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
+    .dossier-stat-row { display: flex; align-items: center; gap: 10px; }
+    .dossier-stat-label {
+        width: 34px; flex-shrink: 0;
+        font-family: var(--f-mono); font-size: 0.66rem; color: var(--ink-faint); text-transform: uppercase;
+    }
+    .dossier-stat-bar { flex: 1; height: 6px; border-radius: 4px; background: var(--bg-void); overflow: hidden; }
+    .dossier-stat-fill { height: 100%; background: linear-gradient(90deg, var(--gold), var(--gold-bright)); border-radius: 4px; transition: width .5s ease; }
+    .dossier-stat-val { width: 24px; text-align: right; font-family: var(--f-mono); font-size: 0.7rem; font-weight: 600; color: var(--ink); }
+
+    .dossier-footer {
+        margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--line-soft);
+        font-size: 0.7rem; color: var(--ink-faint); line-height: 1.5;
+    }
+
+    /* ===================== ROLETA ===================== */
+    #roleta-container { display: none; }
+    .roleta-panel {
+        text-align: center;
+        overflow: hidden;
+        position: relative;
+    }
+    .roleta-panel .step-kicker { justify-content: center; display: flex; }
+    #roleta-wrapper {
+        height: 160px;
+        overflow: hidden;
+        margin-top: 20px;
+        position: relative;
+        border-radius: 12px;
+        background: var(--bg-void);
+    }
+    #roleta-wrapper::before {
+        content: "";
+        position: absolute; inset: 0;
+        border-top: 2px solid var(--gold);
+        border-bottom: 2px solid var(--gold);
+        top: 50%; transform: translateY(-50%); height: 160px;
+        background: linear-gradient(180deg, rgba(216,180,92,0.08), transparent 40%, transparent 60%, rgba(216,180,92,0.08));
+        pointer-events: none; z-index: 2;
+    }
     #roleta-logos {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
+        display: flex; flex-direction: column; align-items: center;
         transform: translateY(0);
         transition: transform 4.5s cubic-bezier(0.1, 0.8, 0.1, 1);
     }
-
     .roleta-item {
-        height: 150px;
-        min-height: 150px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 2rem;
-        font-weight: 800;
-        letter-spacing: 2px;
-        color: #444;
-        text-transform: uppercase;
-        transition: all 0.3s ease;
+        height: 160px; min-height: 160px;
+        display: flex; align-items: center; justify-content: center;
+        font-family: var(--f-display);
+        font-size: 1.6rem; letter-spacing: 1px;
+        color: var(--ink-faint); text-transform: uppercase;
+        transition: color .3s;
     }
 
-    /* REVEAL CINEMATOGRÁFICO DA CARTA */
-    #card-reveal {
-        display: none;
-        animation: popIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-    }
-
+    /* ===================== REVEAL (CARTA) ===================== */
+    #card-reveal { display: none; }
     @keyframes popIn {
         0% { transform: scale(0.6); opacity: 0; filter: brightness(0); }
         100% { transform: scale(1); opacity: 1; filter: brightness(1); }
     }
+    #card-reveal.show { animation: popIn 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+    @media (prefers-reduced-motion: reduce) { #card-reveal.show { animation: none; } }
+
+    .contrato-firmado {
+        font-family: var(--f-mono);
+        font-size: 0.68rem; letter-spacing: 2px; text-transform: uppercase;
+        color: var(--ink-faint); text-align: center; margin-bottom: 4px;
+    }
+    .reveal-clube-nome {
+        font-family: var(--f-display);
+        text-align: center;
+        font-size: clamp(1.6rem, 5vw, 2.3rem);
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: var(--ink);
+        margin-bottom: 26px;
+    }
 
     .fut-card {
-        width: 240px;
-        height: 350px;
-        background: linear-gradient(135deg, #141414 0%, #070707 100%);
-        border: 2px solid var(--gold-premium);
-        border-radius: 14px;
-        box-shadow: 0 20px 50px var(--gold-glow);
+        width: 250px; height: 360px;
+        margin-inline: auto;
+        border-radius: 16px;
+        position: relative;
+        background: linear-gradient(160deg, #1c1710 0%, #08090a 55%, #0d0d0d 100%);
+        border: 1px solid rgba(216,180,92,0.5);
+        box-shadow: 0 25px 60px rgba(216,180,92,0.18), inset 0 0 40px rgba(216,180,92,0.05);
         overflow: hidden;
+        display: flex; flex-direction: column; justify-content: space-between;
+        padding: 22px;
     }
+    .fut-card::before {
+        content: "";
+        position: absolute; top: -60%; left: -60%;
+        width: 60%; height: 220%;
+        background: linear-gradient(75deg, transparent, rgba(255,255,255,0.16), transparent);
+        transform: rotate(20deg);
+        animation: shimmer 3.2s ease-in-out infinite;
+    }
+    @keyframes shimmer { 0% { left: -60%; } 55%,100% { left: 130%; } }
+    @media (prefers-reduced-motion: reduce) { .fut-card::before { animation: none; display: none; } }
+
+    .fut-ovr { font-family: var(--f-display); font-size: 3.6rem; line-height: 0.85; color: var(--gold-bright); position: relative; z-index: 1; }
+    .fut-posicao {
+        display: inline-block; margin-top: 6px;
+        font-family: var(--f-mono); font-size: 0.7rem; letter-spacing: 1px;
+        border: 1px solid var(--line); border-radius: 6px; padding: 3px 9px; color: var(--ink-dim);
+        position: relative; z-index: 1;
+    }
+    .fut-icon-bg {
+        position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+        font-size: 6rem; color: rgba(255,255,255,0.05); z-index: 0;
+    }
+    .fut-nome-plate {
+        position: relative; z-index: 1;
+        text-align: center; background: rgba(0,0,0,0.55);
+        border-top: 1px solid rgba(216,180,92,0.35);
+        border-radius: 10px; padding: 10px 8px;
+    }
+    .fut-nome {
+        font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;
+        margin: 0; font-size: 1rem; color: var(--ink);
+    }
+    .fut-categoria { font-family: var(--f-mono); font-size: 0.6rem; color: var(--ink-faint); letter-spacing: 1px; }
+
+    .btn-entrar {
+        display: block; margin: 32px auto 0;
+        font-family: var(--f-body); font-weight: 700; text-transform: uppercase;
+        letter-spacing: 1px; font-size: 0.85rem;
+        border: 1px solid var(--gold); border-radius: 999px;
+        background: transparent; color: var(--gold-bright);
+        padding: 15px 34px; cursor: pointer; transition: all .2s;
+    }
+    .btn-entrar:hover { background: var(--gold); color: #14110a; box-shadow: 0 10px 30px rgba(216,180,92,0.3); }
 </style>
 
-<div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-md-8 col-lg-6">
-            
-            <div class="text-center mb-4">
-                <h1 class="fw-bold text-uppercase m-0" style="letter-spacing: 3px; color: var(--gold-premium);">A Peneira</h1>
-                <p class="text-muted small text-uppercase" style="letter-spacing: 1px;">Inicie sua trajetória profissional no metaverso</p>
-            </div>
+<div class="scout-shell">
 
-            <div id="form-container" class="premium-card p-4 p-md-5">
-                <form id="form-carreira" onsubmit="enviarInscricao(event)">
-                    {% csrf_token %}
-                    
-                    <div class="mb-4">
-                        <label class="form-label text-white-50 text-uppercase small fw-bold" style="letter-spacing: 1px;">Nome de Exibição (Camisa)</label>
-                        <input type="text" class="form-control form-control-lg premium-input text-uppercase" id="nomeCamisa" placeholder="Ex: CR7 DOS ANJOS" maxlength="15" required>
-                    </div>
+    <div class="scout-header">
+        <span class="scout-eyebrow">Dossiê de Observação</span>
+        <h1 class="scout-title">A Peneira</h1>
+        <p class="scout-sub">Preencha a ficha de scouting e assine seu primeiro contrato profissional no metaverso.</p>
+    </div>
 
-                    <label class="form-label text-white-50 text-uppercase small fw-bold mb-3" style="letter-spacing: 1px;">Escolha seu Arquétipo Tático</label>
-                    <div class="row g-3 mb-5">
-                        <div class="col-6">
-                            <input type="radio" name="arquetipo" id="arqXerife" value="xerife" class="arquetipo-radio" required>
-                            <label for="arqXerife" class="arquetipo-label w-100">
-                                <i class="fa-solid fa-shield-halved fs-3 mb-2 d-block text-muted"></i>
-                                <span class="fw-bold d-block text-uppercase small">Xerife</span>
-                                <small class="text-white-50" style="font-size: 0.65rem;">Foco Defensivo e Físico</small>
-                            </label>
-                        </div>
-                        <div class="col-6">
-                            <input type="radio" name="arquetipo" id="arqMaestro" value="maestro" class="arquetipo-radio">
-                            <label for="arqMaestro" class="arquetipo-label w-100">
-                                <i class="fa-solid fa-wand-magic-sparkles fs-3 mb-2 d-block text-info"></i>
-                                <span class="fw-bold d-block text-uppercase small">Maestro</span>
-                                <small class="text-white-50" style="font-size: 0.65rem;">Foco Tático e Visão</small>
-                            </label>
-                        </div>
-                        <div class="col-6">
-                            <input type="radio" name="arquetipo" id="arqMatador" value="matador" class="arquetipo-radio">
-                            <label for="arqMatador" class="arquetipo-label w-100">
-                                <i class="fa-solid fa-crosshairs fs-3 mb-2 d-block text-danger"></i>
-                                <span class="fw-bold d-block text-uppercase small">Matador</span>
-                                <small class="text-white-50" style="font-size: 0.65rem;">Foco em Finalização</small>
-                            </label>
-                        </div>
-                        <div class="col-6">
-                            <input type="radio" name="arquetipo" id="arqMotor" value="motorzinho" class="arquetipo-radio">
-                            <label for="arqMotor" class="arquetipo-label w-100">
-                                <i class="fa-solid fa-bolt fs-3 mb-2 d-block text-warning"></i>
-                                <span class="fw-bold d-block text-uppercase small">Motorzinho</span>
-                                <small class="text-white-50" style="font-size: 0.65rem;">Foco em Velocidade e Mídia</small>
-                            </label>
-                        </div>
-                    </div>
-
-                    <button type="submit" id="btn-enviar" class="btn btn-warning w-100 py-3 fw-bold text-dark text-uppercase shadow-sm" style="letter-spacing: 1px; border-radius: 8px;">
-                        <i class="fa-solid fa-file-signature"></i> Assinar Contrato Profissional
-                    </button>
-                </form>
-            </div>
-
-            <div id="roleta-container" class="premium-card text-center py-5 shadow-lg">
-                <p class="text-white-50 small text-uppercase fw-bold mb-3" style="letter-spacing: 2px;">Analisando propostas do mercado...</p>
-                <div class="position-absolute top-50 start-50 translate-middle w-100" style="height: 150px; border-top: 2px solid var(--gold-premium); border-bottom: 2px solid var(--gold-premium); background: linear-gradient(180deg, rgba(207,181,59,0.05) 0%, transparent 100%); pointer-events: none;"></div>
-                
-                <div id="roleta-wrapper" style="height: 150px; overflow: hidden; margin-top: 20px;">
-                    <div id="roleta-logos">
-                        </div>
-                </div>
-            </div>
-
-            <div id="card-reveal" class="text-center mt-2">
-                <h5 class="text-white-50 text-uppercase small" style="letter-spacing: 3px;">Contrato Firmado</h5>
-                <h2 id="reveal-clube" class="fw-black text-white mb-4 text-uppercase" style="letter-spacing: 1px;">---</h2>
-                
-                <div class="d-flex justify-content-center">
-                    <div class="fut-card d-flex flex-column justify-content-between p-4 position-relative">
-                        <div class="text-start">
-                            <h1 class="fw-black m-0 p-0" id="reveal-ovr" style="color: var(--gold-premium); font-size: 3.5rem; line-height: 0.9;">--</h1>
-                            <span class="badge bg-dark text-white border border-secondary small fw-bold text-uppercase mt-1" id="reveal-posicao" style="letter-spacing: 1px;">---</span>
-                        </div>
-                        
-                        <div class="opacity-25 text-center position-absolute top-50 start-50 translate-middle w-100">
-                            <i id="reveal-icon" class="fa-solid fs-1 text-white" style="font-size: 5rem !important;"></i>
-                        </div>
-
-                        <div class="text-center border-top border-secondary pt-3 bg-black rounded-3 p-2 shadow-sm" style="border-color: rgba(255,255,255,0.1) !important;">
-                            <h5 id="reveal-nome" class="fw-bold text-uppercase m-0 text-truncate" style="letter-spacing: 1px; color: #fff;">NOME</h5>
-                            <small class="text-white-50 font-monospace" style="font-size: 0.65rem;">CATEGORIA DE BASE</small>
-                        </div>
-                    </div>
-                </div>
-
-                <button onclick="redirecionarDashboard()" class="btn btn-outline-warning rounded-pill px-5 py-3 mt-5 fw-bold text-uppercase shadow" style="letter-spacing: 1px; border-width: 2px;">
-                    Entrar no Centro de Treinamento <i class="fa-solid fa-arrow-right ms-2"></i>
-                </button>
-            </div>
-
+    <div class="progress-rail" id="progressRail">
+        <div class="rail-step active" data-rail="1">
+            <span class="rail-index">01</span><span class="rail-label">Identidade</span>
+        </div>
+        <div class="rail-step" data-rail="2">
+            <span class="rail-index">02</span><span class="rail-label">Arquétipo</span>
+        </div>
+        <div class="rail-step" data-rail="3">
+            <span class="rail-index">03</span><span class="rail-label">Contrato</span>
         </div>
     </div>
+
+    <div id="wizard-wrapper">
+        <div class="scout-grid">
+            <div class="scout-form-col">
+                <div class="scout-panel">
+                    <form id="form-carreira" onsubmit="return false;">
+                        {% csrf_token %}
+
+                        <!-- ETAPA 1 -->
+                        <div class="step-panel active" data-step="1">
+                            <div class="step-kicker">Etapa 01</div>
+                            <h2 class="step-heading">Identidade</h2>
+                            <p class="step-desc">Como você quer ser chamado dentro de campo?</p>
+
+                            <label class="field-label" for="nomeCamisa">Nome de exibição (camisa)</label>
+                            <input type="text" class="scout-input" id="nomeCamisa" placeholder="Ex: CR7 DOS ANJOS" maxlength="15" required>
+                            <div class="field-hint">Máximo de 15 caracteres · aparece nas escalações e no jornal</div>
+
+                            <div class="step-nav">
+                                <button type="button" class="btn-scout primary" onclick="irParaEtapa(2)">
+                                    Continuar <i class="fa-solid fa-arrow-right"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- ETAPA 2 -->
+                        <div class="step-panel" data-step="2">
+                            <div class="step-kicker">Etapa 02</div>
+                            <h2 class="step-heading">Arquétipo Tático</h2>
+                            <p class="step-desc">Cada arquétipo nasce com uma distribuição de atributos diferente.</p>
+
+                            <div class="arquetipo-grid">
+                                <div>
+                                    <input type="radio" name="arquetipo" id="arqXerife" value="xerife" class="arquetipo-radio" data-fis="75" data-tec="45" data-int="65" data-mid="15" required>
+                                    <label for="arqXerife" class="arquetipo-card">
+                                        <div class="arquetipo-top">
+                                            <span class="arquetipo-icon"><i class="fa-solid fa-shield-halved"></i></span>
+                                            <span class="arquetipo-check"></span>
+                                        </div>
+                                        <p class="arquetipo-nome">Xerife</p>
+                                        <p class="arquetipo-desc">Zagueiro · foco defensivo e físico</p>
+                                    </label>
+                                </div>
+                                <div>
+                                    <input type="radio" name="arquetipo" id="arqMaestro" value="maestro" class="arquetipo-radio" data-fis="50" data-tec="70" data-int="75" data-mid="25">
+                                    <label for="arqMaestro" class="arquetipo-card">
+                                        <div class="arquetipo-top">
+                                            <span class="arquetipo-icon"><i class="fa-solid fa-wand-magic-sparkles"></i></span>
+                                            <span class="arquetipo-check"></span>
+                                        </div>
+                                        <p class="arquetipo-nome">Maestro</p>
+                                        <p class="arquetipo-desc">Meia · foco tático e visão de jogo</p>
+                                    </label>
+                                </div>
+                                <div>
+                                    <input type="radio" name="arquetipo" id="arqMatador" value="matador" class="arquetipo-radio" data-fis="65" data-tec="75" data-int="55" data-mid="40">
+                                    <label for="arqMatador" class="arquetipo-card">
+                                        <div class="arquetipo-top">
+                                            <span class="arquetipo-icon"><i class="fa-solid fa-crosshairs"></i></span>
+                                            <span class="arquetipo-check"></span>
+                                        </div>
+                                        <p class="arquetipo-nome">Matador</p>
+                                        <p class="arquetipo-desc">Atacante · foco em finalização</p>
+                                    </label>
+                                </div>
+                                <div>
+                                    <input type="radio" name="arquetipo" id="arqMotor" value="motorzinho" class="arquetipo-radio" data-fis="60" data-tec="65" data-int="50" data-mid="50">
+                                    <label for="arqMotor" class="arquetipo-card">
+                                        <div class="arquetipo-top">
+                                            <span class="arquetipo-icon"><i class="fa-solid fa-bolt"></i></span>
+                                            <span class="arquetipo-check"></span>
+                                        </div>
+                                        <p class="arquetipo-nome">Motorzinho</p>
+                                        <p class="arquetipo-desc">Ponta · foco em velocidade e mídia</p>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="step-nav">
+                                <button type="button" class="btn-scout" onclick="irParaEtapa(1)"><i class="fa-solid fa-arrow-left"></i> Voltar</button>
+                                <button type="button" class="btn-scout primary" id="btn-ir-etapa-3" onclick="irParaEtapa(3)" disabled>
+                                    Continuar <i class="fa-solid fa-arrow-right"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- ETAPA 3 -->
+                        <div class="step-panel" data-step="3">
+                            <div class="step-kicker">Etapa 03</div>
+                            <h2 class="step-heading">Confirmar Contrato</h2>
+                            <p class="step-desc">Revise sua ficha antes de entrar no mercado profissional.</p>
+
+                            <div class="resumo-linha">
+                                <span class="resumo-chave">Nome de camisa</span>
+                                <span class="resumo-valor" id="resumo-nome">—</span>
+                            </div>
+                            <div class="resumo-linha">
+                                <span class="resumo-chave">Arquétipo</span>
+                                <span class="resumo-valor" id="resumo-arquetipo">—</span>
+                            </div>
+                            <div class="resumo-linha">
+                                <span class="resumo-chave">Clube de destino</span>
+                                <span class="resumo-valor">A definir por sorteio</span>
+                            </div>
+
+                            <div class="aviso-clausula">
+                                <i class="fa-solid fa-circle-info"></i>
+                                <span>O clube é sorteado no ato da assinatura, com maior chance para clubes da Série C. O teto de potencial fica oculto até você evoluir em campo.</span>
+                            </div>
+
+                            <div class="step-nav">
+                                <button type="button" class="btn-scout" onclick="irParaEtapa(2)"><i class="fa-solid fa-arrow-left"></i> Voltar</button>
+                                <button type="button" id="btn-enviar" class="btn-scout primary" onclick="enviarInscricao()">
+                                    <i class="fa-solid fa-file-signature"></i> Assinar Contrato
+                                </button>
+                            </div>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+
+            <div class="scout-dossier-col">
+                <div class="dossier-card">
+                    <div class="dossier-tag">
+                        <span class="live-dot">PRÉVIA AO VIVO</span>
+                        <span>FICHA #{{ request.user.id|default:"000" }}</span>
+                    </div>
+
+                    <div class="dossier-nome" id="dossier-nome">SEU NOME AQUI</div>
+                    <span class="dossier-posicao" id="dossier-posicao">ARQUÉTIPO INDEFINIDO</span>
+
+                    <div class="radar-wrap">
+                        <svg class="radar-svg" width="180" height="180" viewBox="0 0 180 180" id="radar-svg"></svg>
+                    </div>
+
+                    <div class="dossier-stats" id="dossier-stats">
+                        <div class="dossier-stat-row">
+                            <span class="dossier-stat-label">FIS</span>
+                            <div class="dossier-stat-bar"><div class="dossier-stat-fill" id="bar-fis" style="width:0%"></div></div>
+                            <span class="dossier-stat-val" id="val-fis">--</span>
+                        </div>
+                        <div class="dossier-stat-row">
+                            <span class="dossier-stat-label">TEC</span>
+                            <div class="dossier-stat-bar"><div class="dossier-stat-fill" id="bar-tec" style="width:0%"></div></div>
+                            <span class="dossier-stat-val" id="val-tec">--</span>
+                        </div>
+                        <div class="dossier-stat-row">
+                            <span class="dossier-stat-label">INT</span>
+                            <div class="dossier-stat-bar"><div class="dossier-stat-fill" id="bar-int" style="width:0%"></div></div>
+                            <span class="dossier-stat-val" id="val-int">--</span>
+                        </div>
+                        <div class="dossier-stat-row">
+                            <span class="dossier-stat-label">MID</span>
+                            <div class="dossier-stat-bar"><div class="dossier-stat-fill" id="bar-mid" style="width:0%"></div></div>
+                            <span class="dossier-stat-val" id="val-mid">--</span>
+                        </div>
+                    </div>
+
+                    <div class="dossier-footer">
+                        Atributos iniciais de base. Físico, Técnica e Inteligência evoluem com o treino; Mídia com exposição na imprensa.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ROLETA -->
+    <div id="roleta-container">
+        <div class="scout-panel roleta-panel">
+            <div class="step-kicker">Processando</div>
+            <h2 class="step-heading">Analisando propostas do mercado</h2>
+            <div id="roleta-wrapper">
+                <div id="roleta-logos"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- REVEAL -->
+    <div id="card-reveal">
+        <div class="contrato-firmado">Contrato Firmado</div>
+        <h2 class="reveal-clube-nome" id="reveal-clube">---</h2>
+
+        <div class="fut-card">
+            <div>
+                <div class="fut-ovr" id="reveal-ovr">--</div>
+                <span class="fut-posicao" id="reveal-posicao">---</span>
+            </div>
+            <i id="reveal-icon" class="fa-solid fut-icon-bg"></i>
+            <div class="fut-nome-plate">
+                <p class="fut-nome" id="reveal-nome">NOME</p>
+                <span class="fut-categoria">Categoria de Base</span>
+            </div>
+        </div>
+
+        <button onclick="redirecionarDashboard()" class="btn-entrar">
+            Entrar no Centro de Treinamento <i class="fa-solid fa-arrow-right ms-1"></i>
+        </button>
+    </div>
+
 </div>
 
 <script>
-    // Pool de segurança visual para preencher a roleta antes de frear no alvo real
+    // ================= NAVEGAÇÃO ENTRE ETAPAS =================
+    let etapaAtual = 1;
+
+    function irParaEtapa(numero) {
+        if (numero === 3) {
+            const nome = document.getElementById('nomeCamisa').value.trim();
+            if (!nome) { document.getElementById('nomeCamisa').focus(); irParaEtapa(1); return; }
+            document.getElementById('resumo-nome').innerText = nome.toUpperCase();
+            const arquetipoEl = document.querySelector('input[name="arquetipo"]:checked');
+            if (arquetipoEl) {
+                document.getElementById('resumo-arquetipo').innerText = arquetipoEl.closest('div').querySelector('.arquetipo-nome').innerText;
+            }
+        }
+
+        document.querySelectorAll('.step-panel').forEach(p => p.classList.toggle('active', p.dataset.step == numero));
+        document.querySelectorAll('.rail-step').forEach(r => {
+            const passo = parseInt(r.dataset.rail);
+            r.classList.toggle('active', passo === numero);
+            r.classList.toggle('done', passo < numero);
+        });
+        etapaAtual = numero;
+        window.scrollTo({ top: document.querySelector('.scout-panel').offsetTop - 20, behavior: 'smooth' });
+    }
+
+    // ================= PRÉVIA AO VIVO (DOSSIÊ) =================
+    const nomeInput = document.getElementById('nomeCamisa');
+    nomeInput.addEventListener('input', () => {
+        document.getElementById('dossier-nome').innerText = nomeInput.value.trim() || 'SEU NOME AQUI';
+    });
+
+    const posicaoSigla = { xerife: 'ZAG · XERIFE', maestro: 'MEI · MAESTRO', matador: 'ATA · MATADOR', motorzinho: 'PON · MOTORZINHO' };
+
+    function polarPoint(cx, cy, r, angleDeg) {
+        const rad = (angleDeg - 90) * Math.PI / 180;
+        return [cx + r * Math.cos(rad), cy + r * Math.sin(rad)];
+    }
+
+    function desenharRadar(fis, tec, inteligencia, mid) {
+        const svg = document.getElementById('radar-svg');
+        const cx = 90, cy = 90, maxR = 68;
+        const eixos = [
+            { label: 'FIS', val: fis, angle: 0 },
+            { label: 'TEC', val: tec, angle: 90 },
+            { label: 'INT', val: inteligencia, angle: 180 },
+            { label: 'MID', val: mid, angle: 270 },
+        ];
+
+        let svgContent = '';
+
+        // Anéis de fundo (25/50/75/100)
+        [0.25, 0.5, 0.75, 1].forEach(f => {
+            const pontos = eixos.map(e => polarPoint(cx, cy, maxR * f, e.angle).join(',')).join(' ');
+            svgContent += `<polygon points="${pontos}" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>`;
+        });
+
+        // Eixos
+        eixos.forEach(e => {
+            const [x, y] = polarPoint(cx, cy, maxR, e.angle);
+            svgContent += `<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>`;
+        });
+
+        // Polígono de dados
+        const pontosDados = eixos.map(e => polarPoint(cx, cy, (e.val / 99) * maxR, e.angle).join(',')).join(' ');
+        svgContent += `<polygon points="${pontosDados}" fill="rgba(216,180,92,0.22)" stroke="#d8b45c" stroke-width="1.6"/>`;
+
+        eixos.forEach(e => {
+            const [x, y] = polarPoint(cx, cy, (e.val / 99) * maxR, e.angle);
+            svgContent += `<circle cx="${x}" cy="${y}" r="2.4" fill="#f2d98a"/>`;
+        });
+
+        // Labels
+        eixos.forEach(e => {
+            const [x, y] = polarPoint(cx, cy, maxR + 13, e.angle);
+            svgContent += `<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="middle">${e.label}</text>`;
+        });
+
+        svg.innerHTML = svgContent;
+    }
+
+    function atualizarDossier(radioEl) {
+        const fis = parseInt(radioEl.dataset.fis);
+        const tec = parseInt(radioEl.dataset.tec);
+        const inteligencia = parseInt(radioEl.dataset.int);
+        const mid = parseInt(radioEl.dataset.mid);
+
+        document.getElementById('dossier-posicao').innerText = posicaoSigla[radioEl.value];
+
+        document.getElementById('val-fis').innerText = fis;
+        document.getElementById('val-tec').innerText = tec;
+        document.getElementById('val-int').innerText = inteligencia;
+        document.getElementById('val-mid').innerText = mid;
+
+        document.getElementById('bar-fis').style.width = fis + '%';
+        document.getElementById('bar-tec').style.width = tec + '%';
+        document.getElementById('bar-int').style.width = inteligencia + '%';
+        document.getElementById('bar-mid').style.width = mid + '%';
+
+        desenharRadar(fis, tec, inteligencia, mid);
+        document.getElementById('btn-ir-etapa-3').disabled = false;
+    }
+
+    document.querySelectorAll('.arquetipo-radio').forEach(r => {
+        r.addEventListener('change', () => atualizarDossier(r));
+    });
+
+    // Radar vazio inicial
+    desenharRadar(0, 0, 0, 0);
+
+    // ================= ENVIO / ROLETA / REVEAL (lógica original preservada) =================
     const clubesDecorativos = [
-        "⚽ Íbis SC", "🛡️ Botafogo-PB", "⚔️ XV de Piracicaba", "🦅 Bangu AC", 
-        "⚓ Vasco da Gama", "🦁 Ferroviária", "🌪️ Juventus da Mooca",
-        "⚙️ Operário-PR", "🦇 Criciúma EC", "🔥 Campinense PB", "🦊 Cruzeiro"
+        "Íbis SC", "Botafogo-PB", "XV de Piracicaba", "Bangu AC",
+        "Vasco da Gama", "Ferroviária", "Juventus da Mooca",
+        "Operário-PR", "Criciúma EC", "Campinense PB", "Cruzeiro"
     ];
 
-    function enviarInscricao(event) {
-        event.preventDefault();
-        
+    function enviarInscricao() {
+        const nome = document.getElementById('nomeCamisa').value.toUpperCase();
+        const arquetipoEl = document.querySelector('input[name="arquetipo"]:checked');
+        if (!nome || !arquetipoEl) return;
+        const arquetipo = arquetipoEl.value;
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
         const btnSubmit = document.getElementById('btn-enviar');
         btnSubmit.disabled = true;
 
-        const nome = document.getElementById('nomeCamisa').value.toUpperCase();
-        const arquetipo = document.querySelector('input[name="arquetipo"]:checked').value;
-        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-
-        // 1. Transição imediata da UI para o modo Roleta de Seleção
-        document.getElementById('form-container').style.display = 'none';
+        document.getElementById('wizard-wrapper').style.display = 'none';
+        document.getElementById('progressRail').style.display = 'none';
         document.getElementById('roleta-container').style.display = 'block';
 
-        // 2. Construção volumétrica da roleta para efeito de aceleração contínua
         const logosDiv = document.getElementById('roleta-logos');
         let htmlLogos = '';
-        
-        // Injeta 35 clubes aleatórios para criar corpo na esteira de rotação
-        for(let i = 0; i < 35; i++) {
+        for (let i = 0; i < 35; i++) {
             let clubeFake = clubesDecorativos[Math.floor(Math.random() * clubesDecorativos.length)];
             htmlLogos += `<div class="roleta-item">${clubeFake}</div>`;
         }
         logosDiv.innerHTML = htmlLogos;
 
-        // 3. Dispara a requisição assíncrona para processamento do DNA no Servidor Django
         fetch("{% url 'modocarreira:api_assinar_contrato' %}", {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrfToken
-            },
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
             body: JSON.stringify({ nome: nome, arquetipo: arquetipo })
         })
         .then(response => response.json())
         .then(data => {
             if (data.sucesso) {
-                // 4. Injeta cirurgicamente o clube vencedor real na posição de parada da esteira
-                const indexParada = 32; 
+                const indexParada = 32;
                 const itens = document.querySelectorAll('.roleta-item');
                 if (itens[indexParada]) {
-                    itens[indexParada].innerText = `🤝 ${data.clube_nome}`;
-                    itens[indexParada].style.color = "var(--gold-premium)";
+                    itens[indexParada].innerText = data.clube_nome;
+                    itens[indexParada].style.color = "var(--gold-bright)";
                 }
 
-                // 5. Aciona o deslocamento físico da esteira via CSS Transition
-                const distanciaDeslocamento = -(indexParada * 150);
+                const distanciaDeslocamento = -(indexParada * 160);
                 logosDiv.style.transform = `translateY(${distanciaDeslocamento}px)`;
 
-                // 6. Aguarda a desaceleração completa da curva bezier para renderizar a carta
                 setTimeout(() => {
-                    itens[indexParada].classList.add('destaque');
                     if (navigator.vibrate) navigator.vibrate([100, 50, 200]);
-                    
                     setTimeout(() => {
-                        executarRevealFinal(nome, arquetipo, data); // <--- CORRIGIDO AQUI (X EM VEZ DE J)
-                    }, 800);
+                        executarRevealFinal(nome, arquetipo, data);
+                    }, 700);
                 }, 4500);
-
             } else {
                 alert("Falha operacional na peneira: " + data.mensagem);
                 window.location.reload();
@@ -293,14 +900,12 @@
         });
     }
 
-    // CORRIGIDO AQUI (X EM VEZ DE J)
     function executarRevealFinal(nome, arquetipo, data) {
         document.getElementById('roleta-container').style.display = 'none';
-        
-        // Mapeamento dinâmico de rótulos e ícones com base na regra de negócio
+
         let siglaPosicao = "JOG";
-        let iconeClasse = "fa-soccer-ball";
-        
+        let iconeClasse = "fa-futbol";
+
         if (arquetipo === 'xerife') { siglaPosicao = "ZAG"; iconeClasse = "fa-shield-halved"; }
         else if (arquetipo === 'maestro') { siglaPosicao = "MEI"; iconeClasse = "fa-wand-magic-sparkles"; }
         else if (arquetipo === 'matador') { siglaPosicao = "ST"; iconeClasse = "fa-crosshairs"; }
@@ -310,15 +915,16 @@
         document.getElementById('reveal-clube').innerText = data.clube_nome;
         document.getElementById('reveal-ovr').innerText = data.ovr_calculado;
         document.getElementById('reveal-posicao').innerText = siglaPosicao;
-        
-        const iconEl = document.getElementById('reveal-icon');
-        iconEl.className = `fa-solid ${iconeClasse} fs-1 text-white`;
 
-        document.getElementById('card-reveal').style.display = 'block';
+        const iconEl = document.getElementById('reveal-icon');
+        iconEl.className = `fa-solid ${iconeClasse} fut-icon-bg`;
+
+        const reveal = document.getElementById('card-reveal');
+        reveal.style.display = 'block';
+        reveal.classList.add('show');
     }
 
     function redirecionarDashboard() {
-        // Redirecionamento correto para o novo dashboard do Modo Carreira
         window.location.href = "{% url 'modocarreira:dashboard' %}";
     }
 </script>

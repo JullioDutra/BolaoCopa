@@ -4,109 +4,274 @@
 {% block title %}O Cartoleiro - Cartolândia{% endblock %}
 
 {% block content %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
 <style>
     :root {
-        --dark-bg: #0a0a0a;
-        --dark-surface: #111111;
-        --gold-premium: #cfb53b;
-        --news-blue: #2196F3;
+        /* ---- Paleta Base ---- */
+        --void: #050907;
+        --surface: #0b1310;
+        --surface-2: #101c17;
+        --surface-border: rgba(255,255,255,0.07);
+
+        --gold: #c9a227;
+        --gold-bright: #f2d879;
+        --gold-glow: rgba(201,162,39,0.35);
+
+        --emerald: #0d3d2c;
+        --emerald-bright: #22c98a;
+        --emerald-glow: rgba(34,201,138,0.28);
+
+        --ink: #f3f6f2;
+        --ink-dim: rgba(243,246,242,0.58);
+        --ink-faint: rgba(243,246,242,0.32);
+
+        --info: #33c3f0;
+        --info-glow: rgba(51,195,240,0.3);
+        
+        --live: #ff5252;
+        --live-glow: rgba(255,82,82,0.25);
+
+        --font-display: 'Oswald', 'Arial Narrow', sans-serif;
+        --font-body: 'Inter', -apple-system, sans-serif;
     }
 
-    body { background-color: var(--dark-bg); color: #ffffff; }
+    body {
+        background: 
+            radial-gradient(circle at 10% 20%, rgba(51,195,240,0.05), transparent 45%),
+            radial-gradient(circle at 90% 80%, rgba(255,82,82,0.03), transparent 45%),
+            var(--void);
+        color: var(--ink);
+        font-family: var(--font-body);
+    }
 
-    .glass-card {
-        background: rgba(17, 17, 17, 0.85);
-        backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.05);
+    .cc-wrap { max-width: 1240px; }
+
+    /* ============ TIPOGRAFIA ============ */
+    .cc-display {
+        font-family: var(--font-display);
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        font-weight: 600;
+    }
+    .cc-eyebrow {
+        font-family: var(--font-display);
+        text-transform: uppercase;
+        letter-spacing: 0.16em;
+        font-size: 0.68rem;
+        font-weight: 600;
+        color: var(--ink-faint);
+    }
+
+    /* ============ NAVEGAÇÃO ============ */
+    .quick-access-btn {
         border-radius: 12px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
-        padding: 24px;
+        font-family: var(--font-display);
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        font-size: 0.82rem;
+        padding: 10px 18px;
+        border: 1px solid var(--surface-border);
+        background: var(--surface);
+        color: var(--ink-dim);
+        transition: all 0.25s ease;
+        text-decoration: none;
+        display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .quick-access-btn:hover {
+        color: var(--void);
+        background: linear-gradient(120deg, var(--info), #1e9dbf);
+        border-color: var(--info);
+        transform: translateY(-2px);
     }
 
-    /* ESTILO DO FEED DE NOTÍCIAS */
+    /* ============ PAINÉIS ============ */
+    .glass-card {
+        background: linear-gradient(160deg, rgba(255,255,255,0.045), rgba(255,255,255,0.01)), var(--surface);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+        border: 1px solid var(--surface-border);
+        border-radius: 18px;
+        box-shadow: 0 20px 45px rgba(0,0,0,0.55);
+        padding: 26px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    hr.section-divider {
+        border: none; height: 1px;
+        background: linear-gradient(90deg, var(--surface-border), transparent);
+        margin: 20px 0;
+    }
+
+    /* ============ FEED DE NOTÍCIAS ============ */
     .news-item {
-        background: linear-gradient(135deg, #1a1a1a, #0d0d0d);
-        border-left: 4px solid var(--news-blue);
-        border-radius: 8px;
+        background: linear-gradient(135deg, rgba(255,255,255,0.03), transparent), var(--surface-2);
+        border: 1px solid var(--surface-border);
+        border-left: 4px solid var(--info);
+        border-radius: 12px;
         padding: 20px;
-        margin-bottom: 15px;
-        transition: transform 0.2s;
+        margin-bottom: 16px;
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
     }
-
+    .news-item:last-child { margin-bottom: 0; }
+    
     .news-item:hover {
-        transform: translateX(5px);
-        background: linear-gradient(135deg, #222, #111);
+        transform: translateX(6px);
+        border-color: rgba(51,195,240,0.4);
+        box-shadow: 0 10px 25px var(--info-glow);
+        background: linear-gradient(135deg, rgba(51,195,240,0.05), transparent), var(--surface-2);
     }
 
     .news-date {
-        color: var(--news-blue);
+        font-family: var(--font-display);
+        color: var(--info);
         font-size: 0.75rem;
-        font-weight: 900;
-        letter-spacing: 1px;
+        letter-spacing: 0.1em;
         text-transform: uppercase;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(51,195,240,0.1);
+        padding: 4px 10px;
+        border-radius: 6px;
     }
 
-    /* ESTILO DE CONFLITOS/RELAÇÕES */
+    /* ============ CONFLITOS (BEEFS) ============ */
     .beef-card {
-        background: rgba(255, 0, 0, 0.05);
-        border: 1px solid rgba(255, 0, 0, 0.2);
+        background: linear-gradient(135deg, rgba(255,82,82,0.06), transparent), var(--surface-2);
+        border: 1px dashed rgba(255,82,82,0.4);
+        border-radius: 14px;
+        padding: 20px;
+        margin-bottom: 16px;
+        transition: all 0.3s ease;
+    }
+    .beef-card:last-child { margin-bottom: 0; }
+    
+    .beef-card:hover {
+        box-shadow: 0 10px 25px var(--live-glow);
+        border-style: solid;
+    }
+
+    .btn-peace {
+        background: var(--surface);
+        border: 1px solid var(--surface-border);
+        color: var(--ink);
+        font-family: var(--font-display);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-weight: 600;
+        font-size: 0.8rem;
+        padding: 10px 16px;
         border-radius: 8px;
-        padding: 15px;
-        margin-bottom: 15px;
+        transition: all 0.2s ease;
+    }
+    .btn-peace:hover:not(:disabled) {
+        background: var(--info);
+        color: var(--void);
+        border-color: var(--info);
+        box-shadow: 0 6px 15px var(--info-glow);
+        transform: translateY(-2px);
+    }
+    .btn-peace:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+
+    /* ============ COMPONENTES EXTRAS ============ */
+    .media-badge {
+        clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
+        background: linear-gradient(90deg, var(--info), #1e9dbf);
+        color: var(--void);
+        font-family: var(--font-display);
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        padding: 8px 18px;
+        display: inline-block;
+        font-size: 0.85rem;
+    }
+
+    .empty-season {
+        border: 1px dashed var(--surface-border);
+        border-radius: 16px;
+        background: var(--surface);
+        padding: 50px 20px;
+        text-align: center;
+    }
+
+    .tip-box {
+        background: linear-gradient(135deg, rgba(51,195,240,0.1), transparent);
+        border: 1px solid var(--surface-border);
+        border-left: 3px solid var(--info);
+        border-radius: 12px;
+        padding: 16px;
+    }
+
+    @media (max-width: 767.98px) {
+        .glass-card { padding: 20px; }
+        .beef-card { padding: 16px; }
+        .news-item { padding: 16px; }
     }
 </style>
 
-<div class="container py-4">
-    <!-- Cabeçalho -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <a href="{% url 'modocarreira:dashboard' %}" class="btn btn-sm btn-outline-light mb-2">
+<div class="container cc-wrap py-4 py-md-5">
+    
+    <div class="row align-items-center mb-4 gap-3 gap-md-0">
+        <div class="col-md-8">
+            <a href="{% url 'modocarreira:dashboard' %}" class="quick-access-btn mb-3">
                 <i class="fa-solid fa-arrow-left"></i> Voltar ao Hub
             </a>
-            <h2 class="fw-black text-uppercase m-0" style="color: var(--news-blue); letter-spacing: 1px;">
+            <h2 class="cc-display m-0" style="color: var(--info);">
                 <i class="fa-solid fa-newspaper me-2"></i> O Cartoleiro
             </h2>
-            <p class="text-white-50 small text-uppercase m-0" style="letter-spacing: 1px;">Notícias e Fofocas do Metaverso</p>
+            <p class="cc-eyebrow mt-1 mb-0" style="font-size: 0.75rem;">Notícias e Fofocas do Metaverso</p>
         </div>
-        <div class="text-end d-none d-md-block">
-            <span class="text-white-50 small text-uppercase fw-bold d-block">Mídia & Fama</span>
-            <span class="badge bg-info text-dark fs-6">{{ avatar.media_fama }} / 100</span>
+        <div class="col-md-4 text-md-end">
+            <span class="cc-eyebrow d-block mb-2">Mídia & Fama</span>
+            <span class="media-badge">{{ avatar.media_fama }} <span style="font-weight: 500; opacity: 0.8;">/ 100</span></span>
         </div>
     </div>
 
     <div class="row g-4">
-        <!-- COLUNA ESQUERDA: FEED DE NOTÍCIAS -->
+        
         <div class="col-lg-7">
-            <div class="glass-card h-100">
-                <h5 class="text-white-50 text-uppercase small fw-bold mb-4 border-bottom border-secondary pb-2">Últimas Manchetes</h5>
+            <div class="glass-card h-100" style="border-top: 3px solid var(--info);">
+                <h5 class="cc-eyebrow mb-3" style="font-size: 0.85rem; color: var(--ink);">Últimas Manchetes</h5>
+                <hr class="section-divider">
                 
                 <div class="news-feed">
                     {% if noticias %}
                         {% for noticia in noticias %}
-                        <div class="news-item shadow-sm">
-                            <div class="news-date mb-2"><i class="fa-regular fa-clock me-1"></i> Rodada {{ noticia.rodada }} | Temporada {{ noticia.temporada }}</div>
-                            <h5 class="fw-bold text-white mb-2">{{ noticia.titulo }}</h5>
-                            <p class="text-white-50 small m-0">{{ noticia.conteudo }}</p>
+                        <div class="news-item">
+                            <div class="news-date mb-3">
+                                <i class="fa-regular fa-clock"></i> 
+                                Rodada {{ noticia.rodada }} &bull; Temporada {{ noticia.temporada }}
+                            </div>
+                            <h5 class="cc-display m-0 mb-2" style="font-size: 1.25rem; letter-spacing: 0.02em;">{{ noticia.titulo }}</h5>
+                            <p class="text-white-50 small m-0" style="line-height: 1.5; font-size: 0.85rem;">{{ noticia.conteudo }}</p>
                         </div>
                         {% endfor %}
                     {% else %}
-                        <div class="text-center py-5">
-                            <i class="fa-solid fa-microphone-lines-slash fs-1 text-muted mb-3"></i>
-                            <h5 class="text-white-50 text-uppercase">Sem Notícias</h5>
-                            <p class="small text-muted">A imprensa está calada. Gere fatos no campo ou nos treinos para virar manchete.</p>
+                        <div class="empty-season border-0">
+                            <i class="fa-solid fa-microphone-lines-slash fs-1 mb-3 opacity-25" style="color: var(--info);"></i>
+                            <h5 class="cc-display mb-2">Sem Notícias</h5>
+                            <p class="text-white-50 small m-0">A imprensa está calada. Entregue boas atuações em campo ou gere atritos nos treinos para virar manchete.</p>
                         </div>
                     {% endif %}
                 </div>
             </div>
         </div>
 
-        <!-- COLUNA DIREITA: RELAÇÕES E BALNEÁRIO -->
         <div class="col-lg-5">
             <div class="glass-card h-100">
-                <h5 class="text-white-50 text-uppercase small fw-bold mb-4 border-bottom border-secondary pb-2">Gestão de RP e Balneário</h5>
+                <h5 class="cc-eyebrow mb-3" style="font-size: 0.85rem; color: var(--ink);">Gestão de RP e Balneário</h5>
+                <hr class="section-divider">
                 
-                <p class="small text-muted mb-4">
-                    Conflitos com colegas reduzem a moral do time. Custa <strong class="text-warning">1 AP</strong> chamar o jogador para conversar e tentar fazer as pazes.
+                <p class="cc-eyebrow mb-4" style="font-size: 0.65rem; color: var(--ink-dim); text-transform: none; font-family: var(--font-body); font-weight: 400; line-height: 1.5;">
+                    Conflitos com colegas reduzem a moral do time. Custa <span style="color: var(--gold-bright); font-weight: 700;">1 AP</span> chamar o jogador para conversar e tentar selar a paz.
                 </p>
 
                 {% if conflitos %}
@@ -114,32 +279,33 @@
                         {% for conflito in conflitos %}
                         <div class="beef-card d-flex flex-column">
                             <div class="d-flex align-items-center gap-3 mb-3">
-                                <div class="bg-danger bg-opacity-25 rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
-                                    <i class="fa-solid fa-face-angry text-danger fs-4"></i>
+                                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px; background: rgba(255,82,82,0.15); border: 1px solid rgba(255,82,82,0.3);">
+                                    <i class="fa-solid fa-bolt text-danger fs-5"></i>
                                 </div>
                                 <div>
-                                    <h6 class="fw-bold text-uppercase m-0 text-danger">Atrito com {{ conflito.alvo.nome_camisa }}</h6>
-                                    <small class="text-white-50">Motivo: {{ conflito.motivo }}</small>
+                                    <h6 class="cc-display m-0 mb-1" style="color: var(--live); font-size: 1.05rem;">Atrito com {{ conflito.alvo.nome_camisa }}</h6>
+                                    <span class="cc-eyebrow d-block" style="font-size: 0.6rem; color: var(--ink-faint); text-transform: none;">Motivo: {{ conflito.motivo }}</span>
                                 </div>
                             </div>
-                            <button onclick="tentarPazes('{% url 'modocarreira:api_fazer_pazes' conflito.id %}')" class="btn btn-outline-light btn-sm w-100 fw-bold text-uppercase" {% if avatar.pontos_acao_diarios <= 0 %}disabled{% endif %}>
-                                <i class="fa-solid fa-handshake-angle me-1"></i> Tentar Reconciliação (1 AP)
+                            <button onclick="tentarPazes('{% url 'modocarreira:api_fazer_pazes' conflito.id %}')" class="btn btn-peace w-100" {% if avatar.pontos_acao_diarios <= 0 %}disabled{% endif %}>
+                                <i class="fa-solid fa-handshake-angle me-2"></i> Tentar Reconciliação <span style="color: var(--gold-bright); font-weight: 700;">(1 AP)</span>
                             </button>
                         </div>
                         {% endfor %}
                     </div>
                 {% else %}
-                    <div class="text-center py-4 border border-secondary border-opacity-25 rounded-3" style="background: rgba(76, 175, 80, 0.05);">
+                    <div class="empty-season py-4" style="border-color: rgba(34,201,138,0.3); background: rgba(34,201,138,0.03);">
                         <i class="fa-solid fa-dove fs-1 text-success mb-3 opacity-75"></i>
-                        <h6 class="fw-bold text-success text-uppercase">Clima de Paz</h6>
-                        <p class="small text-white-50 m-0">Você não tem inimizades no momento. O ambiente no balneário está excelente.</p>
+                        <h6 class="cc-display text-success mb-2" style="font-size: 1.1rem;">Clima de Paz</h6>
+                        <p class="text-white-50 small m-0">Você não tem inimizades no momento. O ambiente no vestiário está excelente.</p>
                     </div>
                 {% endif %}
 
-                <!-- DICA DE RP -->
-                <div class="mt-4 p-3 rounded-3" style="background: rgba(33, 150, 243, 0.1); border-left: 3px solid var(--news-blue);">
-                    <h6 class="fw-bold text-info small text-uppercase mb-1"><i class="fa-solid fa-lightbulb me-1"></i> Dica do Empresário</h6>
-                    <p class="small text-white-50 m-0">Aumentar o atributo <strong>Mídia</strong> nos treinos ajuda a contornar crises de imprensa e melhora as chances de selar a paz com rivais.</p>
+                <div class="tip-box mt-4">
+                    <h6 class="cc-eyebrow mb-2" style="color: var(--info);"><i class="fa-solid fa-lightbulb me-1"></i> Dica do Empresário</h6>
+                    <p class="text-white-50 small m-0" style="line-height: 1.5;">
+                        Treinar o atributo <strong class="text-white">Mídia</strong> ajuda a contornar crises de imprensa mais facilmente e melhora significativamente a sua taxa de sucesso ao tentar selar a paz com rivais de elenco.
+                    </p>
                 </div>
 
             </div>

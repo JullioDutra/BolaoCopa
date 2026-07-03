@@ -481,3 +481,27 @@ def tela_classificacao(request):
     # Nota: A lógica exata aqui depende de como a sua Tabela é gerada no banco de dados.
     # Por enquanto, renderizamos o HTML base. Pode adaptar a query para buscar as estatísticas reais (Vitórias, Derrotas, SG) da sua modelagem.
     return render(request, 'carreira/classificacao.html')
+
+
+@login_required
+def artificial_selecao(request):
+    """ Exibe a lista oficial de convocados da seleção """
+    try:
+        avatar = request.user.avatar_carreira
+    except Avatar.DoesNotExist:
+        return redirect('modocarreira:tela_peneira')
+
+    # Busca os top 26 avatares do mundo baseados no critério técnico de OVR
+    # Filtra avatares reais para priorizar usuários humanos na seleção do metaverso
+    convocados_lista = Avatar.objects.exclude(usuario__username__startswith='bot_')
+    convocados = sorted(convocados_lista, key=lambda j: j.ovr_calculado, reverse=True)[:26]
+    
+    # Verifica se o próprio usuário está entre os convocados
+    convocado_oficial = avatar in convocados
+
+    contexto = {
+        'avatar': avatar,
+        'convocados': convocados,
+        'convocado_oficial': convocado_oficial,
+    }
+    return render(request, 'carreira/selecao.html', contexto)

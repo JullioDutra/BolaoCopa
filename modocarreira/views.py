@@ -21,7 +21,7 @@ from .services import (
     escalar_time_titular, processar_tique_partida, resolver_acao_jogador, encerrar_partida_e_processar_stats,
     calcular_valor_passe, gerar_propostas_mercado, processar_resposta_proposta,
     fazer_as_pazes, executar_virada_de_temporada,
-    gerar_frases_narracao_ia, gerar_noticia_jornal_ia
+    gerar_frases_narracao_ia, gerar_noticia_jornal_ia, gerar_calendario_liga
 )
 
 logger = logging.getLogger(__name__)
@@ -375,7 +375,8 @@ def api_cron_engine(request, token):
                 partida.save()
                 encerrar_partida_e_processar_stats(partida) # Paga salários, lesões IA, tretas IA
                 
-            acoes_realizadas.append(f"{partidas_pendentes.count()} partidas encerradas. Salários pagos.")
+            if partidas_pendentes.exists():
+                acoes_realizadas.append(f"{partidas_pendentes.count()} partidas encerradas. Salários pagos.")
             
             # Geração da Notícia do Dia (IA Jornalista)
             if partidas_pendentes.exists():
@@ -392,6 +393,47 @@ def api_cron_engine(request, token):
                     corpo_texto=noticia['corpo']
                 )
                 acoes_realizadas.append("Notícia do Jornal gerada pela IA.")
+
+        # ==============================================================
+        # ROTINA 4: INÍCIO DO MUNDO E VIRADA DE TEMPORADA (23h)
+        # ==============================================================
+        if agora.hour == 23:
+            config = ServidorConfig.objects.first()
+            if config:
+                campeonatos_ativos = Campeonato.objects.filter(temporada=config.temporada_atual)
+                todas_finalizadas = True
+                
+                for camp in campeonatos_ativos:
+                    jogos_camp = PartidaMundo.objects.filter(campeonato=camp)
+                    
+                    # 1. INICIAR O MUNDO (Se o campeonato não tiver nenhum jogo ainda)
+                    if not jogos_camp.exists():
+                        gerar_calendario_liga(camp)
+                        acoes_realizadas.append(f"Big Bang: Calendário gerado para {camp.nome} (Temporada {config.temporada_atual}).")
+                        todas_finalizadas = False # O campeonato acabou de nascer
+                    
+                    # 2. VERIFICA SE O CAMPEONATO AINDA ESTÁ A ROLAR
+                    elif jogos_camp.exclude(status='finalizada').exists():
+                        todas_finalizadas = False
+                
+                # 3. VIRADA DE TEMPORADA GERAL
+                # Se todos os campeonatos da temporada atual já tiveram todos os seus jogos finalizados
+                if todas_finalizadas and campeonatos_ativos.exists():
+                    config.temporada_atual += 1
+                    config.rodada_atual = 1
+                    config.save()
+                    
+                    # Clona os campeonatos para a nova temporada e gera os novos calendários
+                    for camp_antigo in campeonatos_ativos:
+                        novo_camp = Campeonato.objects.create(
+                            nome=camp_antigo.nome,
+                            temporada=config.temporada_atual,
+                            tipo=camp_antigo.tipo,
+                            divisao=camp_antigo.divisao
+                        )
+                        gerar_calendario_liga(novo_camp)
+                        
+                    acoes_realizadas.append(f"A TEMPORADA {config.temporada_atual} COMEÇOU! Novos calendários gerados automaticamente.")
 
         return JsonResponse({
             'sucesso': True, 

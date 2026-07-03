@@ -155,23 +155,31 @@ def api_resolver_dilema(request):
 
 @login_required
 def tela_vestiario(request):
-    """ Renderiza a prancheta tática e o elenco do clube """
+    """ Exibe o painel da prancheta e os titulares do clube """
     try:
         avatar = request.user.avatar_carreira
     except Avatar.DoesNotExist:
         return redirect('modocarreira:tela_peneira')
 
     clube = avatar.clube_atual
-    if not clube:
-        return redirect('modocarreira:dashboard')
+    escalacao = []
 
-    escalacao = EscalacaoPosicao.objects.filter(clube=clube)
-    
-    if not escalacao.exists():
-        escalar_time_titular(clube)
-        escalacao = EscalacaoPosicao.objects.filter(clube=clube)
+    if clube:
+        # Busca a escalação do clube no banco
+        escalacao_atual = EscalacaoPosicao.objects.filter(clube=clube)
+        
+        # Se a prancheta estiver vazia (primeira vez que o clube entra no jogo)
+        if not escalacao_atual.exists():
+            escalar_time_titular(clube) # Chama o treinador IA para gerar as posições
+            
+        # Puxa a escalação atualizada
+        escalacao = EscalacaoPosicao.objects.filter(clube=clube).order_by('id')
 
-    contexto = { 'avatar': avatar, 'clube': clube, 'escalacao': escalacao }
+    contexto = {
+        'avatar': avatar,
+        'clube': clube,
+        'escalacao': escalacao,
+    }
     return render(request, 'carreira/vestiario.html', contexto)
 
 @login_required

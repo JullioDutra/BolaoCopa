@@ -115,21 +115,26 @@ def api_resolver_dilema(request):
         try:
             avatar = request.user.avatar_carreira
             data = json.loads(request.body)
-            escolha = data.get('escolha') 
-            
+            escolha = data.get('escolha')
+
             dilema = request.session.get('dilema_atual')
             if not dilema:
                 return JsonResponse({'sucesso': False, 'mensagem': 'Nenhum dilema ativo.'})
-                
-            opcao_dict = dilema[escolha]
+
+            # Aceita tanto "A"/"B" quanto "opcao_A"/"opcao_B" vindos do front-end
+            chave = escolha if escolha in dilema else f'opcao_{escolha}'
+            if chave not in dilema:
+                return JsonResponse({'sucesso': False, 'mensagem': f'Escolha inválida: {escolha}'})
+
+            opcao_dict = dilema[chave]
             resolver_dilema(avatar, opcao_dict)
-            
+
             del request.session['dilema_atual']
             return JsonResponse({'sucesso': True, 'mensagem': 'Decisão tomada e consequências aplicadas!'})
-            
+
         except Exception as e:
             return JsonResponse({'sucesso': False, 'mensagem': str(e)})
-            
+
     return JsonResponse({'sucesso': False, 'mensagem': 'Método inválido.'})
 
 

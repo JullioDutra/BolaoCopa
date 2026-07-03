@@ -1,0 +1,172 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Mercado da Bola - Cartolândia{% endblock %}
+
+{% block content %}
+<style>
+    :root {
+        --dark-bg: #0a0a0a;
+        --dark-surface: #111111;
+        --gold-premium: #cfb53b;
+    }
+
+    body { background-color: var(--dark-bg); color: #ffffff; }
+
+    .glass-card {
+        background: rgba(17, 17, 17, 0.9);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        padding: 20px;
+    }
+
+    .proposta-card {
+        background: linear-gradient(135deg, #1a1a1a, #0d0d0d);
+        border-left: 4px solid var(--gold-premium);
+        border-radius: 8px;
+        transition: transform 0.2s;
+    }
+
+    .proposta-card:hover {
+        transform: translateY(-3px);
+        background: linear-gradient(135deg, #222, #111);
+    }
+</style>
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <a href="{% url 'modocarreira:dashboard' %}" class="btn btn-sm btn-outline-light mb-2">
+                <i class="fa-solid fa-arrow-left"></i> Voltar ao Hub
+            </a>
+            <h2 class="fw-bold text-uppercase m-0" style="color: var(--gold-premium);">
+                <i class="fa-solid fa-file-signature me-2"></i> Mercado da Bola
+            </h2>
+        </div>
+        <div class="text-end d-none d-md-block">
+            <span class="text-white-50 small text-uppercase fw-bold d-block">Status de Transferência</span>
+            {% if avatar.ovr_calculado >= 80 %}
+                <span class="badge bg-success">Jogador de Elite</span>
+            {% elif avatar.ovr_calculado >= 70 %}
+                <span class="badge bg-info text-dark">Alta Procura</span>
+            {% else %}
+                <span class="badge bg-secondary">Em Desenvolvimento</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <div class="glass-card text-center mb-4">
+                <div class="mb-3">
+                    <i class="fa-solid fa-money-check-dollar" style="font-size: 4rem; color: var(--gold-premium);"></i>
+                </div>
+                <h5 class="text-white-50 text-uppercase small fw-bold">Valor de Mercado Estimado</h5>
+                <h2 class="fw-bold text-success mb-4">$ {{ valor_mercado }}</h2>
+                
+                <hr class="border-secondary opacity-25">
+                
+                <div class="d-flex justify-content-between text-start small mb-2">
+                    <span class="text-white-50 text-uppercase fw-bold">Clube Atual:</span>
+                    <span class="fw-bold">{{ avatar.clube_atual.nome }}</span>
+                </div>
+                <div class="d-flex justify-content-between text-start small mb-2">
+                    <span class="text-white-50 text-uppercase fw-bold">Salário por Rodada:</span>
+                    <span class="fw-bold">$ {{ avatar.salario_rodada }}</span>
+                </div>
+                <div class="d-flex justify-content-between text-start small">
+                    <span class="text-white-50 text-uppercase fw-bold">Cláusula de Rescisão:</span>
+                    <span class="fw-bold">$ {{ avatar.clausula_rescisoria }}</span>
+                </div>
+            </div>
+
+            <div class="glass-card text-center border-warning">
+                <h6 class="text-white-50 text-uppercase small fw-bold mb-3">Agenciamento</h6>
+                <p class="small text-muted mb-3">Peça ao seu empresário para sondar o mercado em busca de novos clubes interessados no seu futebol.</p>
+                <form method="POST" action="{% url 'modocarreira:tela_mercado' %}">
+                    {% csrf_token %}
+                    <button type="submit" name="buscar_ofertas" class="btn btn-warning w-100 fw-bold text-dark text-uppercase shadow-sm">
+                        <i class="fa-solid fa-satellite-dish me-2"></i> Sondar Mercado
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="glass-card h-100">
+                <h5 class="text-white-50 text-uppercase small fw-bold mb-4">Propostas na Mesa</h5>
+                
+                {% if propostas %}
+                    <div class="d-flex flex-column gap-3">
+                        {% for proposta in propostas %}
+                        <div class="proposta-card p-3 p-md-4" id="proposta-{{ proposta.id }}">
+                            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+                                <div class="mb-3 mb-md-0">
+                                    <h4 class="fw-bold m-0 text-uppercase">{{ proposta.clube_comprador.nome }}</h4>
+                                    <span class="badge bg-dark border border-secondary text-uppercase small mt-1">Série {{ proposta.clube_comprador.divisao }}</span>
+                                </div>
+                                <div class="text-md-end">
+                                    <div class="small text-white-50 text-uppercase fw-bold">Oferta Salarial:</div>
+                                    <h4 class="fw-bold text-success m-0">$ {{ proposta.salario_proposto }} <small class="text-muted fs-6">/ rodada</small></h4>
+                                </div>
+                            </div>
+                            
+                            <hr class="border-secondary opacity-25 my-3">
+                            
+                            <div class="d-flex gap-2 justify-content-end">
+                                <button onclick="responderProposta({{ proposta.id }}, 'recusar')" class="btn btn-outline-danger fw-bold text-uppercase px-4">
+                                    <i class="fa-solid fa-xmark"></i> Recusar
+                                </button>
+                                <button onclick="responderProposta({{ proposta.id }}, 'aceitar')" class="btn btn-success fw-bold text-uppercase px-4 shadow-sm">
+                                    <i class="fa-solid fa-check"></i> Assinar
+                                </button>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fa-solid fa-file-contract mb-3" style="font-size: 4rem; color: #333;"></i>
+                        <h4 class="fw-bold text-uppercase text-white-50">Nenhuma Oferta</h4>
+                        <p class="text-muted">Seu telefone não tocou. Melhore seu OVR nos treinos ou faça um bom jogo para atrair a atenção dos olheiros.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function responderProposta(propostaId, acao) {
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const msg = acao === 'aceitar' ? "Tem certeza que deseja assinar com este clube?" : "Tem certeza que deseja recusar a oferta?";
+        
+        if (confirm(msg)) {
+            fetch(`/carreira/api/proposta/${propostaId}/responder/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({ acao: acao })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.sucesso) {
+                    if (acao === 'aceitar') {
+                        alert("Parabéns! Você tem um novo clube!");
+                        window.location.href = "{% url 'modocarreira:dashboard' %}";
+                    } else {
+                        document.getElementById(`proposta-${propostaId}`).style.display = 'none';
+                    }
+                }
+            })
+            .catch(error => {
+                console.error("Erro:", error);
+                alert("Erro ao responder a proposta.");
+            });
+        }
+    }
+</script>
+{% endblock %}

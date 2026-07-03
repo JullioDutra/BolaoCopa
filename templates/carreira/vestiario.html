@@ -4,196 +4,399 @@
 {% block title %}Vestiário - Cartolândia{% endblock %}
 
 {% block content %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
 <style>
     :root {
-        --dark-bg: #0a0a0a;
-        --dark-surface: #111111;
-        --gold-premium: #cfb53b;
-        --pitch-green: #1b5e20;
+        /* ---- Paleta Base ---- */
+        --void: #050907;
+        --surface: #0b1310;
+        --surface-2: #101c17;
+        --surface-border: rgba(255,255,255,0.07);
+
+        --gold: #c9a227;
+        --gold-bright: #f2d879;
+        --gold-glow: rgba(201,162,39,0.35);
+
+        --emerald: #0d3d2c;
+        --emerald-bright: #22c98a;
+        --emerald-glow: rgba(34,201,138,0.28);
+
+        --ink: #f3f6f2;
+        --ink-dim: rgba(243,246,242,0.58);
+        --ink-faint: rgba(243,246,242,0.32);
+
+        --info: #33c3f0;
+        --info-glow: rgba(51,195,240,0.3);
+        
+        --live: #ff5252;
+        --live-glow: rgba(255,82,82,0.3);
+        
+        --alert: #ff9800;
+        --alert-glow: rgba(255,152,0,0.25);
+
+        --font-display: 'Oswald', 'Arial Narrow', sans-serif;
+        --font-body: 'Inter', -apple-system, sans-serif;
     }
 
-    body { background-color: var(--dark-bg); color: #ffffff; }
+    body {
+        background: 
+            radial-gradient(circle at 10% 10%, rgba(34,201,138,0.05), transparent 40%),
+            radial-gradient(circle at 90% 90%, rgba(201,162,39,0.04), transparent 45%),
+            var(--void);
+        color: var(--ink);
+        font-family: var(--font-body);
+    }
 
-    .glass-card {
-        background: rgba(17, 17, 17, 0.9);
-        border: 1px solid rgba(255, 255, 255, 0.05);
+    .cc-wrap { max-width: 1240px; }
+
+    /* ============ TIPOGRAFIA ============ */
+    .cc-display {
+        font-family: var(--font-display);
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        font-weight: 600;
+    }
+    .cc-eyebrow {
+        font-family: var(--font-display);
+        text-transform: uppercase;
+        letter-spacing: 0.16em;
+        font-size: 0.68rem;
+        font-weight: 600;
+        color: var(--ink-faint);
+    }
+
+    /* ============ NAVEGAÇÃO & BOTÕES ============ */
+    .quick-access-btn {
         border-radius: 12px;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-        padding: 20px;
+        font-family: var(--font-display);
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        font-size: 0.82rem;
+        padding: 10px 18px;
+        border: 1px solid var(--surface-border);
+        background: var(--surface);
+        color: var(--ink-dim);
+        transition: all 0.25s ease;
+        text-decoration: none;
+        display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .quick-access-btn:hover {
+        color: var(--void);
+        background: linear-gradient(120deg, var(--emerald-bright), #159a67);
+        border-color: var(--emerald-bright);
+        transform: translateY(-2px);
     }
 
-    /* ESTILOS DOS JOGADORES NA LISTA */
-    .player-row {
-        background: linear-gradient(to right, #1a1a1a, #0d0d0d);
-        border: 1px solid #333;
-        border-radius: 8px;
-        margin-bottom: 10px;
-        transition: transform 0.2s;
+    /* ============ PAINÉIS ============ */
+    .glass-card {
+        background: linear-gradient(160deg, rgba(255,255,255,0.045), rgba(255,255,255,0.01)), var(--surface);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+        border: 1px solid var(--surface-border);
+        border-radius: 18px;
+        box-shadow: 0 20px 45px rgba(0,0,0,0.55);
+        padding: 26px;
+        position: relative;
+        overflow: hidden;
     }
 
-    .player-row:hover {
-        transform: translateX(5px);
-        border-color: #555;
+    hr.section-divider {
+        border: none; height: 1px;
+        background: linear-gradient(90deg, var(--surface-border), transparent);
+        margin: 20px 0;
     }
 
-    /* Destaque para Jogadores Reais (Avatares) */
-    .player-real {
-        border-left: 4px solid var(--gold-premium);
-        background: linear-gradient(to right, rgba(207, 181, 59, 0.1), #0d0d0d);
+    /* ============ BADGES ============ */
+    .status-badge {
+        font-family: var(--font-display);
+        font-size: 0.8rem; letter-spacing: 0.1em;
+        text-transform: uppercase; padding: 8px 18px;
+        clip-path: polygon(12px 0, 100% 0, calc(100% - 12px) 100%, 0 100%);
+        display: inline-block; font-weight: 700;
     }
+    .status-titular { background: linear-gradient(90deg, var(--emerald-bright), #159a67); color: var(--void); box-shadow: 0 0 20px var(--emerald-glow); }
+    .status-banco { background: linear-gradient(90deg, var(--alert), #e65100); color: var(--void); box-shadow: 0 0 20px var(--alert-glow); }
 
-    /* Destaque para o PRÓPRIO jogador (O utilizador logado) */
-    .player-me {
-        border: 2px solid var(--gold-premium);
-        background: linear-gradient(to right, rgba(207, 181, 59, 0.2), rgba(207, 181, 59, 0.05));
-        box-shadow: 0 0 15px rgba(207, 181, 59, 0.3);
-    }
-
-    /* Estilo para os Bots (NPCs) */
-    .player-bot {
-        border-left: 4px solid #444;
-        opacity: 0.8;
-    }
-
-    .pos-badge {
-        width: 45px;
-        height: 45px;
+    /* ============ PRANCHETA TÁTICA (SLOTS) ============ */
+    .tactic-slot {
+        background: linear-gradient(160deg, var(--surface-2), var(--surface));
+        border: 1px solid var(--surface-border);
+        border-radius: 12px;
+        padding: 14px 18px;
+        margin-bottom: 12px;
         display: flex;
         align-items: center;
-        justify-content: center;
-        font-weight: 900;
-        border-radius: 8px;
-        background-color: #222;
-        border: 1px solid #444;
+        justify-content: space-between;
+        transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+    .tactic-slot:last-child { margin-bottom: 0; }
+    
+    /* Hover genérico */
+    .tactic-slot:not(.is-bot):hover {
+        transform: translateX(6px);
+        border-color: rgba(255,255,255,0.15);
+        background: linear-gradient(160deg, #16261f, var(--surface-2));
     }
 
+    /* Jogador Real (Companheiros) */
+    .tactic-slot.is-real {
+        border-left: 4px solid var(--emerald-bright);
+    }
+
+    /* Você (Logado) */
+    .tactic-slot.is-me {
+        border: 1px solid var(--gold);
+        border-left: 4px solid var(--gold-bright);
+        background: linear-gradient(160deg, rgba(201,162,39,0.1), var(--surface-2));
+        box-shadow: 0 10px 24px var(--gold-glow);
+    }
+    .tactic-slot.is-me:hover {
+        transform: translateX(8px);
+        box-shadow: 0 14px 30px rgba(201,162,39,0.4);
+    }
+
+    /* Bot (Base) */
+    .tactic-slot.is-bot {
+        border-left: 4px solid #333;
+        opacity: 0.75;
+        background: var(--surface);
+    }
+
+    .pos-tag {
+        clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
+        background: var(--surface);
+        border: 1px solid var(--surface-border);
+        color: var(--ink-dim);
+        font-family: var(--font-display);
+        font-size: 0.85rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        padding: 8px 12px;
+        display: flex; align-items: center; justify-content: center;
+        min-width: 50px; height: 50px;
+    }
+    .is-real .pos-tag { color: var(--emerald-bright); border-color: rgba(34,201,138,0.3); }
+    .is-me .pos-tag { color: var(--gold-bright); border-color: var(--gold-glow); background: rgba(201,162,39,0.05); }
+
     .ovr-badge {
-        font-size: 1.2rem;
-        font-weight: 900;
-        color: var(--gold-premium);
+        font-family: var(--font-display);
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: var(--ink);
+    }
+    .is-me .ovr-badge { color: var(--gold-bright); text-shadow: 0 0 12px var(--gold-glow); }
+    .is-bot .ovr-badge { color: var(--ink-faint); }
+
+    .you-badge {
+        background: var(--gold-bright);
+        color: var(--void);
+        font-family: var(--font-display);
+        font-size: 0.55rem;
+        letter-spacing: 0.1em;
+        padding: 2px 6px;
+        border-radius: 4px;
+        vertical-align: middle;
+        margin-left: 6px;
+    }
+
+    /* ============ ALERTAS & DM ============ */
+    .alert-panel {
+        border-radius: 16px;
+        padding: 20px;
+        display: flex;
+        align-items: flex-start;
+        gap: 16px;
+    }
+    .alert-panel.bench {
+        background: linear-gradient(135deg, rgba(255,152,0,0.08), transparent), var(--surface-2);
+        border: 1px dashed var(--alert);
+    }
+    .alert-panel.dm-red {
+        background: linear-gradient(135deg, rgba(255,82,82,0.1), transparent), var(--surface-2);
+        border: 1px solid rgba(255,82,82,0.4);
+        box-shadow: 0 10px 25px var(--live-glow);
+    }
+    .alert-panel.dm-green {
+        background: linear-gradient(135deg, rgba(34,201,138,0.08), transparent), var(--surface-2);
+        border: 1px solid rgba(34,201,138,0.3);
+    }
+
+    /* ============ SOCIAL BTN ============ */
+    .btn-social {
+        background: linear-gradient(120deg, var(--info), #1e9dbf);
+        color: var(--void);
+        font-family: var(--font-display);
+        text-transform: uppercase;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        border: none;
+        border-radius: 12px;
+        padding: 14px;
+        transition: all 0.3s ease;
+        display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-social:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 26px var(--info-glow);
+        color: var(--void);
+    }
+
+    .empty-season {
+        border: 1px dashed var(--surface-border);
+        border-radius: 16px;
+        background: var(--surface);
+        padding: 50px 20px;
+        text-align: center;
+    }
+
+    @media (max-width: 767.98px) {
+        .glass-card { padding: 20px; }
+        .tactic-slot { padding: 12px; flex-wrap: wrap; }
+        .pos-tag { min-width: 44px; height: 44px; font-size: 0.75rem; }
     }
 </style>
 
-<div class="container py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <a href="{% url 'modocarreira:dashboard' %}" class="btn btn-sm btn-outline-light mb-2">
+<div class="container cc-wrap py-4 py-md-5">
+    
+    <!-- HEADER -->
+    <div class="row align-items-center mb-4 gap-3 gap-md-0">
+        <div class="col-md-8">
+            <a href="{% url 'modocarreira:dashboard' %}" class="quick-access-btn mb-3">
                 <i class="fa-solid fa-arrow-left"></i> Voltar ao Hub
             </a>
-            <h2 class="fw-bold text-uppercase m-0" style="color: var(--gold-premium);">
+            <h2 class="cc-display m-0" style="color: var(--emerald-bright);">
                 <i class="fa-solid fa-users me-2"></i> Vestiário do {{ clube.sigla }}
             </h2>
         </div>
-        <div class="text-end d-none d-md-block">
-            <span class="text-white-50 small text-uppercase fw-bold d-block">O Seu Status</span>
+        <div class="col-md-4 text-md-end">
+            <span class="cc-eyebrow d-block mb-2">O Seu Status</span>
             {% if avatar.vaga_titular.exists %}
-                <span class="badge bg-success pulse-dot px-3 py-2 text-uppercase shadow-sm">Titular Absoluto</span>
+                <span class="status-badge status-titular"><i class="fa-solid fa-bolt me-1"></i> Titular Absoluto</span>
             {% else %}
-                <span class="badge bg-warning text-dark px-3 py-2 text-uppercase shadow-sm">Banco de Reservas</span>
+                <span class="status-badge status-banco"><i class="fa-solid fa-chair me-1"></i> Banco de Reservas</span>
             {% endif %}
         </div>
     </div>
 
     <div class="row g-4">
+        
+        <!-- PAINEL ESQUERDO: PRANCHETA TÁTICA -->
         <div class="col-lg-8">
-            <div class="glass-card">
-                <div class="d-flex justify-content-between align-items-center mb-4 border-bottom border-secondary pb-3">
-                    <h5 class="text-white-50 text-uppercase small fw-bold m-0">Prancheta Tática do Treinador (Os 11 Iniciais)</h5>
-                    <span class="badge bg-dark border border-secondary">Formação: 4-4-2</span>
+            <div class="glass-card h-100">
+                <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center mb-4 gap-2">
+                    <h5 class="cc-eyebrow m-0" style="font-size: 0.85rem; color: var(--ink);">
+                        <i class="fa-solid fa-clipboard-list me-2" style="color: var(--emerald-bright);"></i> Prancheta Tática (Os 11 Iniciais)
+                    </h5>
+                    <span class="cc-eyebrow" style="background: var(--surface-2); padding: 4px 10px; border-radius: 6px; border: 1px solid var(--surface-border);">Formação: 4-4-2</span>
                 </div>
 
-                <div class="elenco-list">
+                <hr class="section-divider">
+
+                <div class="tactic-board">
                     {% for posicao in escalacao %}
                         
                         {% if posicao.jogador_titular %}
-                            <div class="player-row p-3 d-flex align-items-center justify-content-between {% if posicao.jogador_titular == avatar %}player-me{% else %}player-real{% endif %}">
-                                <div class="d-flex align-items-center gap-3">
-                                    <div class="pos-badge">{{ posicao.posicao_campo }}</div>
-                                    <div>
-                                        <h5 class="fw-bold m-0 text-uppercase d-flex align-items-center gap-2">
+                            <div class="tactic-slot {% if posicao.jogador_titular == avatar %}is-me{% else %}is-real{% endif %}">
+                                <div class="d-flex align-items-center gap-3 overflow-hidden">
+                                    <div class="pos-tag">{{ posicao.posicao_campo }}</div>
+                                    <div class="text-truncate">
+                                        <h5 class="cc-display m-0 mb-1 text-truncate" style="font-size: 1.15rem; letter-spacing: 0.02em;">
                                             {{ posicao.jogador_titular.nome_camisa }}
                                             {% if posicao.jogador_titular == avatar %}
-                                                <span class="badge bg-warning text-dark small" style="font-size: 0.6rem;">VOCÊ</span>
+                                                <span class="you-badge">VOCÊ</span>
                                             {% endif %}
                                         </h5>
-                                        <small class="text-white-50">
-                                            <i class="fa-solid fa-bolt text-warning"></i> Físico: {{ posicao.jogador_titular.fisico }}%
+                                        <small class="cc-eyebrow d-block text-truncate" style="font-size: 0.65rem;">
+                                            <i class="fa-solid fa-bolt {% if posicao.jogador_titular == avatar %}text-warning{% else %}text-white-50{% endif %}"></i> Físico: {{ posicao.jogador_titular.fisico }}%
                                         </small>
                                     </div>
                                 </div>
-                                <div class="text-end">
-                                    <span class="d-block text-white-50 small fw-bold text-uppercase">OVR</span>
+                                <div class="text-end ps-2">
                                     <span class="ovr-badge">{{ posicao.jogador_titular.ovr_calculado }}</span>
+                                    <span class="cc-eyebrow d-block" style="font-size: 0.5rem;">OVR</span>
                                 </div>
                             </div>
 
                         {% else %}
-                            <div class="player-row p-3 d-flex align-items-center justify-content-between player-bot">
-                                <div class="d-flex align-items-center gap-3">
-                                    <div class="pos-badge text-white-50">{{ posicao.posicao_campo }}</div>
-                                    <div>
-                                        <h6 class="fw-bold text-white-50 m-0 text-uppercase">{{ posicao.bot_nome }}</h6>
-                                        <small class="text-muted" style="font-size: 0.7rem;">(Categoria de Base)</small>
+                            <!-- SLOT BOT (BASE) -->
+                            <div class="tactic-slot is-bot">
+                                <div class="d-flex align-items-center gap-3 overflow-hidden">
+                                    <div class="pos-tag">{{ posicao.posicao_campo }}</div>
+                                    <div class="text-truncate">
+                                        <h6 class="cc-display m-0 mb-1 text-truncate" style="font-size: 1rem; color: var(--ink-dim);">{{ posicao.bot_nome }}</h6>
+                                        <small class="cc-eyebrow d-block" style="font-size: 0.6rem; color: var(--ink-faint);">(Categoria de Base)</small>
                                     </div>
                                 </div>
-                                <div class="text-end">
-                                    <span class="d-block text-muted small fw-bold text-uppercase">OVR</span>
-                                    <span class="ovr-badge text-white-50">{{ posicao.bot_ovr }}</span>
+                                <div class="text-end ps-2">
+                                    <span class="ovr-badge">{{ posicao.bot_ovr }}</span>
+                                    <span class="cc-eyebrow d-block" style="font-size: 0.5rem;">OVR</span>
                                 </div>
                             </div>
                         {% endif %}
 
                     {% empty %}
-                        <div class="text-center py-5">
-                            <i class="fa-solid fa-clipboard-question fs-1 text-muted mb-3"></i>
-                            <h5 class="text-white-50 text-uppercase">Prancheta Vazia</h5>
-                            <p class="small text-muted">O treinador ainda não divulgou a escalação para a próxima partida.</p>
+                        <div class="empty-season">
+                            <i class="fa-solid fa-clipboard-question fs-1 mb-3 opacity-25" style="color: var(--emerald-bright);"></i>
+                            <h5 class="cc-display mb-2">Prancheta Vazia</h5>
+                            <p class="text-white-50 small m-0">O treinador ainda não divulgou a escalação para a próxima partida.</p>
                         </div>
                     {% endfor %}
                 </div>
             </div>
         </div>
 
+        <!-- PAINEL DIREITO: STATUS, DM & SOCIAL -->
         <div class="col-lg-4">
             
             {% if not avatar.vaga_titular.exists %}
-            <div class="glass-card mb-4" style="border: 2px dashed #ff9800; background-color: rgba(255, 152, 0, 0.05);">
-                <div class="d-flex align-items-center gap-3">
-                    <i class="fa-solid fa-chair fs-1 text-warning"></i>
-                    <div>
-                        <h6 class="fw-bold text-warning text-uppercase mb-1">Você está no Banco!</h6>
-                        <p class="small text-white-50 m-0">Treine duro para superar o OVR dos titulares. Fique atento: você pode entrar aos 60 minutos se alguém cansar!</p>
-                    </div>
+            <div class="alert-panel bench mb-4">
+                <i class="fa-solid fa-chair fs-2" style="color: var(--alert);"></i>
+                <div>
+                    <h6 class="cc-display m-0 mb-1" style="color: var(--alert); font-size: 1.1rem;">Você está no Banco!</h6>
+                    <p class="cc-eyebrow m-0" style="font-size: 0.65rem; color: var(--ink-dim); line-height: 1.4; text-transform: none; font-family: var(--font-body); font-weight: 400;">
+                        Treine duro para superar o OVR dos titulares. Fique atento: você pode entrar aos 60 minutos se alguém cansar!
+                    </p>
                 </div>
             </div>
             {% endif %}
 
-            <div class="glass-card mb-4">
-                <h6 class="text-white-50 text-uppercase small fw-bold mb-4">Relatório do Departamento Médico</h6>
+            <div class="glass-card mb-4" style="border-top: 3px solid var(--surface-border);">
+                <h6 class="cc-eyebrow mb-3" style="font-size: 0.8rem; color: var(--ink);"><i class="fa-solid fa-truck-medical me-2"></i> Departamento Médico</h6>
                 
                 {% if avatar.lesionado_rodadas_restantes > 0 %}
-                    <div class="alert alert-danger bg-danger bg-opacity-10 border-danger text-danger">
-                        <i class="fa-solid fa-briefcase-medical me-2"></i> <strong>Você está Lesionado!</strong><br>
-                        <small>{{ avatar.descricao_lesao }}</small><br>
-                        <small class="fw-bold mt-1 d-block">Previsão de retorno: {{ avatar.lesionado_rodadas_restantes }} rodada(s).</small>
+                    <div class="alert-panel dm-red flex-column align-items-center text-center p-4">
+                        <i class="fa-solid fa-crutch fs-1 mb-2" style="color: var(--live);"></i>
+                        <h6 class="cc-display m-0" style="color: var(--live); font-size: 1.2rem;">Você está Lesionado!</h6>
+                        <p class="text-white-50 small my-2">{{ avatar.descricao_lesao }}</p>
+                        <div class="w-100 mt-2" style="background: rgba(255,82,82,0.1); border: 1px solid rgba(255,82,82,0.2); padding: 8px; border-radius: 8px;">
+                            <span class="cc-eyebrow m-0" style="color: var(--live);">Retorno: {{ avatar.lesionado_rodadas_restantes }} rodada(s)</span>
+                        </div>
                     </div>
                 {% else %}
-                    <div class="d-flex align-items-center gap-3 p-3 rounded" style="background-color: rgba(76, 175, 80, 0.1); border: 1px solid rgba(76, 175, 80, 0.3);">
-                        <i class="fa-solid fa-heart-pulse fs-3 text-success"></i>
+                    <div class="alert-panel dm-green align-items-center">
+                        <i class="fa-solid fa-heart-pulse fs-2" style="color: var(--emerald-bright);"></i>
                         <div>
-                            <h6 class="fw-bold text-success text-uppercase m-0">100% Saudável</h6>
-                            <small class="text-white-50">Você está apto para ir a jogo.</small>
+                            <h6 class="cc-display m-0 mb-1" style="color: var(--emerald-bright); font-size: 1.1rem;">100% Saudável</h6>
+                            <p class="cc-eyebrow m-0" style="font-size: 0.65rem; color: var(--ink-dim); text-transform: none; font-family: var(--font-body); font-weight: 400;">
+                                Você está apto fisicamente para ir a jogo.
+                            </p>
                         </div>
                     </div>
                 {% endif %}
             </div>
 
-            <div class="glass-card text-center">
-                <i class="fa-solid fa-comments fs-2 text-info mb-3"></i>
-                <h6 class="fw-bold text-uppercase mb-2">Clima no Balneário</h6>
-                <p class="small text-white-50 mb-3">Veja o que a imprensa está a dizer sobre a equipa ou resolva conflitos com os seus colegas.</p>
-                <a href="{% url 'modocarreira:tela_social' %}" class="btn btn-outline-info w-100 fw-bold text-uppercase shadow-sm">
-                    Ver O Cartoleiro <i class="fa-solid fa-newspaper ms-2"></i>
+            <div class="glass-card text-center" style="border-top: 3px solid var(--info);">
+                <i class="fa-solid fa-bullhorn mb-3" style="font-size: 2.5rem; color: var(--info); filter: drop-shadow(0 0 10px var(--info-glow));"></i>
+                <h6 class="cc-display mb-2" style="font-size: 1.1rem;">Clima no Balneário</h6>
+                <p class="text-white-50 small mb-4" style="line-height: 1.4;">Acompanhe o que a imprensa está a dizer sobre a equipa ou tente resolver conflitos com os seus colegas.</p>
+                
+                <a href="{% url 'modocarreira:tela_social' %}" class="btn btn-social w-100">
+                    <i class="fa-solid fa-newspaper"></i> Abrir O Cartoleiro
                 </a>
             </div>
 

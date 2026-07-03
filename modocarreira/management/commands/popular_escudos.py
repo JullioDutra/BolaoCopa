@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
 from modocarreira.models import Clube
 # Assumindo que a sua app 'duelos' tem o modelo ClubeFutebol com os escudos reais
-from duelos.models import ClubeFutebol 
+from duelos.models import Clube 
 
 class Command(BaseCommand):
     help = 'Sincroniza os escudos reais da app Duelos para o Modo Carreira'
@@ -15,7 +15,7 @@ class Command(BaseCommand):
 
         for clube in clubes_carreira:
             # Procura um clube na app Duelos que tenha o mesmo nome (ignorando maiúsculas/minúsculas)
-            clube_real = ClubeFutebol.objects.filter(nome__icontains=clube.nome).first()
+            clube_real = Clube.objects.filter(nome__icontains=clube.nome).first()
             
             # Se encontrou o clube e ele tem uma imagem de escudo guardada
             if clube_real and clube_real.escudo:

@@ -73,9 +73,20 @@ def dashboard_carreira(request):
     except Avatar.DoesNotExist:
         return redirect('modocarreira:tela_peneira')
 
+    clube = avatar.clube_atual
+    proxima_partida = None
+    
+    if clube:
+        # Busca o próximo jogo do clube do jogador (que ainda não acabou)
+        proxima_partida = PartidaMundo.objects.filter(
+            Q(clube_casa=clube) | Q(clube_fora=clube),
+            status__in=['agendada', 'andamento']
+        ).order_by('id').first()
+
     contexto = {
         'avatar': avatar,
-        'clube': avatar.clube_atual,
+        'clube': clube,
+        'proxima_partida': proxima_partida,
     }
     return render(request, 'carreira/dashboard.html', contexto)
 

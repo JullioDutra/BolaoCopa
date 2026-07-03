@@ -96,25 +96,50 @@ def gerar_laudo_medico_ia(nome_jogador):
     except Exception:
         return "Rotura muscular na coxa direita devido a fadiga extrema."
 
-def gerar_noticia_jornal_ia(clube_casa, gols_casa, clube_fora, gols_fora, heroi=None):
-    texto_heroi = f"O grande destaque foi {heroi}." if heroi else ""
-    prompt = f"""
-    Escreva uma notícia de jornal sensacionalista de futebol sobre o jogo: {clube_casa} {gols_casa} x {gols_fora} {clube_fora}. {texto_heroi}
-    Retorne UM JSON com:
-    {{
-        "manchete": "Título Chamativo (máx 10 palavras)",
-        "corpo": "Texto da notícia com 3 frases divertidas e sensacionalistas."
-    }}
-    """
+# Configura a IA
+if hasattr(settings, 'GEMINI_API_KEY'):
+    genai.configure(api_key=settings.GEMINI_API_KEY)
+
+def gerar_noticia_jornal_ia(casa, gols_c, fora, gols_f):
+    """ Cria a manchete criativa para a tela Social do Cartoleiro """
+    padrao_fallback = {
+        "manchete": f"{casa} e {fora} protagonizam duelo acirrado!",
+        "corpo": f"A partida terminou com o placar de {gols_c} a {gols_f}. Os torcedores já especulam o futuro das equipes no campeonato metaverso."
+    }
+    
     try:
-        modelo = obter_modelo_gemini(formato_json=True)
-        resposta = modelo.generate_content(prompt)
-        return json.loads(resposta.text)
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        prompt = f"""
+        Você é um jornalista esportivo polêmico. Escreva uma manchete criativa e um parágrafo curto de notícia sobre o jogo: {casa} {gols_c} x {gols_f} {fora}.
+        Responda APENAS em um JSON estrito com as chaves "manchete" e "corpo".
+        """
+        resposta = model.generate_content(prompt)
+        # Limpa formatação markdown se houver
+        texto_limpo = resposta.text.replace('```json', '').replace('```', '').strip()
+        dados = json.loads(texto_limpo)
+        return dados
+    except Exception as e:
+        print(f"Erro na IA do Jornal: {e}")
+        return padrao_fallback
+
+def gerar_frases_narracao_ia(casa, fora):
+    """ Retorna frases dinâmicas para a tela do Jogo Ao Vivo (Match Day) """
+    try:
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        prompt = f"""
+        Escreva 3 frases de narração de futebol emocionantes para um jogo entre {casa} e {fora}.
+        Não use números, apenas frases genéricas de lance perigoso, dividida forte e torcida cantando.
+        Responda APENAS com um array JSON de strings. Exemplo: ["Que lance absurdo!", "A torcida do {casa} canta alto!", "Falta dura!"]
+        """
+        resposta = model.generate_content(prompt)
+        texto_limpo = resposta.text.replace('```json', '').replace('```', '').strip()
+        return json.loads(texto_limpo)
     except Exception:
-        return {
-            "manchete": f"Fim de Papo: {clube_casa} e {clube_fora} dão espetáculo!",
-            "corpo": f"A partida terminou {gols_casa} a {gols_fora}. Os adeptos já comentam nas redes sociais sobre o desempenho das equipas, exigindo melhorias para a próxima rodada."
-        }
+        return [
+            f"O clima esquenta entre {casa} e {fora}!",
+            "O treinador esbraveja na beira do campo.",
+            "Posse de bola truncada no meio campo."
+        ]
 
 
 # ==========================================

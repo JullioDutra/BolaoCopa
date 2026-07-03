@@ -203,7 +203,7 @@
         // Desabilita botões preventivamente
         botoes.forEach(btn => btn.disabled = true);
 
-        fetch("{% url 'carreira:api_treinar' %}", {
+        fetch("{% url 'modocarreira:api_treinar' %}", {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

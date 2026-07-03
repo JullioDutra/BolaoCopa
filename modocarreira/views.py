@@ -46,8 +46,12 @@ def api_assinar_contrato(request):
             data = json.loads(request.body)
             nome_camisa = data.get('nome')
             arquetipo = data.get('arquetipo')
+            posicao_preferida = data.get('posicao_preferida')
 
-            avatar = criar_avatar_peneira(request.user, nome_camisa, arquetipo)
+            if not posicao_preferida:
+                return JsonResponse({'sucesso': False, 'mensagem': 'Selecione uma posição em campo antes de assinar.'})
+
+            avatar = criar_avatar_peneira(request.user, nome_camisa, arquetipo, posicao_preferida)
 
             return JsonResponse({
                 'sucesso': True,

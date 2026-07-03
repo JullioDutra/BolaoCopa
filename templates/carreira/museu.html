@@ -4,77 +4,190 @@
 {% block title %}Museu do Futebol - Cartolândia{% endblock %}
 
 {% block content %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
 <style>
     :root {
-        --dark-bg: #050505;
-        --dark-surface: #0a0a0a;
-        --gold-premium: #cfb53b;
-        --gold-glow: rgba(207, 181, 59, 0.4);
+        /* ---- Paleta Base ---- */
+        --void: #050907;
+        --surface: #0b1310;
+        --surface-2: #101c17;
+        --surface-border: rgba(255,255,255,0.07);
+
+        --gold: #c9a227;
+        --gold-bright: #f2d879;
+        --gold-glow: rgba(201,162,39,0.35);
+
+        --silver: #c0c0c0;
+        --silver-glow: rgba(192, 192, 192, 0.25);
+        
+        --bronze: #cd7f32;
+        --bronze-glow: rgba(205, 127, 50, 0.25);
+
+        --museum-purple: #c084fc;
+        --museum-glow: rgba(192, 132, 252, 0.15);
+
+        --ink: #f3f6f2;
+        --ink-dim: rgba(243,246,242,0.58);
+        --ink-faint: rgba(243,246,242,0.32);
+
+        --font-display: 'Oswald', 'Arial Narrow', sans-serif;
+        --font-body: 'Inter', -apple-system, sans-serif;
     }
 
-    body { background-color: var(--dark-bg); color: #ffffff; }
+    body {
+        background: 
+            radial-gradient(circle at 50% 0%, var(--museum-glow), transparent 50%),
+            radial-gradient(circle at 80% 100%, rgba(201,162,39,0.05), transparent 45%),
+            var(--void);
+        color: var(--ink);
+        font-family: var(--font-body);
+    }
 
-    .glass-card {
-        background: rgba(10, 10, 10, 0.85);
-        backdrop-filter: blur(12px);
-        border: 1px solid rgba(207, 181, 59, 0.15);
+    .cc-wrap { max-width: 1240px; }
+
+    /* ============ TIPOGRAFIA ============ */
+    .cc-display {
+        font-family: var(--font-display);
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        font-weight: 600;
+    }
+    .cc-eyebrow {
+        font-family: var(--font-display);
+        text-transform: uppercase;
+        letter-spacing: 0.16em;
+        font-size: 0.68rem;
+        font-weight: 600;
+        color: var(--ink-faint);
+    }
+
+    /* ============ NAVEGAÇÃO ============ */
+    .quick-access-btn {
         border-radius: 12px;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
-        padding: 24px;
+        font-family: var(--font-display);
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        font-size: 0.82rem;
+        padding: 10px 18px;
+        border: 1px solid var(--surface-border);
+        background: var(--surface);
+        color: var(--ink-dim);
+        transition: all 0.25s ease;
+        text-decoration: none;
+        display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .quick-access-btn:hover {
+        color: var(--void);
+        background: linear-gradient(120deg, var(--museum-purple), #9333ea);
+        border-color: #9333ea;
+        transform: translateY(-2px);
+    }
+
+    /* ============ PAINÉIS ============ */
+    .glass-card {
+        background: linear-gradient(160deg, rgba(255,255,255,0.045), rgba(255,255,255,0.01)), var(--surface);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+        border: 1px solid var(--surface-border);
+        border-radius: 18px;
+        box-shadow: 0 20px 45px rgba(0,0,0,0.55);
+        padding: 26px;
+        position: relative;
+        overflow: hidden;
+        z-index: 1;
+    }
+
+    .bg-watermark {
+        position: absolute;
+        bottom: -20%;
+        right: -10%;
+        font-size: 18rem;
+        color: rgba(255, 255, 255, 0.015);
+        z-index: 0;
+        transform: rotate(-15deg);
+        pointer-events: none;
+    }
+
+    /* ============ PEDESTAIS DE TROFÉU ============ */
+    .pedestal {
+        background: linear-gradient(180deg, rgba(255,255,255,0.03), var(--surface-2));
+        border: 1px solid var(--surface-border);
+        border-bottom: 3px solid var(--pedestal-color, var(--surface-border));
+        border-radius: 16px;
+        padding: 34px 20px;
+        text-align: center;
+        transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+        height: 100%;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+    .pedestal:hover {
+        transform: translateY(-8px);
+        background: linear-gradient(180deg, rgba(255,255,255,0.05), var(--surface-2));
+        box-shadow: 0 15px 35px var(--pedestal-glow, rgba(0,0,0,0.5));
+    }
+    .pedestal-icon {
+        font-size: 4.5rem;
+        color: var(--pedestal-color, var(--ink-faint));
+        margin-bottom: 20px;
+        filter: drop-shadow(0 0 18px var(--pedestal-glow, transparent));
+    }
+    
+    .pedestal.gold { --pedestal-color: var(--gold-bright); --pedestal-glow: var(--gold-glow); }
+    .pedestal.silver { --pedestal-color: var(--silver); --pedestal-glow: var(--silver-glow); }
+    .pedestal.bronze { --pedestal-color: var(--bronze); --pedestal-glow: var(--bronze-glow); }
+
+    /* ============ CARTÕES DE LENDAS ============ */
+    .legend-panel {
+        background: linear-gradient(135deg, rgba(255,255,255,0.03), transparent), var(--surface-2);
+        border: 1px solid var(--surface-border);
+        border-left: 4px solid var(--legend-color, var(--gold));
+        border-radius: 12px;
+        padding: 20px;
+        margin-top: 16px;
+        text-align: left;
         position: relative;
         overflow: hidden;
     }
+    .legend-panel::after {
+        content: ''; position: absolute; top: 0; right: 0; bottom: 0; width: 50%;
+        background: radial-gradient(circle at 100% 50%, var(--legend-glow, transparent), transparent 70%);
+        opacity: 0.15; pointer-events: none;
+    }
+    .legend-panel.ballon-dor { --legend-color: var(--gold-bright); --legend-glow: var(--gold-bright); }
+    .legend-panel.golden-boot { --legend-color: var(--silver); --legend-glow: var(--silver); }
 
-    .trophy-showcase {
-        background: radial-gradient(circle at center, #1a1a1a 0%, #050505 100%);
-        border-bottom: 2px solid var(--gold-premium);
-        border-radius: 12px;
-        padding: 30px 15px;
-        text-align: center;
-        transition: transform 0.3s;
+    hr.section-divider {
+        border: none; height: 1px;
+        background: linear-gradient(90deg, var(--surface-border), transparent);
+        margin: 0 0 24px;
     }
 
-    .trophy-showcase:hover {
-        transform: scale(1.02);
-        box-shadow: 0 0 25px var(--gold-glow);
-    }
-
-    .trophy-icon {
-        font-size: 5rem;
-        color: var(--gold-premium);
-        filter: drop-shadow(0 0 15px rgba(207, 181, 59, 0.6));
-        margin-bottom: 15px;
-    }
-
-    .legend-card {
-        background: linear-gradient(135deg, #111 0%, #000 100%);
-        border-left: 4px solid var(--gold-premium);
-        border-radius: 8px;
-        padding: 15px;
-    }
-
-    .hall-of-fame-bg {
-        position: absolute;
-        top: -50px;
-        right: -50px;
-        font-size: 15rem;
-        color: rgba(255, 255, 255, 0.02);
-        z-index: 0;
-        transform: rotate(15deg);
+    @media (max-width: 767.98px) {
+        .glass-card { padding: 20px; }
+        .pedestal { padding: 24px 16px; }
+        .pedestal-icon { font-size: 3.5rem; }
     }
 </style>
 
-<div class="container py-5">
-    <!-- Cabeçalho de Gala -->
-    <div class="d-flex justify-content-between align-items-center mb-5">
-        <div>
-            <a href="{% url 'modocarreira:dashboard' %}" class="btn btn-sm btn-outline-light mb-3" style="border-radius: 20px;">
+<div class="container cc-wrap py-4 py-md-5">
+    
+    <!-- CABEÇALHO -->
+    <div class="row align-items-center mb-5 gap-3 gap-md-0">
+        <div class="col-md-12">
+            <a href="{% url 'modocarreira:dashboard' %}" class="quick-access-btn mb-4">
                 <i class="fa-solid fa-arrow-left"></i> Voltar ao Hub
             </a>
-            <h1 class="fw-black text-uppercase m-0" style="color: var(--gold-premium); letter-spacing: 2px;">
+            <h1 class="cc-display m-0" style="color: var(--museum-purple); font-size: 2.5rem; letter-spacing: 0.05em;">
                 <i class="fa-solid fa-building-columns me-2"></i> Museu do Futebol
             </h1>
-            <p class="text-white-50 text-uppercase small m-0" style="letter-spacing: 1px;">A História Eterna do Metaverso da Cartolândia</p>
+            <p class="cc-eyebrow mt-2 mb-0" style="font-size: 0.8rem;">A História Eterna do Metaverso da Cartolândia</p>
         </div>
     </div>
 
@@ -82,48 +195,52 @@
         
         <!-- SALA DE TROFÉUS (CAMPEÕES) -->
         <div class="col-lg-8">
-            <div class="glass-card h-100">
-                <i class="fa-solid fa-trophy hall-of-fame-bg"></i>
-                <div class="position-relative z-index-1">
-                    <h5 class="text-white-50 text-uppercase small fw-bold mb-4 border-bottom border-secondary pb-2">Galeria de Campeões (Temporada Anterior)</h5>
+            <div class="glass-card h-100 border-top-0 border-start-0 border-end-0 border-bottom" style="border-bottom-width: 3px; border-bottom-color: var(--museum-purple);">
+                <i class="fa-solid fa-trophy bg-watermark"></i>
+                
+                <div class="position-relative z-1">
+                    <h5 class="cc-eyebrow mb-3" style="font-size: 0.85rem; color: var(--ink);">Galeria de Campeões (Temporada Anterior)</h5>
+                    <hr class="section-divider">
                     
                     <div class="row g-3">
                         <!-- Campeão Série A -->
                         <div class="col-md-4">
-                            <div class="trophy-showcase h-100">
-                                <i class="fa-solid fa-trophy trophy-icon"></i>
-                                <h6 class="fw-bold text-uppercase text-white mb-1">Série A</h6>
+                            <div class="pedestal gold">
+                                <i class="fa-solid fa-trophy pedestal-icon"></i>
+                                <h6 class="cc-eyebrow mb-2">Série A</h6>
                                 {% if campeao_serie_a %}
-                                    <h4 class="fw-black m-0" style="color: var(--gold-premium);">{{ campeao_serie_a.nome }}</h4>
+                                    <h4 class="cc-display m-0" style="color: var(--gold-bright); font-size: 1.3rem;">{{ campeao_serie_a.nome }}</h4>
                                 {% else %}
-                                    <h5 class="text-muted m-0">A Disputar</h5>
-                                    <small class="text-white-50">Temporada 1 em andamento</small>
+                                    <h5 class="cc-display m-0 text-muted" style="font-size: 1.1rem;">A Disputar</h5>
+                                    <small class="cc-eyebrow mt-2 d-block" style="font-size: 0.55rem;">Temporada 1 em andamento</small>
                                 {% endif %}
                             </div>
                         </div>
 
                         <!-- Campeão Série B -->
                         <div class="col-md-4">
-                            <div class="trophy-showcase h-100">
-                                <i class="fa-solid fa-medal trophy-icon" style="color: #C0C0C0; filter: drop-shadow(0 0 15px rgba(192, 192, 192, 0.4));"></i>
-                                <h6 class="fw-bold text-uppercase text-white mb-1">Série B</h6>
+                            <div class="pedestal silver">
+                                <i class="fa-solid fa-medal pedestal-icon"></i>
+                                <h6 class="cc-eyebrow mb-2">Série B</h6>
                                 {% if campeao_serie_b %}
-                                    <h4 class="fw-black m-0" style="color: #C0C0C0;">{{ campeao_serie_b.nome }}</h4>
+                                    <h4 class="cc-display m-0" style="color: var(--silver); font-size: 1.3rem;">{{ campeao_serie_b.nome }}</h4>
                                 {% else %}
-                                    <h5 class="text-muted m-0">A Disputar</h5>
+                                    <h5 class="cc-display m-0 text-muted" style="font-size: 1.1rem;">A Disputar</h5>
+                                    <small class="cc-eyebrow mt-2 d-block" style="font-size: 0.55rem;">Temporada 1 em andamento</small>
                                 {% endif %}
                             </div>
                         </div>
 
                         <!-- Campeão Copa -->
                         <div class="col-md-4">
-                            <div class="trophy-showcase h-100">
-                                <i class="fa-solid fa-shield-halved trophy-icon" style="color: #b08d57; filter: drop-shadow(0 0 15px rgba(176, 141, 87, 0.4));"></i>
-                                <h6 class="fw-bold text-uppercase text-white mb-1">Copa Nacional</h6>
+                            <div class="pedestal bronze">
+                                <i class="fa-solid fa-shield-halved pedestal-icon"></i>
+                                <h6 class="cc-eyebrow mb-2">Copa Nacional</h6>
                                 {% if campeao_copa %}
-                                    <h4 class="fw-black m-0" style="color: #b08d57;">{{ campeao_copa.nome }}</h4>
+                                    <h4 class="cc-display m-0" style="color: var(--bronze); font-size: 1.3rem;">{{ campeao_copa.nome }}</h4>
                                 {% else %}
-                                    <h5 class="text-muted m-0">A Disputar</h5>
+                                    <h5 class="cc-display m-0 text-muted" style="font-size: 1.1rem;">A Disputar</h5>
+                                    <small class="cc-eyebrow mt-2 d-block" style="font-size: 0.55rem;">Temporada 1 em andamento</small>
                                 {% endif %}
                             </div>
                         </div>
@@ -135,30 +252,39 @@
         <!-- BOLA DE OURO & DESTAQUES INDIVIDUAIS -->
         <div class="col-lg-4">
             <div class="glass-card h-100">
-                <h5 class="text-white-50 text-uppercase small fw-bold mb-4 border-bottom border-secondary pb-2">Hall da Fama Individual</h5>
+                <h5 class="cc-eyebrow mb-3" style="font-size: 0.85rem; color: var(--ink);">Hall da Fama Individual</h5>
+                <hr class="section-divider">
                 
-                <div class="text-center mb-4">
-                    <i class="fa-solid fa-globe fs-1 mb-2" style="color: var(--gold-premium);"></i>
-                    <h6 class="fw-bold text-uppercase mb-0">Melhor do Mundo (Ballon d'Or)</h6>
-                    <div class="legend-card mt-3 text-start">
+                <div class="text-center mb-5">
+                    <i class="fa-solid fa-globe mb-3" style="font-size: 2.5rem; color: var(--gold-bright); filter: drop-shadow(0 0 10px var(--gold-glow));"></i>
+                    <h6 class="cc-display m-0" style="font-size: 1rem; color: var(--gold-bright);">Melhor do Mundo <span class="text-white-50 small text-capitalize" style="font-family: var(--font-body);">(Ballon d'Or)</span></h6>
+                    
+                    <div class="legend-panel ballon-dor">
                         {% if bola_de_ouro %}
-                            <h5 class="fw-bold text-uppercase m-0">{{ bola_de_ouro.nome_camisa }}</h5>
-                            <small class="text-white-50">{{ bola_de_ouro.clube_atual.nome }} | OVR: {{ bola_de_ouro.ovr_calculado }}</small>
+                            <h5 class="cc-display m-0 mb-1" style="font-size: 1.25rem;">{{ bola_de_ouro.nome_camisa }}</h5>
+                            <span class="cc-eyebrow d-block" style="font-size: 0.6rem;">{{ bola_de_ouro.clube_atual.nome }} &bull; OVR: <span class="text-white">{{ bola_de_ouro.ovr_calculado }}</span></span>
                         {% else %}
-                            <h6 class="text-muted m-0 text-center py-2">Nenhum jogador eleito ainda.</h6>
+                            <div class="text-center py-2">
+                                <i class="fa-solid fa-fingerprint mb-2 opacity-25 fs-4"></i>
+                                <h6 class="cc-eyebrow m-0 text-muted">Nenhum jogador eleito</h6>
+                            </div>
                         {% endif %}
                     </div>
                 </div>
 
                 <div class="text-center">
-                    <i class="fa-solid fa-shoe-prints fs-2 mb-2" style="color: #ccc;"></i>
-                    <h6 class="fw-bold text-uppercase mb-0">Chuteira de Ouro (Artilheiro)</h6>
-                    <div class="legend-card mt-3 text-start" style="border-color: #ccc;">
+                    <i class="fa-solid fa-shoe-prints mb-3" style="font-size: 2.5rem; color: var(--silver); filter: drop-shadow(0 0 10px var(--silver-glow));"></i>
+                    <h6 class="cc-display m-0" style="font-size: 1rem; color: var(--silver);">Chuteira de Ouro <span class="text-white-50 small text-capitalize" style="font-family: var(--font-body);">(Artilheiro)</span></h6>
+                    
+                    <div class="legend-panel golden-boot">
                         {% if artilheiro %}
-                            <h5 class="fw-bold text-uppercase m-0">{{ artilheiro.nome_camisa }}</h5>
-                            <small class="text-white-50">{{ artilheiro.gols }} Gols Marcados</small>
+                            <h5 class="cc-display m-0 mb-1" style="font-size: 1.25rem;">{{ artilheiro.nome_camisa }}</h5>
+                            <span class="cc-eyebrow d-block" style="font-size: 0.6rem;"><span class="text-white">{{ artilheiro.gols }}</span> Gols Marcados</span>
                         {% else %}
-                            <h6 class="text-muted m-0 text-center py-2">Aguardando o fim da temporada.</h6>
+                            <div class="text-center py-2">
+                                <i class="fa-solid fa-hourglass-empty mb-2 opacity-25 fs-4"></i>
+                                <h6 class="cc-eyebrow m-0 text-muted">Aguardando Fim de Época</h6>
+                            </div>
                         {% endif %}
                     </div>
                 </div>

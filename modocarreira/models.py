@@ -146,6 +146,7 @@ class PartidaMundo(models.Model):
     jogador_esperado = models.ForeignKey(Avatar, on_delete=models.SET_NULL, null=True, blank=True, related_name='lances_pendentes')
     opcoes_lance = models.JSONField(null=True, blank=True)
     vencimento_lance = models.DateTimeField(null=True, blank=True)
+    rodada = models.IntegerField(default=1)
 
     def adicionar_log(self, texto, destaque=False):
         log = self.log_narracao

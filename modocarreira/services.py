@@ -273,22 +273,40 @@ def gerar_calendario_liga(campeonato):
     PartidaMundo.objects.bulk_create(partidas_criadas)
 
 def escalar_time_titular(clube):
-    # Apenas alteramos o array para que cada string seja 100% única
-    posicoes_taticas = ['GK', 'RB', 'CB1', 'CB2', 'LB', 'RM', 'CM1', 'CM2', 'LM', 'ST1', 'ST2']
+    import random
+    from modocarreira.models import Avatar, EscalacaoPosicao
     
-    elenco_real = list(Avatar.objects.filter(clube_atual=clube, lesionado_rodadas_restantes=0))
-    elenco_real.sort(key=lambda x: x.ovr_calculado + (x.moral / 10), reverse=True)
+    # 1. Pega todos os jogadores reais do clube aptos para jogar e ordena por OVR
+    jogadores_reais = list(Avatar.objects.filter(clube_atual=clube, lesionado_rodadas_restantes=0).order_by('-ovr_calculado'))
     
+    # 2. Separa por setor baseado na sigla da posição escolhida
+    goleiros = [j for j in jogadores_reais if j.posicao_preferida == 'GOL']
+    defensores = [j for j in jogadores_reais if j.posicao_preferida in ['ZAG', 'LD', 'LE']]
+    meias = [j for j in jogadores_reais if j.posicao_preferida in ['VOL', 'MC', 'MEI']]
+    atacantes = [j for j in jogadores_reais if j.posicao_preferida in ['PE', 'PD', 'SA', 'CA']]
+
+    # Limpa a prancheta atual
     EscalacaoPosicao.objects.filter(clube=clube).delete()
     escalacao_salvar = []
-    
-    for posicao in posicoes_taticas:
-        jogador_escolhido = elenco_real.pop(0) if elenco_real else None
-        if jogador_escolhido:
-            escalacao_salvar.append(EscalacaoPosicao(clube=clube, posicao_campo=posicao, jogador_titular=jogador_escolhido))
+
+    # Mapa tático de um 4-3-3 moderno
+    mapa_tatico = [
+        ('GK', goleiros),
+        ('RB', defensores), ('CB1', defensores), ('CB2', defensores), ('LB', defensores),
+        ('CDM', meias), ('CM1', meias), ('CM2', meias),
+        ('RW', atacantes), ('ST', atacantes), ('LW', atacantes)
+    ]
+
+    for vaga, pool_jogadores in mapa_tatico:
+        # Pega o melhor jogador disponível para aquele setor
+        if pool_jogadores:
+            craque = pool_jogadores.pop(0)
+            escalacao_salvar.append(EscalacaoPosicao(clube=clube, posicao_campo=vaga, jogador_titular=craque))
         else:
-            escalacao_salvar.append(EscalacaoPosicao(clube=clube, posicao_campo=posicao, bot_nome=f"Base {clube.sigla} ({posicao})", bot_ovr=random.randint(55, 65)))
-            
+            # Se não tiver jogador real, cria um Bot específico para aquela posição
+            bot_nome = f"Base {clube.sigla} ({vaga})"
+            escalacao_salvar.append(EscalacaoPosicao(clube=clube, posicao_campo=vaga, bot_nome=bot_nome, bot_ovr=random.randint(55, 65)))
+
     EscalacaoPosicao.objects.bulk_create(escalacao_salvar)
     return True
 

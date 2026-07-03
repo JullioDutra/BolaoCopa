@@ -18,12 +18,12 @@ from .models import (
 # 1. CONFIGURAÇÃO E FUNÇÕES DA IA (GEMINI)
 # ==========================================
 
-# genai.configure(api_key=settings.GEMINI_API_KEY)
+genai.configure(api_key=settings.GEMINI_API_KEY)
 
 def obter_modelo_gemini(formato_json=False):
     """ Retorna a instância do Gemini otimizada (Força JSON se necessário) """
     config = {"response_mime_type": "application/json"} if formato_json else None
-    return genai.GenerativeModel('gemini-1.5-flash', generation_config=config)
+    return genai.GenerativeModel('gemini-2.5-flash', generation_config=config)
 
 def gerar_dilema_ia(avatar):
     clube_nome = avatar.clube_atual.nome if avatar.clube_atual else "clube de várzea"

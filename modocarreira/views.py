@@ -444,3 +444,40 @@ def api_cron_engine(request, token):
     except Exception as e:
         logger.error(f"Erro no Cron Engine: {e}")
         return JsonResponse({'sucesso': False, 'erro': str(e)}, status=500)
+
+# --- ADICIONE NO FINAL DO SEU VIEWS.PY ---
+
+@login_required
+def tela_elencos(request):
+    """ Exibe a base de dados de todos os plantéis do jogo """
+    # Pega em todos os clubes e ordena por divisão (Série A primeiro) e depois por nome
+    clubes = Clube.objects.all().order_by('divisao', 'nome')
+    
+    clube_id = request.GET.get('clube_id')
+    clube_selecionado = None
+    jogadores = []
+    
+    if clube_id:
+        try:
+            clube_selecionado = Clube.objects.get(id=clube_id)
+            # Puxa todos os jogadores do clube
+            jogadores_qs = Avatar.objects.filter(clube_atual=clube_selecionado)
+            # Ordena em Python pelo OVR (do mais forte para o mais fraco)
+            jogadores = sorted(jogadores_qs, key=lambda j: j.ovr_calculado, reverse=True)
+        except Clube.DoesNotExist:
+            pass
+            
+    contexto = {
+        'clubes': clubes,
+        'clube_selecionado': clube_selecionado,
+        'jogadores': jogadores,
+    }
+    return render(request, 'carreira/elencos.html', contexto)
+
+
+@login_required
+def tela_classificacao(request):
+    """ Exibe as tabelas dos campeonatos """
+    # Nota: A lógica exata aqui depende de como a sua Tabela é gerada no banco de dados.
+    # Por enquanto, renderizamos o HTML base. Pode adaptar a query para buscar as estatísticas reais (Vitórias, Derrotas, SG) da sua modelagem.
+    return render(request, 'carreira/classificacao.html')

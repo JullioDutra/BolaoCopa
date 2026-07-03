@@ -4,167 +4,413 @@
 {% block title %}Classificação - Cartolândia{% endblock %}
 
 {% block content %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
 <style>
     :root {
-        --dark-bg: #0a0a0a;
-        --dark-surface: #111111;
-        --gold-premium: #cfb53b;
-        --zone-champ: #cfb53b;
-        --zone-up: #4CAF50;
-        --zone-down: #F44336;
+        /* ---- Paleta Base ---- */
+        --void: #050907;
+        --surface: #0b1310;
+        --surface-2: #101c17;
+        --surface-border: rgba(255,255,255,0.07);
+
+        --gold: #c9a227;
+        --gold-bright: #f2d879;
+        --gold-glow: rgba(201,162,39,0.35);
+
+        --emerald: #0d3d2c;
+        --emerald-bright: #22c98a;
+        --emerald-glow: rgba(34,201,138,0.28);
+
+        --ink: #f3f6f2;
+        --ink-dim: rgba(243,246,242,0.58);
+        --ink-faint: rgba(243,246,242,0.32);
+
+        --info: #33c3f0;
+        
+        --live: #ff5252;
+        --live-glow: rgba(255,82,82,0.3);
+
+        --font-display: 'Oswald', 'Arial Narrow', sans-serif;
+        --font-body: 'Inter', -apple-system, sans-serif;
     }
 
-    body { background-color: var(--dark-bg); color: #ffffff; }
-
-    .glass-card {
-        background: rgba(17, 17, 17, 0.85);
-        backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        border-radius: 12px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
-        padding: 24px;
-        overflow-x: auto;
+    body {
+        background: 
+            radial-gradient(circle at 10% 0%, rgba(201,162,39,0.05), transparent 40%),
+            radial-gradient(circle at 90% 100%, rgba(34,201,138,0.04), transparent 45%),
+            var(--void);
+        color: var(--ink);
+        font-family: var(--font-body);
     }
 
-    .table-premium {
-        width: 100%;
-        color: #fff;
-        border-collapse: separate;
-        border-spacing: 0 8px;
-    }
+    .cc-wrap { max-width: 1240px; }
 
-    .table-premium th {
-        color: var(--gold-premium);
+    /* ============ TIPOGRAFIA ============ */
+    .cc-display {
+        font-family: var(--font-display);
         text-transform: uppercase;
-        font-size: 0.8rem;
-        letter-spacing: 1px;
-        padding: 15px;
-        border-bottom: 2px solid rgba(207, 181, 59, 0.3);
-        font-weight: 900;
+        letter-spacing: 0.03em;
+        font-weight: 600;
+    }
+    .cc-eyebrow {
+        font-family: var(--font-display);
+        text-transform: uppercase;
+        letter-spacing: 0.16em;
+        font-size: 0.68rem;
+        font-weight: 600;
+        color: var(--ink-faint);
     }
 
-    .table-premium td {
-        background: linear-gradient(to right, #1a1a1a, #0d0d0d);
-        padding: 15px;
-        font-weight: bold;
-        border-top: 1px solid #222;
-        border-bottom: 1px solid #222;
+    /* ============ NAVEGAÇÃO & INPUTS ============ */
+    .quick-access-btn {
+        border-radius: 12px;
+        font-family: var(--font-display);
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        font-size: 0.82rem;
+        padding: 10px 18px;
+        border: 1px solid var(--surface-border);
+        background: var(--surface);
+        color: var(--ink-dim);
+        transition: all 0.25s ease;
+        text-decoration: none;
+        display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .quick-access-btn:hover {
+        color: var(--void);
+        background: linear-gradient(120deg, var(--gold-bright), var(--gold));
+        border-color: var(--gold);
+        transform: translateY(-2px);
     }
 
-    .table-premium tr td:first-child { border-top-left-radius: 8px; border-bottom-left-radius: 8px; border-left: 1px solid #222; }
-    .table-premium tr td:last-child { border-top-right-radius: 8px; border-bottom-right-radius: 8px; border-right: 1px solid #222; }
-
-    .table-premium tr:hover td {
-        background: linear-gradient(to right, #222, #111);
-        cursor: default;
+    .league-select {
+        background-color: var(--surface-2);
+        color: var(--gold-bright);
+        border: 1px solid var(--gold-glow);
+        font-family: var(--font-display);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        padding: 12px 20px;
+        border-radius: 12px;
+        box-shadow: 0 0 20px rgba(201,162,39,0.1);
+        transition: all 0.3s ease;
+        appearance: none;
+        background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23f2d879%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+        background-repeat: no-repeat;
+        background-position: right 15px top 50%;
+        background-size: 12px auto;
+    }
+    .league-select:focus {
+        background-color: var(--surface);
+        border-color: var(--gold-bright);
+        box-shadow: 0 0 25px var(--gold-glow);
+        color: var(--gold-bright);
+        outline: none;
+    }
+    .league-select option {
+        background-color: var(--surface);
+        color: var(--ink);
     }
 
-    /* Zonas de Tabela */
-    .zone-champion td:first-child { border-left: 4px solid var(--zone-champ) !important; }
-    .zone-up td:first-child { border-left: 4px solid var(--zone-up) !important; }
-    .zone-down td:first-child { border-left: 4px solid var(--zone-down) !important; }
+    /* ============ PAINÉIS ============ */
+    .glass-card {
+        background: linear-gradient(160deg, rgba(255,255,255,0.045), rgba(255,255,255,0.01)), var(--surface);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+        border: 1px solid var(--surface-border);
+        border-radius: 18px;
+        box-shadow: 0 20px 45px rgba(0,0,0,0.55);
+        padding: 26px;
+        position: relative;
+    }
+
+    /* ============ TABELA DE CLASSIFICAÇÃO ============ */
+    .standings-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0 6px;
+    }
+    .standings-table th {
+        color: var(--ink-faint);
+        font-family: var(--font-display);
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.14em;
+        padding: 0 16px 10px;
+        border-bottom: 1px solid var(--surface-border);
+        font-weight: 600;
+    }
+    .standings-table td {
+        background: linear-gradient(90deg, var(--surface-2), var(--surface));
+        padding: 14px 16px;
+        vertical-align: middle;
+        border-top: 1px solid var(--surface-border);
+        border-bottom: 1px solid var(--surface-border);
+        transition: all 0.2s ease;
+    }
+    .standings-table tr:hover td {
+        background: linear-gradient(90deg, #16261f, var(--surface-2));
+    }
     
-    .pos-badge {
+    .standings-table tr td:first-child { border-top-left-radius: 10px; border-bottom-left-radius: 10px; border-left: 1px solid var(--surface-border); }
+    .standings-table tr td:last-child { border-top-right-radius: 10px; border-bottom-right-radius: 10px; border-right: 1px solid var(--surface-border); }
+
+    /* Zonas de Classificação */
+    .zone-champ td:first-child { border-left: 4px solid var(--gold-bright) !important; }
+    .zone-promo td:first-child { border-left: 4px solid var(--emerald-bright) !important; }
+    .zone-releg td:first-child { border-left: 4px solid var(--live) !important; }
+
+    /* Destaque "Seu Clube" */
+    .is-my-club td {
+        border-top: 1px solid rgba(201,162,39,0.4) !important;
+        border-bottom: 1px solid rgba(201,162,39,0.4) !important;
+        background: linear-gradient(90deg, rgba(201,162,39,0.1), var(--surface)) !important;
+    }
+    .is-my-club tr:hover td { background: linear-gradient(90deg, rgba(201,162,39,0.15), var(--surface-2)) !important; }
+    .is-my-club td:first-child { border-left: 4px solid var(--gold-bright) !important; box-shadow: inset 4px 0 15px rgba(201,162,39,0.2); }
+    .is-my-club td:last-child { border-right: 1px solid rgba(201,162,39,0.4) !important; }
+
+    /* Elementos Internos da Tabela */
+    .pos-number {
+        font-family: var(--font-display);
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--ink-dim);
         display: inline-block;
-        width: 30px;
+        width: 24px;
         text-align: center;
-        font-weight: 900;
+    }
+    .zone-champ .pos-number { color: var(--gold-bright); text-shadow: 0 0 10px var(--gold-glow); }
+    .zone-promo .pos-number { color: var(--emerald-bright); text-shadow: 0 0 10px var(--emerald-glow); }
+    .zone-releg .pos-number { color: var(--live); text-shadow: 0 0 10px var(--live-glow); }
+
+    .club-name {
+        font-family: var(--font-display);
+        font-size: 1.05rem;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
     }
 
-    .meu-clube td {
-        background: linear-gradient(to right, rgba(207, 181, 59, 0.15), rgba(0,0,0,0)) !important;
-        border-top: 1px solid var(--gold-premium) !important;
-        border-bottom: 1px solid var(--gold-premium) !important;
+    .pts-val {
+        font-family: var(--font-display);
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--gold-bright);
+    }
+
+    .stat-val {
+        font-family: var(--font-body);
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: var(--ink-dim);
+    }
+
+    .my-club-badge {
+        background: linear-gradient(120deg, var(--gold-bright), var(--gold));
+        color: var(--void);
+        font-family: var(--font-display);
+        font-size: 0.6rem;
+        letter-spacing: 0.1em;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-weight: 700;
+        vertical-align: middle;
+    }
+
+    /* Legenda */
+    .legend-box {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        padding-top: 20px;
+        border-top: 1px solid var(--surface-border);
+        margin-top: 24px;
+    }
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-family: var(--font-display);
+        font-size: 0.75rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--ink-dim);
+    }
+    .legend-color {
+        width: 12px; height: 12px; border-radius: 3px;
+    }
+
+    @media (max-width: 767.98px) {
+        .glass-card { padding: 16px; overflow-x: auto; }
+        .standings-table th, .standings-table td { padding: 12px 10px; }
+        .club-name { font-size: 0.95rem; }
     }
 </style>
 
-<div class="container py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <a href="{% url 'modocarreira:dashboard' %}" class="btn btn-sm btn-outline-light mb-2">
+<div class="container cc-wrap py-4 py-md-5">
+    
+    <!-- HEADER & SELETOR DE CAMPEONATO -->
+    <div class="row align-items-center mb-4 gap-3 gap-md-0">
+        <div class="col-md-7">
+            <a href="{% url 'modocarreira:dashboard' %}" class="quick-access-btn mb-3">
                 <i class="fa-solid fa-arrow-left"></i> Voltar ao Hub
             </a>
-            <h2 class="fw-black text-uppercase m-0" style="color: var(--gold-premium); letter-spacing: 1px;">
-                <i class="fa-solid fa-list-ol me-2"></i> Classificações
+            <h2 class="cc-display m-0" style="color: var(--gold-bright);">
+                <i class="fa-solid fa-list-ol me-2"></i> Classificação
             </h2>
-            <p class="text-white-50 small text-uppercase m-0" style="letter-spacing: 1px;">Temporada Atual</p>
+            <p class="cc-eyebrow mt-1 mb-0">Temporada Atual</p>
         </div>
-        
-        <div class="d-none d-md-flex gap-2">
-            <button class="btn btn-warning fw-bold text-dark px-4 shadow-sm">Série A</button>
-            <button class="btn btn-outline-light fw-bold px-4">Série B</button>
-            <button class="btn btn-outline-light fw-bold px-4">Série C</button>
+
+        <div class="col-md-5 text-md-end">
+            <!-- Formulário para filtrar o campeonato -->
+            <form method="GET" class="d-inline-block w-100" style="max-width: 320px;">
+                <select name="campeonato_id" class="form-select league-select w-100" onchange="this.form.submit()">
+                    <!-- Opcional: Renderizar via Django. Exemplo estático abaixo -->
+                    <option value="1" selected>BRASILEIRÃO SÉRIE A</option>
+                    <option value="2">BRASILEIRÃO SÉRIE B</option>
+                    <option value="3">BRASILEIRÃO SÉRIE C</option>
+                </select>
+            </form>
         </div>
     </div>
 
-    <div class="glass-card">
-        <h5 class="text-white fw-bold text-uppercase mb-4">Brasileirão Série A</h5>
+    <!-- TABELA DE CLASSIFICAÇÃO -->
+    <div class="glass-card border-top-0 border-start-0 border-end-0 border-bottom" style="border-bottom-width: 3px; border-bottom-color: var(--gold-bright);">
         
-        <table class="table-premium">
-            <thead>
-                <tr>
-                    <th style="width: 50px;">Pos</th>
-                    <th>Clube</th>
-                    <th class="text-center">Pts</th>
-                    <th class="text-center d-none d-md-table-cell">J</th>
-                    <th class="text-center d-none d-md-table-cell">V</th>
-                    <th class="text-center d-none d-md-table-cell">E</th>
-                    <th class="text-center d-none d-md-table-cell">D</th>
-                    <th class="text-center">SG</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr class="zone-champion">
-                    <td><span class="pos-badge text-warning">1</span></td>
-                    <td class="text-uppercase"><i class="fa-solid fa-shield-halved text-white-50 me-2"></i> Flamengo</td>
-                    <td class="text-center fs-5 text-warning">45</td>
-                    <td class="text-center text-white-50 d-none d-md-table-cell">18</td>
-                    <td class="text-center text-success d-none d-md-table-cell">14</td>
-                    <td class="text-center text-white-50 d-none d-md-table-cell">3</td>
-                    <td class="text-center text-danger d-none d-md-table-cell">1</td>
-                    <td class="text-center text-info">+22</td>
-                </tr>
+        <div class="table-responsive">
+            <table class="standings-table">
+                <thead>
+                    <tr>
+                        <th class="text-center" style="width: 50px;">Pos</th>
+                        <th>Clube</th>
+                        <th class="text-center">Pts</th>
+                        <th class="text-center d-none d-md-table-cell">J</th>
+                        <th class="text-center d-none d-md-table-cell" title="Vitórias">V</th>
+                        <th class="text-center d-none d-md-table-cell" title="Empates">E</th>
+                        <th class="text-center d-none d-md-table-cell" title="Derrotas">D</th>
+                        <th class="text-center" title="Saldo de Gols">SG</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    
+                    <!-- Exemplo Renderização via Django: 
+                    {% for linha in classificacao %}
+                        <tr class="{% if linha.zona == 'campeao' %}zone-champ{% elif linha.zona == 'promocao' %}zone-promo{% elif linha.zona == 'rebaixamento' %}zone-releg{% endif %} {% if linha.clube == avatar.clube_atual %}is-my-club{% endif %}">
+                            ...
+                        </tr>
+                    {% endfor %}
+                    -->
 
-                <tr class="zone-up">
-                    <td><span class="pos-badge text-success">2</span></td>
-                    <td class="text-uppercase"><i class="fa-solid fa-shield-halved text-white-50 me-2"></i> Palmeiras</td>
-                    <td class="text-center fs-5 text-warning">42</td>
-                    <td class="text-center text-white-50 d-none d-md-table-cell">18</td>
-                    <td class="text-center text-success d-none d-md-table-cell">13</td>
-                    <td class="text-center text-white-50 d-none d-md-table-cell">3</td>
-                    <td class="text-center text-danger d-none d-md-table-cell">2</td>
-                    <td class="text-center text-info">+18</td>
-                </tr>
+                    <!-- Linha Campeão -->
+                    <tr class="zone-champ">
+                        <td class="text-center"><span class="pos-number">1</span></td>
+                        <td>
+                            <h6 class="club-name">
+                                <i class="fa-solid fa-shield-halved text-white-50"></i> Flamengo
+                            </h6>
+                        </td>
+                        <td class="text-center"><span class="pts-val">45</span></td>
+                        <td class="text-center d-none d-md-table-cell"><span class="stat-val">18</span></td>
+                        <td class="text-center d-none d-md-table-cell"><span class="stat-val text-success">14</span></td>
+                        <td class="text-center d-none d-md-table-cell"><span class="stat-val">3</span></td>
+                        <td class="text-center d-none d-md-table-cell"><span class="stat-val text-danger">1</span></td>
+                        <td class="text-center"><span class="stat-val text-info">+22</span></td>
+                    </tr>
 
-                <tr class="meu-clube">
-                    <td><span class="pos-badge text-white-50">10</span></td>
-                    <td class="text-uppercase"><i class="fa-solid fa-shield-halved text-warning me-2"></i> Vasco da Gama <span class="badge bg-warning text-dark ms-2 small">SEU CLUBE</span></td>
-                    <td class="text-center fs-5 text-warning">24</td>
-                    <td class="text-center text-white-50 d-none d-md-table-cell">18</td>
-                    <td class="text-center text-success d-none d-md-table-cell">7</td>
-                    <td class="text-center text-white-50 d-none d-md-table-cell">3</td>
-                    <td class="text-center text-danger d-none d-md-table-cell">8</td>
-                    <td class="text-center text-info">-2</td>
-                </tr>
+                    <!-- Linha Promoção / Libertadores -->
+                    <tr class="zone-promo">
+                        <td class="text-center"><span class="pos-number">2</span></td>
+                        <td>
+                            <h6 class="club-name">
+                                <i class="fa-solid fa-shield-halved text-white-50"></i> Palmeiras
+                            </h6>
+                        </td>
+                        <td class="text-center"><span class="pts-val">42</span></td>
+                        <td class="text-center d-none d-md-table-cell"><span class="stat-val">18</span></td>
+                        <td class="text-center d-none d-md-table-cell"><span class="stat-val text-success">13</span></td>
+                        <td class="text-center d-none d-md-table-cell"><span class="stat-val">3</span></td>
+                        <td class="text-center d-none d-md-table-cell"><span class="stat-val text-danger">2</span></td>
+                        <td class="text-center"><span class="stat-val text-info">+18</span></td>
+                    </tr>
 
-                <tr class="zone-down mt-3">
-                    <td><span class="pos-badge text-danger">17</span></td>
-                    <td class="text-uppercase"><i class="fa-solid fa-shield-halved text-white-50 me-2"></i> Juventude</td>
-                    <td class="text-center fs-5 text-warning">14</td>
-                    <td class="text-center text-white-50 d-none d-md-table-cell">18</td>
-                    <td class="text-center text-success d-none d-md-table-cell">3</td>
-                    <td class="text-center text-white-50 d-none d-md-table-cell">5</td>
-                    <td class="text-center text-danger d-none d-md-table-cell">10</td>
-                    <td class="text-center text-info">-15</td>
-                </tr>
-            </tbody>
-        </table>
+                    <!-- Linha Clube do Jogador -->
+                    <tr class="is-my-club">
+                        <td class="text-center"><span class="pos-number">10</span></td>
+                        <td>
+                            <h6 class="club-name">
+                                <i class="fa-solid fa-shield-halved" style="color: var(--gold-bright);"></i> Vasco da Gama
+                                <span class="my-club-badge">SEU CLUBE</span>
+                            </h6>
+                        </td>
+                        <td class="text-center"><span class="pts-val">24</span></td>
+                        <td class="text-center d-none d-md-table-cell"><span class="stat-val">18</span></td>
+                        <td class="text-center d-none d-md-table-cell"><span class="stat-val text-success">7</span></td>
+                        <td class="text-center d-none d-md-table-cell"><span class="stat-val">3</span></td>
+                        <td class="text-center d-none d-md-table-cell"><span class="stat-val text-danger">8</span></td>
+                        <td class="text-center"><span class="stat-val">-2</span></td>
+                    </tr>
 
-        <div class="d-flex flex-wrap gap-3 mt-4 pt-3 border-top border-secondary opacity-75">
-            <small class="text-uppercase fw-bold"><i class="fa-solid fa-square me-1" style="color: var(--zone-champ);"></i> Campeão</small>
-            <small class="text-uppercase fw-bold"><i class="fa-solid fa-square me-1" style="color: var(--zone-up);"></i> Classificação / Subida</small>
-            <small class="text-uppercase fw-bold"><i class="fa-solid fa-square me-1" style="color: var(--zone-down);"></i> Rebaixamento</small>
+                    <!-- Linha Meio de Tabela Normal -->
+                    <tr>
+                        <td class="text-center"><span class="pos-number">11</span></td>
+                        <td>
+                            <h6 class="club-name">
+                                <i class="fa-solid fa-shield-halved text-white-50"></i> São Paulo
+                            </h6>
+                        </td>
+                        <td class="text-center"><span class="pts-val text-white">23</span></td>
+                        <td class="text-center d-none d-md-table-cell"><span class="stat-val">18</span></td>
+                        <td class="text-center d-none d-md-table-cell"><span class="stat-val text-success">6</span></td>
+                        <td class="text-center d-none d-md-table-cell"><span class="stat-val">5</span></td>
+                        <td class="text-center d-none d-md-table-cell"><span class="stat-val text-danger">7</span></td>
+                        <td class="text-center"><span class="stat-val">0</span></td>
+                    </tr>
+
+                    <!-- Linha Rebaixamento -->
+                    <tr class="zone-releg">
+                        <td class="text-center"><span class="pos-number">17</span></td>
+                        <td>
+                            <h6 class="club-name">
+                                <i class="fa-solid fa-shield-halved text-white-50"></i> Juventude
+                            </h6>
+                        </td>
+                        <td class="text-center"><span class="pts-val text-white">14</span></td>
+                        <td class="text-center d-none d-md-table-cell"><span class="stat-val">18</span></td>
+                        <td class="text-center d-none d-md-table-cell"><span class="stat-val text-success">3</span></td>
+                        <td class="text-center d-none d-md-table-cell"><span class="stat-val">5</span></td>
+                        <td class="text-center d-none d-md-table-cell"><span class="stat-val text-danger">10</span></td>
+                        <td class="text-center"><span class="stat-val text-danger">-15</span></td>
+                    </tr>
+
+                </tbody>
+            </table>
         </div>
+
+        <!-- LEGENDA -->
+        <div class="legend-box">
+            <div class="legend-item">
+                <div class="legend-color" style="background: var(--gold-bright); box-shadow: 0 0 10px var(--gold-glow);"></div>
+                Campeão / Título
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: var(--emerald-bright); box-shadow: 0 0 10px var(--emerald-glow);"></div>
+                Promoção / Taças
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: var(--live); box-shadow: 0 0 10px var(--live-glow);"></div>
+                Rebaixamento
+            </div>
+        </div>
+
     </div>
 </div>
 {% endblock %}

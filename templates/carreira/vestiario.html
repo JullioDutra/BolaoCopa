@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Vestiário - {{ clube.nome }} {% endblock %}
+{% block title %}Vestiário - Cartolândia{% endblock %}
 
 {% block content %}
 <style>
@@ -9,6 +9,7 @@
         --dark-bg: #0a0a0a;
         --dark-surface: #111111;
         --gold-premium: #cfb53b;
+        --pitch-green: #1b5e20;
     }
 
     body { background-color: var(--dark-bg); color: #ffffff; }
@@ -18,23 +19,52 @@
         border: 1px solid rgba(255, 255, 255, 0.05);
         border-radius: 12px;
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        padding: 20px;
     }
 
+    /* ESTILOS DOS JOGADORES NA LISTA */
     .player-row {
-        background: #1a1a1a;
-        border: 1px solid #222;
+        background: linear-gradient(to right, #1a1a1a, #0d0d0d);
+        border: 1px solid #333;
         border-radius: 8px;
-        transition: all 0.2s;
+        margin-bottom: 10px;
+        transition: transform 0.2s;
     }
 
     .player-row:hover {
-        border-color: var(--gold-premium);
-        background: #222;
+        transform: translateX(5px);
+        border-color: #555;
     }
 
-    .is-me {
+    /* Destaque para Jogadores Reais (Avatares) */
+    .player-real {
         border-left: 4px solid var(--gold-premium);
-        background: rgba(207, 181, 59, 0.1);
+        background: linear-gradient(to right, rgba(207, 181, 59, 0.1), #0d0d0d);
+    }
+
+    /* Destaque para o PRÓPRIO jogador (O utilizador logado) */
+    .player-me {
+        border: 2px solid var(--gold-premium);
+        background: linear-gradient(to right, rgba(207, 181, 59, 0.2), rgba(207, 181, 59, 0.05));
+        box-shadow: 0 0 15px rgba(207, 181, 59, 0.3);
+    }
+
+    /* Estilo para os Bots (NPCs) */
+    .player-bot {
+        border-left: 4px solid #444;
+        opacity: 0.8;
+    }
+
+    .pos-badge {
+        width: 45px;
+        height: 45px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 900;
+        border-radius: 8px;
+        background-color: #222;
+        border: 1px solid #444;
     }
 
     .ovr-badge {
@@ -45,60 +75,128 @@
 </style>
 
 <div class="container py-4">
-    
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h2 class="fw-bold text-uppercase m-0" style="color: var(--gold-premium);">Vestiário: {{ clube.nome }}</h2>
-            <p class="text-white-50 text-uppercase small m-0">Prancheta Tática do Treinador (4-4-2)</p>
+            <a href="{% url 'modocarreira:dashboard' %}" class="btn btn-sm btn-outline-light mb-2">
+                <i class="fa-solid fa-arrow-left"></i> Voltar ao Hub
+            </a>
+            <h2 class="fw-bold text-uppercase m-0" style="color: var(--gold-premium);">
+                <i class="fa-solid fa-users me-2"></i> Vestiário do {{ clube.sigla }}
+            </h2>
         </div>
-        <a href="{% url 'carreira:dashboard' %}" class="btn btn-outline-light text-uppercase fw-bold small"><i class="fa-solid fa-arrow-left"></i> Voltar</a>
+        <div class="text-end d-none d-md-block">
+            <span class="text-white-50 small text-uppercase fw-bold d-block">O Seu Status</span>
+            {% if avatar.vaga_titular.exists %}
+                <span class="badge bg-success pulse-dot px-3 py-2 text-uppercase shadow-sm">Titular Absoluto</span>
+            {% else %}
+                <span class="badge bg-warning text-dark px-3 py-2 text-uppercase shadow-sm">Banco de Reservas</span>
+            {% endif %}
+        </div>
     </div>
 
     <div class="row g-4">
-        <div class="col-12">
-            <div class="glass-card p-4">
-                <h5 class="text-white-50 text-uppercase small fw-bold mb-4 border-bottom border-secondary pb-2">11 Titulares</h5>
-                
-                <div class="d-flex flex-column gap-2">
+        <div class="col-lg-8">
+            <div class="glass-card">
+                <div class="d-flex justify-content-between align-items-center mb-4 border-bottom border-secondary pb-3">
+                    <h5 class="text-white-50 text-uppercase small fw-bold m-0">Prancheta Tática do Treinador (Os 11 Iniciais)</h5>
+                    <span class="badge bg-dark border border-secondary">Formação: 4-4-2</span>
+                </div>
+
+                <div class="elenco-list">
                     {% for posicao in escalacao %}
-                        <div class="player-row d-flex align-items-center justify-content-between p-3 {% if posicao.jogador_titular == avatar %}is-me{% endif %}">
-                            
-                            <div class="d-flex align-items-center gap-3">
-                                <span class="badge bg-dark border border-secondary text-white-50" style="width: 50px;">{{ posicao.posicao_campo }}</span>
-                                
-                                <div>
-                                    {% if posicao.jogador_titular %}
-                                        <!-- Jogador Real -->
-                                        <h6 class="fw-bold text-uppercase m-0 text-white">{{ posicao.jogador_titular.nome_camisa }} {% if posicao.jogador_titular == avatar %}<span class="badge bg-warning text-dark ms-2 small">VOCÊ</span>{% endif %}</h6>
-                                        <small class="text-info text-uppercase" style="font-size: 0.7rem;"><i class="fa-solid fa-user"></i> Avatar Real</small>
-                                    {% else %}
-                                        <!-- Bot Genérico -->
-                                        <h6 class="fw-bold text-uppercase m-0 text-muted">{{ posicao.bot_nome }}</h6>
-                                        <small class="text-secondary text-uppercase" style="font-size: 0.7rem;"><i class="fa-solid fa-robot"></i> Categoria de Base</small>
-                                    {% endif %}
+                        
+                        {% if posicao.jogador_titular %}
+                            <div class="player-row p-3 d-flex align-items-center justify-content-between {% if posicao.jogador_titular == avatar %}player-me{% else %}player-real{% endif %}">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="pos-badge">{{ posicao.posicao_campo }}</div>
+                                    <div>
+                                        <h5 class="fw-bold m-0 text-uppercase d-flex align-items-center gap-2">
+                                            {{ posicao.jogador_titular.nome_camisa }}
+                                            {% if posicao.jogador_titular == avatar %}
+                                                <span class="badge bg-warning text-dark small" style="font-size: 0.6rem;">VOCÊ</span>
+                                            {% endif %}
+                                        </h5>
+                                        <small class="text-white-50">
+                                            <i class="fa-solid fa-bolt text-warning"></i> Físico: {{ posicao.jogador_titular.fisico }}%
+                                        </small>
+                                    </div>
+                                </div>
+                                <div class="text-end">
+                                    <span class="d-block text-white-50 small fw-bold text-uppercase">OVR</span>
+                                    <span class="ovr-badge">{{ posicao.jogador_titular.ovr_calculado }}</span>
                                 </div>
                             </div>
 
-                            <div class="ovr-badge">
-                                {% if posicao.jogador_titular %}
-                                    {{ posicao.jogador_titular.ovr_calculado }}
-                                {% else %}
-                                    {{ posicao.bot_ovr }}
-                                {% endif %}
+                        {% else %}
+                            <div class="player-row p-3 d-flex align-items-center justify-content-between player-bot">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="pos-badge text-white-50">{{ posicao.posicao_campo }}</div>
+                                    <div>
+                                        <h6 class="fw-bold text-white-50 m-0 text-uppercase">{{ posicao.bot_nome }}</h6>
+                                        <small class="text-muted" style="font-size: 0.7rem;">(Categoria de Base)</small>
+                                    </div>
+                                </div>
+                                <div class="text-end">
+                                    <span class="d-block text-muted small fw-bold text-uppercase">OVR</span>
+                                    <span class="ovr-badge text-white-50">{{ posicao.bot_ovr }}</span>
+                                </div>
                             </div>
+                        {% endif %}
 
+                    {% empty %}
+                        <div class="text-center py-5">
+                            <i class="fa-solid fa-clipboard-question fs-1 text-muted mb-3"></i>
+                            <h5 class="text-white-50 text-uppercase">Prancheta Vazia</h5>
+                            <p class="small text-muted">O treinador ainda não divulgou a escalação para a próxima partida.</p>
                         </div>
                     {% endfor %}
                 </div>
-
-                {% if not avatar in escalacao.all %}
-                <div class="alert alert-danger mt-4 bg-transparent border-danger text-center">
-                    <h6 class="fw-bold text-uppercase m-0 text-danger"><i class="fa-solid fa-bench-tree"></i> Você está no banco de reservas!</h6>
-                    <small class="text-white-50">Treine mais duro e melhore sua nota para convencer o treinador.</small>
-                </div>
-                {% endif %}
-
             </div>
+        </div>
+
+        <div class="col-lg-4">
+            
+            {% if not avatar.vaga_titular.exists %}
+            <div class="glass-card mb-4" style="border: 2px dashed #ff9800; background-color: rgba(255, 152, 0, 0.05);">
+                <div class="d-flex align-items-center gap-3">
+                    <i class="fa-solid fa-chair fs-1 text-warning"></i>
+                    <div>
+                        <h6 class="fw-bold text-warning text-uppercase mb-1">Você está no Banco!</h6>
+                        <p class="small text-white-50 m-0">Treine duro para superar o OVR dos titulares. Fique atento: você pode entrar aos 60 minutos se alguém cansar!</p>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="glass-card mb-4">
+                <h6 class="text-white-50 text-uppercase small fw-bold mb-4">Relatório do Departamento Médico</h6>
+                
+                {% if avatar.lesionado_rodadas_restantes > 0 %}
+                    <div class="alert alert-danger bg-danger bg-opacity-10 border-danger text-danger">
+                        <i class="fa-solid fa-briefcase-medical me-2"></i> <strong>Você está Lesionado!</strong><br>
+                        <small>{{ avatar.descricao_lesao }}</small><br>
+                        <small class="fw-bold mt-1 d-block">Previsão de retorno: {{ avatar.lesionado_rodadas_restantes }} rodada(s).</small>
+                    </div>
+                {% else %}
+                    <div class="d-flex align-items-center gap-3 p-3 rounded" style="background-color: rgba(76, 175, 80, 0.1); border: 1px solid rgba(76, 175, 80, 0.3);">
+                        <i class="fa-solid fa-heart-pulse fs-3 text-success"></i>
+                        <div>
+                            <h6 class="fw-bold text-success text-uppercase m-0">100% Saudável</h6>
+                            <small class="text-white-50">Você está apto para ir a jogo.</small>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="glass-card text-center">
+                <i class="fa-solid fa-comments fs-2 text-info mb-3"></i>
+                <h6 class="fw-bold text-uppercase mb-2">Clima no Balneário</h6>
+                <p class="small text-white-50 mb-3">Veja o que a imprensa está a dizer sobre a equipa ou resolva conflitos com os seus colegas.</p>
+                <a href="{% url 'modocarreira:tela_social' %}" class="btn btn-outline-info w-100 fw-bold text-uppercase shadow-sm">
+                    Ver O Cartoleiro <i class="fa-solid fa-newspaper ms-2"></i>
+                </a>
+            </div>
+
         </div>
     </div>
 </div>

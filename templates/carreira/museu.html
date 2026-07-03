@@ -1,0 +1,170 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Museu do Futebol - Cartolândia{% endblock %}
+
+{% block content %}
+<style>
+    :root {
+        --dark-bg: #050505;
+        --dark-surface: #0a0a0a;
+        --gold-premium: #cfb53b;
+        --gold-glow: rgba(207, 181, 59, 0.4);
+    }
+
+    body { background-color: var(--dark-bg); color: #ffffff; }
+
+    .glass-card {
+        background: rgba(10, 10, 10, 0.85);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(207, 181, 59, 0.15);
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
+        padding: 24px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .trophy-showcase {
+        background: radial-gradient(circle at center, #1a1a1a 0%, #050505 100%);
+        border-bottom: 2px solid var(--gold-premium);
+        border-radius: 12px;
+        padding: 30px 15px;
+        text-align: center;
+        transition: transform 0.3s;
+    }
+
+    .trophy-showcase:hover {
+        transform: scale(1.02);
+        box-shadow: 0 0 25px var(--gold-glow);
+    }
+
+    .trophy-icon {
+        font-size: 5rem;
+        color: var(--gold-premium);
+        filter: drop-shadow(0 0 15px rgba(207, 181, 59, 0.6));
+        margin-bottom: 15px;
+    }
+
+    .legend-card {
+        background: linear-gradient(135deg, #111 0%, #000 100%);
+        border-left: 4px solid var(--gold-premium);
+        border-radius: 8px;
+        padding: 15px;
+    }
+
+    .hall-of-fame-bg {
+        position: absolute;
+        top: -50px;
+        right: -50px;
+        font-size: 15rem;
+        color: rgba(255, 255, 255, 0.02);
+        z-index: 0;
+        transform: rotate(15deg);
+    }
+</style>
+
+<div class="container py-5">
+    <!-- Cabeçalho de Gala -->
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <div>
+            <a href="{% url 'modocarreira:dashboard' %}" class="btn btn-sm btn-outline-light mb-3" style="border-radius: 20px;">
+                <i class="fa-solid fa-arrow-left"></i> Voltar ao Hub
+            </a>
+            <h1 class="fw-black text-uppercase m-0" style="color: var(--gold-premium); letter-spacing: 2px;">
+                <i class="fa-solid fa-building-columns me-2"></i> Museu do Futebol
+            </h1>
+            <p class="text-white-50 text-uppercase small m-0" style="letter-spacing: 1px;">A História Eterna do Metaverso da Cartolândia</p>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        
+        <!-- SALA DE TROFÉUS (CAMPEÕES) -->
+        <div class="col-lg-8">
+            <div class="glass-card h-100">
+                <i class="fa-solid fa-trophy hall-of-fame-bg"></i>
+                <div class="position-relative z-index-1">
+                    <h5 class="text-white-50 text-uppercase small fw-bold mb-4 border-bottom border-secondary pb-2">Galeria de Campeões (Temporada Anterior)</h5>
+                    
+                    <div class="row g-3">
+                        <!-- Campeão Série A -->
+                        <div class="col-md-4">
+                            <div class="trophy-showcase h-100">
+                                <i class="fa-solid fa-trophy trophy-icon"></i>
+                                <h6 class="fw-bold text-uppercase text-white mb-1">Série A</h6>
+                                {% if campeao_serie_a %}
+                                    <h4 class="fw-black m-0" style="color: var(--gold-premium);">{{ campeao_serie_a.nome }}</h4>
+                                {% else %}
+                                    <h5 class="text-muted m-0">A Disputar</h5>
+                                    <small class="text-white-50">Temporada 1 em andamento</small>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Campeão Série B -->
+                        <div class="col-md-4">
+                            <div class="trophy-showcase h-100">
+                                <i class="fa-solid fa-medal trophy-icon" style="color: #C0C0C0; filter: drop-shadow(0 0 15px rgba(192, 192, 192, 0.4));"></i>
+                                <h6 class="fw-bold text-uppercase text-white mb-1">Série B</h6>
+                                {% if campeao_serie_b %}
+                                    <h4 class="fw-black m-0" style="color: #C0C0C0;">{{ campeao_serie_b.nome }}</h4>
+                                {% else %}
+                                    <h5 class="text-muted m-0">A Disputar</h5>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Campeão Copa -->
+                        <div class="col-md-4">
+                            <div class="trophy-showcase h-100">
+                                <i class="fa-solid fa-shield-halved trophy-icon" style="color: #b08d57; filter: drop-shadow(0 0 15px rgba(176, 141, 87, 0.4));"></i>
+                                <h6 class="fw-bold text-uppercase text-white mb-1">Copa Nacional</h6>
+                                {% if campeao_copa %}
+                                    <h4 class="fw-black m-0" style="color: #b08d57;">{{ campeao_copa.nome }}</h4>
+                                {% else %}
+                                    <h5 class="text-muted m-0">A Disputar</h5>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- BOLA DE OURO & DESTAQUES INDIVIDUAIS -->
+        <div class="col-lg-4">
+            <div class="glass-card h-100">
+                <h5 class="text-white-50 text-uppercase small fw-bold mb-4 border-bottom border-secondary pb-2">Hall da Fama Individual</h5>
+                
+                <div class="text-center mb-4">
+                    <i class="fa-solid fa-globe fs-1 mb-2" style="color: var(--gold-premium);"></i>
+                    <h6 class="fw-bold text-uppercase mb-0">Melhor do Mundo (Ballon d'Or)</h6>
+                    <div class="legend-card mt-3 text-start">
+                        {% if bola_de_ouro %}
+                            <h5 class="fw-bold text-uppercase m-0">{{ bola_de_ouro.nome_camisa }}</h5>
+                            <small class="text-white-50">{{ bola_de_ouro.clube_atual.nome }} | OVR: {{ bola_de_ouro.ovr_calculado }}</small>
+                        {% else %}
+                            <h6 class="text-muted m-0 text-center py-2">Nenhum jogador eleito ainda.</h6>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="text-center">
+                    <i class="fa-solid fa-shoe-prints fs-2 mb-2" style="color: #ccc;"></i>
+                    <h6 class="fw-bold text-uppercase mb-0">Chuteira de Ouro (Artilheiro)</h6>
+                    <div class="legend-card mt-3 text-start" style="border-color: #ccc;">
+                        {% if artilheiro %}
+                            <h5 class="fw-bold text-uppercase m-0">{{ artilheiro.nome_camisa }}</h5>
+                            <small class="text-white-50">{{ artilheiro.gols }} Gols Marcados</small>
+                        {% else %}
+                            <h6 class="text-muted m-0 text-center py-2">Aguardando o fim da temporada.</h6>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+    </div>
+</div>
+{% endblock %}

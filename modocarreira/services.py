@@ -234,31 +234,43 @@ def resolver_dilema(avatar, opcao_escolhida_dict):
 # ==========================================
 
 def gerar_calendario_liga(campeonato):
+    """ Gera os confrontos (Turno) para todos os clubes daquela divisão """
+    # Verifica se já existem jogos para não duplicar
+    if PartidaMundo.objects.filter(campeonato=campeonato).exists():
+        return
+
     clubes = list(Clube.objects.filter(divisao=campeonato.divisao))
-    if len(clubes) % 2 != 0: clubes.append(None)
+    if len(clubes) < 2:
+        return
+    
+    # Se o número de clubes for ímpar, adiciona um "Fantasma" para folga
+    if len(clubes) % 2 != 0:
+        clubes.append(None)
         
-    total_clubes = len(clubes)
-    total_rodadas = total_clubes - 1
-    metade_tamanho = total_clubes // 2
+    random.shuffle(clubes)
+    
+    total_rodadas = len(clubes) - 1
+    metade = len(clubes) // 2
+    
     partidas_criadas = []
-
+    
     for rodada in range(total_rodadas):
-        for i in range(metade_tamanho):
+        for i in range(metade):
             casa = clubes[i]
-            fora = clubes[total_clubes - 1 - i]
+            fora = clubes[len(clubes) - 1 - i]
+            
             if casa is not None and fora is not None:
-                partidas_criadas.append(PartidaMundo(campeonato=campeonato, clube_casa=casa, clube_fora=fora))
+                # Alterna o mando de campo
+                if rodada % 2 == 0:
+                    partidas_criadas.append(PartidaMundo(campeonato=campeonato, rodada=rodada+1, clube_casa=casa, clube_fora=fora, status='agendada'))
+                else:
+                    partidas_criadas.append(PartidaMundo(campeonato=campeonato, rodada=rodada+1, clube_casa=fora, clube_fora=casa, status='agendada'))
+                    
+        # Roda a lista mantendo o primeiro fixo (Algoritmo Round-Robin)
         clubes.insert(1, clubes.pop())
-
-    for rodada in range(total_rodadas):
-        for i in range(metade_tamanho):
-            fora = clubes[i] 
-            casa = clubes[total_clubes - 1 - i]
-            if casa is not None and fora is not None:
-                partidas_criadas.append(PartidaMundo(campeonato=campeonato, clube_casa=casa, clube_fora=fora))
-                
+        
+    # Salva todos os jogos de uma vez no banco
     PartidaMundo.objects.bulk_create(partidas_criadas)
-    return True
 
 def escalar_time_titular(clube):
     posicoes_taticas = ['GK', 'RB', 'CB', 'CB', 'LB', 'RM', 'CM', 'CM', 'LM', 'ST', 'ST']

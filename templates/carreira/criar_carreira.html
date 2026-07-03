@@ -132,22 +132,14 @@
         color: var(--ink-faint);
         white-space: nowrap;
     }
-    .rail-step.active {
-        border-color: var(--gold);
-        background: linear-gradient(135deg, rgba(216,180,92,0.14), rgba(216,180,92,0.02));
-    }
+    .rail-step.active { border-color: var(--gold); background: linear-gradient(135deg, rgba(216,180,92,0.14), rgba(216,180,92,0.02)); }
     .rail-step.active .rail-index { background: var(--gold); color: #10141a; border-color: var(--gold); }
     .rail-step.active .rail-label { color: var(--gold-bright); }
     .rail-step.done .rail-index { background: var(--pitch); color: #fff; border-color: var(--pitch); }
     .rail-step.done .rail-label { color: var(--pitch-bright); }
 
     /* ===================== GRID PRINCIPAL ===================== */
-    .scout-grid {
-        display: grid;
-        grid-template-columns: 1.35fr 1fr;
-        gap: 26px;
-        align-items: start;
-    }
+    .scout-grid { display: grid; grid-template-columns: 1.35fr 1fr; gap: 26px; align-items: start; }
     @media (max-width: 900px) {
         .scout-grid { grid-template-columns: 1fr; }
         .scout-dossier-col { order: -1; }
@@ -210,24 +202,35 @@
         transition: border-color .2s, box-shadow .2s;
     }
     .scout-input::placeholder { color: var(--ink-faint); font-family: var(--f-body); font-size: 0.95rem; text-transform: none; letter-spacing: normal; }
-    .scout-input:focus {
-        outline: none;
-        border-color: var(--rare);
-        box-shadow: 0 0 0 3px rgba(95,208,232,0.16);
-    }
-    .field-hint {
+    .scout-input:focus { outline: none; border-color: var(--rare); box-shadow: 0 0 0 3px rgba(95,208,232,0.16); }
+    .field-hint { font-family: var(--f-mono); font-size: 0.68rem; color: var(--ink-faint); margin-top: 8px; }
+
+    /* ===================== SELECT (posição) ===================== */
+    .scout-select {
+        width: 100%;
+        background: var(--bg-void);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        color: var(--ink);
         font-family: var(--f-mono);
-        font-size: 0.68rem;
-        color: var(--ink-faint);
-        margin-top: 8px;
+        font-size: 0.9rem;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        padding: 14px 16px;
+        transition: border-color .2s, box-shadow .2s;
+        appearance: none;
+        -webkit-appearance: none;
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%239099a6' stroke-width='2'><polyline points='6 9 12 15 18 9'/></svg>");
+        background-repeat: no-repeat;
+        background-position: right 16px center;
     }
+    .scout-select:focus { outline: none; border-color: var(--rare); box-shadow: 0 0 0 3px rgba(95,208,232,0.16); }
+    .scout-select:disabled { opacity: 0.4; cursor: not-allowed; }
+    .posicao-box { margin-top: 22px; display: none; }
+    .posicao-box.show { display: block; animation: fadeSlide .3s ease; }
 
     /* ===================== ARQUÉTIPOS ===================== */
-    .arquetipo-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 12px;
-    }
+    .arquetipo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     @media (max-width: 460px) { .arquetipo-grid { grid-template-columns: 1fr; } }
 
     .arquetipo-radio { display: none; }
@@ -258,10 +261,7 @@
         font-size: 1rem; color: var(--ink-dim);
     }
     .arquetipo-radio:checked + .arquetipo-card .arquetipo-icon { color: var(--gold); border-color: var(--gold); }
-    .arquetipo-check {
-        width: 18px; height: 18px; border-radius: 50%;
-        border: 1px solid var(--line); flex-shrink: 0;
-    }
+    .arquetipo-check { width: 18px; height: 18px; border-radius: 50%; border: 1px solid var(--line); flex-shrink: 0; }
     .arquetipo-radio:checked + .arquetipo-card .arquetipo-check {
         border-color: var(--gold);
         background: radial-gradient(circle, var(--gold) 40%, transparent 42%);
@@ -298,10 +298,7 @@
     .btn-scout i { margin-right: 6px; }
 
     /* ===================== RESUMO (ETAPA 3) ===================== */
-    .resumo-linha {
-        display: flex; justify-content: space-between; align-items: center;
-        padding: 14px 0; border-bottom: 1px solid var(--line-soft);
-    }
+    .resumo-linha { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid var(--line-soft); }
     .resumo-linha:last-child { border-bottom: none; }
     .resumo-chave { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1px; color: var(--ink-faint); }
     .resumo-valor { font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--ink); font-family: var(--f-mono); font-size: 0.85rem; }
@@ -338,10 +335,7 @@
         margin-bottom: 16px;
     }
     .dossier-tag .live-dot { color: var(--pitch-bright); }
-    .dossier-tag .live-dot::before {
-        content: "●"; margin-right: 5px;
-        animation: pulseDot 1.6s infinite;
-    }
+    .dossier-tag .live-dot::before { content: "●"; margin-right: 5px; animation: pulseDot 1.6s infinite; }
     @keyframes pulseDot { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
     @media (prefers-reduced-motion: reduce) { .dossier-tag .live-dot::before { animation: none; } }
 
@@ -372,35 +366,18 @@
 
     .dossier-stats { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
     .dossier-stat-row { display: flex; align-items: center; gap: 10px; }
-    .dossier-stat-label {
-        width: 34px; flex-shrink: 0;
-        font-family: var(--f-mono); font-size: 0.66rem; color: var(--ink-faint); text-transform: uppercase;
-    }
+    .dossier-stat-label { width: 34px; flex-shrink: 0; font-family: var(--f-mono); font-size: 0.66rem; color: var(--ink-faint); text-transform: uppercase; }
     .dossier-stat-bar { flex: 1; height: 6px; border-radius: 4px; background: var(--bg-void); overflow: hidden; }
     .dossier-stat-fill { height: 100%; background: linear-gradient(90deg, var(--gold), var(--gold-bright)); border-radius: 4px; transition: width .5s ease; }
     .dossier-stat-val { width: 24px; text-align: right; font-family: var(--f-mono); font-size: 0.7rem; font-weight: 600; color: var(--ink); }
 
-    .dossier-footer {
-        margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--line-soft);
-        font-size: 0.7rem; color: var(--ink-faint); line-height: 1.5;
-    }
+    .dossier-footer { margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--line-soft); font-size: 0.7rem; color: var(--ink-faint); line-height: 1.5; }
 
     /* ===================== ROLETA ===================== */
     #roleta-container { display: none; }
-    .roleta-panel {
-        text-align: center;
-        overflow: hidden;
-        position: relative;
-    }
+    .roleta-panel { text-align: center; overflow: hidden; position: relative; }
     .roleta-panel .step-kicker { justify-content: center; display: flex; }
-    #roleta-wrapper {
-        height: 160px;
-        overflow: hidden;
-        margin-top: 20px;
-        position: relative;
-        border-radius: 12px;
-        background: var(--bg-void);
-    }
+    #roleta-wrapper { height: 160px; overflow: hidden; margin-top: 20px; position: relative; border-radius: 12px; background: var(--bg-void); }
     #roleta-wrapper::before {
         content: "";
         position: absolute; inset: 0;
@@ -410,11 +387,7 @@
         background: linear-gradient(180deg, rgba(216,180,92,0.08), transparent 40%, transparent 60%, rgba(216,180,92,0.08));
         pointer-events: none; z-index: 2;
     }
-    #roleta-logos {
-        display: flex; flex-direction: column; align-items: center;
-        transform: translateY(0);
-        transition: transform 4.5s cubic-bezier(0.1, 0.8, 0.1, 1);
-    }
+    #roleta-logos { display: flex; flex-direction: column; align-items: center; transform: translateY(0); transition: transform 4.5s cubic-bezier(0.1, 0.8, 0.1, 1); }
     .roleta-item {
         height: 160px; min-height: 160px;
         display: flex; align-items: center; justify-content: center;
@@ -433,11 +406,7 @@
     #card-reveal.show { animation: popIn 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
     @media (prefers-reduced-motion: reduce) { #card-reveal.show { animation: none; } }
 
-    .contrato-firmado {
-        font-family: var(--f-mono);
-        font-size: 0.68rem; letter-spacing: 2px; text-transform: uppercase;
-        color: var(--ink-faint); text-align: center; margin-bottom: 4px;
-    }
+    .contrato-firmado { font-family: var(--f-mono); font-size: 0.68rem; letter-spacing: 2px; text-transform: uppercase; color: var(--ink-faint); text-align: center; margin-bottom: 4px; }
     .reveal-clube-nome {
         font-family: var(--f-display);
         text-align: center;
@@ -478,20 +447,14 @@
         border: 1px solid var(--line); border-radius: 6px; padding: 3px 9px; color: var(--ink-dim);
         position: relative; z-index: 1;
     }
-    .fut-icon-bg {
-        position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
-        font-size: 6rem; color: rgba(255,255,255,0.05); z-index: 0;
-    }
+    .fut-icon-bg { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-size: 6rem; color: rgba(255,255,255,0.05); z-index: 0; }
     .fut-nome-plate {
         position: relative; z-index: 1;
         text-align: center; background: rgba(0,0,0,0.55);
         border-top: 1px solid rgba(216,180,92,0.35);
         border-radius: 10px; padding: 10px 8px;
     }
-    .fut-nome {
-        font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;
-        margin: 0; font-size: 1rem; color: var(--ink);
-    }
+    .fut-nome { font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; margin: 0; font-size: 1rem; color: var(--ink); }
     .fut-categoria { font-family: var(--f-mono); font-size: 0.6rem; color: var(--ink-faint); letter-spacing: 1px; }
 
     .btn-entrar {
@@ -557,7 +520,18 @@
 
                             <div class="arquetipo-grid">
                                 <div>
-                                    <input type="radio" name="arquetipo" id="arqXerife" value="xerife" class="arquetipo-radio" data-fis="75" data-tec="45" data-int="65" data-mid="15" required>
+                                    <input type="radio" name="arquetipo" id="arqParedao" value="paredao" class="arquetipo-radio" data-fis="70" data-tec="30" data-int="80" data-mid="10" required>
+                                    <label for="arqParedao" class="arquetipo-card">
+                                        <div class="arquetipo-top">
+                                            <span class="arquetipo-icon"><i class="fa-solid fa-mitten"></i></span>
+                                            <span class="arquetipo-check"></span>
+                                        </div>
+                                        <p class="arquetipo-nome">Paredão</p>
+                                        <p class="arquetipo-desc">Goleiro · foco em reflexo e leitura de jogo</p>
+                                    </label>
+                                </div>
+                                <div>
+                                    <input type="radio" name="arquetipo" id="arqXerife" value="xerife" class="arquetipo-radio" data-fis="75" data-tec="45" data-int="65" data-mid="15">
                                     <label for="arqXerife" class="arquetipo-card">
                                         <div class="arquetipo-top">
                                             <span class="arquetipo-icon"><i class="fa-solid fa-shield-halved"></i></span>
@@ -602,6 +576,14 @@
                                 </div>
                             </div>
 
+                            <div class="posicao-box" id="box-posicao">
+                                <label class="field-label" for="posicaoCampo">Posição em campo</label>
+                                <select class="scout-select" id="posicaoCampo" required>
+                                    <option value="">Selecione a posição</option>
+                                </select>
+                                <div class="field-hint">Define sua função tática dentro do arquétipo escolhido</div>
+                            </div>
+
                             <div class="step-nav">
                                 <button type="button" class="btn-scout" onclick="irParaEtapa(1)"><i class="fa-solid fa-arrow-left"></i> Voltar</button>
                                 <button type="button" class="btn-scout primary" id="btn-ir-etapa-3" onclick="irParaEtapa(3)" disabled>
@@ -623,6 +605,10 @@
                             <div class="resumo-linha">
                                 <span class="resumo-chave">Arquétipo</span>
                                 <span class="resumo-valor" id="resumo-arquetipo">—</span>
+                            </div>
+                            <div class="resumo-linha">
+                                <span class="resumo-chave">Posição em campo</span>
+                                <span class="resumo-valor" id="resumo-posicao">—</span>
                             </div>
                             <div class="resumo-linha">
                                 <span class="resumo-chave">Clube de destino</span>
@@ -739,6 +725,9 @@
             if (arquetipoEl) {
                 document.getElementById('resumo-arquetipo').innerText = arquetipoEl.closest('div').querySelector('.arquetipo-nome').innerText;
             }
+            const posicaoSelect = document.getElementById('posicaoCampo');
+            const posicaoTexto = posicaoSelect.options[posicaoSelect.selectedIndex] ? posicaoSelect.options[posicaoSelect.selectedIndex].text : '—';
+            document.getElementById('resumo-posicao').innerText = posicaoTexto;
         }
 
         document.querySelectorAll('.step-panel').forEach(p => p.classList.toggle('active', p.dataset.step == numero));
@@ -757,7 +746,7 @@
         document.getElementById('dossier-nome').innerText = nomeInput.value.trim() || 'SEU NOME AQUI';
     });
 
-    const posicaoSigla = { xerife: 'ZAG · XERIFE', maestro: 'MEI · MAESTRO', matador: 'ATA · MATADOR', motorzinho: 'PON · MOTORZINHO' };
+    const posicaoSigla = { paredao: 'GOL · PAREDÃO', xerife: 'ZAG · XERIFE', maestro: 'MEI · MAESTRO', matador: 'ATA · MATADOR', motorzinho: 'PON · MOTORZINHO' };
 
     function polarPoint(cx, cy, r, angleDeg) {
         const rad = (angleDeg - 90) * Math.PI / 180;
@@ -776,19 +765,16 @@
 
         let svgContent = '';
 
-        // Anéis de fundo (25/50/75/100)
         [0.25, 0.5, 0.75, 1].forEach(f => {
             const pontos = eixos.map(e => polarPoint(cx, cy, maxR * f, e.angle).join(',')).join(' ');
             svgContent += `<polygon points="${pontos}" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>`;
         });
 
-        // Eixos
         eixos.forEach(e => {
             const [x, y] = polarPoint(cx, cy, maxR, e.angle);
             svgContent += `<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>`;
         });
 
-        // Polígono de dados
         const pontosDados = eixos.map(e => polarPoint(cx, cy, (e.val / 99) * maxR, e.angle).join(',')).join(' ');
         svgContent += `<polygon points="${pontosDados}" fill="rgba(216,180,92,0.22)" stroke="#d8b45c" stroke-width="1.6"/>`;
 
@@ -797,13 +783,40 @@
             svgContent += `<circle cx="${x}" cy="${y}" r="2.4" fill="#f2d98a"/>`;
         });
 
-        // Labels
         eixos.forEach(e => {
             const [x, y] = polarPoint(cx, cy, maxR + 13, e.angle);
             svgContent += `<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="middle">${e.label}</text>`;
         });
 
         svg.innerHTML = svgContent;
+    }
+
+    function atualizarBotaoEtapa3() {
+        const arquetipoOk = document.querySelector('input[name="arquetipo"]:checked') !== null;
+        const posicaoOk = document.getElementById('posicaoCampo').value !== '';
+        document.getElementById('btn-ir-etapa-3').disabled = !(arquetipoOk && posicaoOk);
+    }
+
+    function atualizarPosicoes() {
+        const arquetipo = document.querySelector('input[name="arquetipo"]:checked').value;
+        const selectPosicao = document.getElementById('posicaoCampo');
+        const boxPosicao = document.getElementById('box-posicao');
+
+        boxPosicao.classList.add('show');
+        selectPosicao.innerHTML = '<option value="">Selecione a posição</option>';
+        const posicoes = {
+            'paredao': ['GOL (Goleiro)'],
+            'xerife': ['ZAG (Zagueiro Central)', 'VOL (Volante Defensivo)'],
+            'motorzinho': ['LD (Lateral Direito)', 'LE (Lateral Esquerdo)', 'PE (Ponta Esquerda)', 'PD (Ponta Direita)'],
+            'maestro': ['MC (Meia Central)', 'MEI (Meia Armador)'],
+            'matador': ['SA (Segundo Atacante)', 'CA (Centroavante)']
+        };
+        posicoes[arquetipo].forEach(pos => {
+            const valor = pos.split(' ')[0]; // Pega só a sigla (GOL, ZAG, etc)
+            selectPosicao.innerHTML += `<option value="${valor}">${pos}</option>`;
+        });
+
+        atualizarBotaoEtapa3();
     }
 
     function atualizarDossier(radioEl) {
@@ -825,12 +838,14 @@
         document.getElementById('bar-mid').style.width = mid + '%';
 
         desenharRadar(fis, tec, inteligencia, mid);
-        document.getElementById('btn-ir-etapa-3').disabled = false;
+        atualizarPosicoes();
     }
 
     document.querySelectorAll('.arquetipo-radio').forEach(r => {
         r.addEventListener('change', () => atualizarDossier(r));
     });
+
+    document.getElementById('posicaoCampo').addEventListener('change', atualizarBotaoEtapa3);
 
     // Radar vazio inicial
     desenharRadar(0, 0, 0, 0);
@@ -845,7 +860,8 @@
     function enviarInscricao() {
         const nome = document.getElementById('nomeCamisa').value.toUpperCase();
         const arquetipoEl = document.querySelector('input[name="arquetipo"]:checked');
-        if (!nome || !arquetipoEl) return;
+        const posicaoExata = document.getElementById('posicaoCampo').value;
+        if (!nome || !arquetipoEl || !posicaoExata) return;
         const arquetipo = arquetipoEl.value;
         const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
@@ -867,7 +883,7 @@
         fetch("{% url 'modocarreira:api_assinar_contrato' %}", {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
-            body: JSON.stringify({ nome: nome, arquetipo: arquetipo })
+            body: JSON.stringify({ nome: nome, arquetipo: arquetipo, posicao_preferida: posicaoExata })
         })
         .then(response => response.json())
         .then(data => {
@@ -885,7 +901,7 @@
                 setTimeout(() => {
                     if (navigator.vibrate) navigator.vibrate([100, 50, 200]);
                     setTimeout(() => {
-                        executarRevealFinal(nome, arquetipo, data);
+                        executarRevealFinal(nome, arquetipo, posicaoExata, data);
                     }, 700);
                 }, 4500);
             } else {
@@ -900,21 +916,20 @@
         });
     }
 
-    function executarRevealFinal(nome, arquetipo, data) {
+    function executarRevealFinal(nome, arquetipo, posicaoExata, data) {
         document.getElementById('roleta-container').style.display = 'none';
 
-        let siglaPosicao = "JOG";
         let iconeClasse = "fa-futbol";
-
-        if (arquetipo === 'xerife') { siglaPosicao = "ZAG"; iconeClasse = "fa-shield-halved"; }
-        else if (arquetipo === 'maestro') { siglaPosicao = "MEI"; iconeClasse = "fa-wand-magic-sparkles"; }
-        else if (arquetipo === 'matador') { siglaPosicao = "ST"; iconeClasse = "fa-crosshairs"; }
-        else if (arquetipo === 'motorzinho') { siglaPosicao = "PON"; iconeClasse = "fa-bolt"; }
+        if (arquetipo === 'paredao') { iconeClasse = "fa-mitten"; }
+        else if (arquetipo === 'xerife') { iconeClasse = "fa-shield-halved"; }
+        else if (arquetipo === 'maestro') { iconeClasse = "fa-wand-magic-sparkles"; }
+        else if (arquetipo === 'matador') { iconeClasse = "fa-crosshairs"; }
+        else if (arquetipo === 'motorzinho') { iconeClasse = "fa-bolt"; }
 
         document.getElementById('reveal-nome').innerText = nome;
         document.getElementById('reveal-clube').innerText = data.clube_nome;
         document.getElementById('reveal-ovr').innerText = data.ovr_calculado;
-        document.getElementById('reveal-posicao').innerText = siglaPosicao;
+        document.getElementById('reveal-posicao').innerText = posicaoExata;
 
         const iconEl = document.getElementById('reveal-icon');
         iconEl.className = `fa-solid ${iconeClasse} fut-icon-bg`;

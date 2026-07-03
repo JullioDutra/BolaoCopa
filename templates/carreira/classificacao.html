@@ -7,175 +7,157 @@
 <style>
     :root {
         --dark-bg: #0a0a0a;
-        --dark-surface: #111111;
         --gold-premium: #cfb53b;
-        --zone-champ: #cfb53b;
-        --zone-up: #4CAF50;
-        --zone-down: #F44336;
+        --gold-glow: rgba(207, 181, 59, 0.35);
     }
-
     body { background-color: var(--dark-bg); color: #ffffff; }
 
     .glass-card {
-        background: rgba(17, 17, 17, 0.85);
-        backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        border-radius: 12px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
-        padding: 24px;
-        overflow-x: auto;
+        background: rgba(17, 17, 17, 0.9);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 14px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
     }
 
-    .table-premium {
-        width: 100%;
-        color: #fff;
-        border-collapse: separate;
-        border-spacing: 0 8px;
-    }
-
-    .table-premium th {
-        color: var(--gold-premium);
-        text-transform: uppercase;
+    .divisao-pill {
+        border: 1px solid #333;
+        border-radius: 999px;
+        padding: 8px 20px;
+        color: #ccc;
+        text-decoration: none;
+        font-weight: 700;
         font-size: 0.8rem;
         letter-spacing: 1px;
-        padding: 15px;
-        border-bottom: 2px solid rgba(207, 181, 59, 0.3);
-        font-weight: 900;
+        text-transform: uppercase;
+        transition: all .2s;
+        background: #141414;
+    }
+    .divisao-pill:hover { color: #fff; border-color: var(--gold-premium); }
+    .divisao-pill.ativa {
+        background: linear-gradient(135deg, var(--gold-premium), #a88f2c);
+        color: #0a0a0a;
+        border-color: var(--gold-premium);
+        box-shadow: 0 4px 15px var(--gold-glow);
     }
 
-    .table-premium td {
-        background: linear-gradient(to right, #1a1a1a, #0d0d0d);
-        padding: 15px;
-        font-weight: bold;
-        border-top: 1px solid #222;
-        border-bottom: 1px solid #222;
+    table.tabela-class { border-collapse: separate; border-spacing: 0; width: 100%; }
+    table.tabela-class thead th {
+        text-transform: uppercase;
+        font-size: 0.68rem;
+        letter-spacing: 1px;
+        color: #888;
+        border-bottom: 1px solid #262626;
+        padding: 12px 10px;
+        font-weight: 700;
+    }
+    table.tabela-class tbody td {
+        padding: 12px 10px;
+        border-bottom: 1px solid #1c1c1c;
+        font-weight: 600;
+        color: #eaeaea;
         vertical-align: middle;
     }
-
-    .table-premium tr td:first-child { border-top-left-radius: 8px; border-bottom-left-radius: 8px; border-left: 1px solid #222; }
-    .table-premium tr td:last-child { border-top-right-radius: 8px; border-bottom-right-radius: 8px; border-right: 1px solid #222; }
-
-    .table-premium tr:hover td {
-        background: linear-gradient(to right, #222, #111);
-        cursor: default;
+    table.tabela-class tbody tr { transition: background .15s; }
+    table.tabela-class tbody tr:hover { background: rgba(255,255,255,0.03); }
+    table.tabela-class tbody tr.linha-jogador {
+        background: linear-gradient(90deg, rgba(207,181,59,0.14), transparent);
+        box-shadow: inset 3px 0 0 var(--gold-premium);
     }
 
-    /* Zonas de Tabela */
-    .zone-champion td:first-child { border-left: 4px solid var(--zone-champ) !important; }
-    .zone-up td:first-child { border-left: 4px solid var(--zone-up) !important; }
-    .zone-down td:first-child { border-left: 4px solid var(--zone-down) !important; }
-    
     .pos-badge {
-        display: inline-block;
-        width: 30px;
-        text-align: center;
-        font-weight: 900;
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 26px; height: 26px; border-radius: 6px;
+        font-size: 0.75rem; font-weight: 800; background: #1e1e1e; color: #aaa;
+    }
+    .pos-g4 .pos-badge { background: #123d1f; color: #4ee07f; }
+    .pos-z4 .pos-badge { background: #3d1212; color: #ff6b6b; }
+
+    .escudo-mini {
+        width: 28px; height: 28px; border-radius: 6px; background: #1e1e1e;
+        display: inline-flex; align-items: center; justify-content: center;
+        font-size: 0.65rem; font-weight: 800; color: var(--gold-premium);
+        border: 1px solid #2a2a2a;
     }
 
-    .meu-clube td {
-        background: linear-gradient(to right, rgba(207, 181, 59, 0.15), rgba(0,0,0,0)) !important;
-        border-top: 1px solid var(--gold-premium) !important;
-        border-bottom: 1px solid var(--gold-premium) !important;
-    }
+    .pts-final { color: var(--gold-premium); font-weight: 800; }
+    .empty-state { padding: 60px 20px; text-align: center; color: #777; }
 </style>
 
 <div class="container py-4">
-    <!-- Cabeçalho -->
-    <div class="d-flex justify-content-between align-items-center mb-5">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
         <div>
-            <a href="{% url 'modocarreira:dashboard' %}" class="btn btn-sm btn-outline-light mb-2">
-                <i class="fa-solid fa-arrow-left"></i> Voltar ao Hub
+            <h2 class="fw-bold text-uppercase m-0" style="letter-spacing: 2px; color: var(--gold-premium);">Classificação</h2>
+            <p class="text-white-50 small text-uppercase m-0">Tabela de pontos corridos por divisão</p>
+        </div>
+        <a href="{% url 'modocarreira:dashboard' %}" class="text-white-50 small text-decoration-none">
+            <i class="fa-solid fa-arrow-left me-1"></i> Voltar ao Hub
+        </a>
+    </div>
+
+    <div class="d-flex flex-wrap gap-2 mb-4">
+        {% for camp in campeonatos %}
+            <a href="?campeonato={{ camp.id }}"
+               class="divisao-pill {% if campeonato_selecionado.id == camp.id %}ativa{% endif %}">
+                Série {{ camp.divisao }}
             </a>
-            <h2 class="fw-black text-uppercase m-0" style="color: var(--gold-premium); letter-spacing: 1px;">
-                <i class="fa-solid fa-list-ol me-2"></i> Classificações
-            </h2>
-            <p class="text-white-50 small text-uppercase m-0" style="letter-spacing: 1px;">Temporada {{ temporada|default:"1" }}</p>
-        </div>
+        {% empty %}
+            <span class="text-white-50 small">Nenhum campeonato disputado ainda nesta temporada.</span>
+        {% endfor %}
     </div>
 
-    <!-- Loop pelas tabelas (Série A, Série B, Série C) que vêm da View -->
-    {% for divisao, linhas_tabela in tabelas.items %}
-    <div class="glass-card mb-5">
-        <h5 class="text-white fw-bold text-uppercase mb-4 border-bottom border-secondary pb-2">Brasileirão Série {{ divisao }}</h5>
-        
-        <table class="table-premium">
-            <thead>
-                <tr>
-                    <th style="width: 50px;">Pos</th>
-                    <th>Clube</th>
-                    <th class="text-center">Pts</th>
-                    <th class="text-center d-none d-md-table-cell">J</th>
-                    <th class="text-center d-none d-md-table-cell">V</th>
-                    <th class="text-center d-none d-md-table-cell">E</th>
-                    <th class="text-center d-none d-md-table-cell">D</th>
-                    <th class="text-center">SG</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for stats in linhas_tabela %}
-                <!-- Lógica do Django para definir a cor da linha baseado na posição -->
-                <tr class="
-                    {% if forloop.counter == 1 and divisao == 'A' %}zone-champion
-                    {% elif forloop.counter <= 4 and divisao != 'A' %}zone-up
-                    {% elif forloop.counter <= 6 and divisao == 'A' %}zone-up
-                    {% elif forloop.counter > linhas_tabela|length|add:'-4' %}zone-down
-                    {% endif %}
-                    {% if request.user.avatar_carreira.clube_atual == stats.clube %}meu-clube{% endif %}
-                ">
-                    <td>
-                        <span class="pos-badge 
-                            {% if forloop.counter == 1 and divisao == 'A' %}text-warning
-                            {% elif forloop.counter > linhas_tabela|length|add:'-4' %}text-danger
-                            {% else %}text-white-50{% endif %}">
-                            {{ forloop.counter }}
-                        </span>
-                    </td>
-                    <td class="text-uppercase fw-bold">
-                        <i class="fa-solid fa-shield-halved text-white-50 me-2 d-none d-sm-inline"></i> 
-                        {{ stats.clube.nome }}
-                        {% if request.user.avatar_carreira.clube_atual == stats.clube %}
-                            <span class="badge bg-warning text-dark ms-2 small d-none d-md-inline-block" style="font-size: 0.65rem;">SEU CLUBE</span>
-                        {% endif %}
-                    </td>
-                    <td class="text-center fs-5 text-warning">{{ stats.pontos }}</td>
-                    <td class="text-center text-white-50 d-none d-md-table-cell">{{ stats.jogos }}</td>
-                    <td class="text-center text-success d-none d-md-table-cell">{{ stats.vitorias }}</td>
-                    <td class="text-center text-white-50 d-none d-md-table-cell">{{ stats.empates }}</td>
-                    <td class="text-center text-danger d-none d-md-table-cell">{{ stats.derrotas }}</td>
-                    <td class="text-center text-info">
-                        {% if stats.saldo > 0 %}+{{ stats.saldo }}{% else %}{{ stats.saldo }}{% endif %}
-                    </td>
-                </tr>
-                {% empty %}
-                <!-- Se o calendário ainda não tiver gerado os jogos -->
-                <tr>
-                    <td colspan="8" class="text-center py-5 text-muted">
-                        <i class="fa-solid fa-hourglass-empty fs-2 mb-3"></i><br>
-                        Tabela em processamento. Aguardando o início dos jogos da temporada.
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-
-        <!-- Legenda Específica por Divisão -->
-        <div class="d-flex flex-wrap gap-3 mt-4 pt-3 border-top border-secondary opacity-75">
-            {% if divisao == 'A' %}
-                <small class="text-uppercase fw-bold"><i class="fa-solid fa-square me-1" style="color: var(--zone-champ);"></i> Campeão</small>
-                <small class="text-uppercase fw-bold"><i class="fa-solid fa-square me-1" style="color: var(--zone-up);"></i> Libertadores</small>
-            {% else %}
-                <small class="text-uppercase fw-bold"><i class="fa-solid fa-square me-1" style="color: var(--zone-up);"></i> Zona de Acesso (Sobe de Divisão)</small>
-            {% endif %}
-            <small class="text-uppercase fw-bold"><i class="fa-solid fa-square me-1" style="color: var(--zone-down);"></i> Zona de Rebaixamento (Z4)</small>
+    <div class="glass-card p-3 p-md-4">
+        {% if campeonato_selecionado and tabela %}
+        <h6 class="text-white-50 text-uppercase small fw-bold mb-3">{{ campeonato_selecionado.nome }}</h6>
+        <div class="table-responsive">
+            <table class="tabela-class">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Clube</th>
+                        <th class="text-center">P</th>
+                        <th class="text-center">J</th>
+                        <th class="text-center">V</th>
+                        <th class="text-center">E</th>
+                        <th class="text-center">D</th>
+                        <th class="text-center">GP</th>
+                        <th class="text-center">GC</th>
+                        <th class="text-center">SG</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for linha in tabela %}
+                    <tr class="{% if linha.clube_id == clube_jogador_id %}linha-jogador{% endif %} {% if forloop.counter <= 4 %}pos-g4{% elif forloop.revcounter <= 4 %}pos-z4{% endif %}">
+                        <td><span class="pos-badge">{{ forloop.counter }}</span></td>
+                        <td>
+                            <span class="escudo-mini me-2">{{ linha.clube.sigla }}</span>
+                            {{ linha.clube.nome }}
+                            {% if linha.clube_id == clube_jogador_id %}
+                                <i class="fa-solid fa-star ms-1" style="color: var(--gold-premium); font-size: 0.7rem;"></i>
+                            {% endif %}
+                        </td>
+                        <td class="text-center pts-final">{{ linha.pontos }}</td>
+                        <td class="text-center text-white-50">{{ linha.jogos }}</td>
+                        <td class="text-center text-white-50">{{ linha.vitorias }}</td>
+                        <td class="text-center text-white-50">{{ linha.empates }}</td>
+                        <td class="text-center text-white-50">{{ linha.derrotas }}</td>
+                        <td class="text-center text-white-50">{{ linha.gols_pro }}</td>
+                        <td class="text-center text-white-50">{{ linha.gols_contra }}</td>
+                        <td class="text-center text-white-50">{{ linha.saldo }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
+        <div class="d-flex gap-3 mt-3 small text-white-50">
+            <span><span class="pos-badge" style="background:#123d1f;color:#4ee07f;">•</span> Zona de acesso</span>
+            <span><span class="pos-badge" style="background:#3d1212;color:#ff6b6b;">•</span> Zona de rebaixamento</span>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="fa-solid fa-table-list fs-1 mb-3 d-block"></i>
+            <p class="m-0">A tabela ainda não tem jogos suficientes. Assim que as partidas do servidor começarem, a classificação aparece aqui.</p>
+        </div>
+        {% endif %}
     </div>
-    {% empty %}
-    <!-- Tela Vazia caso o "Big Bang" não tenha sido executado -->
-    <div class="glass-card text-center py-5 mt-4 border-secondary border-opacity-50">
-        <i class="fa-solid fa-satellite-dish mb-3 opacity-50" style="font-size: 4rem; color: var(--gold-premium);"></i>
-        <h4 class="fw-bold text-uppercase text-white-50">Sinal Interrompido</h4>
-        <p class="text-muted m-0">Nenhuma temporada ativa. O administrador precisa gerar o calendário (Big Bang).</p>
-    </div>
-    {% endfor %}
 </div>
 {% endblock %}

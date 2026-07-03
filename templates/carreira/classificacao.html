@@ -49,6 +49,7 @@
         font-weight: bold;
         border-top: 1px solid #222;
         border-bottom: 1px solid #222;
+        vertical-align: middle;
     }
 
     .table-premium tr td:first-child { border-top-left-radius: 8px; border-bottom-left-radius: 8px; border-left: 1px solid #222; }
@@ -79,7 +80,8 @@
 </style>
 
 <div class="container py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <!-- Cabeçalho -->
+    <div class="d-flex justify-content-between align-items-center mb-5">
         <div>
             <a href="{% url 'modocarreira:dashboard' %}" class="btn btn-sm btn-outline-light mb-2">
                 <i class="fa-solid fa-arrow-left"></i> Voltar ao Hub
@@ -87,18 +89,14 @@
             <h2 class="fw-black text-uppercase m-0" style="color: var(--gold-premium); letter-spacing: 1px;">
                 <i class="fa-solid fa-list-ol me-2"></i> Classificações
             </h2>
-            <p class="text-white-50 small text-uppercase m-0" style="letter-spacing: 1px;">Temporada Atual</p>
-        </div>
-        
-        <div class="d-none d-md-flex gap-2">
-            <button class="btn btn-warning fw-bold text-dark px-4 shadow-sm">Série A</button>
-            <button class="btn btn-outline-light fw-bold px-4">Série B</button>
-            <button class="btn btn-outline-light fw-bold px-4">Série C</button>
+            <p class="text-white-50 small text-uppercase m-0" style="letter-spacing: 1px;">Temporada {{ temporada|default:"1" }}</p>
         </div>
     </div>
 
-    <div class="glass-card">
-        <h5 class="text-white fw-bold text-uppercase mb-4">Brasileirão Série A</h5>
+    <!-- Loop pelas tabelas (Série A, Série B, Série C) que vêm da View -->
+    {% for divisao, linhas_tabela in tabelas.items %}
+    <div class="glass-card mb-5">
+        <h5 class="text-white fw-bold text-uppercase mb-4 border-bottom border-secondary pb-2">Brasileirão Série {{ divisao }}</h5>
         
         <table class="table-premium">
             <thead>
@@ -114,57 +112,70 @@
                 </tr>
             </thead>
             <tbody>
-                <tr class="zone-champion">
-                    <td><span class="pos-badge text-warning">1</span></td>
-                    <td class="text-uppercase"><i class="fa-solid fa-shield-halved text-white-50 me-2"></i> Flamengo</td>
-                    <td class="text-center fs-5 text-warning">45</td>
-                    <td class="text-center text-white-50 d-none d-md-table-cell">18</td>
-                    <td class="text-center text-success d-none d-md-table-cell">14</td>
-                    <td class="text-center text-white-50 d-none d-md-table-cell">3</td>
-                    <td class="text-center text-danger d-none d-md-table-cell">1</td>
-                    <td class="text-center text-info">+22</td>
+                {% for stats in linhas_tabela %}
+                <!-- Lógica do Django para definir a cor da linha baseado na posição -->
+                <tr class="
+                    {% if forloop.counter == 1 and divisao == 'A' %}zone-champion
+                    {% elif forloop.counter <= 4 and divisao != 'A' %}zone-up
+                    {% elif forloop.counter <= 6 and divisao == 'A' %}zone-up
+                    {% elif forloop.counter > linhas_tabela|length|add:'-4' %}zone-down
+                    {% endif %}
+                    {% if request.user.avatar_carreira.clube_atual == stats.clube %}meu-clube{% endif %}
+                ">
+                    <td>
+                        <span class="pos-badge 
+                            {% if forloop.counter == 1 and divisao == 'A' %}text-warning
+                            {% elif forloop.counter > linhas_tabela|length|add:'-4' %}text-danger
+                            {% else %}text-white-50{% endif %}">
+                            {{ forloop.counter }}
+                        </span>
+                    </td>
+                    <td class="text-uppercase fw-bold">
+                        <i class="fa-solid fa-shield-halved text-white-50 me-2 d-none d-sm-inline"></i> 
+                        {{ stats.clube.nome }}
+                        {% if request.user.avatar_carreira.clube_atual == stats.clube %}
+                            <span class="badge bg-warning text-dark ms-2 small d-none d-md-inline-block" style="font-size: 0.65rem;">SEU CLUBE</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-center fs-5 text-warning">{{ stats.pontos }}</td>
+                    <td class="text-center text-white-50 d-none d-md-table-cell">{{ stats.jogos }}</td>
+                    <td class="text-center text-success d-none d-md-table-cell">{{ stats.vitorias }}</td>
+                    <td class="text-center text-white-50 d-none d-md-table-cell">{{ stats.empates }}</td>
+                    <td class="text-center text-danger d-none d-md-table-cell">{{ stats.derrotas }}</td>
+                    <td class="text-center text-info">
+                        {% if stats.saldo > 0 %}+{{ stats.saldo }}{% else %}{{ stats.saldo }}{% endif %}
+                    </td>
                 </tr>
-
-                <tr class="zone-up">
-                    <td><span class="pos-badge text-success">2</span></td>
-                    <td class="text-uppercase"><i class="fa-solid fa-shield-halved text-white-50 me-2"></i> Palmeiras</td>
-                    <td class="text-center fs-5 text-warning">42</td>
-                    <td class="text-center text-white-50 d-none d-md-table-cell">18</td>
-                    <td class="text-center text-success d-none d-md-table-cell">13</td>
-                    <td class="text-center text-white-50 d-none d-md-table-cell">3</td>
-                    <td class="text-center text-danger d-none d-md-table-cell">2</td>
-                    <td class="text-center text-info">+18</td>
+                {% empty %}
+                <!-- Se o calendário ainda não tiver gerado os jogos -->
+                <tr>
+                    <td colspan="8" class="text-center py-5 text-muted">
+                        <i class="fa-solid fa-hourglass-empty fs-2 mb-3"></i><br>
+                        Tabela em processamento. Aguardando o início dos jogos da temporada.
+                    </td>
                 </tr>
-
-                <tr class="meu-clube">
-                    <td><span class="pos-badge text-white-50">10</span></td>
-                    <td class="text-uppercase"><i class="fa-solid fa-shield-halved text-warning me-2"></i> Vasco da Gama <span class="badge bg-warning text-dark ms-2 small">SEU CLUBE</span></td>
-                    <td class="text-center fs-5 text-warning">24</td>
-                    <td class="text-center text-white-50 d-none d-md-table-cell">18</td>
-                    <td class="text-center text-success d-none d-md-table-cell">7</td>
-                    <td class="text-center text-white-50 d-none d-md-table-cell">3</td>
-                    <td class="text-center text-danger d-none d-md-table-cell">8</td>
-                    <td class="text-center text-info">-2</td>
-                </tr>
-
-                <tr class="zone-down mt-3">
-                    <td><span class="pos-badge text-danger">17</span></td>
-                    <td class="text-uppercase"><i class="fa-solid fa-shield-halved text-white-50 me-2"></i> Juventude</td>
-                    <td class="text-center fs-5 text-warning">14</td>
-                    <td class="text-center text-white-50 d-none d-md-table-cell">18</td>
-                    <td class="text-center text-success d-none d-md-table-cell">3</td>
-                    <td class="text-center text-white-50 d-none d-md-table-cell">5</td>
-                    <td class="text-center text-danger d-none d-md-table-cell">10</td>
-                    <td class="text-center text-info">-15</td>
-                </tr>
+                {% endfor %}
             </tbody>
         </table>
 
+        <!-- Legenda Específica por Divisão -->
         <div class="d-flex flex-wrap gap-3 mt-4 pt-3 border-top border-secondary opacity-75">
-            <small class="text-uppercase fw-bold"><i class="fa-solid fa-square me-1" style="color: var(--zone-champ);"></i> Campeão</small>
-            <small class="text-uppercase fw-bold"><i class="fa-solid fa-square me-1" style="color: var(--zone-up);"></i> Classificação / Subida</small>
-            <small class="text-uppercase fw-bold"><i class="fa-solid fa-square me-1" style="color: var(--zone-down);"></i> Rebaixamento</small>
+            {% if divisao == 'A' %}
+                <small class="text-uppercase fw-bold"><i class="fa-solid fa-square me-1" style="color: var(--zone-champ);"></i> Campeão</small>
+                <small class="text-uppercase fw-bold"><i class="fa-solid fa-square me-1" style="color: var(--zone-up);"></i> Libertadores</small>
+            {% else %}
+                <small class="text-uppercase fw-bold"><i class="fa-solid fa-square me-1" style="color: var(--zone-up);"></i> Zona de Acesso (Sobe de Divisão)</small>
+            {% endif %}
+            <small class="text-uppercase fw-bold"><i class="fa-solid fa-square me-1" style="color: var(--zone-down);"></i> Zona de Rebaixamento (Z4)</small>
         </div>
     </div>
+    {% empty %}
+    <!-- Tela Vazia caso o "Big Bang" não tenha sido executado -->
+    <div class="glass-card text-center py-5 mt-4 border-secondary border-opacity-50">
+        <i class="fa-solid fa-satellite-dish mb-3 opacity-50" style="font-size: 4rem; color: var(--gold-premium);"></i>
+        <h4 class="fw-bold text-uppercase text-white-50">Sinal Interrompido</h4>
+        <p class="text-muted m-0">Nenhuma temporada ativa. O administrador precisa gerar o calendário (Big Bang).</p>
+    </div>
+    {% endfor %}
 </div>
 {% endblock %}

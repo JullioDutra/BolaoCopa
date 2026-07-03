@@ -26,6 +26,8 @@ urlpatterns = [
     path('social/', views.tela_social, name='tela_social'),
     path('api/pazes/<int:conflito_id>/', views.api_fazer_pazes, name='api_fazer_pazes'),
     path('museu/', views.tela_museu, name='tela_museu'),
+    path('classificacao/', views.tela_classificacao, name='tela_classificacao'),
+    path('elencos/', views.tela_elencos, name='tela_elencos'),
     
     # Cronjob (O Motor do Jogo)
     path('api/engine/cron/<str:token>/', views.api_cron_engine, name='api_cron_engine'),

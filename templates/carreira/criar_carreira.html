@@ -277,7 +277,7 @@
                     if (navigator.vibrate) navigator.vibrate([100, 50, 200]);
                     
                     setTimeout(() => {
-                        executarRevealFinal(nome, arquetipo, data);
+                        executarRevealFinal(nome, arquetipo, data); // <--- CORRIGIDO AQUI (X EM VEZ DE J)
                     }, 800);
                 }, 4500);
 
@@ -293,7 +293,8 @@
         });
     }
 
-    function ejecutarRevealFinal(nome, arquetipo, data) {
+    // CORRIGIDO AQUI (X EM VEZ DE J)
+    function executarRevealFinal(nome, arquetipo, data) {
         document.getElementById('roleta-container').style.display = 'none';
         
         // Mapeamento dinâmico de rótulos e ícones com base na regra de negócio
@@ -317,8 +318,8 @@
     }
 
     function redirecionarDashboard() {
-        // Redirecionamento futuro para a prancheta de rotina diária
-        window.location.href = "/";
+        // Redirecionamento correto para o novo dashboard do Modo Carreira
+        window.location.href = "{% url 'modocarreira:dashboard' %}";
     }
 </script>
 {% endblock %}

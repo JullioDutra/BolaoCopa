@@ -4,281 +4,586 @@
 {% block title %}Hub de Carreira - Cartolândia{% endblock %}
 
 {% block content %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
 <style>
     :root {
-        --dark-bg: #050505;
-        --dark-surface: #0f0f0f;
-        --gold-premium: #cfb53b;
-        --gold-glow: rgba(207, 181, 59, 0.4);
-        --neon-blue: #0dcaf0;
-        --neon-green: #198754;
+        /* ---- Paleta: "Trófeu sob luz de estádio" ---- */
+        --void: #050907;
+        --surface: #0b1310;
+        --surface-2: #101c17;
+        --surface-border: rgba(255,255,255,0.07);
+
+        --gold: #c9a227;
+        --gold-bright: #f2d879;
+        --gold-glow: rgba(201,162,39,0.35);
+
+        --emerald: #0d3d2c;
+        --emerald-bright: #22c98a;
+        --emerald-glow: rgba(34,201,138,0.28);
+
+        --ink: #f3f6f2;
+        --ink-dim: rgba(243,246,242,0.58);
+        --ink-faint: rgba(243,246,242,0.32);
+
+        --live: #ff5252;
+        --info: #33c3f0;
+
+        --font-display: 'Oswald', 'Arial Narrow', sans-serif;
+        --font-body: 'Inter', -apple-system, sans-serif;
     }
 
-    body { background-color: var(--dark-bg); color: #ffffff; }
+    body { background:
+            radial-gradient(circle at 15% 0%, rgba(201,162,39,0.07), transparent 40%),
+            radial-gradient(circle at 100% 20%, rgba(34,201,138,0.06), transparent 45%),
+            var(--void);
+        color: var(--ink);
+        font-family: var(--font-body);
+    }
 
-    /* Efeito de Vidro Premium */
+    .cc-wrap { max-width: 1240px; }
+
+    /* ============ TIPOGRAFIA ============ */
+    .cc-display {
+        font-family: var(--font-display);
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        font-weight: 600;
+    }
+    .cc-eyebrow {
+        font-family: var(--font-display);
+        text-transform: uppercase;
+        letter-spacing: 0.16em;
+        font-size: 0.68rem;
+        font-weight: 600;
+        color: var(--ink-faint);
+    }
+
+    /* ============ PAINÉIS DE VIDRO ============ */
     .glass-card {
-        background: rgba(20, 20, 20, 0.7);
-        backdrop-filter: blur(16px);
-        -webkit-backdrop-filter: blur(16px);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 16px;
-        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
-        padding: 24px;
+        background: linear-gradient(160deg, rgba(255,255,255,0.045), rgba(255,255,255,0.01)), var(--surface);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+        border: 1px solid var(--surface-border);
+        border-radius: 18px;
+        box-shadow: 0 20px 45px rgba(0,0,0,0.55);
+        padding: 26px;
         position: relative;
         overflow: hidden;
     }
 
-    /* Animações e Cards de Hub */
-    .hub-card {
-        background: linear-gradient(135deg, #181818, #0a0a0a);
-        border: 1px solid rgba(255, 255, 255, 0.1);
+    /* ============ CHIPS (Carteira / Energia) — recorte diagonal, assinatura de broadcast ============ */
+    .stat-chip {
+        clip-path: polygon(14px 0, 100% 0, 100% 100%, 0 100%, 0 14px);
+        background: linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.01)), var(--surface-2);
+        border: 1px solid var(--surface-border);
+        padding: 10px 22px 10px 18px;
+        min-width: 130px;
+        position: relative;
+    }
+    .stat-chip::before {
+        content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+        background: var(--chip-accent, var(--gold));
+    }
+    .stat-chip .chip-label {
+        font-family: var(--font-display);
+        font-size: 0.63rem;
+        letter-spacing: 0.14em;
+        color: var(--ink-faint);
+        text-transform: uppercase;
+        display: block;
+    }
+    .stat-chip .chip-value {
+        font-family: var(--font-display);
+        font-size: 1.35rem;
+        font-weight: 600;
+        display: block;
+        line-height: 1.15;
+    }
+    .stat-chip.money { --chip-accent: var(--emerald-bright); }
+    .stat-chip.money .chip-value { color: var(--emerald-bright); }
+    .stat-chip.energy { --chip-accent: var(--gold-bright); }
+    .stat-chip.energy .chip-value { color: var(--gold-bright); }
+
+    /* ============ BADGE DE DIVISÃO ============ */
+    .division-tag {
+        clip-path: polygon(8px 0, 100% 0, 100% 100%, 0 100%, 0 8px);
+        background: var(--surface-2);
+        border: 1px solid var(--gold-glow);
+        color: var(--gold-bright);
+        font-family: var(--font-display);
+        letter-spacing: 0.12em;
+        padding: 4px 14px;
+    }
+
+    /* ============ NAV DE ACESSO RÁPIDO ============ */
+    .quick-nav { display: flex; gap: 10px; flex-wrap: wrap; }
+    .quick-access-btn {
+        border-radius: 12px;
+        font-family: var(--font-display);
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        font-size: 0.82rem;
+        padding: 13px 18px;
+        border: 1px solid var(--surface-border);
+        background: var(--surface);
+        color: var(--ink-dim);
+        transition: all 0.25s ease;
+        flex: 1 1 180px;
+        text-align: center;
+        text-decoration: none;
+        display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .quick-access-btn:hover {
+        color: var(--void);
+        background: linear-gradient(120deg, var(--gold-bright), var(--gold));
+        border-color: var(--gold);
+        transform: translateY(-2px);
+        box-shadow: 0 10px 24px var(--gold-glow);
+    }
+    .quick-access-btn.qn-scout:hover { background: linear-gradient(120deg, #6fe0ff, var(--info)); box-shadow: 0 10px 24px rgba(51,195,240,0.35); }
+    .quick-access-btn.qn-nation:hover { background: linear-gradient(120deg, var(--emerald-bright), #159a67); box-shadow: 0 10px 24px var(--emerald-glow); }
+
+    /* ============ CARTÃO DO JOGADOR — estilo "carta de craque" ============ */
+    .player-card {
+        background:
+            radial-gradient(circle at 85% -10%, var(--gold-glow), transparent 55%),
+            linear-gradient(165deg, var(--surface-2), var(--surface) 65%);
+        border: 1px solid var(--surface-border);
+        border-radius: 22px;
+        padding: 30px 24px 24px;
+        position: relative;
+        overflow: hidden;
+        text-align: center;
+    }
+    .player-card::after {
+        content: '';
+        position: absolute; inset: 0;
+        border-radius: 22px;
+        padding: 1px;
+        background: linear-gradient(160deg, var(--gold-glow), transparent 40%, transparent 70%, var(--emerald-glow));
+        -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+        -webkit-mask-composite: xor; mask-composite: exclude;
+        pointer-events: none;
+    }
+    .rating-shield {
+        clip-path: polygon(50% 0%, 100% 22%, 100% 78%, 50% 100%, 0% 78%, 0% 22%);
+        background: linear-gradient(160deg, var(--gold-bright), var(--gold) 60%, #8a6c14);
+        width: 108px; height: 118px;
+        margin: 0 auto 6px;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        box-shadow: 0 12px 30px var(--gold-glow);
+    }
+    .rating-shield .rs-num {
+        font-family: var(--font-display);
+        font-size: 2.6rem;
+        font-weight: 700;
+        color: var(--void);
+        line-height: 1;
+    }
+    .rating-shield .rs-label {
+        font-family: var(--font-display);
+        font-size: 0.6rem;
+        letter-spacing: 0.14em;
+        color: rgba(5,9,7,0.7);
+        margin-top: 2px;
+    }
+    .archetype-pill {
+        display: inline-block;
+        background: var(--surface);
+        border: 1px solid var(--surface-border);
+        color: var(--ink-dim);
+        font-family: var(--font-display);
+        font-size: 0.72rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        padding: 5px 16px;
+        border-radius: 999px;
+        margin-bottom: 14px;
+    }
+    .player-name { font-size: 1.7rem; letter-spacing: 0.02em; }
+    .player-meta { color: var(--ink-dim); font-size: 0.85rem; }
+    .potential-line {
+        margin-top: 16px; padding-top: 16px;
+        border-top: 1px dashed rgba(255,255,255,0.1);
+        font-family: var(--font-display);
+        font-size: 0.78rem;
+        letter-spacing: 0.08em;
+        color: var(--info);
+        text-transform: uppercase;
+    }
+
+    /* ============ TREINO — barras estilo prancheta tática ============ */
+    .training-panel-title {
+        font-family: var(--font-display);
+        font-size: 0.78rem;
+        letter-spacing: 0.14em;
+        color: var(--ink-faint);
+        text-transform: uppercase;
+    }
+    .btn-treino {
+        background: var(--surface-2);
+        border: 1px solid var(--surface-border);
         border-radius: 14px;
+        padding: 16px 18px;
+        text-align: left;
+        transition: all 0.25s ease;
+        color: var(--ink);
+    }
+    .btn-treino:hover:not(:disabled) {
+        border-color: var(--gold);
+        background: linear-gradient(120deg, rgba(201,162,39,0.1), var(--surface-2));
+        transform: translateX(3px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+    }
+    .btn-treino:disabled { opacity: 0.35; filter: grayscale(100%); cursor: not-allowed; }
+    .treino-label {
+        font-family: var(--font-display);
+        font-size: 0.85rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+    }
+    .treino-icon-wrap {
+        width: 42px; height: 42px; border-radius: 10px;
+        background: var(--surface);
+        border: 1px solid var(--surface-border);
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .stat-bar-bg {
+        background: repeating-linear-gradient(90deg, #16201b 0 6px, #131c17 6px 8px);
+        border-radius: 6px;
+        height: 10px;
+        width: 100%;
+        overflow: hidden;
+        margin-top: 8px;
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+    }
+    .stat-bar-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #8a6c14, var(--gold-bright));
+        transition: width 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+        border-radius: 6px;
+    }
+    .stat-bar-fill.bg-info { background: linear-gradient(90deg, #0e7ea0, var(--info)) !important; }
+
+    /* ============ CARDS DE INSTALAÇÃO — estilo pacote de carta ============ */
+    .hub-card {
+        background: linear-gradient(160deg, rgba(255,255,255,0.045), rgba(255,255,255,0.01)), var(--surface);
+        border: 1px solid var(--surface-border);
+        border-radius: 16px;
         transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
         text-decoration: none;
-        color: white;
+        color: var(--ink);
         display: block;
         position: relative;
         overflow: hidden;
     }
-
     .hub-card::before {
         content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
-        background: linear-gradient(to right, transparent, rgba(255,255,255,0.05), transparent);
-        transform: skewX(-20deg); transition: 0.5s;
+        background: linear-gradient(to right, transparent, rgba(255,255,255,0.06), transparent);
+        transform: skewX(-20deg); transition: 0.6s;
     }
-
     .hub-card:hover {
-        transform: translateY(-5px);
-        border-color: var(--gold-premium);
-        color: white;
-        box-shadow: 0 8px 25px rgba(207, 181, 59, 0.25);
+        transform: translateY(-6px);
+        border-color: var(--gold);
+        color: var(--ink);
+        box-shadow: 0 16px 34px rgba(0,0,0,0.5), 0 0 0 1px var(--gold-glow);
     }
-    
     .hub-card:hover::before { left: 150%; }
+    .hub-icon-badge {
+        width: 56px; height: 56px; border-radius: 14px;
+        display: flex; align-items: center; justify-content: center;
+        margin: 0 auto 14px;
+        background: rgba(255,255,255,0.04);
+        border: 1px solid var(--surface-border);
+    }
+    .hub-card h6 { font-family: var(--font-display); letter-spacing: 0.04em; }
 
+    /* ============ CARTÃO DE PARTIDA — placar de transmissão ============ */
     .match-card {
-        background: linear-gradient(135deg, #002b00, #050505);
-        border: 1px solid var(--gold-premium);
-        box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+        background:
+            linear-gradient(135deg, rgba(34,201,138,0.14), transparent 55%),
+            linear-gradient(160deg, var(--surface-2), var(--surface) 70%);
+        border: 1px solid var(--gold-glow);
+        box-shadow: inset 0 0 30px rgba(0,0,0,0.45), 0 18px 40px rgba(0,0,0,0.5);
+        border-radius: 20px;
+    }
+    .comp-badge {
+        clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
+        background: linear-gradient(120deg, var(--gold-bright), var(--gold));
+        color: var(--void);
+        font-family: var(--font-display);
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        padding: 8px 20px;
+    }
+    .live-badge {
+        clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
+        background: var(--live);
+        font-family: var(--font-display);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        font-size: 0.72rem;
+        padding: 8px 18px;
+        position: relative;
+        animation: liveGlow 1.6s ease-in-out infinite;
+    }
+    @keyframes liveGlow {
+        0%, 100% { box-shadow: 0 0 0 rgba(255,82,82,0.5); }
+        50% { box-shadow: 0 0 16px rgba(255,82,82,0.65); }
+    }
+    .waiting-badge {
+        clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
+        background: var(--surface);
+        border: 1px solid var(--surface-border);
+        color: var(--ink-dim);
+        font-family: var(--font-display);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        font-size: 0.72rem;
+        padding: 8px 18px;
+    }
+    .crest-circle {
+        width: 74px; height: 74px; border-radius: 50%;
+        background: linear-gradient(160deg, var(--surface-2), var(--surface));
+        border: 2px solid var(--surface-border);
+        display: flex; align-items: center; justify-content: center;
+        margin: 0 auto 10px;
+        font-family: var(--font-display);
+        font-size: 1.5rem;
+        font-weight: 700;
+    }
+    .vs-mark {
+        font-family: var(--font-display);
+        font-weight: 700;
+        color: var(--gold-bright);
+        letter-spacing: 0.05em;
+        text-shadow: 0 0 20px var(--gold-glow);
+    }
+    .btn-broadcast {
+        background: linear-gradient(120deg, var(--gold-bright), var(--gold));
+        border: none;
+        color: var(--void);
+        font-family: var(--font-display);
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        border-radius: 12px;
+        transition: all 0.25s ease;
+    }
+    .btn-broadcast:hover {
+        color: var(--void);
+        filter: brightness(1.08);
+        transform: translateY(-2px);
+        box-shadow: 0 12px 26px var(--gold-glow);
     }
 
-    /* Barras de Atributos Modernas */
-    .stat-bar-bg { 
-        background-color: #1a1a1a; 
-        border-radius: 8px; 
-        height: 12px; 
-        width: 100%; 
-        overflow: hidden; 
-        margin-top: 6px;
-        box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
-    }
-    .stat-bar-fill { 
-        height: 100%; 
-        background: linear-gradient(90deg, #a68b2c, var(--gold-premium)); 
-        transition: width 0.8s cubic-bezier(0.22, 1, 0.36, 1); 
-        border-radius: 8px;
-    }
-    .stat-bar-fill.bg-info { background: linear-gradient(90deg, #087990, var(--neon-blue)) !important; }
-
-    /* Botões de Treinamento */
-    .btn-treino {
-        background: linear-gradient(to right, #111, #181818); 
-        border: 1px solid #333; 
-        color: #fff; 
-        border-radius: 12px; 
-        padding: 16px; 
-        text-align: left; 
-        transition: all 0.3s ease;
-    }
-    .btn-treino:hover:not(:disabled) { 
-        border-color: var(--gold-premium); 
-        background: linear-gradient(to right, #181818, #222); 
-        transform: scale(1.02); 
-        box-shadow: 0 5px 15px rgba(207, 181, 59, 0.1);
-    }
-    .btn-treino:disabled { opacity: 0.4; filter: grayscale(100%); cursor: not-allowed; }
-
-    /* Painel do Jogador (Cartinha) */
-    .player-panel {
-        background: radial-gradient(circle at top right, rgba(207,181,59,0.15) 0%, transparent 60%);
+    .empty-season {
+        border: 1px dashed var(--surface-border);
+        border-radius: 20px;
+        background: var(--surface);
     }
 
-    /* Acesso Rápido */
-    .quick-access-btn {
-        border-radius: 10px;
-        font-weight: 800;
-        letter-spacing: 0.5px;
-        transition: all 0.2s;
+    hr.section-divider {
+        border: none; height: 1px;
+        background: linear-gradient(90deg, var(--surface-border), transparent);
+        margin: 28px 0 18px;
+    }
+
+    /* ============ RESPONSIVO ============ */
+    @media (max-width: 767.98px) {
+        .glass-card { padding: 18px; border-radius: 14px; }
+        .cc-display.club-name { font-size: 1.5rem !important; }
+        .rating-shield { width: 92px; height: 100px; }
+        .rating-shield .rs-num { font-size: 2.1rem; }
+        .player-name { font-size: 1.35rem; }
+        .quick-access-btn { flex: 1 1 100%; }
+        .crest-circle { width: 58px; height: 58px; font-size: 1.15rem; }
+    }
+
+    /* ============ MODAL DE DILEMA ============ */
+    #modalDilema .modal-content {
+        border: 1px solid rgba(201,162,39,0.4);
+        box-shadow: 0 0 50px rgba(201,162,39,0.18);
     }
 </style>
 
-<div class="container py-4">
-    
+<div class="container cc-wrap py-4">
+
     <div class="row mb-4 align-items-center">
         <div class="col-md-6 mb-3 mb-md-0">
-            <h2 class="fw-black text-uppercase m-0" style="color: var(--gold-premium); letter-spacing: 1px;">
-                {{ clube.nome|default:"Sem Clube" }} 
-                <span class="badge bg-dark border border-secondary ms-2 align-middle" style="font-size: 0.5em; letter-spacing: 2px;">Série {{ clube.divisao }}</span>
+            <p class="cc-eyebrow mb-1">Temporada Atual &bull; Fase Regular</p>
+            <h2 class="cc-display club-name m-0" style="font-size: 2.1rem; color: var(--ink);">
+                {{ clube.nome|default:"Sem Clube" }}
+                <span class="division-tag ms-2 align-middle" style="font-size: 0.6em;">SÉRIE {{ clube.divisao }}</span>
             </h2>
-            <p class="text-white-50 text-uppercase small m-0 mt-1" style="letter-spacing: 1px;">Temporada Atual - Fase Regular</p>
         </div>
         <div class="col-md-6 text-md-end">
-            <div class="d-inline-flex gap-3">
-                <div class="glass-card py-2 px-4 text-center p-0 m-0" style="padding: 10px 20px !important;">
-                    <span class="d-block text-white-50 small text-uppercase fw-bold" style="font-size: 0.65rem;">Carteira</span>
-                    <span class="fw-bold fs-5 text-success">$ {{ avatar.saldo_bancario }}</span>
+            <div class="d-inline-flex gap-3 flex-wrap justify-content-md-end">
+                <div class="stat-chip money">
+                    <span class="chip-label">Carteira</span>
+                    <span class="chip-value">$ {{ avatar.saldo_bancario }}</span>
                 </div>
-                <div class="glass-card py-2 px-4 text-center border-warning p-0 m-0" style="padding: 10px 20px !important;">
-                    <span class="d-block text-white-50 small text-uppercase fw-bold" style="font-size: 0.65rem;">Energia (AP)</span>
-                    <span class="fw-bold fs-5 text-warning" id="ap-display">{{ avatar.pontos_acao_diarios }} / 1</span>
+                <div class="stat-chip energy">
+                    <span class="chip-label">Energia (AP)</span>
+                    <span class="chip-value" id="ap-display">{{ avatar.pontos_acao_diarios }} / 1</span>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="d-flex flex-wrap gap-2 mb-4">
-        <a href="{% url 'modocarreira:tela_classificacao' %}" class="btn btn-outline-warning quick-access-btn flex-grow-1 py-2">
-            <i class="fa-solid fa-list-ol me-2"></i> Classificação
+    <nav class="quick-nav mb-4">
+        <a href="{% url 'modocarreira:tela_classificacao' %}" class="quick-access-btn">
+            <i class="fa-solid fa-list-ol"></i> Classificação
         </a>
-        <a href="{% url 'modocarreira:tela_elencos' %}" class="btn btn-outline-info quick-access-btn flex-grow-1 py-2">
-            <i class="fa-solid fa-binoculars me-2"></i> Olheiro Global
+        <a href="{% url 'modocarreira:tela_elencos' %}" class="quick-access-btn qn-scout">
+            <i class="fa-solid fa-binoculars"></i> Olheiro Global
         </a>
-        <a href="{% url 'modocarreira:tela_selecao' %}" class="btn btn-outline-success quick-access-btn flex-grow-1 py-2">
-            <i class="fa-solid fa-star me-2"></i> Seleção Nacional
+        <a href="{% url 'modocarreira:tela_selecao' %}" class="quick-access-btn qn-nation">
+            <i class="fa-solid fa-star"></i> Seleção Nacional
         </a>
-    </div>
+    </nav>
 
     <div class="row g-4">
         <div class="col-lg-5">
-            <div class="glass-card player-panel text-center mb-4 border-warning">
-                <div class="position-absolute top-0 end-0 p-3 opacity-10" style="pointer-events: none;">
-                    <i class="fa-solid fa-bolt" style="font-size: 10rem;"></i>
+            <div class="player-card mb-4">
+                <p class="cc-eyebrow mb-2">O Seu Craque</p>
+
+                <div class="rating-shield">
+                    <span class="rs-num" id="ovr-display">{{ avatar.ovr_calculado }}</span>
+                    <span class="rs-label">OVR</span>
                 </div>
-                <h6 class="text-white-50 text-uppercase small fw-bold mb-2">O Seu Craque</h6>
-                
-                <h1 class="fw-black m-0" style="font-size: 4.5rem; color: var(--gold-premium); line-height: 1;" id="ovr-display">{{ avatar.ovr_calculado }}</h1>
-                <span class="badge bg-dark border border-secondary text-uppercase mb-3 px-3 py-1">{{ avatar.get_arquetipo_display }}</span>
-                
-                <h4 class="fw-black text-uppercase m-0" style="letter-spacing: 1px;">{{ avatar.nome_camisa }}</h4>
-                <p class="text-white-50 small mt-1 mb-0">Idade: {{ avatar.idade_atual }} anos &bull; Salário: ${{ avatar.salario_rodada }}</p>
-                
-                <div class="mt-3 pt-3 border-top border-secondary border-opacity-25">
-                    <small class="text-info fw-bold text-uppercase" style="letter-spacing: 1px;">
-                        <i class="fa-solid fa-arrow-trend-up me-1"></i> Teto Potencial: {{ avatar.teto_potencial_oculto }}
-                    </small>
+
+                <span class="archetype-pill">{{ avatar.get_arquetipo_display }}</span>
+
+                <h4 class="cc-display player-name m-0">{{ avatar.nome_camisa }}</h4>
+                <p class="player-meta mt-1 mb-0">Idade: {{ avatar.idade_atual }} anos &bull; Salário: ${{ avatar.salario_rodada }}</p>
+
+                <div class="potential-line">
+                    <i class="fa-solid fa-arrow-trend-up me-1"></i> Teto Potencial: {{ avatar.teto_potencial_oculto }}
                 </div>
             </div>
 
             <div class="glass-card mb-4">
-                <h6 class="text-white-50 text-uppercase small fw-bold mb-3"><i class="fa-solid fa-stopwatch me-2"></i> Rotina de Treinamento</h6>
+                <h6 class="training-panel-title mb-3"><i class="fa-solid fa-stopwatch me-2"></i> Rotina de Treinamento</h6>
                 <div class="d-flex flex-column gap-3">
-                    
+
                     <button class="btn btn-treino w-100 d-flex justify-content-between align-items-center" onclick="executarTreino('fisico')" {% if avatar.pontos_acao_diarios <= 0 %}disabled{% endif %}>
                         <div class="flex-grow-1 pe-3">
-                            <span class="fw-bold d-block text-uppercase small mb-1">Físico (<span id="val-fisico">{{ avatar.fisico }}</span>)</span>
+                            <span class="treino-label d-block mb-1">Físico (<span id="val-fisico">{{ avatar.fisico }}</span>)</span>
                             <div class="stat-bar-bg"><div class="stat-bar-fill" id="bar-fisico" style="width: {{ avatar.fisico }}%;"></div></div>
                         </div>
-                        <i class="fa-solid fa-dumbbell text-secondary fs-4"></i>
+                        <div class="treino-icon-wrap"><i class="fa-solid fa-dumbbell" style="color: var(--gold-bright);"></i></div>
                     </button>
 
                     <button class="btn btn-treino w-100 d-flex justify-content-between align-items-center" onclick="executarTreino('tecnico')" {% if avatar.pontos_acao_diarios <= 0 %}disabled{% endif %}>
                         <div class="flex-grow-1 pe-3">
-                            <span class="fw-bold d-block text-uppercase small mb-1">Técnico (<span id="val-tecnica">{{ avatar.tecnica }}</span>)</span>
+                            <span class="treino-label d-block mb-1">Técnico (<span id="val-tecnica">{{ avatar.tecnica }}</span>)</span>
                             <div class="stat-bar-bg"><div class="stat-bar-fill" id="bar-tecnica" style="width: {{ avatar.tecnica }}%;"></div></div>
                         </div>
-                        <i class="fa-solid fa-futbol text-secondary fs-4"></i>
+                        <div class="treino-icon-wrap"><i class="fa-solid fa-futbol" style="color: var(--gold-bright);"></i></div>
                     </button>
 
                     <button class="btn btn-treino w-100 d-flex justify-content-between align-items-center" onclick="executarTreino('tatico')" {% if avatar.pontos_acao_diarios <= 0 %}disabled{% endif %}>
                         <div class="flex-grow-1 pe-3">
-                            <span class="fw-bold d-block text-uppercase small mb-1">Tático (<span id="val-inteligencia">{{ avatar.inteligencia }}</span>)</span>
+                            <span class="treino-label d-block mb-1">Tático (<span id="val-inteligencia">{{ avatar.inteligencia }}</span>)</span>
                             <div class="stat-bar-bg"><div class="stat-bar-fill" id="bar-inteligencia" style="width: {{ avatar.inteligencia }}%;"></div></div>
                         </div>
-                        <i class="fa-solid fa-chess-knight text-secondary fs-4"></i>
+                        <div class="treino-icon-wrap"><i class="fa-solid fa-chess-knight" style="color: var(--gold-bright);"></i></div>
                     </button>
 
                     <button class="btn btn-treino w-100 d-flex justify-content-between align-items-center" onclick="executarTreino('midia')" {% if avatar.pontos_acao_diarios <= 0 %}disabled{% endif %}>
                         <div class="flex-grow-1 pe-3">
-                            <span class="fw-bold d-block text-uppercase small mb-1">Mídia (<span id="val-media_fama">{{ avatar.media_fama }}</span>)</span>
+                            <span class="treino-label d-block mb-1">Mídia (<span id="val-media_fama">{{ avatar.media_fama }}</span>)</span>
                             <div class="stat-bar-bg"><div class="stat-bar-fill bg-info" id="bar-media_fama" style="width: {{ avatar.media_fama }}%;"></div></div>
                         </div>
-                        <i class="fa-solid fa-camera text-info fs-4"></i>
+                        <div class="treino-icon-wrap"><i class="fa-solid fa-camera" style="color: var(--info);"></i></div>
                     </button>
-                    
+
                 </div>
             </div>
         </div>
 
         <div class="col-lg-7">
-            
-            <h6 class="text-white-50 text-uppercase small fw-bold mb-3"><i class="fa-regular fa-calendar-check me-2"></i> Próximo Compromisso</h6>
-            
+
+            <h6 class="training-panel-title mb-3"><i class="fa-regular fa-calendar-check me-2"></i> Próximo Compromisso</h6>
+
             {% if proxima_partida %}
-            <div class="hub-card match-card p-4 mb-4 position-relative rounded-4">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <span class="badge bg-warning text-dark text-uppercase fw-bold px-3 py-2 shadow-sm">{{ proxima_partida.campeonato.nome }}</span>
+            <div class="match-card p-4 mb-4 position-relative">
+                <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+                    <span class="comp-badge">{{ proxima_partida.campeonato.nome }}</span>
                     {% if proxima_partida.status == 'andamento' %}
-                        <span class="badge bg-danger pulse-dot text-uppercase px-3 py-2 shadow-sm">Ao Vivo ({{ proxima_partida.minuto_atual }}')</span>
+                        <span class="live-badge">Ao Vivo &bull; {{ proxima_partida.minuto_atual }}'</span>
                     {% else %}
-                        <span class="badge bg-dark border border-secondary text-white-50 px-3 py-2 text-uppercase"><i class="fa-regular fa-clock me-1"></i> Aguardando Apito Inicial</span>
+                        <span class="waiting-badge"><i class="fa-regular fa-clock me-1"></i> Aguardando Apito Inicial</span>
                     {% endif %}
                 </div>
-                
+
                 <div class="d-flex justify-content-center align-items-center gap-2 gap-md-4 my-4">
                     <div class="text-center" style="flex: 1;">
-                        <h2 class="fw-black m-0 text-uppercase text-truncate">{{ proxima_partida.clube_casa.sigla }}</h2>
-                        <small class="text-white-50 fw-bold" style="letter-spacing: 2px;">CASA</small>
+                        <div class="crest-circle">{{ proxima_partida.clube_casa.sigla }}</div>
+                        <h5 class="cc-display m-0 text-truncate">{{ proxima_partida.clube_casa.sigla }}</h5>
+                        <small class="cc-eyebrow">Casa</small>
                     </div>
-                    <div class="fs-3 text-white-50 fw-black px-2 px-md-4">X</div>
+                    <div class="fs-2 vs-mark px-2 px-md-3">VS</div>
                     <div class="text-center" style="flex: 1;">
-                        <h2 class="fw-black m-0 text-uppercase text-truncate">{{ proxima_partida.clube_fora.sigla }}</h2>
-                        <small class="text-white-50 fw-bold" style="letter-spacing: 2px;">FORA</small>
+                        <div class="crest-circle">{{ proxima_partida.clube_fora.sigla }}</div>
+                        <h5 class="cc-display m-0 text-truncate">{{ proxima_partida.clube_fora.sigla }}</h5>
+                        <small class="cc-eyebrow">Fora</small>
                     </div>
                 </div>
 
-                <a href="{% url 'modocarreira:tela_match_day' proxima_partida.id %}" class="btn btn-warning w-100 fw-black text-dark text-uppercase py-3 rounded-3 shadow mt-2" style="letter-spacing: 1px;">
+                <a href="{% url 'modocarreira:tela_match_day' proxima_partida.id %}" class="btn btn-broadcast w-100 py-3 mt-2">
                     <i class="fa-solid fa-play me-2"></i> Acessar Transmissão
                 </a>
             </div>
             {% else %}
-            <div class="hub-card p-5 mb-4 text-center border-secondary rounded-4 bg-dark bg-opacity-25">
-                <i class="fa-solid fa-calendar-xmark mb-3 opacity-25" style="font-size: 4rem;"></i>
-                <h5 class="fw-bold text-uppercase">Férias / Fim de Temporada</h5>
+            <div class="empty-season p-5 mb-4 text-center">
+                <i class="fa-solid fa-calendar-xmark mb-3 opacity-25" style="font-size: 3.5rem; color: var(--gold);"></i>
+                <h5 class="cc-display">Férias / Fim de Temporada</h5>
                 <p class="text-white-50 small m-0">Aguarde o sorteio do calendário da próxima época no metaverso.</p>
             </div>
             {% endif %}
 
-            <h6 class="text-white-50 text-uppercase small fw-bold mb-3 mt-2"><i class="fa-solid fa-building me-2"></i> Instalações do Clube</h6>
+            <hr class="section-divider">
+
+            <h6 class="training-panel-title mb-3"><i class="fa-solid fa-building me-2"></i> Instalações do Clube</h6>
             <div class="row g-3">
                 <div class="col-md-6">
                     <a href="{% url 'modocarreira:tela_vestiario' %}" class="hub-card p-4 h-100 text-center">
-                        <i class="fa-solid fa-users fs-1 mb-3" style="color: var(--neon-green);"></i>
-                        <h6 class="fw-bold text-uppercase mb-2">O Vestiário</h6>
+                        <div class="hub-icon-badge"><i class="fa-solid fa-users fs-4" style="color: var(--emerald-bright);"></i></div>
+                        <h6 class="mb-2">O Vestiário</h6>
                         <p class="text-white-50 small m-0" style="font-size: 0.8rem;">Elenco titular e intrigas internas.</p>
                     </a>
                 </div>
 
                 <div class="col-md-6">
                     <a href="{% url 'modocarreira:tela_mercado' %}" class="hub-card p-4 h-100 text-center">
-                        <i class="fa-solid fa-file-signature fs-1 mb-3" style="color: var(--gold-premium);"></i>
-                        <h6 class="fw-bold text-uppercase mb-2">Mercado da Bola</h6>
+                        <div class="hub-icon-badge"><i class="fa-solid fa-file-signature fs-4" style="color: var(--gold-bright);"></i></div>
+                        <h6 class="mb-2">Mercado da Bola</h6>
                         <p class="text-white-50 small m-0" style="font-size: 0.8rem;">Passe, finanças e transferências.</p>
                     </a>
                 </div>
 
                 <div class="col-md-6">
                     <a href="{% url 'modocarreira:tela_social' %}" class="hub-card p-4 h-100 text-center">
-                        <i class="fa-solid fa-newspaper fs-1 mb-3" style="color: var(--neon-blue);"></i>
-                        <h6 class="fw-bold text-uppercase mb-2">O Cartoleiro</h6>
+                        <div class="hub-icon-badge"><i class="fa-solid fa-newspaper fs-4" style="color: var(--info);"></i></div>
+                        <h6 class="mb-2">O Cartoleiro</h6>
                         <p class="text-white-50 small m-0" style="font-size: 0.8rem;">Imprensa, fofocas e RP.</p>
                     </a>
                 </div>
 
                 <div class="col-md-6">
                     <a href="{% url 'modocarreira:tela_museu' %}" class="hub-card p-4 h-100 text-center">
-                        <i class="fa-solid fa-building-columns fs-1 mb-3" style="color: #9C27B0;"></i>
-                        <h6 class="fw-bold text-uppercase mb-2">Museu do Futebol</h6>
+                        <div class="hub-icon-badge"><i class="fa-solid fa-building-columns fs-4" style="color: #c084fc;"></i></div>
+                        <h6 class="mb-2">Museu do Futebol</h6>
                         <p class="text-white-50 small m-0" style="font-size: 0.8rem;">Títulos, prêmios e história.</p>
                     </a>
                 </div>
@@ -290,9 +595,9 @@
 
 <div class="modal fade" id="modalDilema" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content glass-card p-2" style="border: 2px solid #800080; box-shadow: 0 0 40px rgba(128, 0, 128, 0.4);">
+    <div class="modal-content glass-card p-2">
       <div class="modal-header border-0 pb-0">
-        <h5 class="modal-title fw-black text-uppercase w-100 text-center" style="color: #d896ff; letter-spacing: 1px;">
+        <h5 class="modal-title cc-display w-100 text-center" style="color: var(--gold-bright);">
             <i class="fa-solid fa-triangle-exclamation mb-2 fs-2 d-block"></i> Evento Inesperado
         </h5>
       </div>
@@ -301,11 +606,11 @@
         <p id="dilema-desc" class="text-white-50">Descrição do evento...</p>
         <div class="d-grid gap-3 mt-4">
             <button class="btn btn-outline-light text-start p-3 rounded-3" onclick="responderDilema('opcao_A')">
-                <span class="fw-bold d-block mb-1" style="color: var(--gold-premium);">Opção A</span>
+                <span class="fw-bold d-block mb-1" style="color: var(--gold-bright);">Opção A</span>
                 <span id="dilema-opt-a" class="small text-white">Texto da Opção A</span>
             </button>
             <button class="btn btn-outline-light text-start p-3 rounded-3" onclick="responderDilema('opcao_B')">
-                <span class="fw-bold d-block mb-1" style="color: var(--gold-premium);">Opção B</span>
+                <span class="fw-bold d-block mb-1" style="color: var(--gold-bright);">Opção B</span>
                 <span id="dilema-opt-b" class="small text-white">Texto da Opção B</span>
             </button>
         </div>
@@ -331,13 +636,13 @@
                 const info = data.dados;
                 document.getElementById('ap-display').innerText = `${info.ap_restante} / 1`;
                 document.getElementById('ovr-display').innerText = info.novo_ovr;
-                
+
                 let attrBase = info.atributo_treinado;
                 let valorAtualizado = parseInt(document.getElementById(`val-${attrBase}`).innerText) + info.valor_ganho;
                 document.getElementById(`val-${attrBase}`).innerText = valorAtualizado;
                 document.getElementById(`bar-${attrBase}`).style.width = `${valorAtualizado}%`;
 
-                if (data.tem_dilema) { abrirModalDilema(data.dilema_dados); } 
+                if (data.tem_dilema) { abrirModalDilema(data.dilema_dados); }
                 else { if (info.ap_restante > 0) botoes.forEach(btn => btn.disabled = false); }
             } else {
                 alert(data.mensagem);

@@ -477,10 +477,67 @@ def tela_elencos(request):
 
 @login_required
 def tela_classificacao(request):
-    """ Exibe as tabelas dos campeonatos """
-    # Nota: A lógica exata aqui depende de como a sua Tabela é gerada no banco de dados.
-    # Por enquanto, renderizamos o HTML base. Pode adaptar a query para buscar as estatísticas reais (Vitórias, Derrotas, SG) da sua modelagem.
-    return render(request, 'carreira/classificacao.html')
+    """ Calcula e exibe as tabelas dos campeonatos dinamicamente """
+    config = ServidorConfig.objects.first()
+    temporada_atual = config.temporada_atual if config else 1
+
+    # Busca os campeonatos ativos desta temporada
+    campeonatos = Campeonato.objects.filter(temporada=temporada_atual).order_by('divisao')
+    
+    tabelas = {}
+    for camp in campeonatos:
+        clubes_divisao = Clube.objects.filter(divisao=camp.divisao)
+        classificacao = []
+        
+        for clube in clubes_divisao:
+            stats = {
+                'clube': clube, 'pontos': 0, 'jogos': 0, 
+                'vitorias': 0, 'empates': 0, 'derrotas': 0, 
+                'gols_pro': 0, 'gols_contra': 0, 'saldo': 0
+            }
+            
+            # Jogos como Casa
+            partidas_casa = PartidaMundo.objects.filter(campeonato=camp, clube_casa=clube, status='finalizada')
+            for p in partidas_casa:
+                stats['jogos'] += 1
+                stats['gols_pro'] += p.gols_casa
+                stats['gols_contra'] += p.gols_fora
+                if p.gols_casa > p.gols_fora:
+                    stats['pontos'] += 3
+                    stats['vitorias'] += 1
+                elif p.gols_casa == p.gols_fora:
+                    stats['pontos'] += 1
+                    stats['empates'] += 1
+                else:
+                    stats['derrotas'] += 1
+
+            # Jogos como Fora
+            partidas_fora = PartidaMundo.objects.filter(campeonato=camp, clube_fora=clube, status='finalizada')
+            for p in partidas_fora:
+                stats['jogos'] += 1
+                stats['gols_pro'] += p.gols_fora
+                stats['gols_contra'] += p.gols_casa
+                if p.gols_fora > p.gols_casa:
+                    stats['pontos'] += 3
+                    stats['vitorias'] += 1
+                elif p.gols_fora == p.gols_casa:
+                    stats['pontos'] += 1
+                    stats['empates'] += 1
+                else:
+                    stats['derrotas'] += 1
+            
+            stats['saldo'] = stats['gols_pro'] - stats['gols_contra']
+            classificacao.append(stats)
+        
+        # O grande motor de ordenação: 1º Pontos, 2º Vitórias, 3º Saldo de Gols
+        classificacao.sort(key=lambda x: (x['pontos'], x['vitorias'], x['saldo']), reverse=True)
+        tabelas[camp.divisao] = classificacao
+
+    contexto = {
+        'tabelas': tabelas,
+        'temporada': temporada_atual
+    }
+    return render(request, 'carreira/classificacao.html', contexto)
 
 
 @login_required

@@ -1,69 +1,62 @@
 from django.contrib import admin
-from .models import Jogo, Palpite, OscarCartolandia
-from django.contrib import admin
-from django.db.models import Sum
-from django.contrib.auth.models import User
 from .models import Jogo, Palpite, OscarCartolandia, Clube, Temporada, PalpiteLongoPrazo, MuralCampeoes
+from .ranking_utils import calcular_ranking_geral
 
-from convocacao.models import Convocacao
+from convocacao.models import SelecaoBrasileirao
+
 
 # ==========================================
 # ACTION: FINALIZAR TEMPORADA E GERAR MURAL
 # ==========================================
-@admin.action(description='🏁 Finalizar Temporada Atual e Gerar Mural de Campeões')
+@admin.action(description='🏁 Finalizar Temporada Atual e Gerar Mural de Campeões (zera o ciclo)')
 def finalizar_temporada(modeladmin, request, queryset):
     for temporada in queryset:
         if not temporada.ativa:
             modeladmin.message_user(request, f"A temporada {temporada.ano} já está encerrada.", level='WARNING')
             continue
 
-        usuarios = User.objects.all()
-        campeao = None
-        maior_pontuacao = -1
+        # Usa a MESMA regra de pontuação da tela de Ranking Geral, então o
+        # campeão do Mural é sempre exatamente quem estava em 1º lugar no ranking.
+        ranking = calcular_ranking_geral(temporada=temporada)
 
-        for user in usuarios:
-            # 1. Busca os pontos dos Jogos Normais do Bolão
-            pontos_jogos = Palpite.objects.filter(usuario=user).aggregate(total=Sum('pontuacao_obtida'))['total'] or 0
-            
-            # 2. Busca os pontos dos Palpites de Longo Prazo (G4, Z4, Campeões)
-            pontos_longo = PalpiteLongoPrazo.objects.filter(usuario=user, temporada=temporada).aggregate(total=Sum('pontos_obtidos'))['total'] or 0
-            
-            # 3. Busca os pontos da Seleção do Brasileirão / Copa
-            pontos_selecao = Convocacao.objects.filter(usuario=user).aggregate(total=Sum('pontuacao_total'))['total'] or 0
-
-            # SOMA GERAL PARA O RANKING
-            pontuacao_total_usuario = pontos_jogos + pontos_longo + pontos_selecao
-
-            # Verifica se é o maior pontuador até agora
-            if pontuacao_total_usuario > maior_pontuacao:
-                maior_pontuacao = pontuacao_total_usuario
-                campeao = user
-
-        # Salva o grande campeão no Mural
-        if campeao:
+        if ranking:
+            primeiro = ranking[0]
             MuralCampeoes.objects.create(
                 temporada=temporada,
-                usuario=campeao,
-                pontuacao_final=maior_pontuacao
+                usuario=primeiro['usuario'],
+                pontuacao_final=primeiro['total_pontos']
             )
+            campeao_nome = primeiro['usuario'].username
+            campeao_pontos = primeiro['total_pontos']
+        else:
+            campeao_nome = "ninguém (sem palpites na temporada)"
+            campeao_pontos = 0
 
-        # Encerra a temporada atual
+        # Encerra a temporada atual e abre a próxima
         temporada.ativa = False
         temporada.save()
-
-        # Inicia a próxima temporada automaticamente
         Temporada.objects.get_or_create(ano=temporada.ano + 1, defaults={'ativa': True})
 
         # =========================================================
-        # ZERANDO O BOLÃO PARA COMEÇAR DO ZERO (Descomente se quiser)
+        # ZERANDO O BOLÃO PARA COMEÇAR DO ZERO
+        # Descomente as linhas abaixo se quiser realmente resetar os dados.
         # =========================================================
-        # Como você disse que quer "começá-la do zero novamente":
-        # Descomente as linhas abaixo se quiser deletar os palpites e jogos antigos.
         # Palpite.objects.all().delete()
         # Jogo.objects.all().delete()
-        # Convocacao.objects.all().delete()
+        # PalpiteLongoPrazo.objects.filter(temporada=temporada).delete()
+        # SelecaoBrasileirao.objects.update(pontuacao_total=0)
 
-        modeladmin.message_user(request, f"Temporada {temporada.ano} encerrada com sucesso! O Campeão foi {campeao.username} com {maior_pontuacao} pontos! 🏆")
+        modeladmin.message_user(
+            request,
+            f"Temporada {temporada.ano} encerrada com sucesso! O Campeão foi {campeao_nome} com {campeao_pontos} pontos! 🏆"
+        )
+
+
+@admin.action(description='🔄 Recalcular pontuação das Seleções 4-3-3 do Brasileirão')
+def recalcular_selecoes_brasileirao(modeladmin, request, queryset):
+    for selecao in queryset:
+        selecao.calcular_pontuacao()
+    modeladmin.message_user(request, "Pontuações recalculadas com base nos jogadores oficiais marcados.")
 
 
 # ==========================================
@@ -73,31 +66,35 @@ def finalizar_temporada(modeladmin, request, queryset):
 class TemporadaAdmin(admin.ModelAdmin):
     list_display = ('ano', 'ativa')
     list_filter = ('ativa',)
-    actions = [finalizar_temporada] # Acopla o botão na tela de Temporadas
+    actions = [finalizar_temporada]
+
 
 class PalpiteLongoPrazoAdmin(admin.ModelAdmin):
     list_display = ('usuario', 'tipo', 'clube', 'posicao_esperada', 'pontos_obtidos', 'temporada')
     list_filter = ('tipo', 'temporada')
     search_fields = ('usuario__username', 'clube__nome')
 
+
 class MuralCampeoesAdmin(admin.ModelAdmin):
     list_display = ('temporada', 'usuario', 'pontuacao_final', 'data_conquista')
 
-# Registrando os novos modelos para você poder gerenciá-los no painel
+
+class ClubeAdmin(admin.ModelAdmin):
+    list_display = ('nome', 'cor_hexadecimal', 'escudo')
+
+
 admin.site.register(Temporada, TemporadaAdmin)
 admin.site.register(PalpiteLongoPrazo, PalpiteLongoPrazoAdmin)
 admin.site.register(MuralCampeoes, MuralCampeoesAdmin)
-admin.site.register(Clube)
+admin.site.register(Clube, ClubeAdmin)
+
 
 @admin.register(Jogo)
 class JogoAdmin(admin.ModelAdmin):
-    # 1. ADICIONAMOS OS GOLS AQUI NO list_display (para eles aparecerem na tela)
     list_display = ('time_casa', 'gols_casa_real', 'gols_fora_real', 'time_fora', 'data_hora', 'finalizado')
-    
     list_filter = ('finalizado', 'data_hora')
-    
-    # 2. Agora o Django permite que eles sejam editáveis!
-    list_editable = ('gols_casa_real', 'gols_fora_real', 'finalizado') 
+    list_editable = ('gols_casa_real', 'gols_fora_real', 'finalizado')
+
 
 @admin.register(Palpite)
 class PalpiteAdmin(admin.ModelAdmin):
@@ -105,24 +102,21 @@ class PalpiteAdmin(admin.ModelAdmin):
     search_fields = ('usuario__username', 'jogo__time_casa')
     list_filter = ('jogo',)
 
+
 @admin.register(OscarCartolandia)
 class OscarCartolandiaAdmin(admin.ModelAdmin):
-    # O que vai aparecer nas colunas da tabela principal
     list_display = ('autor', 'categoria_formatada', 'nivel', 'indicado_por', 'data_criacao')
-    
-    # Filtros laterais para facilitar a vida do tribunal
     list_filter = ('categoria', 'nivel', 'data_criacao')
-    
-    # Barra de pesquisa (busca pelo nome do autor, na fala ou pelo usuário que indicou)
     search_fields = ('autor', 'fala', 'indicado_por__username', 'indicado_por__first_name')
-    
-    # Impede que a data de criação seja editada sem querer
     readonly_fields = ('data_criacao',)
-    
-    # Organiza por data, do mais recente para o mais antigo
     ordering = ('-data_criacao',)
 
-    # Deixa o nome da categoria mais bonito na tabela do Admin
     @admin.display(description='Categoria')
     def categoria_formatada(self, obj):
         return obj.get_categoria_display()
+
+
+@admin.register(SelecaoBrasileirao)
+class SelecaoBrasileiraoAdmin(admin.ModelAdmin):
+    list_display = ('usuario', 'pontuacao_total', 'data_atualizacao')
+    actions = [recalcular_selecoes_brasileirao]

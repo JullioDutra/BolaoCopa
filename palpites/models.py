@@ -149,3 +149,54 @@ class OscarCartolandia(models.Model):
 
     def __str__(self):
         return f"{self.autor} - {self.get_categoria_display()}"
+
+# ==========================================
+# NOVOS MODELOS: ESTRUTURA PARA LONGO PRAZO
+# ==========================================
+
+class Clube(models.Model):
+    nome = models.CharField(max_length=100, unique=True)
+    escudo = models.ImageField(upload_to='escudos/', blank=True, null=True)
+    cor_hexadecimal = models.CharField(max_length=7, default='#FFFFFF', help_text="Ex: #FF0000 para vermelho")
+
+    def __str__(self):
+        return self.nome
+
+class Temporada(models.Model):
+    ano = models.IntegerField(unique=True)
+    ativa = models.BooleanField(default=True)
+    
+    def __str__(self):
+        return f"Temporada {self.ano}"
+
+class PalpiteLongoPrazo(models.Model):
+    TIPO_CHOICES = [
+        ('CAMPEAO_BR', 'Campeão Brasileirão'),
+        ('G4', 'G4 Brasileirão'),
+        ('Z4', 'Z4 Brasileirão'),
+        ('CAMPEAO_EUROPA', 'Campeão Europeu (Champions)'),
+        ('CAMPEAO_CDB', 'Campeão Copa do Brasil'),
+    ]
+    
+    usuario = models.ForeignKey(User, on_delete=models.CASCADE, related_name='palpites_longo_prazo')
+    temporada = models.ForeignKey(Temporada, on_delete=models.CASCADE, related_name='palpites')
+    tipo = models.CharField(max_length=20, choices=TIPO_CHOICES)
+    clube = models.ForeignKey(Clube, on_delete=models.CASCADE)
+    posicao_esperada = models.IntegerField(null=True, blank=True, help_text="Ex: 1 para campeão, 17 para Z4")
+    pontos_obtidos = models.IntegerField(default=0)
+    
+    class Meta:
+        # Evita que o usuário palpite o mesmo clube para a mesma posição duas vezes
+        unique_together = ['usuario', 'temporada', 'tipo', 'clube']
+
+    def __str__(self):
+        return f"{self.usuario.username} - {self.get_tipo_display()} - {self.clube.nome}"
+
+class MuralCampeoes(models.Model):
+    temporada = models.OneToOneField(Temporada, on_delete=models.CASCADE, related_name='campeao')
+    usuario = models.ForeignKey(User, on_delete=models.CASCADE)
+    pontuacao_final = models.IntegerField()
+    data_conquista = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"🏆 Campeão {self.temporada.ano}: {self.usuario.username}"

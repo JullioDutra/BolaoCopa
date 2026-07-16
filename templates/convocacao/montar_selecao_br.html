@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    /* Estilização do Campo de Futebol Visual */
+    .campo-futebol {
+        background: linear-gradient(180deg, #2e7d32 0%, #1b5e20 100%);
+        border: 3px solid #fff;
+        border-radius: 8px;
+        padding: 30px 10px;
+        position: relative;
+        min-height: 600px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        margin-bottom: 30px;
+    }
+    
+    /* Desenhos do Campo (Opcional, para dar o toque premium) */
+    .campo-futebol::before {
+        content: ''; position: absolute; top: 50%; left: 0; right: 0;
+        height: 2px; background: rgba(255,255,255,0.4);
+    }
+    .campo-futebol::after {
+        content: ''; position: absolute; top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        width: 100px; height: 100px;
+        border: 2px solid rgba(255,255,255,0.4); border-radius: 50%;
+    }
+
+    /* Linhas Táticas */
+    .linha-tatica {
+        display: flex;
+        justify-content: space-evenly;
+        width: 100%;
+        z-index: 2; /* Fica acima dos desenhos do campo */
+    }
+
+    /* Slot Individual de Jogador */
+    .jogador-slot {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 22%; /* Garante que 4 defensores caibam na tela */
+    }
+
+    .camisa-icon {
+        font-size: 2rem;
+        margin-bottom: 5px;
+        filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.5));
+    }
+
+    .selecao-input {
+        font-size: 0.75rem;
+        text-align: center;
+        padding: 4px;
+        border-radius: 4px;
+        width: 100%;
+        border: 1px solid #ddd;
+    }
+</style>
+
+<div class="container mt-4">
+    <h2 class="text-center mb-4">⭐ Monte a Seleção do Brasileirão (4-3-3)</h2>
+    
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    <form method="POST">
+        {% csrf_token %}
+        <div class="campo-futebol">
+            
+            <!-- LINHA DE ATAQUE (3 Jogadores) -->
+            <div class="linha-tatica">
+                <div class="jogador-slot">
+                    <span class="camisa-icon">👕</span>
+                    {{ form.atacante_1 }}
+                </div>
+                <div class="jogador-slot">
+                    <span class="camisa-icon">👕</span>
+                    {{ form.atacante_2 }}
+                </div>
+                <div class="jogador-slot">
+                    <span class="camisa-icon">👕</span>
+                    {{ form.atacante_3 }}
+                </div>
+            </div>
+
+            <!-- LINHA DE MEIO-CAMPO (3 Jogadores) -->
+            <div class="linha-tatica mt-4">
+                <div class="jogador-slot">
+                    <span class="camisa-icon">👕</span>
+                    {{ form.meia_1 }}
+                </div>
+                <div class="jogador-slot">
+                    <span class="camisa-icon">👕</span>
+                    {{ form.meia_2 }}
+                </div>
+                <div class="jogador-slot">
+                    <span class="camisa-icon">👕</span>
+                    {{ form.meia_3 }}
+                </div>
+            </div>
+
+            <!-- LINHA DE DEFESA (4 Jogadores) -->
+            <div class="linha-tatica mt-4">
+                <div class="jogador-slot">
+                    <span class="camisa-icon">👕</span>
+                    {{ form.defensor_1 }}
+                </div>
+                <div class="jogador-slot">
+                    <span class="camisa-icon">👕</span>
+                    {{ form.defensor_2 }}
+                </div>
+                <div class="jogador-slot">
+                    <span class="camisa-icon">👕</span>
+                    {{ form.defensor_3 }}
+                </div>
+                <div class="jogador-slot">
+                    <span class="camisa-icon">👕</span>
+                    {{ form.defensor_4 }}
+                </div>
+            </div>
+
+            <!-- GOLEIRO (1 Jogador) -->
+            <div class="linha-tatica mt-4">
+                <div class="jogador-slot">
+                    <span class="camisa-icon" style="color: #f1c40f;">🧤</span>
+                    {{ form.goleiro }}
+                </div>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-success btn-lg w-100 mt-3 shadow">Confirmar Seleção</button>
+    </form>
+</div>
+{% endblock %}

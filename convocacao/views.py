@@ -6,7 +6,7 @@ from django.utils import timezone
 import datetime
 
 from .models import Jogador, Convocacao
-from .forms import ConvocacaoForm
+from .forms import ConvocacaoForm, SelecaoBrasileiraoForm
 from bolao.decorators import acesso_liberado_required
 from accounts.models import Transacao
 from django.db.models import Count
@@ -154,3 +154,56 @@ def estatisticas_convocacao(request):
         'total_listas': total_listas
     }
     return render(request, 'convocacao/mais_escalados.html', context)
+
+
+@login_required
+def montar_selecao(request):
+    convocacao, created = Convocacao.objects.get_or_create(usuario=request.user)
+    
+    if request.method == 'POST':
+        form = SelecaoBrasileiraoForm(request.POST)
+        if form.is_valid():
+            # Agrupa os 11 jogadores submetidos
+            jogadores_selecionados = [
+                form.cleaned_data['goleiro'],
+                form.cleaned_data['defensor_1'], form.cleaned_data['defensor_2'], 
+                form.cleaned_data['defensor_3'], form.cleaned_data['defensor_4'],
+                form.cleaned_data['meia_1'], form.cleaned_data['meia_2'], form.cleaned_data['meia_3'],
+                form.cleaned_data['atacante_1'], form.cleaned_data['atacante_2'], form.cleaned_data['atacante_3']
+            ]
+            
+            # Validação estrita contra duplicação de jogadores
+            if len(set(jogadores_selecionados)) != 11:
+                messages.error(request, "Erro: Você não pode escalar o mesmo jogador em posições diferentes. Verifique duplicações no elenco.")
+                return render(request, 'convocacao/montar_selecao.html', {'form': form})
+
+            # Limpa o time antigo e salva o novo 4-3-3
+            convocacao.jogadores.clear()
+            for jogador in jogadores_selecionados:
+                convocacao.jogadores.add(jogador)
+                
+            messages.success(request, "Seleção 4-3-3 confirmada com sucesso! ⚽")
+            return redirect('montar_selecao')
+            
+    else:
+        # Preenche o formulário se o usuário já tiver montado o time antes
+        initial_data = {}
+        jogadores_atuais = list(convocacao.jogadores.all())
+        
+        if len(jogadores_atuais) == 11:
+            gols = [j for j in jogadores_atuais if j.posicao == 'Goleiro']
+            defs = [j for j in jogadores_atuais if j.posicao == 'Defensor']
+            meis = [j for j in jogadores_atuais if j.posicao == 'Meio-campista']
+            atas = [j for j in jogadores_atuais if j.posicao == 'Atacante']
+            
+            if gols: initial_data['goleiro'] = gols[0]
+            for i, d in enumerate(defs): initial_data[f'defensor_{i+1}'] = d
+            for i, m in enumerate(meis): initial_data[f'meia_{i+1}'] = m
+            for i, a in enumerate(atas): initial_data[f'atacante_{i+1}'] = a
+
+        form = SelecaoBrasileiraoForm(initial=initial_data)
+
+    return render(request, 'convocacao/montar_selecao.html', {
+        'form': form,
+        'convocacao': convocacao
+    })

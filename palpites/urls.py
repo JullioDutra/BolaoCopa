@@ -8,4 +8,5 @@ urlpatterns = [
     path('fazer-palpite/<int:jogo_id>/', views.fazer_palpite, name='fazer_palpite'),
     path('ranking/', views.ranking_geral, name='ranking_geral'),
     path('oscar/', views.indicar_oscar, name='indicar_oscar'),
+    path('admin-resultados/', views.inserir_resultados_finais, name='inserir_resultados_finais'),
 ]

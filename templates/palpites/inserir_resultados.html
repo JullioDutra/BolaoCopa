@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+    🏆 Fechamento de Temporada: Resultados Finais
+    Preencha os resultados reais para distribuir os pontos dos palpites de longo prazo.
+
+    {% if messages %}
+        {% for message in messages %}
+            {{ message }}
+        {% endfor %}
+    {% endif %}
+
+    
+        {% csrf_token %}
+        
+        
+            Temporada
+            {{ form.temporada_ano }}
+        
+
+        
+        
+        
+            
+                G4 do Brasileirão
+                {{ form.campeao_br.label }}: {{ form.campeao_br }}
+                {{ form.vice_br.label }}: {{ form.vice_br }}
+                {{ form.terceiro_br.label }}: {{ form.terceiro_br }}
+                {{ form.quarto_br.label }}: {{ form.quarto_br }}
+            
+            
+            
+                Z4 do Brasileirão
+                {{ form.pos_17.label }}: {{ form.pos_17 }}
+                {{ form.pos_18.label }}: {{ form.pos_18 }}
+                {{ form.pos_19.label }}: {{ form.pos_19 }}
+                {{ form.pos_20.label }}: {{ form.pos_20 }}
+            
+        
+
+        
+
+        
+            
+                Outros Campeões
+                {{ form.campeao_europa.label }}: {{ form.campeao_europa }}
+                {{ form.campeao_cdb.label }}: {{ form.campeao_cdb }}
+            
+        
+
+        Distribuir Pontos
+    
+
+{% endblock %}

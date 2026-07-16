@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+
+
+    🔮 Meus Palpites de Longo Prazo - Temporada {{ temporada.ano }}
+    
+
+    {% if messages %}
+        {% for message in messages %}
+            {{ message }}
+        {% endfor %}
+    {% endif %}
+
+    
+    {% if palpites_salvos %}
+    Suas Apostas Atuais
+    
+        {% for palpite in palpites_salvos %}
+            
+            
+                {% if palpite.clube.escudo %}
+                    
+                {% else %}
+                    🛡️
+                {% endif %}
+                
+                
+                    {{ palpite.get_tipo_display }}
+                    {% if palpite.posicao_esperada %}
+                        {{ palpite.posicao_esperada }}º Lugar
+                    {% endif %}
+                
+            
+        {% endfor %}
+    
+    {% endif %}
+
+    
+    
+        {% if palpites_salvos %}Alterar Palpites{% else %}Fazer Palpites{% endif %}
+        
+            {% csrf_token %}
+            
+                
+                    G4 do Brasileirão
+                    {{ form.campeao_br.label_tag }} {{ form.campeao_br }}
+                    {{ form.g4_2.label_tag }} {{ form.g4_2 }}
+                    {{ form.g4_3.label_tag }} {{ form.g4_3 }}
+                    {{ form.g4_4.label_tag }} {{ form.g4_4 }}
+                
+                
+                    Z4 do Brasileirão
+                    {{ form.z4_17.label_tag }} {{ form.z4_17 }}
+                    {{ form.z4_18.label_tag }} {{ form.z4_18 }}
+                    {{ form.z4_19.label_tag }} {{ form.z4_19 }}
+                    {{ form.z4_20.label_tag }} {{ form.z4_20 }}
+                
+            
+            
+            
+                
+                    Mundo afora
+                    {{ form.campeao_europa.label_tag }} {{ form.campeao_europa }}
+                    {{ form.campeao_cdb.label_tag }} {{ form.campeao_cdb }}
+                
+            
+            Salvar Palpites
+        
+    
+
+{% endblock %}

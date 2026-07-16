@@ -7,8 +7,9 @@ from django.contrib.auth.models import User
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
-from .forms import ResultadosFinaisForm
+from .forms import ResultadosFinaisForm, PalpiteLongoPrazoForm
 from .engine import processar_pontuacoes_longo_prazo
+from .models import PalpiteLongoPrazo, Temporada
 
 
 # Imports dos seus aplicativos
@@ -234,3 +235,66 @@ def inserir_resultados_finais(request):
         form = ResultadosFinaisForm()
         
     return render(request, 'palpites/inserir_resultados.html', {'form': form})
+
+@login_required
+def meus_palpites_longo_prazo(request):
+    temporada = Temporada.objects.filter(ativa=True).first()
+    if not temporada:
+        messages.error(request, "Nenhuma temporada ativa no momento.")
+        return redirect('dashboard') # Ou o nome da sua home
+        
+    if request.method == 'POST':
+        form = PalpiteLongoPrazoForm(request.POST)
+        if form.is_valid():
+            dados = form.cleaned_data
+            
+            # Mapeamento para salvar no formato correto do banco
+            mapeamento = [
+                ('CAMPEAO_BR', 1, dados['campeao_br']),
+                ('G4', 2, dados['g4_2']),
+                ('G4', 3, dados['g4_3']),
+                ('G4', 4, dados['g4_4']),
+                ('Z4', 17, dados['z4_17']),
+                ('Z4', 18, dados['z4_18']),
+                ('Z4', 19, dados['z4_19']),
+                ('Z4', 20, dados['z4_20']),
+                ('CAMPEAO_EUROPA', 1, dados['campeao_europa']),
+                ('CAMPEAO_CDB', 1, dados['campeao_cdb']),
+            ]
+            
+            with transaction.atomic():
+                # Deleta os antigos desta temporada para o usuário e recria
+                PalpiteLongoPrazo.objects.filter(usuario=request.user, temporada=temporada).delete()
+                
+                for tipo, pos, clube in mapeamento:
+                    if clube: 
+                        PalpiteLongoPrazo.objects.create(
+                            usuario=request.user,
+                            temporada=temporada,
+                            tipo=tipo,
+                            posicao_esperada=pos,
+                            clube=clube
+                        )
+            messages.success(request, "Seus palpites foram salvos com sucesso!")
+            return redirect('meus_palpites_longo_prazo')
+    else:
+        # Preenche o formulário se o usuário já tiver apostado
+        palpites_existentes = PalpiteLongoPrazo.objects.filter(usuario=request.user, temporada=temporada)
+        iniciais = {}
+        for p in palpites_existentes:
+            if p.tipo == 'CAMPEAO_BR': iniciais['campeao_br'] = p.clube
+            elif p.tipo == 'CAMPEAO_EUROPA': iniciais['campeao_europa'] = p.clube
+            elif p.tipo == 'CAMPEAO_CDB': iniciais['campeao_cdb'] = p.clube
+            elif p.tipo == 'G4': iniciais[f'g4_{p.posicao_esperada}'] = p.clube
+            elif p.tipo == 'Z4': iniciais[f'z4_{p.posicao_esperada}'] = p.clube
+        
+        form = PalpiteLongoPrazoForm(initial=iniciais)
+        
+    # Busca os palpites salvos para exibir os cards
+    palpites_salvos = PalpiteLongoPrazo.objects.filter(usuario=request.user, temporada=temporada).order_by('posicao_esperada')
+    
+    return render(request, 'palpites/meus_palpites_longo_prazo.html', {
+        'form': form,
+        'palpites_salvos': palpites_salvos,
+        'temporada': temporada
+    })

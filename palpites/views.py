@@ -6,6 +6,9 @@ from django.db import transaction
 from django.contrib.auth.models import User
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.contrib.admin.views.decorators import staff_member_required
+from .forms import ResultadosFinaisForm
+from .engine import processar_pontuacoes_longo_prazo
 
 
 # Imports dos seus aplicativos
@@ -187,3 +190,47 @@ def indicar_oscar(request):
         return redirect('palpites:indicar_oscar') # Recarrega a página limpando o form
 
     return render(request, 'palpites/indicar_oscar.html')
+
+
+
+@staff_member_required
+def inserir_resultados_finais(request):
+    if request.method == 'POST':
+        form = ResultadosFinaisForm(request.POST)
+        if form.is_valid():
+            dados = form.cleaned_data
+            temporada_ano = dados['temporada_ano'].ano
+            
+            # Monta o dicionário de classificação do Brasileirão
+            classificacao_br = {
+                1: dados['campeao_br'].id,
+                2: dados['vice_br'].id,
+                3: dados['terceiro_br'].id,
+                4: dados['quarto_br'].id,
+                17: dados['pos_17'].id,
+                18: dados['pos_18'].id,
+                19: dados['pos_19'].id,
+                20: dados['pos_20'].id,
+            }
+            
+            id_europa = dados['campeao_europa'].id
+            id_cdb = dados['campeao_cdb'].id
+            
+            # Dispara a Engine
+            sucesso = processar_pontuacoes_longo_prazo(
+                temporada_ano=temporada_ano,
+                classificacao_br=classificacao_br,
+                id_campeao_europa=id_europa,
+                id_campeao_cdb=id_cdb
+            )
+            
+            if sucesso:
+                messages.success(request, "Resultados processados e pontos distribuídos com sucesso! Agora você já pode finalizar a temporada no Admin.")
+            else:
+                messages.error(request, "Erro ao processar. Verifique se a temporada está ativa.")
+                
+            return redirect('inserir_resultados_finais')
+    else:
+        form = ResultadosFinaisForm()
+        
+    return render(request, 'palpites/inserir_resultados.html', {'form': form})

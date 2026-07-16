@@ -47,3 +47,26 @@ class ResultadosFinaisForm(forms.Form):
     # Outros Campeões
     campeao_europa = forms.ModelChoiceField(queryset=Clube.objects.all(), label="Campeão Europeu (Champions)")
     campeao_cdb = forms.ModelChoiceField(queryset=Clube.objects.all(), label="Campeão Copa do Brasil")
+
+class PalpiteLongoPrazoForm(forms.Form):
+    # Campeão e G4
+    campeao_br = forms.ModelChoiceField(queryset=Clube.objects.all(), label="1º Lugar (Campeão BR)")
+    g4_2 = forms.ModelChoiceField(queryset=Clube.objects.all(), label="2º Lugar (G4)")
+    g4_3 = forms.ModelChoiceField(queryset=Clube.objects.all(), label="3º Lugar (G4)")
+    g4_4 = forms.ModelChoiceField(queryset=Clube.objects.all(), label="4º Lugar (G4)")
+    
+    # Z4
+    z4_17 = forms.ModelChoiceField(queryset=Clube.objects.all(), label="17º Lugar (Z4)")
+    z4_18 = forms.ModelChoiceField(queryset=Clube.objects.all(), label="18º Lugar (Z4)")
+    z4_19 = forms.ModelChoiceField(queryset=Clube.objects.all(), label="19º Lugar (Z4)")
+    z4_20 = forms.ModelChoiceField(queryset=Clube.objects.all(), label="20º Lugar (Z4)")
+    
+    # Outros Torneios
+    campeao_europa = forms.ModelChoiceField(queryset=Clube.objects.all(), label="Campeão Europeu (Champions)")
+    campeao_cdb = forms.ModelChoiceField(queryset=Clube.objects.all(), label="Campeão Copa do Brasil")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Adiciona classes do Bootstrap para ficar bonito na tela
+        for field in self.fields.values():
+            field.widget.attrs.update({'class': 'form-control'})

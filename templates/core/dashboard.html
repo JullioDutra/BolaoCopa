@@ -15,13 +15,13 @@
         70% { box-shadow: 0 0 0 15px rgba(207, 181, 59, 0); }
         100% { box-shadow: 0 0 0 0 rgba(207, 181, 59, 0); }
     }
-    
+
     .card-locked-teaser {
         animation: pulse-gold 2.5s infinite;
         position: relative;
         overflow: hidden;
     }
-    
+
     .ribbon-teaser {
         position: absolute;
         top: 20px;
@@ -36,6 +36,14 @@
         box-shadow: 0 2px 10px rgba(0,0,0,0.5);
         z-index: 10;
     }
+
+    .mural-mini-card {
+        background: linear-gradient(135deg, #1b1b1b, #2c2c2c);
+        border-radius: 1rem;
+        color: #fff;
+        padding: 1.25rem 1.5rem;
+    }
+    .mural-mini-card .campeao-nome { color: #cfb53b; }
 </style>
 
 <!-- Alerta de Caixa (Carteira) -->
@@ -69,28 +77,50 @@
     </div>
 </div>
 
+<!-- Mural dos Campeões (resumo) -->
+{% if ultimo_campeao %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="mural-mini-card d-flex flex-column flex-md-row align-items-center justify-content-between gap-3">
+            <div class="d-flex align-items-center gap-3">
+                <i class="fa-solid fa-trophy fs-1" style="color:#cfb53b;"></i>
+                <div>
+                    <p class="text-white-50 small mb-1 text-uppercase" style="letter-spacing:1px;">Mural da Cartolândia — Última Temporada</p>
+                    <h5 class="mb-0">Campeão: <span class="fw-bold campeao-nome">{{ ultimo_campeao.usuario.first_name|default:ultimo_campeao.usuario.username }}</span></h5>
+                    <small class="text-white-50">{{ ultimo_campeao.pontuacao_final }} pontos na temporada {{ ultimo_campeao.temporada.ano }}</small>
+                </div>
+            </div>
+            <a href="{% url 'palpites:ranking_geral' %}" class="btn btn-sm btn-outline-warning rounded-pill fw-bold">Ver Ranking Atual</a>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <!-- Telões de Estádio (Timers) -->
 <div class="row mb-4 g-3">
-    <!-- Timer Convocação -->
+    <!-- Card: Mural da Copa + Cronômetro 2030 (modo encerrado) -->
     <div class="col-12 col-lg-6">
-        <div class="card text-white p-4 shadow border-0 rounded-4 h-100 position-relative overflow-hidden" 
-             style="background: linear-gradient(135deg, #1b5e20, #0a3d10);">
+        <div class="card text-white p-4 shadow border-0 rounded-4 h-100 position-relative overflow-hidden"
+             style="background: linear-gradient(135deg, #050505, #1a1a1a);">
             <div class="position-absolute opacity-25" style="top: -20px; right: -20px;">
-                <i class="fa-solid fa-users-viewfinder" style="font-size: 8rem;"></i>
+                <i class="fa-solid fa-trophy" style="font-size: 8rem;"></i>
             </div>
             <div class="position-relative z-index-1">
-                <h6 class="fw-bold text-warning small mb-2 text-uppercase tracking-wider">
-                    <span class="pulse-dot me-1"></span> Janela de Transferências
+                <h6 class="fw-bold small mb-2 text-uppercase tracking-wider" style="color:#cfb53b;">
+                    <i class="fa-solid fa-flag-checkered me-1"></i> Copa — Encerrada
                 </h6>
-                <p class="small text-white-50 mb-2">Convocação fecha em:</p>
-                <div id="timer-convocacao" class="fs-2 fw-bold scoreboard-font text-warning">--:--:--:--</div>
+                <p class="small text-white-50 mb-2">Próxima Copa do Mundo em:</p>
+                <div id="timer-copa-2030" class="fs-2 fw-bold scoreboard-font" style="color:#cfb53b;">--:--:--:--</div>
+                <a href="{% url 'convocacao:copa_mural' %}" class="d-inline-block mt-3 small fw-bold text-decoration-none" style="color:#cfb53b;">
+                    Ver mural e campeão da Copa <i class="fa-solid fa-arrow-right"></i>
+                </a>
             </div>
         </div>
     </div>
 
     <!-- Timer Próximo Jogo -->
     <div class="col-12 col-lg-6">
-        <div class="card text-white p-4 shadow border-0 rounded-4 h-100 position-relative overflow-hidden" 
+        <div class="card text-white p-4 shadow border-0 rounded-4 h-100 position-relative overflow-hidden"
              style="background: linear-gradient(135deg, #0d47a1, #002171);">
             <div class="position-absolute opacity-25" style="top: -20px; right: -20px;">
                 <i class="fa-solid fa-stopwatch" style="font-size: 8rem;"></i>
@@ -101,7 +131,7 @@
                         <span class="pulse-dot me-1"></span> Bolão: {{ proximo_jogo.time_casa }} x {{ proximo_jogo.time_fora }}
                     </h6>
                     <p class="small text-white-50 mb-2">Apostas encerram em:</p>
-                    <div id="timer-jogo" class="fs-2 fw-bold scoreboard-font text-info" 
+                    <div id="timer-jogo" class="fs-2 fw-bold scoreboard-font text-info"
                          data-limite="{{ proximo_jogo.data_hora|date:'c' }}">--:--:--:--</div>
                 {% else %}
                     <h6 class="fw-bold text-info small mb-2 text-uppercase tracking-wider">
@@ -117,7 +147,7 @@
 
 <!-- Opções de Jogo (Cards) -->
 <div class="row g-4 mb-5">
-    <!-- Convocação -->
+    <!-- Seleção 4-3-3 do Brasileirão (NOVO modo ativo) -->
     <div class="col-12 col-md-6 col-lg-3">
         <div class="card card-action card-clean h-100 text-center p-4 shadow-sm border-0 rounded-4">
             <div class="card-body d-flex flex-column p-0">
@@ -126,8 +156,8 @@
                         <i class="fa-solid fa-shirt text-success" style="font-size: 2.5rem;"></i>
                     </div>
                 </div>
-                <h5 class="fw-bold" style="color: var(--verde-escuro);">Meu Elenco</h5>
-                <p class="text-muted small mb-4">Escale seus 26 jogadores. Edição livre até 17/05.</p>
+                <h5 class="fw-bold" style="color: var(--verde-escuro);">Seleção Brasileirão</h5>
+                <p class="text-muted small mb-4">Monte seu 4-3-3 com os craques da Série A.</p>
                 <div class="mt-auto">
                     <a href="{% url 'convocacao:montar_selecao' %}" class="btn btn-success w-100 fw-bold rounded-pill shadow-sm text-uppercase" style="letter-spacing: 0.5px;">
                         Escalar Seleção
@@ -157,19 +187,39 @@
         </div>
     </div>
 
-    <!-- Ranking -->
+    <!-- Palpites de Temporada (G4/Z4/Campeões) -->
     <div class="col-12 col-md-6 col-lg-3">
         <div class="card card-action card-clean h-100 text-center p-4 shadow-sm border-0 rounded-4" style="border-top: 5px solid #ffc107 !important;">
             <div class="card-body d-flex flex-column p-0">
                 <div class="mb-3">
                     <div class="bg-warning bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
-                        <i class="fa-solid fa-trophy text-warning" style="font-size: 2.5rem;"></i>
+                        <i class="fa-solid fa-crown text-warning" style="font-size: 2.5rem;"></i>
+                    </div>
+                </div>
+                <h5 class="fw-bold" style="color: var(--verde-escuro);">Campeão / G4 / Z4</h5>
+                <p class="text-muted small mb-4">Acerte a tabela final do Brasileirão e os campeões continentais.</p>
+                <div class="mt-auto">
+                    <a href="{% url 'palpites:meus_palpites_longo_prazo' %}" class="btn btn-warning text-dark w-100 fw-bold rounded-pill shadow-sm text-uppercase" style="letter-spacing: 0.5px;">
+                        Dar Palpite
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ranking -->
+    <div class="col-12 col-md-6 col-lg-3">
+        <div class="card card-action card-clean h-100 text-center p-4 shadow-sm border-0 rounded-4">
+            <div class="card-body d-flex flex-column p-0">
+                <div class="mb-3">
+                    <div class="bg-dark bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                        <i class="fa-solid fa-ranking-star" style="font-size: 2.5rem; color: var(--verde-escuro);"></i>
                     </div>
                 </div>
                 <h5 class="fw-bold" style="color: var(--verde-escuro);">Ranking Geral</h5>
                 <p class="text-muted small mb-4">Veja quem está liderando a corrida pela taça.</p>
                 <div class="mt-auto">
-                    <a href="{% url 'palpites:ranking_geral' %}" class="btn btn-warning text-dark w-100 fw-bold rounded-pill shadow-sm text-uppercase" style="letter-spacing: 0.5px;">
+                    <a href="{% url 'palpites:ranking_geral' %}" class="btn btn-outline-dark w-100 fw-bold rounded-pill text-uppercase" style="letter-spacing: 0.5px;">
                         Ver Tabela
                     </a>
                 </div>
@@ -203,16 +253,14 @@
     function updateTimers() {
         const now = new Date().getTime();
 
-        // Timer Convocação: 17 de Maio às 23:59:59
-        const year = new Date().getFullYear();
-        const deadlineConvocacao = new Date(`May 17, ${year} 23:59:59`).getTime();
-        renderTime(deadlineConvocacao - now, "timer-convocacao");
+        // Timer Copa: cronômetro fixo para a próxima Copa do Mundo (2030)
+        const deadlineCopa = new Date("2030-06-13T16:00:00").getTime();
+        renderTime(deadlineCopa - now, "timer-copa-2030");
 
         // Timer Jogo: Data do Jogo menos 1 hora
         const timerJogoElement = document.getElementById("timer-jogo");
         if (timerJogoElement) {
             const gameDateStr = timerJogoElement.getAttribute("data-limite");
-            // Matemática ajustada: 60 minutos * 60 segundos * 1000 ms = 1 hora
             const deadlineJogo = new Date(gameDateStr).getTime() - (60 * 60 * 1000);
             renderTime(deadlineJogo - now, "timer-jogo");
         }

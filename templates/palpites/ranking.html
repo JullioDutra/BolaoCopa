@@ -8,25 +8,32 @@
     .table-ranking th, .table-ranking td {
         vertical-align: middle !important;
     }
-    
+
     .podium-1 { color: #FFD700; text-shadow: 0 2px 4px rgba(255, 215, 0, 0.3); }
     .podium-2 { color: #C0C0C0; text-shadow: 0 2px 4px rgba(192, 192, 192, 0.3); }
     .podium-3 { color: #CD7F32; text-shadow: 0 2px 4px rgba(205, 127, 50, 0.3); }
-    
+
     .linha-destaque {
         background-color: rgba(25, 135, 84, 0.05) !important;
         border-left: 4px solid var(--verde-escuro) !important;
     }
+
+    .badge-modo {
+        font-size: 0.65rem;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+    }
 </style>
 
 <div class="row justify-content-center mt-4 mb-5 px-2">
-    <div class="col-12 col-md-10 col-lg-8">
-        
+    <div class="col-12 col-md-11 col-lg-9">
+
         <div class="text-center mb-4">
             <h2 class="fw-bold mb-1" style="color: var(--verde-escuro);">
                 <i class="fa-solid fa-trophy text-warning"></i> Classificação Geral
             </h2>
-            <p class="text-muted small">Corrida pelo título da temporada. Cada ponto conta!</p>
+            <p class="text-muted small mb-0">Corrida pelo título da temporada{% if temporada_ativa %} {{ temporada_ativa.ano }}{% endif %}. Cada ponto conta!</p>
+            <p class="text-muted small">Soma: Bolão + Campeão/G4/Z4/Europa/CDB + Seleção 4-3-3 do Brasileirão.</p>
         </div>
 
         <div class="card card-clean shadow-lg border-0 rounded-4 overflow-hidden">
@@ -34,9 +41,18 @@
                 <table class="table table-hover table-ranking align-middle text-center mb-0">
                     <thead class="bg-light text-muted small text-uppercase" style="letter-spacing: 0.5px; border-bottom: 2px solid #dee2e6;">
                         <tr>
-                            <th scope="col" class="text-center px-3 py-3" style="width: 15%;">Pos</th>
-                            <th scope="col" class="text-start py-3" style="width: 45%;">Manager</th>
-                            <th scope="col" title="Total de Pontos" class="py-3 text-dark fw-bold" style="width: 20%;">PTS</th>
+                            <th scope="col" class="text-center px-3 py-3" style="width: 10%;">Pos</th>
+                            <th scope="col" class="text-start py-3" style="width: 28%;">Manager</th>
+                            <th scope="col" title="Total de Pontos" class="py-3 text-dark fw-bold" style="width: 14%;">PTS</th>
+                            <th scope="col" title="Pontos do Bolão (jogos)" class="py-3 d-none d-md-table-cell">
+                                <i class="fa-regular fa-futbol"></i> Bolão
+                            </th>
+                            <th scope="col" title="Campeão / G4 / Z4 / Europa / Copa do Brasil" class="py-3 d-none d-md-table-cell">
+                                <i class="fa-solid fa-crown text-warning"></i> Temporada
+                            </th>
+                            <th scope="col" title="Seleção 4-3-3 do Brasileirão" class="py-3 d-none d-md-table-cell">
+                                <i class="fa-solid fa-shirt text-success"></i> Seleção
+                            </th>
                             <th scope="col" title="Acertou o Placar Cheio" class="py-3 d-none d-sm-table-cell">AP</th>
                             <th scope="col" title="Acertou Vencedor/Empate" class="py-3 d-none d-sm-table-cell">AV</th>
                             <th scope="col" title="Maior Pontuador da Rodada" class="py-3 d-none d-sm-table-cell">MP</th>
@@ -44,9 +60,9 @@
                     </thead>
                     <tbody class="border-top-0">
                         {% for posicao in ranking %}
-                        
-                        <tr class="{% if posicao.usuario__username == request.user.username %}linha-destaque{% endif %}">
-                            
+
+                        <tr class="{% if posicao.usuario.username == request.user.username %}linha-destaque{% endif %}">
+
                             <th scope="row" class="text-center px-2">
                                 {% if forloop.counter == 1 %}
                                     <i class="fa-solid fa-medal fs-3 podium-1" title="1º Lugar"></i>
@@ -58,7 +74,7 @@
                                     <span class="fw-bold text-muted fs-6">{{ forloop.counter }}º</span>
                                 {% endif %}
                             </th>
-                            
+
                             <td class="text-start">
                                 <div class="d-flex align-items-center">
                                     <div class="bg-secondary bg-opacity-10 rounded-circle d-flex justify-content-center align-items-center me-2 me-sm-3 shadow-sm" style="width: 35px; height: 35px;">
@@ -66,26 +82,36 @@
                                     </div>
                                     <div>
                                         <span class="fw-bold text-dark d-block" style="line-height: 1.2;">
-                                            {{ posicao.usuario__first_name|default:posicao.usuario__username|title }}
+                                            {{ posicao.usuario.first_name|default:posicao.usuario.username|title }}
                                         </span>
-                                        {% if posicao.usuario__username == request.user.username %}
+                                        {% if posicao.usuario.username == request.user.username %}
                                             <span class="badge bg-success rounded-pill" style="font-size: 0.6rem;">Você</span>
                                         {% endif %}
                                     </div>
                                 </div>
                             </td>
-                            
+
                             <td class="fw-black fs-5 text-success" style="font-family: 'Courier New', Courier, monospace;">
                                 {{ posicao.total_pontos|default:"0" }}
                             </td>
-                            
+
+                            <td class="d-none d-md-table-cell">
+                                <span class="badge bg-primary bg-opacity-10 text-primary badge-modo">{{ posicao.pontos_jogos|default:"0" }} pts</span>
+                            </td>
+                            <td class="d-none d-md-table-cell">
+                                <span class="badge bg-warning bg-opacity-10 text-warning-emphasis badge-modo">{{ posicao.pontos_longo_prazo|default:"0" }} pts</span>
+                            </td>
+                            <td class="d-none d-md-table-cell">
+                                <span class="badge bg-success bg-opacity-10 text-success badge-modo">{{ posicao.pontos_selecao_brasileirao|default:"0" }} pts</span>
+                            </td>
+
                             <td class="text-muted fw-bold d-none d-sm-table-cell">{{ posicao.acertos_placar|default:"0" }}</td>
                             <td class="text-muted fw-bold d-none d-sm-table-cell">{{ posicao.acertos_vencedor|default:"0" }}</td>
                             <td class="text-muted fw-bold d-none d-sm-table-cell">{{ posicao.maior_pontuador|default:"0" }}</td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="6" class="text-center py-5">
+                            <td colspan="9" class="text-center py-5">
                                 <i class="fa-solid fa-ranking-star text-muted opacity-50 mb-3" style="font-size: 3rem;"></i>
                                 <h5 class="fw-bold text-dark">Ranking em Construção</h5>
                                 <p class="text-muted small mb-0">Nenhum palpite foi finalizado ainda. A tabela está zerada!</p>
@@ -95,16 +121,16 @@
                     </tbody>
                 </table>
             </div>
-            
+
             <div class="d-block d-sm-none text-center bg-light p-2 border-top">
                 <span class="small text-muted fst-italic"><i class="fa-solid fa-mobile-screen-button"></i> Gire a tela para ver os acertos detalhados</span>
             </div>
 
         </div>
 
-        <div class="mt-4 pt-3 mb-5">
+        <div class="mt-4 pt-3 mb-3">
             <h6 class="fw-bold mb-3 text-muted text-uppercase" style="font-size: 0.8rem; letter-spacing: 1px;">
-                <i class="fa-solid fa-circle-info me-1"></i> Entenda a Pontuação:
+                <i class="fa-regular fa-futbol me-1"></i> Bolão — Pontuação por Jogo:
             </h6>
             <div class="row g-2">
                 <div class="col-12 col-md-4">
@@ -118,7 +144,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="col-12 col-md-4">
                     <div class="card bg-white border-0 shadow-sm rounded-3 p-3 h-100 d-flex flex-row align-items-center">
                         <div class="bg-primary bg-opacity-10 rounded-circle d-flex justify-content-center align-items-center me-3" style="width: 40px; height: 40px; min-width: 40px;">
@@ -130,7 +156,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="col-12 col-md-4">
                     <div class="card bg-white border-0 shadow-sm rounded-3 p-3 h-100 d-flex flex-row align-items-center">
                         <div class="bg-warning bg-opacity-10 rounded-circle d-flex justify-content-center align-items-center me-3" style="width: 40px; height: 40px; min-width: 40px;">
@@ -142,6 +168,43 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <div class="mt-2 mb-5">
+            <h6 class="fw-bold mb-3 text-muted text-uppercase" style="font-size: 0.8rem; letter-spacing: 1px;">
+                <i class="fa-solid fa-crown me-1 text-warning"></i> Palpites de Temporada:
+            </h6>
+            <div class="row g-2">
+                <div class="col-6 col-md-3">
+                    <div class="card bg-white border-0 shadow-sm rounded-3 p-2 h-100 text-center">
+                        <span class="fw-bold text-dark small">Campeão BR</span>
+                        <span class="small text-muted">50 pts</span>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="card bg-white border-0 shadow-sm rounded-3 p-2 h-100 text-center">
+                        <span class="fw-bold text-dark small">G4</span>
+                        <span class="small text-muted">30 pts <span class="text-muted">(40 na posição certa)</span></span>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="card bg-white border-0 shadow-sm rounded-3 p-2 h-100 text-center">
+                        <span class="fw-bold text-dark small">Z4</span>
+                        <span class="small text-muted">30 pts <span class="text-muted">(35 na posição certa)</span></span>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="card bg-white border-0 shadow-sm rounded-3 p-2 h-100 text-center">
+                        <span class="fw-bold text-dark small">Europa / CDB</span>
+                        <span class="small text-muted">45 / 50 pts</span>
+                    </div>
+                </div>
+            </div>
+            <div class="text-center mt-3">
+                <a href="{% url 'palpites:meus_palpites_longo_prazo' %}" class="small fw-bold text-decoration-none" style="color: var(--verde-escuro);">
+                    Dar meus palpites de temporada <i class="fa-solid fa-arrow-right"></i>
+                </a>
             </div>
         </div>
 

@@ -2,118 +2,338 @@
 {% block title %}Palpites de Temporada - Cartolândia{% endblock %}
 
 {% block content %}
+<!-- Google Fonts para um visual mais moderno -->
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
 <style>
-    .clube-preview {
-        display: inline-flex; align-items: center; gap: 8px;
-        margin-top: 6px; padding: 6px 12px; border-radius: 999px;
-        color: #fff; font-weight: 700; font-size: 0.85rem;
-        min-height: 34px; transition: background-color .2s ease;
-        background-color: #6c757d;
+    :root {
+        --verde-primario: #16a34a;
+        --verde-escuro: #14532d;
+        --dourado-champ: #f59e0b;
+        --vermelho-z4: #dc2626;
+        --azul-copas: #2563eb;
+        --bg-cards: #ffffff;
+        --text-padrao: #1f2937;
     }
-    .clube-preview img { width: 22px; height: 22px; object-fit: contain; background: #fff; border-radius: 50%; padding: 2px; }
-    .bloco-pontuacao { background: #f8fcf8; border-left: 5px solid var(--verde-escuro); border-radius: .75rem; padding: 1rem 1.25rem; }
-    .grupo-card { border: 0; border-radius: 1rem; box-shadow: 0 .25rem .75rem rgba(0,0,0,.06); margin-bottom: 1.5rem; }
-    .grupo-card .card-header { border-radius: 1rem 1rem 0 0 !important; font-weight: 800; letter-spacing: .5px; text-transform: uppercase; font-size: .85rem; }
+
+    body {
+        font-family: 'Poppins', sans-serif;
+        color: var(--text-padrao);
+        background-color: #f3f4f6; /* Fundo levemente cinza para destacar os cards brancos */
+    }
+
+    /* Cabeçalho de Título */
+    .season-header {
+        background: linear-gradient(135deg, var(--verde-escuro), var(--verde-primario));
+        border-radius: 1.25rem;
+        padding: 2rem;
+        color: white;
+        box-shadow: 0 10px 25px -5px rgba(22, 163, 74, 0.4);
+        margin-bottom: 2rem;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .season-header::after {
+        content: '\f091'; /* Ícone de troféu em background */
+        font-family: "Font Awesome 6 Free";
+        font-weight: 900;
+        position: absolute;
+        right: -20px;
+        bottom: -40px;
+        font-size: 10rem;
+        opacity: 0.08;
+        transform: rotate(-15deg);
+    }
+
+    /* Regras de Pontuação (Pills) */
+    .pontuacao-pill {
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(5px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 50px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    /* Cards de Seção */
+    .grupo-card {
+        background: var(--bg-cards);
+        border: none;
+        border-radius: 1.25rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.04);
+        margin-bottom: 2rem;
+        transition: transform 0.3s ease;
+    }
+    
+    .grupo-card:hover {
+        transform: translateY(-3px);
+    }
+
+    .card-topo-decorativo {
+        height: 6px;
+        border-radius: 1.25rem 1.25rem 0 0;
+    }
+
+    .grupo-card .card-header-modern {
+        background: transparent;
+        padding: 1.5rem 1.5rem 0;
+        border: none;
+        font-weight: 800;
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    /* Estilização dos Inputs (Selects) */
+    .custom-select-wrapper select {
+        appearance: none;
+        background-color: #f8fafc;
+        border: 2px solid #e2e8f0;
+        border-radius: 0.75rem;
+        padding: 0.75rem 1rem;
+        font-weight: 600;
+        font-size: 0.95rem;
+        color: #334155;
+        width: 100%;
+        transition: all 0.3s ease;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 1rem center;
+        background-size: 1em;
+    }
+
+    .custom-select-wrapper select:focus {
+        border-color: var(--verde-primario);
+        outline: none;
+        box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.15);
+    }
+
+    /* Preview do Clube com Animação Elástica */
+    .clube-preview {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 12px;
+        padding: 8px 16px;
+        border-radius: 50px;
+        color: #fff;
+        font-weight: 700;
+        font-size: 0.85rem;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        opacity: 0; /* Começa invisível */
+        transform: translateY(-10px) scale(0.95);
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        pointer-events: none;
+        position: absolute;
+    }
+
+    .clube-preview.active {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        position: relative;
+    }
+
+    .clube-preview img { 
+        width: 26px; 
+        height: 26px; 
+        object-fit: contain; 
+        background: #fff; 
+        border-radius: 50%; 
+        padding: 3px; 
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+
+    /* Cards de Palpites Salvos */
+    .palpite-salvo-card {
+        border: none;
+        border-radius: 1rem;
+        text-align: center;
+        padding: 1.5rem 1rem;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        background: #fff;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        z-index: 1;
+    }
+
+    .palpite-salvo-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 12px 25px rgba(0,0,0,0.1);
+    }
+
+    .palpite-bg-color {
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 100%;
+        opacity: 0.08;
+        z-index: -1;
+    }
+
+    .palpite-badge-pontos {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: var(--verde-primario);
+        color: white;
+        font-size: 0.75rem;
+        font-weight: 800;
+        padding: 4px 8px;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+
+    /* Botão de Salvar */
+    .btn-salvar-palpites {
+        background: linear-gradient(135deg, var(--verde-primario), #10b981);
+        border: none;
+        font-size: 1.1rem;
+        padding: 1rem 2rem;
+        border-radius: 50px;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-salvar-palpites:hover {
+        transform: scale(1.02);
+        box-shadow: 0 10px 20px rgba(22, 163, 74, 0.3);
+    }
 </style>
 
-<h3 class="fw-bold mb-1" style="color: var(--verde-escuro);">
-    <i class="fa-solid fa-crown text-warning"></i> Palpites de Temporada {{ temporada.ano }}
-</h3>
-<p class="text-muted mb-4">Acerte o Campeão, o G4, o Z4 e os campeões de Europa/Copa do Brasil. Vale para o Ranking Geral!</p>
-
-<div class="bloco-pontuacao mb-4 small">
-    <strong>Como pontua:</strong>
-    Campeão Brasileirão: <b>50 pts</b> &nbsp;|&nbsp;
-    G4 (time certo): <b>30 pts</b> (posição exata: <b>40 pts</b>) &nbsp;|&nbsp;
-    Z4 (time certo): <b>30 pts</b> (posição exata: <b>35 pts</b>) &nbsp;|&nbsp;
-    Campeão Europeu: <b>45 pts</b> &nbsp;|&nbsp;
-    Campeão Copa do Brasil: <b>50 pts</b>
+<!-- HEADER PRINCIPAL -->
+<div class="season-header">
+    <h2 class="fw-bold mb-2">
+        <i class="fa-solid fa-crown text-warning me-2"></i> Palpites {{ temporada.ano }}
+    </h2>
+    <p class="mb-4 text-white-50" style="font-size: 0.95rem;">Faça suas escolhas e mostre quem manda. Os pontos valem para o Ranking Geral!</p>
+    
+    <div class="d-flex flex-wrap gap-2">
+        <span class="pontuacao-pill"><i class="fa-solid fa-trophy text-warning"></i> Campeão BR: 50 pts</span>
+        <span class="pontuacao-pill"><i class="fa-solid fa-medal text-warning"></i> G4: 30 pts (Pos. Exata: 40 pts)</span>
+        <span class="pontuacao-pill"><i class="fa-solid fa-skull text-danger"></i> Z4: 30 pts (Pos. Exata: 35 pts)</span>
+        <span class="pontuacao-pill"><i class="fa-solid fa-earth-americas text-info"></i> Europa/Copa: 45/50 pts</span>
+    </div>
 </div>
 
 <form method="post">
     {% csrf_token %}
 
+    <!-- BLOCO 1: CAMPEÃO E G4 -->
     <div class="card grupo-card">
-        <div class="card-header bg-warning bg-opacity-25 text-dark"><i class="fa-solid fa-trophy"></i> Campeão &amp; G4</div>
-        <div class="card-body row g-3">
-            <div class="col-12 col-md-6 col-lg-3">
-                <label class="form-label small fw-bold">{{ form.campeao_br.label }}</label>
+        <div class="card-topo-decorativo" style="background: linear-gradient(90deg, var(--dourado-champ), #fbbf24);"></div>
+        <div class="card-header-modern text-dark">
+            <i class="fa-solid fa-trophy text-warning"></i> Campeão & G4
+        </div>
+        <div class="card-body p-4 row g-4">
+            <div class="col-12 col-md-6 col-lg-3 custom-select-wrapper">
+                <label class="form-label small text-muted fw-bold text-uppercase">{{ form.campeao_br.label }}</label>
                 {{ form.campeao_br }}
-                <div class="clube-preview clube-select-preview" data-target="id_campeao_br"><span>Selecione um time</span></div>
+                <div class="clube-preview clube-select-preview" data-target="id_campeao_br"></div>
             </div>
-            <div class="col-12 col-md-6 col-lg-3">
-                <label class="form-label small fw-bold">{{ form.g4_2.label }}</label>
+            <div class="col-12 col-md-6 col-lg-3 custom-select-wrapper">
+                <label class="form-label small text-muted fw-bold text-uppercase">{{ form.g4_2.label }}</label>
                 {{ form.g4_2 }}
-                <div class="clube-preview clube-select-preview" data-target="id_g4_2"><span>Selecione um time</span></div>
+                <div class="clube-preview clube-select-preview" data-target="id_g4_2"></div>
             </div>
-            <div class="col-12 col-md-6 col-lg-3">
-                <label class="form-label small fw-bold">{{ form.g4_3.label }}</label>
+            <div class="col-12 col-md-6 col-lg-3 custom-select-wrapper">
+                <label class="form-label small text-muted fw-bold text-uppercase">{{ form.g4_3.label }}</label>
                 {{ form.g4_3 }}
-                <div class="clube-preview clube-select-preview" data-target="id_g4_3"><span>Selecione um time</span></div>
+                <div class="clube-preview clube-select-preview" data-target="id_g4_3"></div>
             </div>
-            <div class="col-12 col-md-6 col-lg-3">
-                <label class="form-label small fw-bold">{{ form.g4_4.label }}</label>
+            <div class="col-12 col-md-6 col-lg-3 custom-select-wrapper">
+                <label class="form-label small text-muted fw-bold text-uppercase">{{ form.g4_4.label }}</label>
                 {{ form.g4_4 }}
-                <div class="clube-preview clube-select-preview" data-target="id_g4_4"><span>Selecione um time</span></div>
+                <div class="clube-preview clube-select-preview" data-target="id_g4_4"></div>
             </div>
         </div>
     </div>
 
+    <!-- BLOCO 2: Z4 -->
     <div class="card grupo-card">
-        <div class="card-header bg-danger bg-opacity-25 text-dark"><i class="fa-solid fa-skull"></i> Z4 (Rebaixamento)</div>
-        <div class="card-body row g-3">
+        <div class="card-topo-decorativo" style="background: linear-gradient(90deg, var(--vermelho-z4), #f87171);"></div>
+        <div class="card-header-modern text-dark">
+            <i class="fa-solid fa-arrow-down-wide-short text-danger"></i> Zona de Rebaixamento (Z4)
+        </div>
+        <div class="card-body p-4 row g-4">
             {% for campo in form %}
                 {% if campo.name == 'z4_17' or campo.name == 'z4_18' or campo.name == 'z4_19' or campo.name == 'z4_20' %}
-                <div class="col-12 col-md-6 col-lg-3">
-                    <label class="form-label small fw-bold">{{ campo.label }}</label>
+                <div class="col-12 col-md-6 col-lg-3 custom-select-wrapper">
+                    <label class="form-label small text-muted fw-bold text-uppercase">{{ campo.label }}</label>
                     {{ campo }}
-                    <div class="clube-preview clube-select-preview" data-target="{{ campo.id_for_label }}"><span>Selecione um time</span></div>
+                    <div class="clube-preview clube-select-preview" data-target="{{ campo.id_for_label }}"></div>
                 </div>
                 {% endif %}
             {% endfor %}
         </div>
     </div>
 
+    <!-- BLOCO 3: OUTROS CAMPEÕES -->
     <div class="card grupo-card">
-        <div class="card-header bg-primary bg-opacity-25 text-dark"><i class="fa-solid fa-earth-europe"></i> Outros Campeões</div>
-        <div class="card-body row g-3">
-            <div class="col-12 col-md-6">
-                <label class="form-label small fw-bold">{{ form.campeao_europa.label }}</label>
+        <div class="card-topo-decorativo" style="background: linear-gradient(90deg, var(--azul-copas), #60a5fa);"></div>
+        <div class="card-header-modern text-dark">
+            <i class="fa-solid fa-earth-europe text-primary"></i> Outros Torneios
+        </div>
+        <div class="card-body p-4 row g-4">
+            <div class="col-12 col-md-6 custom-select-wrapper">
+                <label class="form-label small text-muted fw-bold text-uppercase">{{ form.campeao_europa.label }}</label>
                 {{ form.campeao_europa }}
-                <div class="clube-preview clube-select-preview" data-target="id_campeao_europa"><span>Selecione um time</span></div>
+                <div class="clube-preview clube-select-preview" data-target="id_campeao_europa"></div>
             </div>
-            <div class="col-12 col-md-6">
-                <label class="form-label small fw-bold">{{ form.campeao_cdb.label }}</label>
+            <div class="col-12 col-md-6 custom-select-wrapper">
+                <label class="form-label small text-muted fw-bold text-uppercase">{{ form.campeao_cdb.label }}</label>
                 {{ form.campeao_cdb }}
-                <div class="clube-preview clube-select-preview" data-target="id_campeao_cdb"><span>Selecione um time</span></div>
+                <div class="clube-preview clube-select-preview" data-target="id_campeao_cdb"></div>
             </div>
         </div>
     </div>
 
-    <button type="submit" class="btn btn-success btn-lg fw-bold rounded-pill px-5 shadow-sm">
-        <i class="fa-solid fa-floppy-disk"></i> Salvar Palpites
-    </button>
+    <!-- BOTÃO SALVAR -->
+    <div class="text-center mt-5 mb-5">
+        <button type="submit" class="btn btn-primary btn-salvar-palpites fw-bold text-white shadow-lg w-100 w-md-auto px-5 py-3">
+            <i class="fa-solid fa-check-circle me-2"></i> Confirmar Palpites
+        </button>
+    </div>
 </form>
 
+<!-- PALPITES JÁ SALVOS (GRID DE CARDS) -->
 {% if palpites_salvos %}
-<hr class="my-5">
-<h5 class="fw-bold mb-3" style="color: var(--verde-escuro);">Seus palpites salvos</h5>
-<div class="row g-3">
+<hr class="my-5" style="border-color: #cbd5e1;">
+<div class="d-flex align-items-center mb-4 gap-2">
+    <i class="fa-solid fa-box-archive fs-4 text-muted"></i>
+    <h4 class="fw-bold mb-0 text-dark">Seus Palpites Registrados</h4>
+</div>
+
+<div class="row g-4">
     {% for p in palpites_salvos %}
-    <div class="col-6 col-md-3 col-lg-2">
-        <div class="card h-100 border-0 shadow-sm rounded-4 text-center p-3" style="background-color: {{ p.clube.cor_hexadecimal }}1A;">
+    <div class="col-6 col-md-4 col-lg-2">
+        <div class="palpite-salvo-card h-100">
+            <!-- Cor de fundo com opacidade -->
+            <div class="palpite-bg-color" style="background-color: {{ p.clube.cor_hexadecimal }};"></div>
+            
+            <!-- Badge de pontos no canto -->
+            <div class="palpite-badge-pontos">{{ p.pontos_obtidos }} pts</div>
+            
+            <!-- Escudo -->
             {% if p.clube.escudo %}
-                <img src="{{ p.clube.escudo.url }}" alt="{{ p.clube.nome }}" style="width:48px;height:48px;object-fit:contain;margin:0 auto 8px;">
+                <img src="{{ p.clube.escudo.url }}" alt="{{ p.clube.nome }}" class="img-fluid mb-3" style="max-height: 60px; object-fit: contain; drop-shadow: 0 4px 6px rgba(0,0,0,0.1);">
             {% endif %}
-            <small class="text-muted text-uppercase fw-bold">{{ p.get_tipo_display }}</small>
-            <strong>{{ p.clube.nome }}</strong>
-            <span class="badge bg-success mt-1">{{ p.pontos_obtidos }} pts</span>
+            
+            <!-- Textos -->
+            <div class="text-muted small text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.5px;">{{ p.get_tipo_display }}</div>
+            <h6 class="fw-bold text-dark mt-1 mb-0">{{ p.clube.nome }}</h6>
         </div>
     </div>
     {% endfor %}
 </div>
 {% endif %}
 
+<!-- DATA SCRIPT -->
 <script id="clubes-data" type="application/json">
 {
     {% for c in clubes %}"{{ c.id }}": {"nome": "{{ c.nome|escapejs }}", "cor": "{{ c.cor_hexadecimal }}", "escudo": "{% if c.escudo %}{{ c.escudo.url }}{% endif %}"}{% if not forloop.last %},{% endif %}
@@ -121,6 +341,7 @@
 }
 </script>
 
+<!-- LÓGICA DE PREVIEW -->
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const clubesData = JSON.parse(document.getElementById('clubes-data').textContent);
@@ -128,20 +349,28 @@ document.addEventListener('DOMContentLoaded', function () {
     function atualizarPreview(select) {
         const previewEl = document.querySelector('.clube-select-preview[data-target="' + select.id + '"]');
         if (!previewEl) return;
+        
         const clube = clubesData[select.value];
+        
+        // Se nenhum clube válido for selecionado, remove a classe active para esconder a badge animada
         if (!clube) {
-            previewEl.style.backgroundColor = '#6c757d';
-            previewEl.innerHTML = '<span>Selecione um time</span>';
+            previewEl.classList.remove('active');
             return;
         }
-        previewEl.style.backgroundColor = clube.cor || '#6c757d';
+
+        // Aplica as cores e escudo e ativa a animação de entrada
+        previewEl.style.backgroundColor = clube.cor || '#334155';
         const escudoHtml = clube.escudo ? '<img src="' + clube.escudo + '" alt="' + clube.nome + '">' : '';
         previewEl.innerHTML = escudoHtml + '<span>' + clube.nome + '</span>';
+        previewEl.classList.add('active');
     }
 
-    document.querySelectorAll('select').forEach(function (select) {
-        select.classList.add('clube-select');
+    // Inicializa todos os selects iterando e adicionando os listeners
+    document.querySelectorAll('.custom-select-wrapper select').forEach(function (select) {
+        // Se certificar de que qualquer input do form seja rastreado na mudança
         select.addEventListener('change', function () { atualizarPreview(select); });
+        
+        // Dispara logo no carregamento para preencher previews de escolhas já selecionadas
         atualizarPreview(select);
     });
 });

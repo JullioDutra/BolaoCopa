@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}Ranking Seleção 4-3-3 - Cartolândia{% endblock %}
+
+{% block content %}
+<h3 class="fw-bold mb-4" style="color: var(--verde-escuro);">
+    <i class="fa-solid fa-shirt"></i> Ranking — Seleção do Brasileirão (4-3-3)
+</h3>
+
+<div class="table-responsive shadow-sm rounded-4">
+    <table class="table table-hover align-middle mb-0 bg-white">
+        <thead style="background-color: var(--verde-escuro); color: #fff;">
+            <tr><th>#</th><th>Craque</th><th class="text-center">Pontos</th></tr>
+        </thead>
+        <tbody>
+            {% for item in ranking %}
+            <tr {% if forloop.first %}class="table-warning"{% endif %}>
+                <td class="fw-bold">{% if forloop.first %}<i class="fa-solid fa-crown text-warning"></i>{% else %}{{ forloop.counter }}º{% endif %}</td>
+                <td>{{ item.usuario.first_name|default:item.usuario.username }}</td>
+                <td class="text-center fw-bold">{{ item.pontos }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="3" class="text-center text-muted py-4">Ninguém escalou a seleção ainda.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

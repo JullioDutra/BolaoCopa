@@ -155,9 +155,20 @@ class OscarCartolandia(models.Model):
 # ==========================================
 
 class Clube(models.Model):
+    COMPETICAO_CHOICES = [
+        ('BRASILEIRAO', 'Brasileirão / Copa do Brasil'),
+        ('EUROPA', 'Competições Europeias'),
+    ]
+
     nome = models.CharField(max_length=100, unique=True)
     escudo = models.ImageField(upload_to='escudos/', blank=True, null=True)
     cor_hexadecimal = models.CharField(max_length=7, default='#FFFFFF', help_text="Ex: #FF0000 para vermelho")
+    competicao = models.CharField(
+        max_length=20,
+        choices=COMPETICAO_CHOICES,
+        default='BRASILEIRAO',
+        help_text="Usado para filtrar o clube no formulário certo (Campeão BR/G4/Z4/CDB vs Campeão Europeu)."
+    )
 
     def __str__(self):
         return self.nome

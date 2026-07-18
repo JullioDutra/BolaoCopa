@@ -2,50 +2,226 @@
 {% block title %}Mural da Copa - Cartolândia{% endblock %}
 
 {% block content %}
+<!-- Google Fonts: Poppins para texto, JetBrains Mono para o placar -->
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=JetBrains+Mono:wght@700;800&display=swap" rel="stylesheet">
+
 <style>
-    .scoreboard-font { font-family: 'Courier New', Courier, monospace; letter-spacing: 1px; text-shadow: 1px 1px 2px rgba(0,0,0,0.4); }
+    :root {
+        --dourado-premium: #d4af37;
+        --dourado-claro: #fef08a;
+        --dourado-escuro: #a16207;
+        --bg-escuro: #0f172a;
+        --bg-card: #1e293b;
+    }
+
+    body {
+        font-family: 'Poppins', sans-serif;
+        background-color: #f3f4f6;
+    }
+
+    /* Card do Hall da Fama */
+    .hall-of-fame-card {
+        background: radial-gradient(circle at top center, #1e293b 0%, #0f172a 100%);
+        border: 2px solid rgba(212, 175, 55, 0.3);
+        border-radius: 1.5rem;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), inset 0 0 40px rgba(212, 175, 55, 0.05);
+        padding: 3rem 2rem;
+        position: relative;
+        overflow: hidden;
+        text-align: center;
+        margin-bottom: 2.5rem;
+    }
+
+    /* Brilho no topo do card */
+    .hall-of-fame-card::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0; height: 4px;
+        background: linear-gradient(90deg, transparent, var(--dourado-premium), transparent);
+        opacity: 0.8;
+    }
+
+    /* Troféu com pulso brilhante */
+    .trophy-icon {
+        font-size: 4.5rem;
+        background: linear-gradient(135deg, var(--dourado-claro), var(--dourado-premium), var(--dourado-escuro));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        filter: drop-shadow(0 0 15px rgba(212, 175, 55, 0.5));
+        animation: pulse-gold 2.5s infinite;
+        margin-bottom: 1.5rem;
+    }
+
+    @keyframes pulse-gold {
+        0% { filter: drop-shadow(0 0 10px rgba(212, 175, 55, 0.4)); transform: scale(1); }
+        50% { filter: drop-shadow(0 0 25px rgba(212, 175, 55, 0.8)); transform: scale(1.05); }
+        100% { filter: drop-shadow(0 0 10px rgba(212, 175, 55, 0.4)); transform: scale(1); }
+    }
+
+    /* Nome do Campeão */
+    .champion-name {
+        font-size: 2.5rem;
+        font-weight: 800;
+        letter-spacing: 1px;
+        color: white;
+        text-transform: uppercase;
+        margin: 0.5rem 0;
+        text-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    }
+
+    .champion-stats {
+        display: inline-block;
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(4px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: #e2e8f0;
+        padding: 0.5rem 1.5rem;
+        border-radius: 50px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        letter-spacing: 1px;
+    }
+
+    /* Divisória Premium */
+    .premium-divider {
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.5), transparent);
+        margin: 2.5rem 0;
+    }
+
+    /* Relógio Digital / Placar */
+    .countdown-wrapper {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+        margin-top: 1rem;
+    }
+
+    .time-box {
+        background: rgba(0, 0, 0, 0.6);
+        border: 1px solid rgba(212, 175, 55, 0.2);
+        border-radius: 0.75rem;
+        padding: 1rem;
+        min-width: 85px;
+        box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .time-val {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 2.2rem;
+        font-weight: 800;
+        color: var(--dourado-claro);
+        line-height: 1;
+        text-shadow: 0 0 10px rgba(254, 240, 138, 0.3);
+    }
+
+    .time-label {
+        font-size: 0.65rem;
+        color: #94a3b8;
+        text-transform: uppercase;
+        font-weight: 700;
+        letter-spacing: 2px;
+        margin-top: 0.4rem;
+    }
+
+    /* Botão Dark Mode */
+    .btn-ranking-dark {
+        background: var(--bg-escuro);
+        color: var(--dourado-premium);
+        border: 2px solid var(--dourado-premium);
+        font-size: 1rem;
+        padding: 0.75rem 2rem;
+        border-radius: 50px;
+        transition: all 0.3s ease;
+    }
+
+    .btn-ranking-dark:hover {
+        background: var(--dourado-premium);
+        color: var(--bg-escuro);
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(212, 175, 55, 0.2);
+    }
 </style>
 
-<div class="card text-white p-5 shadow border-0 rounded-4 text-center position-relative overflow-hidden mb-4"
-     style="background: linear-gradient(135deg, #050505, #1a1a1a); border: 2px solid #cfb53b !important;">
-    <i class="fa-solid fa-trophy mb-3" style="font-size: 3.5rem; color: #cfb53b; text-shadow: 0 0 20px rgba(207,181,59,.6);"></i>
-    <h4 class="text-uppercase fw-bold mb-1" style="letter-spacing: 2px;">Copa encerrada</h4>
+<div class="hall-of-fame-card">
+    <i class="fa-solid fa-trophy trophy-icon"></i>
+    
+    <h5 class="text-uppercase fw-bold mb-4" style="color: var(--dourado-premium); letter-spacing: 3px; font-size: 0.9rem;">
+        Copa Encerrada
+    </h5>
 
     {% if campeao %}
-        <p class="text-white-50 mb-2">O Craque que mais acertou a convocação foi:</p>
-        <h2 class="fw-bold" style="color: #cfb53b;">{{ campeao.usuario.first_name|default:campeao.usuario.username }}</h2>
-        <p class="text-white-50">{{ campeao.acertos }} de {{ campeao.total_oficiais }} jogadores acertados</p>
+        <p class="text-white-50 mb-1 fw-medium" style="font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;">
+            O Craque da Convocação
+        </p>
+        <h2 class="champion-name">{{ campeao.usuario.first_name|default:campeao.usuario.username }}</h2>
+        <div class="champion-stats mt-3">
+            <i class="fa-solid fa-crosshairs text-warning me-2"></i> {{ campeao.acertos }} / {{ campeao.total_oficiais }} acertos
+        </div>
     {% else %}
-        <p class="text-white-50">Ainda não há um campeão definido para este modo.</p>
+        <p class="text-white-50 fs-5 mb-0">Ainda não há um campeão definido para este modo.</p>
     {% endif %}
 
-    <hr class="border-secondary my-4">
-    <p class="small text-uppercase text-white-50 mb-2" style="letter-spacing: 2px;">Próxima Copa do Mundo em:</p>
-    <div id="timer-copa-2030" class="fs-2 fw-bold scoreboard-font" style="color: #cfb53b;">--:--:--:--</div>
+    <div class="premium-divider"></div>
+    
+    <p class="small text-uppercase mb-3 fw-bold" style="letter-spacing: 2px; color: #94a3b8;">
+        Contagem regressiva: Próxima Copa do Mundo
+    </p>
+    
+    <div class="countdown-wrapper" id="timer-copa-container">
+        <div class="time-box">
+            <div class="time-val" id="t-dias">00</div>
+            <div class="time-label">Dias</div>
+        </div>
+        <div class="time-box">
+            <div class="time-val" id="t-horas">00</div>
+            <div class="time-label">Horas</div>
+        </div>
+        <div class="time-box">
+            <div class="time-val" id="t-minutos">00</div>
+            <div class="time-label">Minutos</div>
+        </div>
+        <div class="time-box">
+            <div class="time-val" id="t-segundos">00</div>
+            <div class="time-label">Segundos</div>
+        </div>
+    </div>
 </div>
 
 <div class="text-center">
-    <a href="{% url 'convocacao:ranking_convocacao' %}" class="btn btn-outline-dark rounded-pill px-4 fw-bold">
-        <i class="fa-solid fa-list-ol"></i> Ver ranking completo da Copa
+    <a href="{% url 'convocacao:ranking_convocacao' %}" class="btn btn-ranking-dark fw-bold">
+        <i class="fa-solid fa-list-ol me-2"></i> Ver ranking completo da Copa
     </a>
 </div>
 
 <script>
     const deadlineCopa = new Date("{{ proxima_copa_iso }}").getTime();
+    
     function updateTimerCopa() {
         const now = new Date().getTime();
         const diff = deadlineCopa - now;
-        const el = document.getElementById("timer-copa-2030");
+        
         if (diff <= 0) {
-            el.innerHTML = "<span class='text-danger'>A Copa começou! 🎉</span>";
+            document.getElementById("timer-copa-container").innerHTML = 
+                "<h3 class='text-success fw-bold mt-3 mb-0' style='letter-spacing: 1px;'>A Copa Começou! <i class='fa-solid fa-earth-americas ms-2'></i></h3>";
             return;
         }
-        const d = Math.floor(diff / (1000*60*60*24)).toString().padStart(2,'0');
-        const h = Math.floor((diff % (1000*60*60*24)) / (1000*60*60)).toString().padStart(2,'0');
-        const m = Math.floor((diff % (1000*60*60)) / (1000*60)).toString().padStart(2,'0');
-        const s = Math.floor((diff % (1000*60)) / 1000).toString().padStart(2,'0');
-        el.innerHTML = `${d}<span class="fs-6 opacity-50">D</span> : ${h}<span class="fs-6 opacity-50">H</span> : ${m}<span class="fs-6 opacity-50">M</span> : ${s}<span class="fs-6 opacity-50">S</span>`;
+        
+        const d = Math.floor(diff / (1000 * 60 * 60 * 24)).toString().padStart(2, '0');
+        const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)).toString().padStart(2, '0');
+        const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0');
+        const s = Math.floor((diff % (1000 * 60)) / 1000).toString().padStart(2, '0');
+        
+        document.getElementById('t-dias').innerText = d;
+        document.getElementById('t-horas').innerText = h;
+        document.getElementById('t-minutos').innerText = m;
+        document.getElementById('t-segundos').innerText = s;
     }
+    
     setInterval(updateTimerCopa, 1000);
     updateTimerCopa();
 </script>

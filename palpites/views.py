@@ -9,7 +9,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 
 from .forms import ResultadosFinaisForm, PalpiteLongoPrazoForm, PalpiteForm
 from .engine import processar_pontuacoes_longo_prazo
-from .models import Jogo, Palpite, OscarCartolandia, PalpiteLongoPrazo, Temporada, MuralCampeoes
+from .models import Jogo, Palpite, OscarCartolandia, PalpiteLongoPrazo, Temporada, MuralCampeoes, Clube
 from .ranking_utils import calcular_ranking_geral
 
 from bolao.decorators import acesso_liberado_required
@@ -175,7 +175,7 @@ def inserir_resultados_finais(request):
     else:
         form = ResultadosFinaisForm()
 
-    return render(request, 'palpites/inserir_resultados.html', {'form': form})
+    return render(request, 'palpites/inserir_resultados.html', {'form': form, 'clubes': Clube.objects.all()})
 
 
 @login_required
@@ -233,5 +233,6 @@ def meus_palpites_longo_prazo(request):
     return render(request, 'palpites/meus_palpites_longo_prazo.html', {
         'form': form,
         'palpites_salvos': palpites_salvos,
-        'temporada': temporada
+        'temporada': temporada,
+        'clubes': Clube.objects.all(),
     })

@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% block title %}Seleção do Brasileirão - Cartolândia{% endblock %}
+
+{% block content %}
+<h3 class="fw-bold mb-1" style="color: var(--verde-escuro);">
+    <i class="fa-solid fa-shirt"></i> Escale sua Seleção do Brasileirão (4-3-3)
+</h3>
+<p class="text-muted mb-4">Acerte quem vai estar na seleção oficial da Série A e pontue no Ranking Geral.</p>
+
+<form method="post">
+    {% csrf_token %}
+    <div class="card border-0 shadow-sm rounded-4 p-4">
+        <h6 class="fw-bold text-uppercase text-muted small">Goleiro</h6>
+        <div class="row g-2 mb-3">
+            <div class="col-12 col-md-4">{{ form.goleiro }}</div>
+        </div>
+
+        <h6 class="fw-bold text-uppercase text-muted small">Defesa</h6>
+        <div class="row g-2 mb-3">
+            <div class="col-6 col-md-3">{{ form.defensor_1 }}</div>
+            <div class="col-6 col-md-3">{{ form.defensor_2 }}</div>
+            <div class="col-6 col-md-3">{{ form.defensor_3 }}</div>
+            <div class="col-6 col-md-3">{{ form.defensor_4 }}</div>
+        </div>
+
+        <h6 class="fw-bold text-uppercase text-muted small">Meio-campo</h6>
+        <div class="row g-2 mb-3">
+            <div class="col-6 col-md-4">{{ form.meia_1 }}</div>
+            <div class="col-6 col-md-4">{{ form.meia_2 }}</div>
+            <div class="col-6 col-md-4">{{ form.meia_3 }}</div>
+        </div>
+
+        <h6 class="fw-bold text-uppercase text-muted small">Ataque</h6>
+        <div class="row g-2 mb-3">
+            <div class="col-6 col-md-4">{{ form.atacante_1 }}</div>
+            <div class="col-6 col-md-4">{{ form.atacante_2 }}</div>
+            <div class="col-6 col-md-4">{{ form.atacante_3 }}</div>
+        </div>
+
+        {% if form.non_field_errors %}
+            <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <button type="submit" class="btn btn-success btn-lg fw-bold rounded-pill mt-2">
+            <i class="fa-solid fa-floppy-disk"></i> Confirmar Escalação
+        </button>
+    </div>
+</form>
+
+<div class="text-center mt-4">
+    <a href="{% url 'convocacao:ranking_brasileirao' %}" class="btn btn-outline-primary rounded-pill px-4 fw-bold">
+        <i class="fa-solid fa-list-ol"></i> Ver ranking deste modo
+    </a>
+</div>
+{% endblock %}

@@ -10,6 +10,7 @@ from .forms import ConvocacaoForm, SelecaoBrasileiraoForm
 from bolao.decorators import acesso_liberado_required
 from accounts.models import Transacao
 from django.db.models import Count
+from django.contrib.auth.decorators import login_required
 
 @acesso_liberado_required
 def montar_selecao(request):

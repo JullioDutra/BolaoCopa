@@ -1,73 +1,149 @@
 {% extends 'base.html' %}
+{% block title %}Palpites de Temporada - Cartolândia{% endblock %}
 
 {% block content %}
+<style>
+    .clube-preview {
+        display: inline-flex; align-items: center; gap: 8px;
+        margin-top: 6px; padding: 6px 12px; border-radius: 999px;
+        color: #fff; font-weight: 700; font-size: 0.85rem;
+        min-height: 34px; transition: background-color .2s ease;
+        background-color: #6c757d;
+    }
+    .clube-preview img { width: 22px; height: 22px; object-fit: contain; background: #fff; border-radius: 50%; padding: 2px; }
+    .bloco-pontuacao { background: #f8fcf8; border-left: 5px solid var(--verde-escuro); border-radius: .75rem; padding: 1rem 1.25rem; }
+    .grupo-card { border: 0; border-radius: 1rem; box-shadow: 0 .25rem .75rem rgba(0,0,0,.06); margin-bottom: 1.5rem; }
+    .grupo-card .card-header { border-radius: 1rem 1rem 0 0 !important; font-weight: 800; letter-spacing: .5px; text-transform: uppercase; font-size: .85rem; }
+</style>
 
+<h3 class="fw-bold mb-1" style="color: var(--verde-escuro);">
+    <i class="fa-solid fa-crown text-warning"></i> Palpites de Temporada {{ temporada.ano }}
+</h3>
+<p class="text-muted mb-4">Acerte o Campeão, o G4, o Z4 e os campeões de Europa/Copa do Brasil. Vale para o Ranking Geral!</p>
 
+<div class="bloco-pontuacao mb-4 small">
+    <strong>Como pontua:</strong>
+    Campeão Brasileirão: <b>50 pts</b> &nbsp;|&nbsp;
+    G4 (time certo): <b>30 pts</b> (posição exata: <b>40 pts</b>) &nbsp;|&nbsp;
+    Z4 (time certo): <b>30 pts</b> (posição exata: <b>35 pts</b>) &nbsp;|&nbsp;
+    Campeão Europeu: <b>45 pts</b> &nbsp;|&nbsp;
+    Campeão Copa do Brasil: <b>50 pts</b>
+</div>
 
-    🔮 Meus Palpites de Longo Prazo - Temporada {{ temporada.ano }}
-    
+<form method="post">
+    {% csrf_token %}
 
-    {% if messages %}
-        {% for message in messages %}
-            {{ message }}
-        {% endfor %}
-    {% endif %}
+    <div class="card grupo-card">
+        <div class="card-header bg-warning bg-opacity-25 text-dark"><i class="fa-solid fa-trophy"></i> Campeão &amp; G4</div>
+        <div class="card-body row g-3">
+            <div class="col-12 col-md-6 col-lg-3">
+                <label class="form-label small fw-bold">{{ form.campeao_br.label }}</label>
+                {{ form.campeao_br }}
+                <div class="clube-preview clube-select-preview" data-target="id_campeao_br"><span>Selecione um time</span></div>
+            </div>
+            <div class="col-12 col-md-6 col-lg-3">
+                <label class="form-label small fw-bold">{{ form.g4_2.label }}</label>
+                {{ form.g4_2 }}
+                <div class="clube-preview clube-select-preview" data-target="id_g4_2"><span>Selecione um time</span></div>
+            </div>
+            <div class="col-12 col-md-6 col-lg-3">
+                <label class="form-label small fw-bold">{{ form.g4_3.label }}</label>
+                {{ form.g4_3 }}
+                <div class="clube-preview clube-select-preview" data-target="id_g4_3"><span>Selecione um time</span></div>
+            </div>
+            <div class="col-12 col-md-6 col-lg-3">
+                <label class="form-label small fw-bold">{{ form.g4_4.label }}</label>
+                {{ form.g4_4 }}
+                <div class="clube-preview clube-select-preview" data-target="id_g4_4"><span>Selecione um time</span></div>
+            </div>
+        </div>
+    </div>
 
-    
-    {% if palpites_salvos %}
-    Suas Apostas Atuais
-    
-        {% for palpite in palpites_salvos %}
-            
-            
-                {% if palpite.clube.escudo %}
-                    
-                {% else %}
-                    🛡️
+    <div class="card grupo-card">
+        <div class="card-header bg-danger bg-opacity-25 text-dark"><i class="fa-solid fa-skull"></i> Z4 (Rebaixamento)</div>
+        <div class="card-body row g-3">
+            {% for campo in form %}
+                {% if campo.name == 'z4_17' or campo.name == 'z4_18' or campo.name == 'z4_19' or campo.name == 'z4_20' %}
+                <div class="col-12 col-md-6 col-lg-3">
+                    <label class="form-label small fw-bold">{{ campo.label }}</label>
+                    {{ campo }}
+                    <div class="clube-preview clube-select-preview" data-target="{{ campo.id_for_label }}"><span>Selecione um time</span></div>
+                </div>
                 {% endif %}
-                
-                
-                    {{ palpite.get_tipo_display }}
-                    {% if palpite.posicao_esperada %}
-                        {{ palpite.posicao_esperada }}º Lugar
-                    {% endif %}
-                
-            
-        {% endfor %}
-    
-    {% endif %}
+            {% endfor %}
+        </div>
+    </div>
 
-    
-    
-        {% if palpites_salvos %}Alterar Palpites{% else %}Fazer Palpites{% endif %}
-        
-            {% csrf_token %}
-            
-                
-                    G4 do Brasileirão
-                    {{ form.campeao_br.label_tag }} {{ form.campeao_br }}
-                    {{ form.g4_2.label_tag }} {{ form.g4_2 }}
-                    {{ form.g4_3.label_tag }} {{ form.g4_3 }}
-                    {{ form.g4_4.label_tag }} {{ form.g4_4 }}
-                
-                
-                    Z4 do Brasileirão
-                    {{ form.z4_17.label_tag }} {{ form.z4_17 }}
-                    {{ form.z4_18.label_tag }} {{ form.z4_18 }}
-                    {{ form.z4_19.label_tag }} {{ form.z4_19 }}
-                    {{ form.z4_20.label_tag }} {{ form.z4_20 }}
-                
-            
-            
-            
-                
-                    Mundo afora
-                    {{ form.campeao_europa.label_tag }} {{ form.campeao_europa }}
-                    {{ form.campeao_cdb.label_tag }} {{ form.campeao_cdb }}
-                
-            
-            Salvar Palpites
-        
-    
+    <div class="card grupo-card">
+        <div class="card-header bg-primary bg-opacity-25 text-dark"><i class="fa-solid fa-earth-europe"></i> Outros Campeões</div>
+        <div class="card-body row g-3">
+            <div class="col-12 col-md-6">
+                <label class="form-label small fw-bold">{{ form.campeao_europa.label }}</label>
+                {{ form.campeao_europa }}
+                <div class="clube-preview clube-select-preview" data-target="id_campeao_europa"><span>Selecione um time</span></div>
+            </div>
+            <div class="col-12 col-md-6">
+                <label class="form-label small fw-bold">{{ form.campeao_cdb.label }}</label>
+                {{ form.campeao_cdb }}
+                <div class="clube-preview clube-select-preview" data-target="id_campeao_cdb"><span>Selecione um time</span></div>
+            </div>
+        </div>
+    </div>
 
+    <button type="submit" class="btn btn-success btn-lg fw-bold rounded-pill px-5 shadow-sm">
+        <i class="fa-solid fa-floppy-disk"></i> Salvar Palpites
+    </button>
+</form>
+
+{% if palpites_salvos %}
+<hr class="my-5">
+<h5 class="fw-bold mb-3" style="color: var(--verde-escuro);">Seus palpites salvos</h5>
+<div class="row g-3">
+    {% for p in palpites_salvos %}
+    <div class="col-6 col-md-3 col-lg-2">
+        <div class="card h-100 border-0 shadow-sm rounded-4 text-center p-3" style="background-color: {{ p.clube.cor_hexadecimal }}1A;">
+            {% if p.clube.escudo %}
+                <img src="{{ p.clube.escudo.url }}" alt="{{ p.clube.nome }}" style="width:48px;height:48px;object-fit:contain;margin:0 auto 8px;">
+            {% endif %}
+            <small class="text-muted text-uppercase fw-bold">{{ p.get_tipo_display }}</small>
+            <strong>{{ p.clube.nome }}</strong>
+            <span class="badge bg-success mt-1">{{ p.pontos_obtidos }} pts</span>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<script id="clubes-data" type="application/json">
+{
+    {% for c in clubes %}"{{ c.id }}": {"nome": "{{ c.nome|escapejs }}", "cor": "{{ c.cor_hexadecimal }}", "escudo": "{% if c.escudo %}{{ c.escudo.url }}{% endif %}"}{% if not forloop.last %},{% endif %}
+    {% endfor %}
+}
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const clubesData = JSON.parse(document.getElementById('clubes-data').textContent);
+
+    function atualizarPreview(select) {
+        const previewEl = document.querySelector('.clube-select-preview[data-target="' + select.id + '"]');
+        if (!previewEl) return;
+        const clube = clubesData[select.value];
+        if (!clube) {
+            previewEl.style.backgroundColor = '#6c757d';
+            previewEl.innerHTML = '<span>Selecione um time</span>';
+            return;
+        }
+        previewEl.style.backgroundColor = clube.cor || '#6c757d';
+        const escudoHtml = clube.escudo ? '<img src="' + clube.escudo + '" alt="' + clube.nome + '">' : '';
+        previewEl.innerHTML = escudoHtml + '<span>' + clube.nome + '</span>';
+    }
+
+    document.querySelectorAll('select').forEach(function (select) {
+        select.classList.add('clube-select');
+        select.addEventListener('change', function () { atualizarPreview(select); });
+        atualizarPreview(select);
+    });
+});
+</script>
 {% endblock %}

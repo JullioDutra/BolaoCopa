@@ -10,7 +10,7 @@ Soma:
   - Pontos da Seleção 4-3-3 do Brasileirão        -> SelecaoBrasileirao.pontuacao_total
 """
 from django.contrib.auth.models import User
-from django.db.models import Sum
+from django.db.models import Sum, Count, Q
 from .models import Palpite, PalpiteLongoPrazo
 
 
@@ -25,9 +25,18 @@ def calcular_ranking_geral(temporada=None):
     ).distinct()
 
     for usuario in usuarios_com_atividade:
-        pontos_jogos = Palpite.objects.filter(usuario=usuario).aggregate(
-            total=Sum('pontuacao_obtida')
-        )['total'] or 0
+        palpites_usuario = Palpite.objects.filter(usuario=usuario)
+
+        agregados_jogos = palpites_usuario.aggregate(
+            total=Sum('pontuacao_obtida'),
+            # AP: acertou o placar cheio (15 pts)
+            acertos_placar=Count('id', filter=Q(pontuacao_obtida=15)),
+            # AV: acertou vencedor/empate (5 pts)
+            acertos_vencedor=Count('id', filter=Q(pontuacao_obtida=5)),
+            # MP: foi o maior pontuador da rodada em algum jogo
+            maior_pontuador=Count('id', filter=Q(is_maior_pontuador=True)),
+        )
+        pontos_jogos = agregados_jogos['total'] or 0
 
         qs_longo = PalpiteLongoPrazo.objects.filter(usuario=usuario)
         if temporada is not None:
@@ -40,7 +49,7 @@ def calcular_ranking_geral(temporada=None):
         total = pontos_jogos + pontos_longo + pontos_selecao
 
         tem_atividade = (
-            Palpite.objects.filter(usuario=usuario).exists()
+            palpites_usuario.exists()
             or qs_longo.exists()
             or selecao is not None
         )
@@ -49,6 +58,9 @@ def calcular_ranking_geral(temporada=None):
             resultado.append({
                 'usuario': usuario,
                 'pontos_jogos': pontos_jogos,
+                'acertos_placar': agregados_jogos['acertos_placar'] or 0,
+                'acertos_vencedor': agregados_jogos['acertos_vencedor'] or 0,
+                'maior_pontuador': agregados_jogos['maior_pontuador'] or 0,
                 'pontos_longo_prazo': pontos_longo,
                 'pontos_selecao_brasileirao': pontos_selecao,
                 'total_pontos': total,

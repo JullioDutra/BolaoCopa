@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block title %}Mural da Copa - Cartolândia{% endblock %}
+
+{% block content %}
+<style>
+    .scoreboard-font { font-family: 'Courier New', Courier, monospace; letter-spacing: 1px; text-shadow: 1px 1px 2px rgba(0,0,0,0.4); }
+</style>
+
+<div class="card text-white p-5 shadow border-0 rounded-4 text-center position-relative overflow-hidden mb-4"
+     style="background: linear-gradient(135deg, #050505, #1a1a1a); border: 2px solid #cfb53b !important;">
+    <i class="fa-solid fa-trophy mb-3" style="font-size: 3.5rem; color: #cfb53b; text-shadow: 0 0 20px rgba(207,181,59,.6);"></i>
+    <h4 class="text-uppercase fw-bold mb-1" style="letter-spacing: 2px;">Copa encerrada</h4>
+
+    {% if campeao %}
+        <p class="text-white-50 mb-2">O Craque que mais acertou a convocação foi:</p>
+        <h2 class="fw-bold" style="color: #cfb53b;">{{ campeao.usuario.first_name|default:campeao.usuario.username }}</h2>
+        <p class="text-white-50">{{ campeao.acertos }} de {{ campeao.total_oficiais }} jogadores acertados</p>
+    {% else %}
+        <p class="text-white-50">Ainda não há um campeão definido para este modo.</p>
+    {% endif %}
+
+    <hr class="border-secondary my-4">
+    <p class="small text-uppercase text-white-50 mb-2" style="letter-spacing: 2px;">Próxima Copa do Mundo em:</p>
+    <div id="timer-copa-2030" class="fs-2 fw-bold scoreboard-font" style="color: #cfb53b;">--:--:--:--</div>
+</div>
+
+<div class="text-center">
+    <a href="{% url 'convocacao:ranking_convocacao' %}" class="btn btn-outline-dark rounded-pill px-4 fw-bold">
+        <i class="fa-solid fa-list-ol"></i> Ver ranking completo da Copa
+    </a>
+</div>
+
+<script>
+    const deadlineCopa = new Date("{{ proxima_copa_iso }}").getTime();
+    function updateTimerCopa() {
+        const now = new Date().getTime();
+        const diff = deadlineCopa - now;
+        const el = document.getElementById("timer-copa-2030");
+        if (diff <= 0) {
+            el.innerHTML = "<span class='text-danger'>A Copa começou! 🎉</span>";
+            return;
+        }
+        const d = Math.floor(diff / (1000*60*60*24)).toString().padStart(2,'0');
+        const h = Math.floor((diff % (1000*60*60*24)) / (1000*60*60)).toString().padStart(2,'0');
+        const m = Math.floor((diff % (1000*60*60)) / (1000*60)).toString().padStart(2,'0');
+        const s = Math.floor((diff % (1000*60)) / 1000).toString().padStart(2,'0');
+        el.innerHTML = `${d}<span class="fs-6 opacity-50">D</span> : ${h}<span class="fs-6 opacity-50">H</span> : ${m}<span class="fs-6 opacity-50">M</span> : ${s}<span class="fs-6 opacity-50">S</span>`;
+    }
+    setInterval(updateTimerCopa, 1000);
+    updateTimerCopa();
+</script>
+{% endblock %}

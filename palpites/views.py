@@ -300,6 +300,7 @@ def _calcular_mais_votados(temporada):
             'votos': item['total'],
             'total_votantes': total_geral,
             'percentual': percentual,
+            'mais_votados': _calcular_mais_votados(temporada),
         })
  
     return resultado

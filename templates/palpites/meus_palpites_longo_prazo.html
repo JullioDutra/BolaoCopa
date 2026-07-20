@@ -205,53 +205,12 @@
         box-shadow: 0 10px 20px rgba(22, 163, 74, 0.3);
     }
 
-    /* Cards de "Favoritos da Torcida" (mais votados) */
-    .voto-card {
-        background: #fff;
-        border-radius: 1.25rem;
-        padding: 1.25rem 1rem;
-        text-align: center;
-        position: relative;
-        overflow: hidden;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-        transition: all 0.3s ease;
-        border: 2px solid transparent;
-    }
-
-    .voto-card:hover {
-        transform: translateY(-6px);
-        border-color: var(--verde-primario);
-        box-shadow: 0 12px 25px rgba(22,163,74,0.15);
-    }
-
-    .voto-card .voto-count-badge {
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        background: linear-gradient(135deg, var(--dourado-champ), #fbbf24);
-        color: #fff;
-        font-size: 0.7rem;
-        font-weight: 800;
-        padding: 4px 9px;
-        border-radius: 8px;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-        display: flex;
-        align-items: center;
-        gap: 4px;
-    }
-
-    .voto-card img {
-        max-height: 55px;
-        object-fit: contain;
-        margin-bottom: 0.5rem;
-    }
-
+    /* Barra de progresso para a tabela e cards */
     .voto-progress-track {
         background: #e2e8f0;
         border-radius: 50px;
         height: 8px;
         width: 100%;
-        margin-top: 10px;
         overflow: hidden;
     }
 
@@ -260,6 +219,68 @@
         border-radius: 50px;
         background: linear-gradient(90deg, var(--verde-primario), #10b981);
         transition: width 0.6s ease;
+    }
+
+    /* --- Tabela Gamificada (Favoritos) --- */
+    .table-gamified {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0 10px; /* Cria espaço entre as linhas */
+        margin-top: -10px;
+    }
+    
+    .table-gamified thead th {
+        border: none;
+        color: #64748b;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        padding: 0 1rem 0.5rem;
+    }
+
+    .table-gamified tbody tr {
+        background-color: var(--bg-cards);
+        box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .table-gamified tbody tr:hover {
+        transform: translateY(-2px) scale(1.005);
+        box-shadow: 0 8px 15px rgba(22, 163, 74, 0.1);
+    }
+
+    .table-gamified td {
+        padding: 1rem;
+        vertical-align: middle;
+        border: none;
+    }
+
+    /* Arredondar os cantos das pontas da linha */
+    .table-gamified td:first-child { border-radius: 1rem 0 0 1rem; }
+    .table-gamified td:last-child { border-radius: 0 1rem 1rem 0; }
+
+    .clube-table-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-weight: 700;
+        color: var(--text-padrao);
+    }
+
+    .clube-table-info img {
+        width: 32px;
+        height: 32px;
+        object-fit: contain;
+    }
+
+    .badge-votos {
+        background: linear-gradient(135deg, var(--verde-escuro), var(--verde-primario));
+        color: white;
+        padding: 6px 12px;
+        border-radius: 10px;
+        font-weight: 800;
+        font-size: 0.8rem;
+        box-shadow: 0 2px 5px rgba(22, 163, 74, 0.3);
     }
 </style>
 
@@ -286,30 +307,57 @@
 </div>
 <p class="text-muted small mb-4">Veja quem a galera está apostando em cada posição antes de fazer seu palpite!</p>
 
-<div class="row g-3 mb-5">
-    {% for item in mais_votados %}
-    <div class="col-6 col-md-4 col-lg-2">
-        <div class="voto-card h-100">
-            <div class="voto-count-badge">
-                <i class="fa-solid fa-users"></i> {{ item.votos }}
-            </div>
-
-            {% if item.clube.escudo %}
-                <img src="{{ item.clube.escudo.url }}" alt="{{ item.clube.nome }}">
-            {% endif %}
-
-            <div class="text-muted text-uppercase fw-bold" style="font-size: 0.68rem; letter-spacing: 0.5px;">
-                <i class="fa-solid {{ item.icone }} {{ item.cor_classe }} me-1"></i>{{ item.label }}
-            </div>
-            <h6 class="fw-bold text-dark mt-1 mb-0">{{ item.clube.nome }}</h6>
-
-            <div class="voto-progress-track">
-                <div class="voto-progress-fill" style="width: {{ item.percentual }}%;"></div>
-            </div>
-            <div class="text-muted mt-1" style="font-size: 0.7rem;">{{ item.percentual }}% dos palpites</div>
-        </div>
-    </div>
-    {% endfor %}
+<div class="table-responsive mb-5">
+    <table class="table-gamified">
+        <thead>
+            <tr>
+                <th>Categoria</th>
+                <th>Clube Mais Votado</th>
+                <th class="text-center">Votos</th>
+                <th style="min-width: 150px;">Adesão da Galera</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in mais_votados %}
+            <tr>
+                <!-- Coluna 1: Categoria -->
+                <td>
+                    <div class="text-uppercase fw-bold" style="font-size: 0.75rem; letter-spacing: 0.5px;">
+                        <i class="fa-solid {{ item.icone }} {{ item.cor_classe }} me-2 fs-6 align-middle"></i>
+                        <span class="text-muted">{{ item.label }}</span>
+                    </div>
+                </td>
+                
+                <!-- Coluna 2: Clube -->
+                <td>
+                    <div class="clube-table-info">
+                        {% if item.clube.escudo %}
+                            <img src="{{ item.clube.escudo.url }}" alt="{{ item.clube.nome }}">
+                        {% endif %}
+                        <span>{{ item.clube.nome }}</span>
+                    </div>
+                </td>
+                
+                <!-- Coluna 3: Votos -->
+                <td class="text-center">
+                    <span class="badge-votos">
+                        <i class="fa-solid fa-users me-1 opacity-75"></i> {{ item.votos }}
+                    </span>
+                </td>
+                
+                <!-- Coluna 4: Barra de Progresso (%) -->
+                <td>
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="voto-progress-track flex-grow-1 m-0" style="height: 10px; background-color: #f1f5f9;">
+                            <div class="voto-progress-fill" style="width: {{ item.percentual }}%; box-shadow: 0 0 8px rgba(22,163,74,0.4);"></div>
+                        </div>
+                        <span class="fw-bold text-muted" style="font-size: 0.8rem; min-width: 35px; text-align: right;">{{ item.percentual }}%</span>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </div>
 {% endif %}
 

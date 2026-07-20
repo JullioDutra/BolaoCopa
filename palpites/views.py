@@ -229,12 +229,14 @@ def meus_palpites_longo_prazo(request):
         form = PalpiteLongoPrazoForm(initial=iniciais)
 
     palpites_salvos = PalpiteLongoPrazo.objects.filter(usuario=request.user, temporada=temporada).order_by('posicao_esperada')
+    mais_votados = _calcular_mais_votados(temporada)
 
     return render(request, 'palpites/meus_palpites_longo_prazo.html', {
         'form': form,
         'palpites_salvos': palpites_salvos,
         'temporada': temporada,
         'clubes': Clube.objects.all(),
+        'mais_votados': mais_votados,
     })
 
 def _calcular_mais_votados(temporada):
@@ -300,7 +302,6 @@ def _calcular_mais_votados(temporada):
             'votos': item['total'],
             'total_votantes': total_geral,
             'percentual': percentual,
-            'mais_votados': _calcular_mais_votados(temporada),
         })
  
     return resultado

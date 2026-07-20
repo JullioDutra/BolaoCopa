@@ -236,3 +236,70 @@ def meus_palpites_longo_prazo(request):
         'temporada': temporada,
         'clubes': Clube.objects.all(),
     })
+
+def _calcular_mais_votados(temporada):
+    """
+    Retorna, para cada posição/categoria de palpite de longo prazo, o clube
+    mais indicado pelos usuários e quantos votos (palpites) ele recebeu.
+    Usado para montar o painel "Favoritos da Torcida".
+    """
+    if not temporada:
+        return []
+ 
+    contagem = (
+        PalpiteLongoPrazo.objects
+        .filter(temporada=temporada)
+        .values('tipo', 'posicao_esperada', 'clube_id')
+        .annotate(total=Count('id'))
+        .order_by('tipo', 'posicao_esperada', '-total')
+    )
+ 
+    top_por_categoria = {}
+    total_votantes = {}
+    for item in contagem:
+        chave = (item['tipo'], item['posicao_esperada'])
+        total_votantes[chave] = total_votantes.get(chave, 0) + item['total']
+        # A query já vem ordenada por -total dentro de cada categoria,
+        # então o primeiro registro encontrado é o mais votado.
+        if chave not in top_por_categoria:
+            top_por_categoria[chave] = item
+ 
+    clube_ids = [v['clube_id'] for v in top_por_categoria.values()]
+    clubes_map = {c.id: c for c in Clube.objects.filter(id__in=clube_ids)}
+ 
+    # Define a ordem de exibição e os textos/ícones de cada categoria
+    ORDEM = [
+        ('CAMPEAO_BR', 1, 'Campeão Brasileiro', 'fa-trophy', 'text-warning'),
+        ('G4', 2, 'G4 · 2º Lugar', 'fa-medal', 'text-warning'),
+        ('G4', 3, 'G4 · 3º Lugar', 'fa-medal', 'text-warning'),
+        ('G4', 4, 'G4 · 4º Lugar', 'fa-medal', 'text-warning'),
+        ('Z4', 17, 'Z4 · 17º Lugar', 'fa-arrow-down', 'text-danger'),
+        ('Z4', 18, 'Z4 · 18º Lugar', 'fa-arrow-down', 'text-danger'),
+        ('Z4', 19, 'Z4 · 19º Lugar', 'fa-arrow-down', 'text-danger'),
+        ('Z4', 20, 'Z4 · 20º Lugar', 'fa-arrow-down', 'text-danger'),
+        ('CAMPEAO_EUROPA', 1, 'Campeão Europa', 'fa-earth-europe', 'text-primary'),
+        ('CAMPEAO_CDB', 1, 'Campeão Copa do Brasil', 'fa-shield-halved', 'text-primary'),
+    ]
+ 
+    resultado = []
+    for tipo, pos, label, icone, cor_classe in ORDEM:
+        chave = (tipo, pos)
+        item = top_por_categoria.get(chave)
+        if not item:
+            continue
+        clube = clubes_map.get(item['clube_id'])
+        if not clube:
+            continue
+        total_geral = total_votantes.get(chave, 0)
+        percentual = round((item['total'] / total_geral) * 100) if total_geral else 0
+        resultado.append({
+            'label': label,
+            'icone': icone,
+            'cor_classe': cor_classe,
+            'clube': clube,
+            'votos': item['total'],
+            'total_votantes': total_geral,
+            'percentual': percentual,
+        })
+ 
+    return resultado

@@ -204,6 +204,63 @@
         transform: scale(1.02);
         box-shadow: 0 10px 20px rgba(22, 163, 74, 0.3);
     }
+
+    /* Cards de "Favoritos da Torcida" (mais votados) */
+    .voto-card {
+        background: #fff;
+        border-radius: 1.25rem;
+        padding: 1.25rem 1rem;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+    }
+
+    .voto-card:hover {
+        transform: translateY(-6px);
+        border-color: var(--verde-primario);
+        box-shadow: 0 12px 25px rgba(22,163,74,0.15);
+    }
+
+    .voto-card .voto-count-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: linear-gradient(135deg, var(--dourado-champ), #fbbf24);
+        color: #fff;
+        font-size: 0.7rem;
+        font-weight: 800;
+        padding: 4px 9px;
+        border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .voto-card img {
+        max-height: 55px;
+        object-fit: contain;
+        margin-bottom: 0.5rem;
+    }
+
+    .voto-progress-track {
+        background: #e2e8f0;
+        border-radius: 50px;
+        height: 8px;
+        width: 100%;
+        margin-top: 10px;
+        overflow: hidden;
+    }
+
+    .voto-progress-fill {
+        height: 100%;
+        border-radius: 50px;
+        background: linear-gradient(90deg, var(--verde-primario), #10b981);
+        transition: width 0.6s ease;
+    }
 </style>
 
 <!-- HEADER PRINCIPAL -->
@@ -220,6 +277,41 @@
         <span class="pontuacao-pill"><i class="fa-solid fa-earth-americas text-info"></i> Europa/Copa: 45/50 pts</span>
     </div>
 </div>
+
+<!-- FAVORITOS DA TORCIDA (MAIS VOTADOS) -->
+{% if mais_votados %}
+<div class="mb-2 d-flex align-items-center gap-2">
+    <i class="fa-solid fa-fire text-danger fs-4"></i>
+    <h4 class="fw-bold mb-0 text-dark">Favoritos da Torcida</h4>
+</div>
+<p class="text-muted small mb-4">Veja quem a galera está apostando em cada posição antes de fazer seu palpite!</p>
+
+<div class="row g-3 mb-5">
+    {% for item in mais_votados %}
+    <div class="col-6 col-md-4 col-lg-2">
+        <div class="voto-card h-100">
+            <div class="voto-count-badge">
+                <i class="fa-solid fa-users"></i> {{ item.votos }}
+            </div>
+
+            {% if item.clube.escudo %}
+                <img src="{{ item.clube.escudo.url }}" alt="{{ item.clube.nome }}">
+            {% endif %}
+
+            <div class="text-muted text-uppercase fw-bold" style="font-size: 0.68rem; letter-spacing: 0.5px;">
+                <i class="fa-solid {{ item.icone }} {{ item.cor_classe }} me-1"></i>{{ item.label }}
+            </div>
+            <h6 class="fw-bold text-dark mt-1 mb-0">{{ item.clube.nome }}</h6>
+
+            <div class="voto-progress-track">
+                <div class="voto-progress-fill" style="width: {{ item.percentual }}%;"></div>
+            </div>
+            <div class="text-muted mt-1" style="font-size: 0.7rem;">{{ item.percentual }}% dos palpites</div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
 
 <form method="post">
     {% csrf_token %}

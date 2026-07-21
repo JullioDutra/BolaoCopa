@@ -121,6 +121,6 @@ class SelecaoBrasileiraoAdmin(admin.ModelAdmin):
     list_display = ('usuario', 'pontuacao_total', 'data_atualizacao')
     actions = [recalcular_selecoes_brasileirao]
 
-admin.site.register(Clube)
+
 admin.site.register(TorneioLongoPrazo)
 admin.site.register(PalpiteTorneioExtra)

@@ -9,7 +9,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 
 from .forms import ResultadosFinaisForm, PalpiteLongoPrazoForm, PalpiteForm
 from .engine import processar_pontuacoes_longo_prazo
-from .models import Jogo, Palpite, OscarCartolandia, PalpiteLongoPrazo, Temporada, MuralCampeoes, Clube
+from .models import Jogo, Palpite, OscarCartolandia, PalpiteLongoPrazo, Temporada, MuralCampeoes, Clube, PalpiteTorneioExtra
 from .ranking_utils import calcular_ranking_geral
 
 from bolao.decorators import acesso_liberado_required

@@ -179,6 +179,16 @@ class Temporada(models.Model):
     prazo_brasileirao = models.DateTimeField(null=True, blank=True, help_text="Trava o Campeão, G4 e Z4")
     prazo_copas = models.DateTimeField(null=True, blank=True, help_text="Trava CDB, Libertadores, Europa, etc")
     
+    def brasileirao_aberto(self):
+        if not self.prazo_brasileirao:
+            return True
+        return timezone.now() < self.prazo_brasileirao
+
+    def copas_fixas_abertas(self):
+        if not self.prazo_copas_fixas:
+            return True
+        return timezone.now() < self.prazo_copas_fixas
+    
     def __str__(self):
         return f"Temporada {self.ano}"
 
@@ -213,3 +223,24 @@ class MuralCampeoes(models.Model):
 
     def __str__(self):
         return f"🏆 Campeão {self.temporada.ano}: {self.usuario.username}"
+
+class TorneioLongoPrazo(models.Model):
+    temporada = models.ForeignKey(Temporada, on_delete=models.CASCADE, related_name='torneios_extras')
+    nome = models.CharField(max_length=100, help_text="Ex: Campeão da Libertadores")
+    icone = models.CharField(max_length=50, default="fa-trophy", help_text="Ícone FontAwesome (ex: fa-earth-americas)")
+    pontos_premio = models.IntegerField(default=50)
+    prazo_final = models.DateTimeField()
+    
+    def is_aberto(self):
+        return timezone.now() < self.prazo_final
+
+    def __str__(self):
+        return f"{self.nome} - {self.temporada.ano}"
+
+class PalpiteTorneioExtra(models.Model):
+    usuario = models.ForeignKey(User, on_delete=models.CASCADE)
+    torneio = models.ForeignKey(TorneioLongoPrazo, on_delete=models.CASCADE)
+    clube = models.ForeignKey(Clube, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('usuario', 'torneio')

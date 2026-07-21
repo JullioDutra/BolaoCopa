@@ -1,398 +1,594 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <!-- Viewport ajustado para comportamento nativo de App (impede zoom de pinça) -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+{% extends 'base.html' %}
+{% block title %}Palpites de Temporada - Cartolândia{% endblock %}
+
+{% block content %}
+<!-- Google Fonts para um visual mais moderno -->
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+    :root {
+        --verde-primario: #16a34a;
+        --verde-escuro: #14532d;
+        --dourado-champ: #f59e0b;
+        --vermelho-z4: #dc2626;
+        --azul-copas: #2563eb;
+        --bg-cards: #ffffff;
+        --text-padrao: #1f2937;
+    }
+
+    body {
+        font-family: 'Poppins', sans-serif;
+        color: var(--text-padrao);
+        background-color: #f3f4f6;
+    }
+
+    /* Cabeçalho de Título */
+    .season-header {
+        background: linear-gradient(135deg, var(--verde-escuro), var(--verde-primario));
+        border-radius: 1.25rem;
+        padding: 2rem;
+        color: white;
+        box-shadow: 0 10px 25px -5px rgba(22, 163, 74, 0.4);
+        margin-bottom: 2rem;
+        position: relative;
+        overflow: hidden;
+    }
     
-    <title>{% block title %}Cartolândia{% endblock %}</title>
+    .season-header::after {
+        content: '\f091';
+        font-family: "Font Awesome 6 Free";
+        font-weight: 900;
+        position: absolute;
+        right: -20px;
+        bottom: -40px;
+        font-size: 10rem;
+        opacity: 0.08;
+        transform: rotate(-15deg);
+    }
+
+    /* Regras de Pontuação (Pills) */
+    .pontuacao-pill {
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(5px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 50px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    /* Cards de Seção */
+    .grupo-card {
+        background: var(--bg-cards);
+        border: none;
+        border-radius: 1.25rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.04);
+        margin-bottom: 2rem;
+        transition: transform 0.3s ease;
+    }
     
-    <!-- ========================================== -->
-    <!-- CONFIGURAÇÕES DE PWA E ÍCONES              -->
-    <!-- ========================================== -->
-    {% load static %}
-    <!-- Favicon (Ícone da aba do navegador) -->
-    <link rel="icon" href="{% static 'media/logo.png' %}" type="image/png">
+    .grupo-card:hover {
+        transform: translateY(-3px);
+    }
+
+    .card-topo-decorativo {
+        height: 6px;
+        border-radius: 1.25rem 1.25rem 0 0;
+    }
+
+    .grupo-card .card-header-modern {
+        background: transparent;
+        padding: 1.5rem 1.5rem 0;
+        border: none;
+        font-weight: 800;
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    /* Estilização dos Inputs (Selects) */
+    .custom-select-wrapper select {
+        appearance: none;
+        background-color: #f8fafc;
+        border: 2px solid #e2e8f0;
+        border-radius: 0.75rem;
+        padding: 0.75rem 1rem;
+        font-weight: 600;
+        font-size: 0.95rem;
+        color: #334155;
+        width: 100%;
+        transition: all 0.3s ease;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 1rem center;
+        background-size: 1em;
+    }
+
+    .custom-select-wrapper select:focus {
+        border-color: var(--verde-primario);
+        outline: none;
+        box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.15);
+    }
+
+    /* Campos Bloqueados por Prazo Encerrado */
+    .custom-select-wrapper select:disabled {
+        background-color: #e2e8f0;
+        border-color: #cbd5e1;
+        color: #94a3b8;
+        cursor: not-allowed;
+        background-image: none;
+    }
+
+    /* Preview do Clube */
+    .clube-preview {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 12px;
+        padding: 8px 16px;
+        border-radius: 50px;
+        color: #fff;
+        font-weight: 700;
+        font-size: 0.85rem;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        opacity: 0;
+        transform: translateY(-10px) scale(0.95);
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        pointer-events: none;
+        position: absolute;
+    }
+
+    .clube-preview.active {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        position: relative;
+    }
+
+    .clube-preview img { 
+        width: 26px; 
+        height: 26px; 
+        object-fit: contain; 
+        background: #fff; 
+        border-radius: 50%; 
+        padding: 3px; 
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+
+    /* Cards de Palpites Salvos */
+    .palpite-salvo-card {
+        border: none;
+        border-radius: 1rem;
+        text-align: center;
+        padding: 1.5rem 1rem;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        background: #fff;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        z-index: 1;
+    }
+
+    .palpite-salvo-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 12px 25px rgba(0,0,0,0.1);
+    }
+
+    .palpite-bg-color {
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 100%;
+        opacity: 0.08;
+        z-index: -1;
+    }
+
+    .palpite-badge-pontos {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: var(--verde-primario);
+        color: white;
+        font-size: 0.75rem;
+        font-weight: 800;
+        padding: 4px 8px;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+
+    /* Botão de Salvar */
+    .btn-salvar-palpites {
+        background: linear-gradient(135deg, var(--verde-primario), #10b981);
+        border: none;
+        font-size: 1.1rem;
+        padding: 1rem 2rem;
+        border-radius: 50px;
+        transition: all 0.3s ease;
+    }
     
-    <!-- Link para o arquivo de Manifesto -->
-    <link rel="manifest" href="{% static 'manifest.json' %}">
+    .btn-salvar-palpites:hover {
+        transform: scale(1.02);
+        box-shadow: 0 10px 20px rgba(22, 163, 74, 0.3);
+    }
+
+    /* Barra de progresso */
+    .voto-progress-track {
+        background: #e2e8f0;
+        border-radius: 50px;
+        height: 8px;
+        width: 100%;
+        overflow: hidden;
+    }
+
+    .voto-progress-fill {
+        height: 100%;
+        border-radius: 50px;
+        background: linear-gradient(90deg, var(--verde-primario), #10b981);
+        transition: width 0.6s ease;
+    }
+
+    /* --- Tabela Gamificada (Favoritos) --- */
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 10px;
+    }
+
+    .table-responsive::-webkit-scrollbar {
+        height: 6px;
+    }
+    .table-responsive::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 10px;
+    }
+    .table-responsive::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 10px;
+    }
+
+    .table-gamified {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0 10px;
+        margin-top: -10px;
+        white-space: nowrap;
+    }
     
-    <!-- Cor da barra de status do celular (Android) -->
-    <meta name="theme-color" content="#0a3d10">
+    .table-gamified thead th {
+        border: none;
+        color: #64748b;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        padding: 0 1rem 0.5rem;
+    }
+
+    .table-gamified tbody tr {
+        background-color: var(--bg-cards);
+        box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .table-gamified tbody tr:hover {
+        transform: translateY(-2px) scale(1.005);
+        box-shadow: 0 8px 15px rgba(22, 163, 74, 0.1);
+    }
+
+    .table-gamified td {
+        padding: 1rem;
+        vertical-align: middle;
+        border: none;
+    }
+
+    .table-gamified td:first-child { border-radius: 1rem 0 0 1rem; }
+    .table-gamified td:last-child { border-radius: 0 1rem 1rem 0; }
+
+    .clube-table-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-weight: 700;
+        color: var(--text-padrao);
+    }
+
+    .clube-table-info img {
+        width: 32px;
+        height: 32px;
+        object-fit: contain;
+    }
+
+    .badge-votos {
+        background: linear-gradient(135deg, var(--verde-escuro), var(--verde-primario));
+        color: white;
+        padding: 6px 12px;
+        border-radius: 10px;
+        font-weight: 800;
+        font-size: 0.8rem;
+        box-shadow: 0 2px 5px rgba(22, 163, 74, 0.3);
+    }
+
+    @media (max-width: 768px) {
+        .table-gamified td {
+            padding: 0.75rem 1rem;
+        }
+        .voto-progress-track {
+            min-width: 80px;
+        }
+    }
+</style>
+
+<!-- HEADER PRINCIPAL -->
+<div class="season-header">
+    <h2 class="fw-bold mb-2">
+        <i class="fa-solid fa-crown text-warning me-2"></i> Palpites {{ temporada.ano }}
+    </h2>
+    <p class="mb-4 text-white-50" style="font-size: 0.95rem;">Faça suas escolhas e mostre quem manda. Fique de olho nos prazos!</p>
     
-    <!-- Ícone que aparecerá na tela inicial do iOS/Android -->
-    <link rel="apple-touch-icon" href="{% static 'media/logo.png' %}">
-    
-    <!-- Diz à Apple que é um App -->
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <!-- Estilo da barra superior no iPhone -->
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <!-- Nome que fica embaixo do ícone no iPhone -->
-    <meta name="apple-mobile-web-app-title" content="Cartolândia">
+    <div class="d-flex flex-wrap gap-2">
+        <span class="pontuacao-pill"><i class="fa-solid fa-trophy text-warning"></i> Campeão BR: 50 pts</span>
+        <span class="pontuacao-pill"><i class="fa-solid fa-medal text-warning"></i> G4 / Z4: 30 pts</span>
+        <span class="pontuacao-pill"><i class="fa-solid fa-earth-americas text-info"></i> Torneios Extras: Dinâmico</span>
+    </div>
+</div>
 
-    <!-- Bootstrap 5 -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    
-    <!-- FontAwesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <style>
-        :root {
-            --verde-escuro: #0a3d10; /* Tom mais profundo e moderno */
-            --verde-campo: #1b5e20;
-            --verde-claro: #2e7d32;
-            --dourado: #cfb53b;
-            --fundo-app: #f4f7f6;
-        }
-        
-        body {
-            background-color: var(--fundo-app);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            -webkit-font-smoothing: antialiased;
-        }
+<!-- FAVORITOS DA TORCIDA (MAIS VOTADOS) -->
+{% if mais_votados %}
+<div class="mb-2 d-flex align-items-center gap-2">
+    <i class="fa-solid fa-fire text-danger fs-4"></i>
+    <h4 class="fw-bold mb-0 text-dark">Favoritos da Torcida</h4>
+</div>
+<p class="text-muted small mb-4">Veja quem a galera está apostando em cada posição antes de fazer seu palpite!</p>
 
-        /* Botões Globais */
-        .btn-principal {
-            background-color: var(--verde-campo);
-            color: white;
-            transition: all 0.2s ease;
-        }
-        .btn-principal:hover {
-            background-color: var(--verde-escuro);
-            color: white;
-            transform: translateY(-2px);
-        }
-
-        /* Estilos de Cards Globais */
-        .card-clean {
-            border-radius: 16px;
-            border: none;
-            background-color: #ffffff;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
-        }
-
-        /* Navbar Customizada */
-        .navbar-custom {
-            background: linear-gradient(135deg, var(--verde-escuro), var(--verde-campo));
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-        .nav-link {
-            font-weight: 600;
-            letter-spacing: 0.3px;
-            transition: color 0.2s ease;
-        }
-        .nav-link:hover {
-            color: var(--dourado) !important;
-        }
-
-        /* Chip da Carteira */
-        .wallet-chip {
-            background-color: rgba(255, 255, 255, 0.15);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 50rem;
-            padding: 0.4rem 1rem;
-            color: white;
-            font-weight: 700;
-            transition: all 0.2s;
-        }
-        .wallet-chip:hover {
-            background-color: rgba(255, 255, 255, 0.25);
-            color: white;
-        }
-
-        /* Ajustes do Offcanvas (Menu Mobile) */
-        .offcanvas-custom {
-            background-color: var(--verde-escuro);
-            color: white;
-        }
-        .offcanvas-custom .nav-link {
-            color: rgba(255,255,255,0.85);
-            padding: 1rem 1.5rem;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-            font-size: 1.1rem;
-        }
-        .offcanvas-custom .nav-link:hover, .offcanvas-custom .nav-link.active {
-            background-color: rgba(255,255,255,0.05);
-            color: var(--dourado) !important;
-            border-left: 4px solid var(--dourado);
-        }
-    </style>
-</head>
-<body>
-
-    <!-- ========================================== -->
-    <!-- NAVBAR TOP (DESKTOP & MOBILE HEADER)       -->
-    <!-- ========================================== -->
-    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom sticky-top">
-        <div class="container">
-            
-            <!-- Botão Menu Mobile (Hamburguer) -->
-            <button class="navbar-toggler border-0 shadow-none px-1" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileMenu" aria-controls="mobileMenu">
-                <i class="fa-solid fa-bars fs-3 text-white"></i>
-            </button>
-
-            <!-- Logo Real Renderizada -->
-            <a class="navbar-brand fw-bold fs-4 mx-auto mx-lg-0 tracking-wider d-flex align-items-center" href="{% url 'dashboard' %}">
-                <img src="{% static 'media/logo.png' %}" alt="Logo" width="32" height="32" class="me-2 object-fit-contain"> Cartolândia
-            </a>
-
-            <!-- Ícone de Carteira Rápida no Mobile (Fica à direita) -->
-            {% if user.is_authenticated and user.carteira %}
-                <div class="d-lg-none">
-                    <a href="{% url 'pagamentos:extrato' %}" class="text-decoration-none text-white fw-bold">
-                        <i class="fa-solid fa-wallet text-success"></i>
-                        <span class="small ms-1">{{ user.carteira.saldo|default:"0,00" }}</span>
-                    </a>
-                </div>
-            {% elif not user.is_authenticated %}
-                <div class="d-lg-none">
-                    <a href="{% url 'login' %}" class="text-white"><i class="fa-solid fa-right-to-bracket fs-4"></i></a>
-                </div>
-            {% endif %}
-            
-            <!-- Menu Desktop -->
-            <div class="collapse navbar-collapse" id="navbarNavDesktop">
-                {% if user.is_authenticated %}
-                    <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-4 gap-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-white" href="{% url 'dashboard' %}"><i class="fa-solid fa-house opacity-75 me-1"></i> Início</a>
-                        </li>
-                        
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle text-white" href="#" id="convocacaoDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="fa-solid fa-clipboard-list opacity-75 me-1"></i> Convocação
-                            </a>
-                            <ul class="dropdown-menu shadow border-0 rounded-3 mt-2" aria-labelledby="convocacaoDropdown">
-                                <li>
-                                    <a class="dropdown-item fw-bold py-2" href="{% url 'convocacao:montar_selecao' %}">
-                                        <i class="fa-solid fa-shirt text-success me-2"></i> Minha Seleção
-                                    </a>
-                                </li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li>
-                                    <a class="dropdown-item py-2" href="{% url 'convocacao:ranking_convocacao' %}">
-                                        <i class="fa-solid fa-medal text-warning me-2"></i> Ranking da Convocação
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item py-2" href="{% url 'convocacao:mais_escalados' %}">
-                                        <i class="fa-solid fa-chart-line text-primary me-2"></i> Mais Escalados
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-
-                        <li class="nav-item">
-                            <a class="nav-link text-white" href="{% url 'palpites:listar_jogos' %}"><i class="fa-regular fa-futbol opacity-75 me-1"></i> Bolão</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-white" href="{% url 'duelos:listar_desafios' %}"><i class="fa-solid fa-khanda opacity-75 me-1"></i> Arena X1</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-white" href="{% url 'palpites:ranking_geral' %}"><i class="fa-solid fa-ranking-star opacity-75 me-1"></i> Geral</a>
-                        </li>
-                        
-                        <!-- NOVO BOTÃO: Oscar / Melhores do Ano -->
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'palpites:indicar_oscar' %}" style="color: #ffeaa7;">
-                                <i class="fa-solid fa-award me-1"></i> Melhores do Ano
-                            </a>
-                        </li>
-                    </ul>
-                    
-                    <ul class="navbar-nav align-items-center gap-3">
-                        {% if user.carteira %}
-                            <li class="nav-item">
-                                <a href="{% url 'pagamentos:extrato' %}" class="text-decoration-none wallet-chip shadow-sm">
-                                    <i class="fa-solid fa-wallet text-success me-1"></i> R$ {{ user.carteira.saldo|default:"0,00" }}
-                                </a>
-                            </li>
+<div class="table-responsive mb-5">
+    <table class="table-gamified">
+        <thead>
+            <tr>
+                <th>Categoria</th>
+                <th>Clube Mais Votado</th>
+                <th class="text-center">Votos</th>
+                <th style="min-width: 150px;">Adesão da Galera</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in mais_votados %}
+            <tr>
+                <td>
+                    <div class="text-uppercase fw-bold" style="font-size: 0.75rem; letter-spacing: 0.5px;">
+                        <i class="fa-solid {{ item.icone }} {{ item.cor_classe }} me-2 fs-6 align-middle"></i>
+                        <span class="text-muted">{{ item.label }}</span>
+                    </div>
+                </td>
+                <td>
+                    <div class="clube-table-info">
+                        {% if item.clube.escudo %}
+                            <img src="{{ item.clube.escudo.url }}" alt="{{ item.clube.nome }}">
                         {% endif %}
-                        
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle fw-bold text-white d-flex align-items-center gap-2" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
-                                <div class="bg-white bg-opacity-25 rounded-circle d-flex justify-content-center align-items-center" style="width: 32px; height: 32px;">
-                                    <i class="fa-solid fa-user text-white"></i>
-                                </div>
-                                {{ user.first_name|default:user.username }}
-                            </a>
-                            <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3 mt-2">
-                                <li>
-                                    <a class="dropdown-item text-danger fw-bold py-2" href="{% url 'logout' %}">
-                                        <i class="fa-solid fa-right-from-bracket me-2"></i> Sair do Vestiário
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-                    </ul>
-                {% else %}
-                    <ul class="navbar-nav ms-auto">
-                        <li class="nav-item">
-                            <a class="btn btn-warning text-dark fw-bold px-4 rounded-pill shadow-sm" href="{% url 'login' %}">
-                                <i class="fa-solid fa-right-to-bracket me-1"></i> Entrar / Cadastrar
-                            </a>
-                        </li>
-                    </ul>
-                {% endif %}
-            </div>
+                        <span>{{ item.clube.nome }}</span>
+                    </div>
+                </td>
+                <td class="text-center">
+                    <span class="badge-votos">
+                        <i class="fa-solid fa-users me-1 opacity-75"></i> {{ item.votos }}
+                    </span>
+                </td>
+                <td>
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="voto-progress-track flex-grow-1 m-0">
+                            <div class="voto-progress-fill" style="width: {{ item.percentual }}%; box-shadow: 0 0 8px rgba(22,163,74,0.4);"></div>
+                        </div>
+                        <span class="fw-bold text-muted" style="font-size: 0.8rem; min-width: 35px; text-align: right;">{{ item.percentual }}%</span>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+<form method="post">
+    {% csrf_token %}
+
+    <!-- BLOCO 1: CAMPEÃO E G4 -->
+    <div class="card grupo-card">
+        <div class="card-topo-decorativo" style="background: linear-gradient(90deg, var(--dourado-champ), #fbbf24);"></div>
+        <div class="card-header-modern text-dark">
+            <i class="fa-solid fa-trophy text-warning"></i> Campeão & G4
+            {% if form.campeao_br.help_text %}
+                <span class="badge bg-danger ms-auto" style="font-size: 0.7rem;"><i class="fa-solid fa-lock"></i> FECHADO</span>
+            {% endif %}
         </div>
-    </nav>
-
-    <!-- ========================================== -->
-    <!-- MENU MOBILE (OFFCANVAS)                    -->
-    <!-- ========================================== -->
-    {% if user.is_authenticated %}
-    <div class="offcanvas offcanvas-start offcanvas-custom d-lg-none shadow-lg" tabindex="-1" id="mobileMenu" aria-labelledby="mobileMenuLabel">
-        <div class="offcanvas-header border-bottom border-light border-opacity-10 py-4">
-            <div class="d-flex align-items-center gap-3">
-                <div class="bg-white bg-opacity-10 rounded-circle d-flex justify-content-center align-items-center" style="width: 50px; height: 50px;">
-                    <i class="fa-solid fa-user fs-3 text-white"></i>
-                </div>
-                <div>
-                    <h5 class="offcanvas-title fw-bold mb-0" id="mobileMenuLabel">{{ user.first_name|default:user.username }}</h5>
-                    <a href="{% url 'pagamentos:extrato' %}" class="text-decoration-none text-success small fw-bold">
-                        <i class="fa-solid fa-wallet"></i> Saldo: R$ {{ user.carteira.saldo|default:"0,00" }}
-                    </a>
-                </div>
+        <div class="card-body p-4 row g-4">
+            <div class="col-12 col-md-6 col-lg-3 custom-select-wrapper">
+                <label class="form-label small text-muted fw-bold text-uppercase">{{ form.campeao_br.label }}</label>
+                {{ form.campeao_br }}
+                <div class="clube-preview clube-select-preview" data-target="id_campeao_br"></div>
             </div>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-        </div>
-        
-        <div class="offcanvas-body p-0 d-flex flex-column">
-            <ul class="navbar-nav mb-auto">
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'dashboard' %}"><i class="fa-solid fa-house fa-fw opacity-75 me-2"></i> Início</a>
-                </li>
-                
-                <li class="nav-item px-3 py-2 text-uppercase small text-white-50 fw-bold tracking-wider mt-3">
-                    Meu Time
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'convocacao:montar_selecao' %}"><i class="fa-solid fa-shirt fa-fw text-success opacity-75 me-2"></i> Escalar Seleção</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'convocacao:ranking_convocacao' %}"><i class="fa-solid fa-users fa-fw opacity-75 me-2"></i> Ranking Convocação</a>
-                </li>
-
-                <li class="nav-item px-3 py-2 text-uppercase small text-white-50 fw-bold tracking-wider mt-3">
-                    Competições
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'palpites:listar_jogos' %}"><i class="fa-regular fa-futbol fa-fw opacity-75 me-2"></i> Bolão de Jogos</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'duelos:listar_desafios' %}"><i class="fa-solid fa-khanda fa-fw opacity-75 me-2"></i> Arena do X1</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'palpites:ranking_geral' %}"><i class="fa-solid fa-ranking-star fa-fw opacity-75 me-2"></i> Classificação Geral</a>
-                </li>
-                
-                <li class="nav-item px-3 py-2 text-uppercase small text-white-50 fw-bold tracking-wider mt-3">
-                    Especiais
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-warning" href="{% url 'palpites:indicar_oscar' %}">
-                        <i class="fa-solid fa-award fa-fw me-2"></i> Melhores do Ano
-                    </a>
-                </li>
-            </ul>
-            
-            <div class="mt-auto border-top border-light border-opacity-10">
-                
-                <!-- BOTÃO DE INSTALAR O APP (PWA) -->
-                <div class="px-3 pt-3 d-none" id="divInstalarApp">
-                    <button id="btnInstalarApp" class="btn btn-warning w-100 fw-bold rounded-pill shadow-sm text-dark">
-                        <i class="fa-solid fa-download me-1"></i> Instalar Aplicativo
-                    </button>
-                </div>
-
-                <div class="p-3">
-                    <a class="btn btn-danger w-100 fw-bold rounded-pill shadow-sm" href="{% url 'logout' %}">
-                        <i class="fa-solid fa-right-from-bracket"></i> Sair do App
-                    </a>
-                </div>
+            <div class="col-12 col-md-6 col-lg-3 custom-select-wrapper">
+                <label class="form-label small text-muted fw-bold text-uppercase">{{ form.g4_2.label }}</label>
+                {{ form.g4_2 }}
+                <div class="clube-preview clube-select-preview" data-target="id_g4_2"></div>
+            </div>
+            <div class="col-12 col-md-6 col-lg-3 custom-select-wrapper">
+                <label class="form-label small text-muted fw-bold text-uppercase">{{ form.g4_3.label }}</label>
+                {{ form.g4_3 }}
+                <div class="clube-preview clube-select-preview" data-target="id_g4_3"></div>
+            </div>
+            <div class="col-12 col-md-6 col-lg-3 custom-select-wrapper">
+                <label class="form-label small text-muted fw-bold text-uppercase">{{ form.g4_4.label }}</label>
+                {{ form.g4_4 }}
+                <div class="clube-preview clube-select-preview" data-target="id_g4_4"></div>
             </div>
         </div>
     </div>
+
+    <!-- BLOCO 2: Z4 -->
+    <div class="card grupo-card">
+        <div class="card-topo-decorativo" style="background: linear-gradient(90deg, var(--vermelho-z4), #f87171);"></div>
+        <div class="card-header-modern text-dark">
+            <i class="fa-solid fa-arrow-down-wide-short text-danger"></i> Zona de Rebaixamento (Z4)
+            {% if form.z4_17.help_text %}
+                <span class="badge bg-danger ms-auto" style="font-size: 0.7rem;"><i class="fa-solid fa-lock"></i> FECHADO</span>
+            {% endif %}
+        </div>
+        <div class="card-body p-4 row g-4">
+            {% for campo in form %}
+                {% if campo.name == 'z4_17' or campo.name == 'z4_18' or campo.name == 'z4_19' or campo.name == 'z4_20' %}
+                <div class="col-12 col-md-6 col-lg-3 custom-select-wrapper">
+                    <label class="form-label small text-muted fw-bold text-uppercase">{{ campo.label }}</label>
+                    {{ campo }}
+                    <div class="clube-preview clube-select-preview" data-target="{{ campo.id_for_label }}"></div>
+                </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- BLOCO 3: COPAS FIXAS -->
+    <div class="card grupo-card">
+        <div class="card-topo-decorativo" style="background: linear-gradient(90deg, var(--azul-copas), #60a5fa);"></div>
+        <div class="card-header-modern text-dark">
+            <i class="fa-solid fa-earth-europe text-primary"></i> Copas Globais
+            {% if form.campeao_europa.help_text %}
+                <span class="badge bg-danger ms-auto" style="font-size: 0.7rem;"><i class="fa-solid fa-lock"></i> FECHADO</span>
+            {% endif %}
+        </div>
+        <div class="card-body p-4 row g-4">
+            <div class="col-12 col-md-6 custom-select-wrapper">
+                <label class="form-label small text-muted fw-bold text-uppercase">{{ form.campeao_europa.label }}</label>
+                {{ form.campeao_europa }}
+                <div class="clube-preview clube-select-preview" data-target="id_campeao_europa"></div>
+            </div>
+            <div class="col-12 col-md-6 custom-select-wrapper">
+                <label class="form-label small text-muted fw-bold text-uppercase">{{ form.campeao_cdb.label }}</label>
+                {{ form.campeao_cdb }}
+                <div class="clube-preview clube-select-preview" data-target="id_campeao_cdb"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- BLOCO 4: TORNEIOS EXTRAS DINÂMICOS -->
+    {% assign has_extras = False %}
+    {% for campo in form %}
+        {% if 'torneio_extra_' in campo.name %}
+            {% if not has_extras %}
+            <div class="card grupo-card">
+                <div class="card-topo-decorativo" style="background: linear-gradient(90deg, #14b8a6, #38bdf8);"></div>
+                <div class="card-header-modern text-dark">
+                    <i class="fa-solid fa-star text-info"></i> Torneios Especiais
+                </div>
+                <div class="card-body p-4 row g-4">
+            {% endif %}
+            {% assign has_extras = True %}
+            
+                <div class="col-12 col-md-6 custom-select-wrapper">
+                    <label class="form-label small text-muted fw-bold text-uppercase d-flex justify-content-between">
+                        {{ campo.label }}
+                        {% if campo.field.disabled %}<span class="text-danger small"><i class="fa-solid fa-lock"></i> Fechado</span>{% endif %}
+                    </label>
+                    {{ campo }}
+                    <div class="clube-preview clube-select-preview" data-target="{{ campo.id_for_label }}"></div>
+                </div>
+            
+        {% endif %}
+    {% endfor %}
+    {% if has_extras %}
+            </div>
+        </div>
     {% endif %}
 
-    <!-- ========================================== -->
-    <!-- MENSAGENS E ALERTAS DO DJANGO              -->
-    <!-- ========================================== -->
-    <div class="container mt-3">
-        {% if messages %}
-            {% for message in messages %}
-                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show shadow-sm d-flex align-items-center rounded-4 border-0" role="alert" style="border-left: 5px solid {% if message.tags == 'error' %}#dc3545{% elif message.tags == 'success' %}#198754{% else %}#0dcaf0{% endif %} !important;">
-                    <i class="fa-solid {% if message.tags == 'error' %}fa-triangle-exclamation text-danger{% elif message.tags == 'success' %}fa-circle-check text-success{% else %}fa-circle-info text-info{% endif %} fs-4 me-3"></i>
-                    <div class="fw-bold text-dark">{{ message }}</div>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            {% endfor %}
-        {% endif %}
+    <!-- BOTÃO SALVAR -->
+    <div class="text-center mt-5 mb-5">
+        <button type="submit" class="btn btn-primary btn-salvar-palpites fw-bold text-white shadow-lg w-100 w-md-auto px-5 py-3">
+            <i class="fa-solid fa-check-circle me-2"></i> Salvar Palpites
+        </button>
+        <p class="text-muted small mt-2">Campos bloqueados já tiveram o prazo encerrado.</p>
     </div>
+</form>
 
-    <!-- ========================================== -->
-    <!-- CONTEÚDO PRINCIPAL (BLOCK CONTENT)         -->
-    <!-- ========================================== -->
-    <div class="container mt-3 mb-5 pb-4">
-        {% block content %}
-        {% endblock %}
+<!-- PALPITES JÁ SALVOS (GRID DE CARDS) -->
+{% if palpites_salvos or palpites_extras_salvos %}
+<hr class="my-5" style="border-color: #cbd5e1;">
+<div class="d-flex align-items-center mb-4 gap-2">
+    <i class="fa-solid fa-box-archive fs-4 text-muted"></i>
+    <h4 class="fw-bold mb-0 text-dark">Seus Palpites Registrados</h4>
+</div>
+
+<div class="row g-4">
+    <!-- Renderiza os Fixos -->
+    {% for p in palpites_salvos %}
+    <div class="col-6 col-md-4 col-lg-2">
+        <div class="palpite-salvo-card h-100">
+            <div class="palpite-bg-color" style="background-color: {{ p.clube.cor_hexadecimal }};"></div>
+            <!-- Exibindo pontos fixos como placeholders ou o valor real se processado -->
+            <div class="palpite-badge-pontos">Fixo pts</div>
+            
+            {% if p.clube.escudo %}
+                <img src="{{ p.clube.escudo.url }}" alt="{{ p.clube.nome }}" class="img-fluid mb-3" style="max-height: 60px; object-fit: contain; drop-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            {% endif %}
+            <div class="text-muted small text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.5px;">{{ p.get_tipo_display }}</div>
+            <h6 class="fw-bold text-dark mt-1 mb-0">{{ p.clube.nome }}</h6>
+        </div>
     </div>
+    {% endfor %}
 
-    <!-- Bootstrap 5 JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Renderiza os Dinâmicos Extras -->
+    {% for pe in palpites_extras_salvos %}
+    <div class="col-6 col-md-4 col-lg-2">
+        <div class="palpite-salvo-card h-100 border border-info border-opacity-25">
+            <div class="palpite-bg-color" style="background-color: {{ pe.clube.cor_hexadecimal }};"></div>
+            <div class="palpite-badge-pontos bg-info">{{ pe.torneio.pontos_premio }} pts</div>
+            
+            {% if pe.clube.escudo %}
+                <img src="{{ pe.clube.escudo.url }}" alt="{{ pe.clube.nome }}" class="img-fluid mb-3" style="max-height: 60px; object-fit: contain; drop-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            {% endif %}
+            <div class="text-muted small text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.5px;">
+                <i class="fa-solid {{ pe.torneio.icone }}"></i> {{ pe.torneio.nome }}
+            </div>
+            <h6 class="fw-bold text-dark mt-1 mb-0">{{ pe.clube.nome }}</h6>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
 
-    <!-- ========================================== -->
-    <!-- SCRIPT DO PWA E BOTÃO DE INSTALAÇÃO        -->
-    <!-- ========================================== -->
-    <script>
-        // 1. Registra o Service Worker
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register("{% static 'sw.js' %}")
-                    .then(reg => console.log('Service Worker registrado com sucesso!'))
-                    .catch(err => console.log('Erro ao registrar Service Worker:', err));
-            });
+<!-- DATA SCRIPT -->
+<script id="clubes-data" type="application/json">
+{
+    {% for c in clubes %}"{{ c.id }}": {"nome": "{{ c.nome|escapejs }}", "cor": "{{ c.cor_hexadecimal }}", "escudo": "{% if c.escudo %}{{ c.escudo.url }}{% endif %}"}{% if not forloop.last %},{% endif %}
+    {% endfor %}
+}
+</script>
+
+<!-- LÓGICA DE PREVIEW -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const clubesData = JSON.parse(document.getElementById('clubes-data').textContent);
+
+    function atualizarPreview(select) {
+        const previewEl = document.querySelector('.clube-select-preview[data-target="' + select.id + '"]');
+        if (!previewEl) return;
+        
+        const clube = clubesData[select.value];
+        
+        if (!clube) {
+            previewEl.classList.remove('active');
+            return;
         }
 
-        // 2. Lógica do botão de Instalação (Aparece apenas se suportado)
-        let deferredPrompt;
-        const divInstalar = document.getElementById('divInstalarApp');
-        const btnInstalar = document.getElementById('btnInstalarApp');
+        previewEl.style.backgroundColor = clube.cor || '#334155';
+        const escudoHtml = clube.escudo ? '<img src="' + clube.escudo + '" alt="' + clube.nome + '">' : '';
+        previewEl.innerHTML = escudoHtml + '<span>' + clube.nome + '</span>';
+        previewEl.classList.add('active');
+    }
 
-        // Se o App já estiver instalado, esconde a div
-        if (window.matchMedia('(display-mode: standalone)').matches) {
-            if(divInstalar) divInstalar.classList.add('d-none');
-        }
-
-        // Intercepta a chamada nativa do navegador
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            // Revela nosso botão personalizado dourado
-            if(divInstalar) divInstalar.classList.remove('d-none');
-        });
-
-        // Evento de clique no botão "Instalar Aplicativo"
-        if(btnInstalar) {
-            btnInstalar.addEventListener('click', async () => {
-                if (deferredPrompt !== null) {
-                    divInstalar.classList.add('d-none');
-                    deferredPrompt.prompt();
-                    const { outcome } = await deferredPrompt.userChoice;
-                    if (outcome === 'accepted') {
-                        console.log('O usuário instalou o PWA!');
-                    }
-                    deferredPrompt = null;
-                }
-            });
-        }
-
-        // Quando a instalação terminar, limpa a tela
-        window.addEventListener('appinstalled', () => {
-            if(divInstalar) divInstalar.classList.add('d-none');
-            deferredPrompt = null;
-        });
-    </script>
-</body>
-</html>
+    document.querySelectorAll('.custom-select-wrapper select').forEach(function (select) {
+        select.addEventListener('change', function () { atualizarPreview(select); });
+        atualizarPreview(select);
+    });
+});
+</script>
+{% endblock %}

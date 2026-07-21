@@ -186,39 +186,88 @@ def meus_palpites_longo_prazo(request):
         return redirect('dashboard')
 
     if request.method == 'POST':
-        form = PalpiteLongoPrazoForm(request.POST)
+        # Passa a temporada para o form aplicar as regras de bloqueio
+        form = PalpiteLongoPrazoForm(request.POST, temporada=temporada)
+        
         if form.is_valid():
             dados = form.cleaned_data
 
-            mapeamento = [
-                ('CAMPEAO_BR', 1, dados['campeao_br']),
-                ('G4', 2, dados['g4_2']),
-                ('G4', 3, dados['g4_3']),
-                ('G4', 4, dados['g4_4']),
-                ('Z4', 17, dados['z4_17']),
-                ('Z4', 18, dados['z4_18']),
-                ('Z4', 19, dados['z4_19']),
-                ('Z4', 20, dados['z4_20']),
-                ('CAMPEAO_EUROPA', 1, dados['campeao_europa']),
-                ('CAMPEAO_CDB', 1, dados['campeao_cdb']),
-            ]
-
             with transaction.atomic():
-                PalpiteLongoPrazo.objects.filter(usuario=request.user, temporada=temporada).delete()
-                for tipo, pos, clube in mapeamento:
-                    if clube:
-                        PalpiteLongoPrazo.objects.create(
-                            usuario=request.user,
-                            temporada=temporada,
-                            tipo=tipo,
-                            posicao_esperada=pos,
-                            clube=clube
-                        )
-            messages.success(request, "Seus palpites foram salvos com sucesso!")
+                # 1. PROCESSAR BRASILEIRÃO (Apenas se o prazo permitir)
+                if temporada.brasileirao_aberto():
+                    # Deleta os antigos do Brasileirão para recriar
+                    PalpiteLongoPrazo.objects.filter(
+                        usuario=request.user, 
+                        temporada=temporada, 
+                        tipo__in=['CAMPEAO_BR', 'G4', 'Z4']
+                    ).delete()
+                    
+                    mapeamento_br = [
+                        ('CAMPEAO_BR', 1, dados.get('campeao_br')),
+                        ('G4', 2, dados.get('g4_2')),
+                        ('G4', 3, dados.get('g4_3')),
+                        ('G4', 4, dados.get('g4_4')),
+                        ('Z4', 17, dados.get('z4_17')),
+                        ('Z4', 18, dados.get('z4_18')),
+                        ('Z4', 19, dados.get('z4_19')),
+                        ('Z4', 20, dados.get('z4_20')),
+                    ]
+                    for tipo, pos, clube in mapeamento_br:
+                        if clube:
+                            PalpiteLongoPrazo.objects.create(
+                                usuario=request.user, 
+                                temporada=temporada, 
+                                tipo=tipo, 
+                                posicao_esperada=pos, 
+                                clube=clube
+                            )
+
+                # 2. PROCESSAR COPAS FIXAS (Apenas se o prazo permitir)
+                if temporada.copas_fixas_abertas():
+                    PalpiteLongoPrazo.objects.filter(
+                        usuario=request.user, 
+                        temporada=temporada, 
+                        tipo__in=['CAMPEAO_EUROPA', 'CAMPEAO_CDB']
+                    ).delete()
+                    
+                    mapeamento_copas = [
+                        ('CAMPEAO_EUROPA', 1, dados.get('campeao_europa')),
+                        ('CAMPEAO_CDB', 1, dados.get('campeao_cdb')),
+                    ]
+                    for tipo, pos, clube in mapeamento_copas:
+                        if clube:
+                            PalpiteLongoPrazo.objects.create(
+                                usuario=request.user, 
+                                temporada=temporada, 
+                                tipo=tipo, 
+                                posicao_esperada=pos, 
+                                clube=clube
+                            )
+
+                # 3. PROCESSAR TORNEIOS DINÂMICOS EXTRAS
+                for torneio in temporada.torneios_extras.all():
+                    if torneio.is_aberto():
+                        nome_campo = f'torneio_extra_{torneio.id}'
+                        clube_escolhido = dados.get(nome_campo)
+                        
+                        if clube_escolhido:
+                            PalpiteTorneioExtra.objects.update_or_create(
+                                usuario=request.user,
+                                torneio=torneio,
+                                defaults={'clube': clube_escolhido}
+                            )
+                        else:
+                            # Se o usuário limpou o select, excluímos o palpite
+                            PalpiteTorneioExtra.objects.filter(usuario=request.user, torneio=torneio).delete()
+
+            messages.success(request, "Seus palpites foram processados e salvos!")
             return redirect('palpites:meus_palpites_longo_prazo')
+
     else:
-        palpites_existentes = PalpiteLongoPrazo.objects.filter(usuario=request.user, temporada=temporada)
         iniciais = {}
+        
+        # Puxa os dados iniciais dos torneios fixos
+        palpites_existentes = PalpiteLongoPrazo.objects.filter(usuario=request.user, temporada=temporada)
         for p in palpites_existentes:
             if p.tipo == 'CAMPEAO_BR': iniciais['campeao_br'] = p.clube
             elif p.tipo == 'CAMPEAO_EUROPA': iniciais['campeao_europa'] = p.clube
@@ -226,18 +275,28 @@ def meus_palpites_longo_prazo(request):
             elif p.tipo == 'G4': iniciais[f'g4_{p.posicao_esperada}'] = p.clube
             elif p.tipo == 'Z4': iniciais[f'z4_{p.posicao_esperada}'] = p.clube
 
-        form = PalpiteLongoPrazoForm(initial=iniciais)
+        # Puxa os dados iniciais dos torneios extras
+        palpites_extras = PalpiteTorneioExtra.objects.filter(usuario=request.user, torneio__temporada=temporada)
+        for p_extra in palpites_extras:
+            iniciais[f'torneio_extra_{p_extra.torneio.id}'] = p_extra.clube
 
+        form = PalpiteLongoPrazoForm(initial=iniciais, temporada=temporada)
+
+    # Recupera os palpites já salvos para exibição nos cards da parte inferior da tela
     palpites_salvos = PalpiteLongoPrazo.objects.filter(usuario=request.user, temporada=temporada).order_by('posicao_esperada')
+    palpites_extras_salvos = PalpiteTorneioExtra.objects.filter(usuario=request.user, torneio__temporada=temporada)
+    
     mais_votados = _calcular_mais_votados(temporada)
 
     return render(request, 'palpites/meus_palpites_longo_prazo.html', {
         'form': form,
         'palpites_salvos': palpites_salvos,
+        'palpites_extras_salvos': palpites_extras_salvos, # Passa os palpites dinâmicos separados
         'temporada': temporada,
         'clubes': Clube.objects.all(),
         'mais_votados': mais_votados,
     })
+
 
 def _calcular_mais_votados(temporada):
     """

@@ -470,14 +470,6 @@
         </div>
     </div>
 
-    <!-- BLOCO 4: TORNEIOS EXTRAS DINÂMICOS -->
-    <!--
-        IMPORTANTE: "has_extras" precisa vir do context da view, pois o Django
-        não permite reatribuir variáveis dentro de um {% for %} (não existe
-        {% assign %} como no Liquid/Jekyll). Na view, adicione:
-
-        context['has_extras'] = any('torneio_extra_' in f.name for f in form)
-    -->
     {% if has_extras %}
     <div class="card grupo-card">
         <div class="card-topo-decorativo" style="background: linear-gradient(90deg, #14b8a6, #38bdf8);"></div>

@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% block title %}Painel de Controle Admin - Cartolândia{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-10">
+            <div class="d-flex align-items-center mb-4">
+                <div class="bg-danger bg-opacity-10 rounded p-3 me-3 text-danger">
+                    <i class="fa-solid fa-gears fs-3"></i>
+                </div>
+                <div>
+                    <h2 class="fw-bold mb-0 text-dark">Painel de Gerenciamento da Staff</h2>
+                    <p class="text-muted small mb-0">Controle total sobre temporadas, pontuações, resultados e campeões do Bolão.</p>
+                </div>
+            </div>
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <div class="row g-4">
+                <!-- Inserir Resultados / Fechamento de Temporada -->
+                <div class="col-12 col-md-6">
+                    <div class="card border-0 shadow-sm rounded-4 h-100 p-4">
+                        <div class="card-body">
+                            <div class="text-primary mb-3"><i class="fa-solid fa-trophy fs-4"></i></div>
+                            <h5 class="fw-bold text-dark">Resultados Finais & G4/Z4</h5>
+                            <p class="text-muted small">Insira a classificação final do Brasileirão, campeão da Copa do Brasil e Champions/Europa para processar os pontos de longo prazo.</p>
+                            <a href="{% url 'palpites:inserir_resultados_finais' %}" class="btn btn-outline-primary btn-sm fw-bold rounded-pill px-3 mt-2">
+                                <i class="fa-solid fa-pen-to-square me-1"></i> Inserir Resultados
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gerenciar Temporadas -->
+                <div class="col-12 col-md-6">
+                    <div class="card border-0 shadow-sm rounded-4 h-100 p-4">
+                        <div class="card-body">
+                            <div class="text-success mb-3"><i class="fa-solid fa-calendar-days fs-4"></i></div>
+                            <h5 class="fw-bold text-dark">Temporada Ativa</h5>
+                            <p class="text-muted small">Temporada atual no sistema: <strong>{% if temporada_ativa %}{{ temporada_ativa.ano }}{% else %}Nenhuma ativa{% endif %}</strong></p>
+                            <a href="/admin/palpites/temporada/" target="_blank" class="btn btn-outline-success btn-sm fw-bold rounded-pill px-3 mt-2">
+                                <i class="fa-solid fa-external-link me-1"></i> Gerenciar no Admin do Django
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Manutenção / Reset -->
+                <div class="col-12">
+                    <div class="card border-0 shadow-sm rounded-4 p-4 bg-light">
+                        <div class="card-body">
+                            <div class="text-warning mb-2"><i class="fa-solid fa-triangle-exclamation fs-5"></i></div>
+                            <h6 class="fw-bold text-dark">Zona de Manutenção</h6>
+                            <p class="text-muted small mb-3">Ferramentas avançadas para correção de dados em caso de erros no fechamento de rodadas.</p>
+                            
+                            <form method="post" onsubmit="return confirm('Tem certeza absoluta que deseja executar esta ação?');">
+                                {% csrf_token %}
+                                <input type="hidden" name="acao" value="zerar_ranking">
+                                <button type="submit" class="btn btn-outline-danger btn-sm fw-bold">
+                                    <i class="fa-solid fa-rotate-left me-1"></i> Recalcular / Zerar Pontuações (Avançado)
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center mt-4">
+                <a href="{% url 'palpites:ranking_geral' %}" class="text-muted small text-decoration-none">
+                    <i class="fa-solid fa-arrow-left me-1"></i> Voltar para o Ranking Geral
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

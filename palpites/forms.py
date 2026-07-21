@@ -47,26 +47,57 @@ class ResultadosFinaisForm(forms.Form):
 
 
 class PalpiteLongoPrazoForm(forms.Form):
-    # Campeão e G4 (só clubes do Brasileirão)
-    campeao_br = forms.ModelChoiceField(queryset=Clube.objects.filter(competicao='BRASILEIRAO'), label="1º Lugar (Campeão BR)")
-    g4_2 = forms.ModelChoiceField(queryset=Clube.objects.filter(competicao='BRASILEIRAO'), label="2º Lugar (G4)")
-    g4_3 = forms.ModelChoiceField(queryset=Clube.objects.filter(competicao='BRASILEIRAO'), label="3º Lugar (G4)")
-    g4_4 = forms.ModelChoiceField(queryset=Clube.objects.filter(competicao='BRASILEIRAO'), label="4º Lugar (G4)")
-
-    # Z4 (só clubes do Brasileirão)
-    z4_17 = forms.ModelChoiceField(queryset=Clube.objects.filter(competicao='BRASILEIRAO'), label="17º Lugar (Z4)")
-    z4_18 = forms.ModelChoiceField(queryset=Clube.objects.filter(competicao='BRASILEIRAO'), label="18º Lugar (Z4)")
-    z4_19 = forms.ModelChoiceField(queryset=Clube.objects.filter(competicao='BRASILEIRAO'), label="19º Lugar (Z4)")
-    z4_20 = forms.ModelChoiceField(queryset=Clube.objects.filter(competicao='BRASILEIRAO'), label="20º Lugar (Z4)")
-
-    # Outros Torneios
-    campeao_europa = forms.ModelChoiceField(queryset=Clube.objects.filter(competicao='EUROPA'), label="Campeão Europeu (Champions)")
-    campeao_cdb = forms.ModelChoiceField(queryset=Clube.objects.filter(competicao='BRASILEIRAO'), label="Campeão Copa do Brasil")
+    campeao_br = forms.ModelChoiceField(queryset=Clube.objects.all(), required=False, label="Campeão", empty_label="Selecione o Clube")
+    g4_2 = forms.ModelChoiceField(queryset=Clube.objects.all(), required=False, label="2º Lugar", empty_label="Selecione o Clube")
+    g4_3 = forms.ModelChoiceField(queryset=Clube.objects.all(), required=False, label="3º Lugar", empty_label="Selecione o Clube")
+    g4_4 = forms.ModelChoiceField(queryset=Clube.objects.all(), required=False, label="4º Lugar", empty_label="Selecione o Clube")
+    
+    z4_17 = forms.ModelChoiceField(queryset=Clube.objects.all(), required=False, label="17º Lugar", empty_label="Selecione o Clube")
+    z4_18 = forms.ModelChoiceField(queryset=Clube.objects.all(), required=False, label="18º Lugar", empty_label="Selecione o Clube")
+    z4_19 = forms.ModelChoiceField(queryset=Clube.objects.all(), required=False, label="19º Lugar", empty_label="Selecione o Clube")
+    z4_20 = forms.ModelChoiceField(queryset=Clube.objects.all(), required=False, label="20º Lugar", empty_label="Selecione o Clube")
+    
+    campeao_europa = forms.ModelChoiceField(queryset=Clube.objects.all(), required=False, label="Champions League", empty_label="Selecione o Clube")
+    campeao_cdb = forms.ModelChoiceField(queryset=Clube.objects.all(), required=False, label="Copa do Brasil", empty_label="Selecione o Clube")
 
     def __init__(self, *args, **kwargs):
+        # Extrai a temporada dos kwargs antes de iniciar o form
+        self.temporada = kwargs.pop('temporada', None)
         super().__init__(*args, **kwargs)
-        for field in self.fields.values():
-            field.widget.attrs.update({'class': 'form-control'})
+
+        if self.temporada:
+            # 1. BLOQUEIO: Brasileirão (Campeão, G4, Z4)
+            if not self.temporada.brasileirao_aberto():
+                campos_br = ['campeao_br', 'g4_2', 'g4_3', 'g4_4', 'z4_17', 'z4_18', 'z4_19', 'z4_20']
+                for campo in campos_br:
+                    self.fields[campo].disabled = True
+                    # Opcional: Adicionar uma classe CSS para deixar visualmente bloqueado
+                    self.fields[campo].widget.attrs['class'] = 'bg-light text-muted' 
+
+            # 2. BLOQUEIO: Copas Fixas
+            if not self.temporada.copas_fixas_abertas():
+                campos_copas = ['campeao_europa', 'campeao_cdb']
+                for campo in campos_copas:
+                    self.fields[campo].disabled = True
+                    self.fields[campo].widget.attrs['class'] = 'bg-light text-muted'
+
+            # 3. GERAÇÃO DINÂMICA: Torneios Extras
+            for torneio in self.temporada.torneios_extras.all():
+                nome_campo = f'torneio_extra_{torneio.id}'
+                
+                # Verifica se este torneio específico já fechou
+                is_aberto = torneio.is_aberto()
+                
+                self.fields[nome_campo] = forms.ModelChoiceField(
+                    queryset=Clube.objects.all(),
+                    label=torneio.nome,
+                    required=False,
+                    disabled=not is_aberto,
+                    empty_label="Selecione o Clube"
+                )
+                
+                if not is_aberto:
+                    self.fields[nome_campo].widget.attrs['class'] = 'bg-light text-muted'
 
 class JogoAdminForm(forms.ModelForm):
     class Meta:

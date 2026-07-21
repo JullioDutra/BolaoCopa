@@ -2,83 +2,144 @@
 {% block title %}Painel de Controle Admin - Cartolândia{% endblock %}
 
 {% block content %}
-<div class="container py-4">
+<div class="container py-4 mb-5">
     <div class="row justify-content-center">
-        <div class="col-12 col-md-10">
-            <div class="d-flex align-items-center mb-4">
-                <div class="bg-danger bg-opacity-10 rounded p-3 me-3 text-danger">
-                    <i class="fa-solid fa-gears fs-3"></i>
+        <div class="col-12 col-xl-10">
+            
+            <!-- HEADER DO PAINEL -->
+            <div class="d-flex align-items-center mb-4 bg-white p-4 rounded-4 shadow-sm">
+                <div class="bg-danger bg-opacity-10 rounded-circle d-flex justify-content-center align-items-center me-4" style="width: 60px; height: 60px;">
+                    <i class="fa-solid fa-gears fs-3 text-danger"></i>
                 </div>
                 <div>
-                    <h2 class="fw-bold mb-0 text-dark">Painel de Gerenciamento da Staff</h2>
-                    <p class="text-muted small mb-0">Controle total sobre temporadas, pontuações, resultados e campeões do Bolão.</p>
+                    <h2 class="fw-bold mb-1 text-dark">Painel de Gerenciamento da Staff</h2>
+                    <p class="text-muted small mb-0">Controle total sobre temporadas, prazos, jogos do bolão e ferramentas de manutenção.</p>
                 </div>
             </div>
 
+            <!-- ALERTS DE FEEDBACK -->
             {% if messages %}
                 {% for message in messages %}
-                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                        {{ message }}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm border-0 rounded-3" role="alert">
+                        <strong>Aviso:</strong> {{ message }}
                         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>
                 {% endfor %}
             {% endif %}
 
+            <!-- GRID DE FERRAMENTAS -->
             <div class="row g-4">
-                <!-- Inserir Resultados / Fechamento de Temporada -->
+                
+                <!-- 1. Gestão do Bolão (Adicionar Jogos) -->
+                <div class="col-12 col-md-4">
+                    <div class="card border-0 shadow-sm rounded-4 h-100 p-4 transition-hover">
+                        <div class="card-body d-flex flex-column p-0">
+                            <div class="text-primary mb-3">
+                                <i class="fa-regular fa-futbol fs-2 bg-primary bg-opacity-10 p-3 rounded-3"></i>
+                            </div>
+                            <h5 class="fw-bold text-dark">Gestão do Bolão</h5>
+                            <p class="text-muted small flex-grow-1">Adicione novos jogos à rodada, defina horários e abra ou feche palpites manualmente.</p>
+                            
+                            <!-- O link aponta direto para a tela de adicionar jogo no admin nativo -->
+                            <a href="/admin/palpites/jogo/add/" target="_blank" class="btn btn-outline-primary btn-sm fw-bold rounded-pill px-3 mt-3 w-100">
+                                <i class="fa-solid fa-plus me-1"></i> Adicionar Jogo
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Controle de Prazos (G4, Z4, Copas) -->
+                <div class="col-12 col-md-4">
+                    <div class="card border-0 shadow-sm rounded-4 h-100 p-4 transition-hover">
+                        <div class="card-body d-flex flex-column p-0">
+                            <div class="text-warning mb-3">
+                                <i class="fa-solid fa-stopwatch fs-2 bg-warning bg-opacity-10 p-3 rounded-3"></i>
+                            </div>
+                            <h5 class="fw-bold text-dark">Prazos e Bloqueios</h5>
+                            <p class="text-muted small flex-grow-1">Defina a data limite para a galera palpitar no Brasileirão, G4, Z4 e Copas Globais.</p>
+                            
+                            <a href="/admin/palpites/temporada/" target="_blank" class="btn btn-outline-warning btn-sm fw-bold rounded-pill px-3 mt-3 w-100 text-dark">
+                                <i class="fa-solid fa-clock me-1"></i> Ajustar Prazos
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Gerenciar Torneios Longo Prazo -->
+                <div class="col-12 col-md-4">
+                    <div class="card border-0 shadow-sm rounded-4 h-100 p-4 transition-hover">
+                        <div class="card-body d-flex flex-column p-0">
+                            <div class="text-success mb-3">
+                                <i class="fa-solid fa-earth-americas fs-2 bg-success bg-opacity-10 p-3 rounded-3"></i>
+                            </div>
+                            <h5 class="fw-bold text-dark">Novos Campeonatos</h5>
+                            <p class="text-muted small flex-grow-1">Crie torneios dinâmicos extras (ex: Libertadores) para a galera palpitar no longo prazo.</p>
+                            
+                            <a href="/admin/palpites/torneiolongoprazo/add/" target="_blank" class="btn btn-outline-success btn-sm fw-bold rounded-pill px-3 mt-3 w-100">
+                                <i class="fa-solid fa-trophy me-1"></i> Criar Torneio Extra
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. Fechamento de Temporada (Resultados) -->
                 <div class="col-12 col-md-6">
-                    <div class="card border-0 shadow-sm rounded-4 h-100 p-4">
-                        <div class="card-body">
-                            <div class="text-primary mb-3"><i class="fa-solid fa-trophy fs-4"></i></div>
-                            <h5 class="fw-bold text-dark">Resultados Finais & G4/Z4</h5>
-                            <p class="text-muted small">Insira a classificação final do Brasileirão, campeão da Copa do Brasil e Champions/Europa para processar os pontos de longo prazo.</p>
-                            <a href="{% url 'palpites:inserir_resultados_finais' %}" class="btn btn-outline-primary btn-sm fw-bold rounded-pill px-3 mt-2">
+                    <div class="card border-0 shadow-sm rounded-4 h-100 p-4" style="background: linear-gradient(135deg, #f8fafc, #f1f5f9);">
+                        <div class="card-body p-0">
+                            <div class="text-dark mb-3">
+                                <i class="fa-solid fa-flag-checkered fs-2 bg-dark bg-opacity-10 p-3 rounded-3"></i>
+                            </div>
+                            <h5 class="fw-bold text-dark">Resultados Finais da Temporada</h5>
+                            <p class="text-muted small">Insira a tabela final (Campeão, G4, Z4) e os vencedores das Copas para o sistema distribuir a pontuação final no ranking da temporada ativa: <strong>{% if temporada_ativa %}{{ temporada_ativa.ano }}{% else %}Nenhuma ativa{% endif %}</strong>.</p>
+                            
+                            <a href="{% url 'palpites:inserir_resultados_finais' %}" class="btn btn-dark btn-sm fw-bold rounded-pill px-4 mt-2">
                                 <i class="fa-solid fa-pen-to-square me-1"></i> Inserir Resultados
                             </a>
                         </div>
                     </div>
                 </div>
 
-                <!-- Gerenciar Temporadas -->
+                <!-- 5. Manutenção / Reset -->
                 <div class="col-12 col-md-6">
-                    <div class="card border-0 shadow-sm rounded-4 h-100 p-4">
-                        <div class="card-body">
-                            <div class="text-success mb-3"><i class="fa-solid fa-calendar-days fs-4"></i></div>
-                            <h5 class="fw-bold text-dark">Temporada Ativa</h5>
-                            <p class="text-muted small">Temporada atual no sistema: <strong>{% if temporada_ativa %}{{ temporada_ativa.ano }}{% else %}Nenhuma ativa{% endif %}</strong></p>
-                            <a href="/admin/palpites/temporada/" target="_blank" class="btn btn-outline-success btn-sm fw-bold rounded-pill px-3 mt-2">
-                                <i class="fa-solid fa-external-link me-1"></i> Gerenciar no Admin do Django
-                            </a>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Manutenção / Reset -->
-                <div class="col-12">
-                    <div class="card border-0 shadow-sm rounded-4 p-4 bg-light">
-                        <div class="card-body">
-                            <div class="text-warning mb-2"><i class="fa-solid fa-triangle-exclamation fs-5"></i></div>
-                            <h6 class="fw-bold text-dark">Zona de Manutenção</h6>
-                            <p class="text-muted small mb-3">Ferramentas avançadas para correção de dados em caso de erros no fechamento de rodadas.</p>
+                    <div class="card border border-danger border-opacity-25 shadow-sm rounded-4 h-100 p-4 bg-danger bg-opacity-10">
+                        <div class="card-body p-0">
+                            <div class="text-danger mb-3">
+                                <i class="fa-solid fa-triangle-exclamation fs-2"></i>
+                            </div>
+                            <h5 class="fw-bold text-danger">Zona de Risco (Manutenção)</h5>
+                            <p class="text-danger small opacity-75 mb-3">Ferramentas avançadas para correção de falhas críticas. Utilize apenas se for necessário recalcular as pontuações gerais de todos os usuários.</p>
                             
-                            <form method="post" onsubmit="return confirm('Tem certeza absoluta que deseja executar esta ação?');">
+                            <form method="post" onsubmit="return confirm('ATENÇÃO: Esta é uma ação destrutiva.\n\nTem certeza absoluta que deseja recalcular/zerar o ranking?');">
                                 {% csrf_token %}
                                 <input type="hidden" name="acao" value="zerar_ranking">
-                                <button type="submit" class="btn btn-outline-danger btn-sm fw-bold">
-                                    <i class="fa-solid fa-rotate-left me-1"></i> Recalcular / Zerar Pontuações (Avançado)
+                                <button type="submit" class="btn btn-danger btn-sm fw-bold px-4">
+                                    <i class="fa-solid fa-rotate-left me-1"></i> Reset / Recalcular Ranking
                                 </button>
                             </form>
                         </div>
                     </div>
                 </div>
+
             </div>
 
-            <div class="text-center mt-4">
-                <a href="{% url 'palpites:ranking_geral' %}" class="text-muted small text-decoration-none">
+            <!-- FOOTER COM VOLTAR -->
+            <div class="text-center mt-5">
+                <a href="{% url 'palpites:ranking_geral' %}" class="text-muted small fw-bold text-decoration-none">
                     <i class="fa-solid fa-arrow-left me-1"></i> Voltar para o Ranking Geral
                 </a>
             </div>
+
         </div>
     </div>
 </div>
+
+<style>
+    .transition-hover {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .transition-hover:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.08) !important;
+    }
+</style>
 {% endblock %}

@@ -9,4 +9,5 @@ urlpatterns = [
     path('oscar/', views.indicar_oscar, name='indicar_oscar'),
     path('admin-resultados/', views.inserir_resultados_finais, name='inserir_resultados_finais'),
     path('longo-prazo/', views.meus_palpites_longo_prazo, name='meus_palpites_longo_prazo'),
+    path('admin-painel/', views.painel_controle_admin, name='painel_controle_admin'),
 ]

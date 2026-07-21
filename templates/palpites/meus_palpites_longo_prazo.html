@@ -115,6 +115,15 @@
         box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.15);
     }
 
+    /* Campos Bloqueados por Prazo Encerrado */
+    .custom-select-wrapper select:disabled {
+        background-color: #e2e8f0;
+        border-color: #cbd5e1;
+        color: #94a3b8;
+        cursor: not-allowed;
+        background-image: none;
+    }
+
     /* Preview do Clube */
     .clube-preview {
         display: flex;
@@ -222,11 +231,30 @@
     }
 
     /* --- Tabela Gamificada (Favoritos) --- */
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 10px;
+    }
+
+    .table-responsive::-webkit-scrollbar {
+        height: 6px;
+    }
+    .table-responsive::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 10px;
+    }
+    .table-responsive::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 10px;
+    }
+
     .table-gamified {
         width: 100%;
         border-collapse: separate;
         border-spacing: 0 10px;
         margin-top: -10px;
+        white-space: nowrap;
     }
     
     .table-gamified thead th {
@@ -282,68 +310,12 @@
         box-shadow: 0 2px 5px rgba(22, 163, 74, 0.3);
     }
 
-    /* === ADAPTAÇÃO PARA MOBILE (TRANSFORMA TABELA EM CARDS) === */
     @media (max-width: 768px) {
-        .table-responsive {
-            overflow-x: visible; /* Remove o scroll horizontal */
-        }
-
-        .table-gamified thead {
-            display: none; /* Esconde o cabeçalho clássico */
-        }
-
-        .table-gamified tbody tr {
-            display: flex;
-            flex-direction: column;
-            padding: 1.25rem 1rem 1rem;
-            position: relative;
-            border-radius: 1rem; /* Arredonda o "card" inteiro */
-        }
-
         .table-gamified td {
-            display: block;
-            width: 100%;
-            padding: 0.25rem 0;
-            text-align: left !important;
+            padding: 0.75rem 1rem;
         }
-
-        .table-gamified td:first-child, 
-        .table-gamified td:last-child { 
-            border-radius: 0; 
-        }
-
-        /* 1. Categoria: Fica no topo à esquerda com uma linha sutil abaixo */
-        .table-gamified td:nth-child(1) {
-            padding-bottom: 0.5rem;
-            border-bottom: 1px solid #f1f5f9;
-            margin-bottom: 0.5rem;
-            padding-right: 80px; /* Evita o texto encostar no badge de votos */
-        }
-
-        /* 2. Clube: Ganha destaque no centro do card */
-        .table-gamified td:nth-child(2) {
-            padding-top: 0.25rem;
-        }
-        .clube-table-info {
-            font-size: 1.1rem; /* Aumenta a fonte do clube no mobile */
-        }
-        .clube-table-info img {
-            width: 38px;
-            height: 38px;
-        }
-
-        /* 3. Votos: Flutua para o canto superior direito do card */
-        .table-gamified td:nth-child(3) {
-            position: absolute;
-            top: 1rem;
-            right: 1rem;
-            width: auto;
-            padding: 0;
-        }
-
-        /* 4. Adesão: Barra de progresso ocupa a largura total embaixo */
-        .table-gamified td:nth-child(4) {
-            padding-top: 0.75rem;
+        .voto-progress-track {
+            min-width: 80px;
         }
     }
 </style>
@@ -353,13 +325,12 @@
     <h2 class="fw-bold mb-2">
         <i class="fa-solid fa-crown text-warning me-2"></i> Palpites {{ temporada.ano }}
     </h2>
-    <p class="mb-4 text-white-50" style="font-size: 0.95rem;">Faça suas escolhas e mostre quem manda. Os pontos valem para o Ranking Geral!</p>
+    <p class="mb-4 text-white-50" style="font-size: 0.95rem;">Faça suas escolhas e mostre quem manda. Fique de olho nos prazos!</p>
     
     <div class="d-flex flex-wrap gap-2">
         <span class="pontuacao-pill"><i class="fa-solid fa-trophy text-warning"></i> Campeão BR: 50 pts</span>
-        <span class="pontuacao-pill"><i class="fa-solid fa-medal text-warning"></i> G4: 30 pts (Pos. Exata: 40 pts)</span>
-        <span class="pontuacao-pill"><i class="fa-solid fa-skull text-danger"></i> Z4: 30 pts (Pos. Exata: 35 pts)</span>
-        <span class="pontuacao-pill"><i class="fa-solid fa-earth-americas text-info"></i> Europa/Copa: 45/50 pts</span>
+        <span class="pontuacao-pill"><i class="fa-solid fa-medal text-warning"></i> G4 / Z4: 30 pts</span>
+        <span class="pontuacao-pill"><i class="fa-solid fa-earth-americas text-info"></i> Torneios Extras: Dinâmico</span>
     </div>
 </div>
 
@@ -384,15 +355,12 @@
         <tbody>
             {% for item in mais_votados %}
             <tr>
-                <!-- Coluna 1: Categoria -->
                 <td>
                     <div class="text-uppercase fw-bold" style="font-size: 0.75rem; letter-spacing: 0.5px;">
                         <i class="fa-solid {{ item.icone }} {{ item.cor_classe }} me-2 fs-6 align-middle"></i>
                         <span class="text-muted">{{ item.label }}</span>
                     </div>
                 </td>
-                
-                <!-- Coluna 2: Clube -->
                 <td>
                     <div class="clube-table-info">
                         {% if item.clube.escudo %}
@@ -401,18 +369,14 @@
                         <span>{{ item.clube.nome }}</span>
                     </div>
                 </td>
-                
-                <!-- Coluna 3: Votos -->
                 <td class="text-center">
                     <span class="badge-votos">
                         <i class="fa-solid fa-users me-1 opacity-75"></i> {{ item.votos }}
                     </span>
                 </td>
-                
-                <!-- Coluna 4: Barra de Progresso (%) -->
                 <td>
                     <div class="d-flex align-items-center gap-3">
-                        <div class="voto-progress-track flex-grow-1 m-0" style="height: 10px; background-color: #f1f5f9;">
+                        <div class="voto-progress-track flex-grow-1 m-0">
                             <div class="voto-progress-fill" style="width: {{ item.percentual }}%; box-shadow: 0 0 8px rgba(22,163,74,0.4);"></div>
                         </div>
                         <span class="fw-bold text-muted" style="font-size: 0.8rem; min-width: 35px; text-align: right;">{{ item.percentual }}%</span>
@@ -433,6 +397,9 @@
         <div class="card-topo-decorativo" style="background: linear-gradient(90deg, var(--dourado-champ), #fbbf24);"></div>
         <div class="card-header-modern text-dark">
             <i class="fa-solid fa-trophy text-warning"></i> Campeão & G4
+            {% if form.campeao_br.help_text %}
+                <span class="badge bg-danger ms-auto" style="font-size: 0.7rem;"><i class="fa-solid fa-lock"></i> FECHADO</span>
+            {% endif %}
         </div>
         <div class="card-body p-4 row g-4">
             <div class="col-12 col-md-6 col-lg-3 custom-select-wrapper">
@@ -463,6 +430,9 @@
         <div class="card-topo-decorativo" style="background: linear-gradient(90deg, var(--vermelho-z4), #f87171);"></div>
         <div class="card-header-modern text-dark">
             <i class="fa-solid fa-arrow-down-wide-short text-danger"></i> Zona de Rebaixamento (Z4)
+            {% if form.z4_17.help_text %}
+                <span class="badge bg-danger ms-auto" style="font-size: 0.7rem;"><i class="fa-solid fa-lock"></i> FECHADO</span>
+            {% endif %}
         </div>
         <div class="card-body p-4 row g-4">
             {% for campo in form %}
@@ -477,11 +447,14 @@
         </div>
     </div>
 
-    <!-- BLOCO 3: OUTROS CAMPEÕES -->
+    <!-- BLOCO 3: COPAS FIXAS -->
     <div class="card grupo-card">
         <div class="card-topo-decorativo" style="background: linear-gradient(90deg, var(--azul-copas), #60a5fa);"></div>
         <div class="card-header-modern text-dark">
-            <i class="fa-solid fa-earth-europe text-primary"></i> Outros Torneios
+            <i class="fa-solid fa-earth-europe text-primary"></i> Copas Globais
+            {% if form.campeao_europa.help_text %}
+                <span class="badge bg-danger ms-auto" style="font-size: 0.7rem;"><i class="fa-solid fa-lock"></i> FECHADO</span>
+            {% endif %}
         </div>
         <div class="card-body p-4 row g-4">
             <div class="col-12 col-md-6 custom-select-wrapper">
@@ -497,16 +470,47 @@
         </div>
     </div>
 
+    <!-- BLOCO 4: TORNEIOS EXTRAS DINÂMICOS -->
+    {% assign has_extras = False %}
+    {% for campo in form %}
+        {% if 'torneio_extra_' in campo.name %}
+            {% if not has_extras %}
+            <div class="card grupo-card">
+                <div class="card-topo-decorativo" style="background: linear-gradient(90deg, #14b8a6, #38bdf8);"></div>
+                <div class="card-header-modern text-dark">
+                    <i class="fa-solid fa-star text-info"></i> Torneios Especiais
+                </div>
+                <div class="card-body p-4 row g-4">
+            {% endif %}
+            {% assign has_extras = True %}
+            
+                <div class="col-12 col-md-6 custom-select-wrapper">
+                    <label class="form-label small text-muted fw-bold text-uppercase d-flex justify-content-between">
+                        {{ campo.label }}
+                        {% if campo.field.disabled %}<span class="text-danger small"><i class="fa-solid fa-lock"></i> Fechado</span>{% endif %}
+                    </label>
+                    {{ campo }}
+                    <div class="clube-preview clube-select-preview" data-target="{{ campo.id_for_label }}"></div>
+                </div>
+            
+        {% endif %}
+    {% endfor %}
+    {% if has_extras %}
+            </div>
+        </div>
+    {% endif %}
+
     <!-- BOTÃO SALVAR -->
     <div class="text-center mt-5 mb-5">
         <button type="submit" class="btn btn-primary btn-salvar-palpites fw-bold text-white shadow-lg w-100 w-md-auto px-5 py-3">
-            <i class="fa-solid fa-check-circle me-2"></i> Confirmar Palpites
+            <i class="fa-solid fa-check-circle me-2"></i> Salvar Palpites
         </button>
+        <p class="text-muted small mt-2">Campos bloqueados já tiveram o prazo encerrado.</p>
     </div>
 </form>
 
 <!-- PALPITES JÁ SALVOS (GRID DE CARDS) -->
-{% if palpites_salvos %}
+{% if palpites_salvos or palpites_extras_salvos %}
 <hr class="my-5" style="border-color: #cbd5e1;">
 <div class="d-flex align-items-center mb-4 gap-2">
     <i class="fa-solid fa-box-archive fs-4 text-muted"></i>
@@ -514,23 +518,37 @@
 </div>
 
 <div class="row g-4">
+    <!-- Renderiza os Fixos -->
     {% for p in palpites_salvos %}
     <div class="col-6 col-md-4 col-lg-2">
         <div class="palpite-salvo-card h-100">
-            <!-- Cor de fundo com opacidade -->
             <div class="palpite-bg-color" style="background-color: {{ p.clube.cor_hexadecimal }};"></div>
+            <!-- Exibindo pontos fixos como placeholders ou o valor real se processado -->
+            <div class="palpite-badge-pontos">Fixo pts</div>
             
-            <!-- Badge de pontos no canto -->
-            <div class="palpite-badge-pontos">{{ p.pontos_obtidos }} pts</div>
-            
-            <!-- Escudo -->
             {% if p.clube.escudo %}
                 <img src="{{ p.clube.escudo.url }}" alt="{{ p.clube.nome }}" class="img-fluid mb-3" style="max-height: 60px; object-fit: contain; drop-shadow: 0 4px 6px rgba(0,0,0,0.1);">
             {% endif %}
-            
-            <!-- Textos -->
             <div class="text-muted small text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.5px;">{{ p.get_tipo_display }}</div>
             <h6 class="fw-bold text-dark mt-1 mb-0">{{ p.clube.nome }}</h6>
+        </div>
+    </div>
+    {% endfor %}
+
+    <!-- Renderiza os Dinâmicos Extras -->
+    {% for pe in palpites_extras_salvos %}
+    <div class="col-6 col-md-4 col-lg-2">
+        <div class="palpite-salvo-card h-100 border border-info border-opacity-25">
+            <div class="palpite-bg-color" style="background-color: {{ pe.clube.cor_hexadecimal }};"></div>
+            <div class="palpite-badge-pontos bg-info">{{ pe.torneio.pontos_premio }} pts</div>
+            
+            {% if pe.clube.escudo %}
+                <img src="{{ pe.clube.escudo.url }}" alt="{{ pe.clube.nome }}" class="img-fluid mb-3" style="max-height: 60px; object-fit: contain; drop-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            {% endif %}
+            <div class="text-muted small text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.5px;">
+                <i class="fa-solid {{ pe.torneio.icone }}"></i> {{ pe.torneio.nome }}
+            </div>
+            <h6 class="fw-bold text-dark mt-1 mb-0">{{ pe.clube.nome }}</h6>
         </div>
     </div>
     {% endfor %}
@@ -556,25 +574,19 @@ document.addEventListener('DOMContentLoaded', function () {
         
         const clube = clubesData[select.value];
         
-        // Se nenhum clube válido for selecionado, remove a classe active para esconder a badge animada
         if (!clube) {
             previewEl.classList.remove('active');
             return;
         }
 
-        // Aplica as cores e escudo e ativa a animação de entrada
         previewEl.style.backgroundColor = clube.cor || '#334155';
         const escudoHtml = clube.escudo ? '<img src="' + clube.escudo + '" alt="' + clube.nome + '">' : '';
         previewEl.innerHTML = escudoHtml + '<span>' + clube.nome + '</span>';
         previewEl.classList.add('active');
     }
 
-    // Inicializa todos os selects iterando e adicionando os listeners
     document.querySelectorAll('.custom-select-wrapper select').forEach(function (select) {
-        // Se certificar de que qualquer input do form seja rastreado na mudança
         select.addEventListener('change', function () { atualizarPreview(select); });
-        
-        // Dispara logo no carregamento para preencher previews de escolhas já selecionadas
         atualizarPreview(select);
     });
 });

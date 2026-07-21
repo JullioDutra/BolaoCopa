@@ -1,5 +1,5 @@
 from django import forms
-from .models import Clube, Temporada, Palpite
+from .models import Clube, Temporada, Palpite, Jogo
 
 
 class PalpiteForm(forms.ModelForm):
@@ -67,3 +67,20 @@ class PalpiteLongoPrazoForm(forms.Form):
         super().__init__(*args, **kwargs)
         for field in self.fields.values():
             field.widget.attrs.update({'class': 'form-control'})
+
+class JogoAdminForm(forms.ModelForm):
+    class Meta:
+        model = Jogo
+        fields = ['time_casa', 'time_fora', 'data_hora', 'rodada', 'aceita_palpite']
+        widgets = {
+            'data_hora': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
+        }
+
+class TemporadaPrazoForm(forms.ModelForm):
+    class Meta:
+        model = Temporada
+        fields = ['prazo_brasileirao', 'prazo_copas']
+        widgets = {
+            'prazo_brasileirao': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
+            'prazo_copas': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
+        }

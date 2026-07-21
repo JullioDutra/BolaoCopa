@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Jogo, Palpite, OscarCartolandia, Clube, Temporada, PalpiteLongoPrazo, MuralCampeoes
+from .models import Jogo, Palpite, OscarCartolandia, Clube, Temporada, PalpiteLongoPrazo, MuralCampeoes, TorneioLongoPrazo, PalpiteTorneioExtra
 from .ranking_utils import calcular_ranking_geral
 
 from convocacao.models import SelecaoBrasileirao

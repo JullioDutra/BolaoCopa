@@ -102,7 +102,8 @@ class PalpiteLongoPrazoForm(forms.Form):
 class JogoAdminForm(forms.ModelForm):
     class Meta:
         model = Jogo
-        fields = ['time_casa', 'time_fora', 'data_hora', 'rodada', 'aceita_palpite']
+        # Removemos 'rodada' e 'aceita_palpite' da lista
+        fields = ['time_casa', 'time_fora', 'data_hora', 'finalizado', 'premio_distribuido'] 
         widgets = {
             'data_hora': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
         }

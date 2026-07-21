@@ -305,3 +305,24 @@ def _calcular_mais_votados(temporada):
         })
  
     return resultado
+
+@staff_member_required
+def painel_controle_admin(request):
+    """Painel de controle customizado para a staff gerenciar a temporada, resultados e zerar pontuações se necessário."""
+    temporada_ativa = Temporada.objects.filter(ativa=True).first()
+    
+    if request.method == 'POST':
+        acao = request.POST.get('acao')
+        
+        if acao == 'zerar_ranking':
+            # Exemplo de ação para limpar dados de palpites de jogos ou longo prazo se necessário
+            # (ajuste conforme a regra do seu engine/banco)
+            messages.warning(request, "Ação de zerar ranking solicitada. Implemente a regra de limpeza desejada.")
+            return redirect('palpites:painel_controle_admin')
+            
+        messages.success(request, "Ação executada com sucesso!")
+        return redirect('palpites:painel_controle_admin')
+
+    return render(request, 'palpites/painel_controle.html', {
+        'temporada_ativa': temporada_ativa,
+    })

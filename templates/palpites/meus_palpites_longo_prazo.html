@@ -471,19 +471,22 @@
     </div>
 
     <!-- BLOCO 4: TORNEIOS EXTRAS DINÂMICOS -->
-    {% assign has_extras = False %}
-    {% for campo in form %}
-        {% if 'torneio_extra_' in campo.name %}
-            {% if not has_extras %}
-            <div class="card grupo-card">
-                <div class="card-topo-decorativo" style="background: linear-gradient(90deg, #14b8a6, #38bdf8);"></div>
-                <div class="card-header-modern text-dark">
-                    <i class="fa-solid fa-star text-info"></i> Torneios Especiais
-                </div>
-                <div class="card-body p-4 row g-4">
-            {% endif %}
-            {% assign has_extras = True %}
-            
+    <!--
+        IMPORTANTE: "has_extras" precisa vir do context da view, pois o Django
+        não permite reatribuir variáveis dentro de um {% for %} (não existe
+        {% assign %} como no Liquid/Jekyll). Na view, adicione:
+
+        context['has_extras'] = any('torneio_extra_' in f.name for f in form)
+    -->
+    {% if has_extras %}
+    <div class="card grupo-card">
+        <div class="card-topo-decorativo" style="background: linear-gradient(90deg, #14b8a6, #38bdf8);"></div>
+        <div class="card-header-modern text-dark">
+            <i class="fa-solid fa-star text-info"></i> Torneios Especiais
+        </div>
+        <div class="card-body p-4 row g-4">
+            {% for campo in form %}
+                {% if 'torneio_extra_' in campo.name %}
                 <div class="col-12 col-md-6 custom-select-wrapper">
                     <label class="form-label small text-muted fw-bold text-uppercase d-flex justify-content-between">
                         {{ campo.label }}
@@ -492,12 +495,10 @@
                     {{ campo }}
                     <div class="clube-preview clube-select-preview" data-target="{{ campo.id_for_label }}"></div>
                 </div>
-            
-        {% endif %}
-    {% endfor %}
-    {% if has_extras %}
-            </div>
+                {% endif %}
+            {% endfor %}
         </div>
+    </div>
     {% endif %}
 
     <!-- BOTÃO SALVAR -->

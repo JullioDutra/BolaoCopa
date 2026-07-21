@@ -111,8 +111,10 @@ class JogoAdminForm(forms.ModelForm):
 class TemporadaPrazoForm(forms.ModelForm):
     class Meta:
         model = Temporada
-        fields = ['prazo_brasileirao', 'prazo_copas']
+        # Atualizado para prazo_copas_fixas
+        fields = ['prazo_brasileirao', 'prazo_copas_fixas'] 
         widgets = {
             'prazo_brasileirao': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
-            'prazo_copas': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
+            # Atualizado para prazo_copas_fixas
+            'prazo_copas_fixas': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
         }

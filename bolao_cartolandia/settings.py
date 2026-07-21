@@ -221,3 +221,5 @@ GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
 
 # Chave secreta para o Cronjob externo bater no servidor
 CRON_SECRET_TOKEN = os.environ.get('CRON_SECRET_TOKEN', '3yrktOdann3sqSCRUoVqzCnBZER3zMo5AHHOLi')
+
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 2500

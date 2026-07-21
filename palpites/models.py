@@ -176,6 +176,8 @@ class Clube(models.Model):
 class Temporada(models.Model):
     ano = models.IntegerField(unique=True)
     ativa = models.BooleanField(default=True)
+    prazo_brasileirao = models.DateTimeField(null=True, blank=True, help_text="Trava o Campeão, G4 e Z4")
+    prazo_copas = models.DateTimeField(null=True, blank=True, help_text="Trava CDB, Libertadores, Europa, etc")
     
     def __str__(self):
         return f"Temporada {self.ano}"

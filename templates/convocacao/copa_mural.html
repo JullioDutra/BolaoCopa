@@ -32,7 +32,6 @@
         margin-bottom: 2.5rem;
     }
 
-    /* Brilho no topo do card */
     .hall-of-fame-card::before {
         content: '';
         position: absolute;
@@ -41,7 +40,6 @@
         opacity: 0.8;
     }
 
-    /* Troféu com pulso brilhante */
     .trophy-icon {
         font-size: 4.5rem;
         background: linear-gradient(135deg, var(--dourado-claro), var(--dourado-premium), var(--dourado-escuro));
@@ -58,7 +56,6 @@
         100% { filter: drop-shadow(0 0 10px rgba(212, 175, 55, 0.4)); transform: scale(1); }
     }
 
-    /* Nome do Campeão */
     .champion-name {
         font-size: 2.5rem;
         font-weight: 800;
@@ -82,14 +79,22 @@
         letter-spacing: 1px;
     }
 
-    /* Divisória Premium */
+    /* Cards dos Top Pontuadores da Convocação */
+    .top-scorers-box {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(212, 175, 55, 0.2);
+        border-radius: 1rem;
+        padding: 1.5rem;
+        margin-top: 2rem;
+        text-align: left;
+    }
+
     .premium-divider {
         height: 1px;
         background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.5), transparent);
         margin: 2.5rem 0;
     }
 
-    /* Relógio Digital / Placar */
     .countdown-wrapper {
         display: flex;
         justify-content: center;
@@ -128,7 +133,6 @@
         margin-top: 0.4rem;
     }
 
-    /* Botão Dark Mode */
     .btn-ranking-dark {
         background: var(--bg-escuro);
         color: var(--dourado-premium);
@@ -151,7 +155,7 @@
     <i class="fa-solid fa-trophy trophy-icon"></i>
     
     <h5 class="text-uppercase fw-bold mb-4" style="color: var(--dourado-premium); letter-spacing: 3px; font-size: 0.9rem;">
-        Copa Encerrada
+        Bolão Copa — Modo Encerrado
     </h5>
 
     {% if campeao %}
@@ -162,9 +166,41 @@
         <div class="champion-stats mt-3">
             <i class="fa-solid fa-crosshairs text-warning me-2"></i> {{ campeao.acertos }} / {{ campeao.total_oficiais }} acertos
         </div>
-    {% else %}
-        <p class="text-white-50 fs-5 mb-0">Ainda não há um campeão definido para este modo.</p>
     {% endif %}
+
+    <!-- DESTAQUE SOLICITADO: LUCAS RAFAEL, YURI E WILLIAM -->
+    <div class="top-scorers-box">
+        <div class="d-flex align-items-center mb-3">
+            <i class="fa-solid fa-fire text-warning fs-5 me-2"></i>
+            <h6 class="text-white fw-bold mb-0 text-uppercase" style="letter-spacing: 1px; font-size: 0.85rem;">
+                Destaques da Convocação (Top Pontuadores)
+            </h6>
+        </div>
+        <p class="text-white-50 small mb-3">Parabéns aos craques que dominaram as previsões e cravaram os nomes na história da convocação:</p>
+        <div class="row g-2 text-center">
+            <div class="col-12 col-md-4">
+                <div class="p-2 rounded bg-dark bg-opacity-50 border border-warning border-opacity-25">
+                    <i class="fa-solid fa-crown text-warning mb-1"></i>
+                    <span class="d-block text-white fw-bold">Lucas Rafael</span>
+                    <span class="small text-warning">Top Convocação</span>
+                </div>
+            </div>
+            <div class="col-12 col-md-4">
+                <div class="p-2 rounded bg-dark bg-opacity-50 border border-secondary border-opacity-25">
+                    <i class="fa-solid fa-medal text-secondary mb-1"></i>
+                    <span class="d-block text-white fw-bold">Yuri</span>
+                    <span class="small text-muted">Top Convocação</span>
+                </div>
+            </div>
+            <div class="col-12 col-md-4">
+                <div class="p-2 rounded bg-dark bg-opacity-50 border border-danger border-opacity-25">
+                    <i class="fa-solid fa-award text-danger mb-1"></i>
+                    <span class="d-block text-white fw-bold">William</span>
+                    <span class="small text-danger">Top Convocação</span>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div class="premium-divider"></div>
     

@@ -4,22 +4,26 @@
 {% block title %}Hall da Fama Copa - Cartolândia{% endblock %}
 
 {% block content %}
-<!-- Google Fonts: Poppins para texto, JetBrains Mono para o placar -->
+<!-- Preconnect antes de carregar as fontes: reduz o tempo de handshake DNS/TLS -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800;900&family=JetBrains+Mono:wght@700;800&display=swap" rel="stylesheet">
-
-<!-- html2canvas: Biblioteca para tirar o print da tela -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<!-- html2canvas NÃO é carregado aqui: só entra sob demanda quando o usuário clica em "Compartilhar" (ver script no fim) -->
 
 <style>
     :root {
-        --verde-supremo: #031406;
+        --verde-supremo: #030f05;
         --verde-escuro: #0a3d10;
-        --verde-campo: #1b5e20;
-        --dourado-premium: #d4af37;
-        --dourado-claro: #fef08a;
-        --dourado-escuro: #855e05;
-        --prata: #e2e8f0;
+        --verde-campo: #145c22;
+        --grama-linha: rgba(255, 255, 255, 0.035);
+        --ouro: #d4af37;
+        --ouro-claro: #f7e6a3;
+        --ouro-escuro: #7a5a08;
+        --prata: #d7dee6;
+        --prata-escura: #8fa0ad;
         --bronze: #cd7f32;
+        --bronze-escura: #8a4f22;
+        --texto-secundario: #94a3b8;
     }
 
     body {
@@ -27,12 +31,25 @@
         background-color: #f3f4f6;
     }
 
-    /* O Quadro de Honra - Estilo Premiação */
+    /* Respeita quem prefere menos movimento na tela */
+    @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+            scroll-behavior: auto !important;
+        }
+    }
+
+    /* ============ QUADRO DE HONRA ============ */
     .quadro-honra {
-        background: radial-gradient(circle at top center, var(--verde-escuro) 0%, var(--verde-supremo) 100%);
+        background:
+            radial-gradient(circle at 50% -10%, rgba(212,175,55,0.14) 0%, transparent 45%),
+            repeating-linear-gradient(90deg, var(--grama-linha) 0 40px, transparent 40px 80px),
+            radial-gradient(circle at top center, var(--verde-escuro) 0%, var(--verde-supremo) 100%);
         border: 1px solid rgba(212, 175, 55, 0.3);
         border-radius: 1.5rem;
-        box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5), inset 0 0 80px rgba(0, 0, 0, 0.8);
+        box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5), inset 0 0 90px rgba(0, 0, 0, 0.85);
         padding: 4rem 2rem;
         position: relative;
         overflow: hidden;
@@ -41,16 +58,23 @@
         color: white;
     }
 
-    /* Brilho Dourado Superior */
     .quadro-honra::before {
         content: '';
         position: absolute;
         top: 0; left: 0; right: 0; height: 3px;
-        background: linear-gradient(90deg, transparent, var(--dourado-premium), transparent);
-        box-shadow: 0 0 20px var(--dourado-premium);
+        background: linear-gradient(90deg, transparent, var(--ouro), transparent);
+        box-shadow: 0 0 20px var(--ouro);
     }
 
-    /* Logo da Cartolândia */
+    .marca-dagua {
+        position: absolute;
+        top: 20px; left: 20px;
+        opacity: 0.18;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 3px;
+    }
+
     .mural-logo {
         width: 100px;
         height: 100px;
@@ -61,9 +85,8 @@
     }
 
     @keyframes float-logo {
-        0% { transform: translateY(0px); }
+        0%, 100% { transform: translateY(0px); }
         50% { transform: translateY(-10px); filter: drop-shadow(0 0 35px rgba(212, 175, 55, 0.8)); }
-        100% { transform: translateY(0px); }
     }
 
     .mural-title {
@@ -72,16 +95,20 @@
         letter-spacing: 6px;
         font-size: 1.6rem;
         text-transform: uppercase;
+        margin-bottom: 0.5rem;
+    }
+    .mural-title span { color: var(--ouro); }
+
+    .mural-subtitulo {
+        font-size: 0.75rem;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        color: var(--texto-secundario);
         margin-bottom: 3rem;
     }
 
-    .mural-title span {
-        color: var(--dourado-premium);
-    }
-
-    /* =========================================
-       ESTRUTURA DO PÓDIO (PODIUM)
-       ========================================= */
+    /* ============ PÓDIO COM HIERARQUIA REAL DE ALTURA ============ */
+    /* A altura de cada bloco representa a colocação: 1º > 2º > 3º, como num pódio de verdade */
     .podium-container {
         display: flex;
         align-items: flex-end;
@@ -95,84 +122,76 @@
         border: 1px solid rgba(255,255,255,0.1);
         border-bottom: none;
         border-radius: 1rem 1rem 0 0;
-        padding: 2rem 1rem;
+        padding: 1.75rem 1rem 1.5rem;
         width: 100%;
         backdrop-filter: blur(10px);
         position: relative;
-        transition: transform 0.3s ease;
+        transition: transform 0.3s ease, background 0.3s ease;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-end;
     }
+    .podium-step:hover { transform: translateY(-5px); }
 
-    .podium-step:hover {
-        transform: translateY(-5px);
-        background: linear-gradient(180deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.02) 100%);
+    /* Degrau base sob cada bloco: altura proporcional à colocação */
+    .podium-degrau {
+        width: 100%;
+        border-radius: 0.6rem 0.6rem 0 0;
+        margin-top: 1.25rem;
     }
+    .podium-center .podium-degrau { height: 64px; background: linear-gradient(180deg, rgba(212,175,55,0.35), rgba(212,175,55,0.08)); }
+    .podium-left .podium-degrau   { height: 40px; background: linear-gradient(180deg, rgba(215,222,230,0.28), rgba(215,222,230,0.06)); }
+    .podium-right .podium-degrau  { height: 24px; background: linear-gradient(180deg, rgba(205,127,50,0.28), rgba(205,127,50,0.06)); }
 
-    /* O Centro (1º Lugar - Yuri) */
     .podium-center {
-        border-color: rgba(212, 175, 55, 0.4);
-        box-shadow: 0 -10px 30px rgba(212, 175, 55, 0.15);
-        padding-bottom: 3.5rem;
+        border-color: rgba(212, 175, 55, 0.45);
+        box-shadow: 0 -10px 34px rgba(212, 175, 55, 0.18);
         z-index: 2;
     }
 
-    .podium-center::after {
-        content: '1';
+    /* Feixe de luz por trás do campeão — leve, 100% CSS, sem custo de JS */
+    .podium-center::before {
+        content: '';
         position: absolute;
-        bottom: 10px;
-        left: 50%;
+        top: -60px; left: 50%;
+        width: 220px; height: 260px;
         transform: translateX(-50%);
-        font-size: 4rem;
-        font-weight: 900;
-        color: rgba(212, 175, 55, 0.1);
-        line-height: 1;
+        background: conic-gradient(from 180deg at 50% 0%, transparent 35%, rgba(247,230,163,0.16) 50%, transparent 65%);
+        pointer-events: none;
+        animation: girar-luz 6s linear infinite;
     }
+    @keyframes girar-luz { to { transform: translateX(-50%) rotate(360deg); } }
 
-    /* Laterais (Lucas Rafael e William) */
-    .podium-side {
-        padding-bottom: 2rem;
-        z-index: 1;
+    .podium-side { z-index: 1; }
+
+    /* ============ MEDALHAS (SVG próprio, substitui ícones genéricos) ============ */
+    .medalha {
+        width: 56px;
+        height: 56px;
+        margin-bottom: 0.75rem;
+        filter: drop-shadow(0 4px 8px rgba(0,0,0,0.45));
     }
+    .podium-center .medalha { width: 72px; height: 72px; }
 
-    .podium-side::after {
-        position: absolute;
-        bottom: 10px;
-        left: 50%;
-        transform: translateX(-50%);
-        font-size: 3rem;
-        font-weight: 900;
-        color: rgba(255, 255, 255, 0.05);
-        line-height: 1;
-    }
-    
-    .podium-left::after { content: '2'; }
-    .podium-right::after { content: '3'; }
-
-    /* Tipografia do Pódio */
     .podium-name {
-        font-size: 1.8rem;
+        font-size: 1.5rem;
         font-weight: 800;
         color: white;
         text-transform: uppercase;
         letter-spacing: 1px;
-        margin: 0.5rem 0;
+        margin: 0.25rem 0;
     }
-
-    .podium-center .podium-name {
-        font-size: 2.2rem;
-        color: var(--dourado-claro);
-    }
+    .podium-center .podium-name { font-size: 2rem; color: var(--ouro-claro); }
 
     .podium-role {
-        font-size: 0.75rem;
+        font-size: 0.72rem;
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 2px;
-        color: #94a3b8;
+        color: var(--texto-secundario);
     }
-
-    .podium-center .podium-role {
-        color: var(--dourado-premium);
-    }
+    .podium-center .podium-role { color: var(--ouro); }
 
     .podium-tag {
         font-size: 0.65rem;
@@ -182,20 +201,14 @@
         padding: 6px 12px;
         border-radius: 50px;
         background: rgba(0,0,0,0.5);
-        display: inline-block;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
         margin-top: 10px;
         border: 1px solid;
+        white-space: nowrap;
     }
 
-    /* Ícones com gradiente Dourado */
-    .gold-icon {
-        background: linear-gradient(135deg, var(--dourado-claro), var(--dourado-premium), var(--dourado-escuro));
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4));
-    }
-
-    /* Menção Honrosa */
     .honorable-card {
         background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%);
         border: 1px solid rgba(212, 175, 55, 0.3);
@@ -206,11 +219,10 @@
         box-shadow: 0 10px 20px rgba(0,0,0,0.2);
     }
 
-    /* Botão de Compartilhar Moderno */
     .btn-share {
         background: transparent;
-        color: var(--dourado-premium);
-        border: 2px solid var(--dourado-premium);
+        color: var(--ouro);
+        border: 2px solid var(--ouro);
         font-size: 0.95rem;
         padding: 0.8rem 2.5rem;
         border-radius: 50px;
@@ -218,22 +230,28 @@
         letter-spacing: 2px;
         transition: all 0.3s ease;
         text-transform: uppercase;
+        cursor: pointer;
     }
-
-    .btn-share:hover {
-        background: var(--dourado-premium);
+    .btn-share:hover:not(:disabled) {
+        background: var(--ouro);
         color: var(--verde-supremo);
-        box-shadow: 0 10px 20px rgba(212, 175, 55, 0.2);
+        box-shadow: 0 10px 20px rgba(212, 175, 55, 0.25);
+    }
+    .btn-share:disabled { opacity: 0.7; cursor: progress; }
+
+    /* Foco visível para navegação por teclado — acessibilidade, não estética */
+    .btn-share:focus-visible,
+    a:focus-visible {
+        outline: 3px solid var(--ouro-claro);
+        outline-offset: 3px;
     }
 
-    /* Divisória */
     .premium-divider {
         height: 1px;
         background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
         margin: 3rem 0 2rem;
     }
 
-    /* Relógio Digital / Placar */
     .countdown-wrapper {
         display: flex;
         justify-content: center;
@@ -243,7 +261,7 @@
 
     .time-box {
         background: rgba(0, 0, 0, 0.4);
-        border: 1px solid rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.06);
         border-radius: 0.5rem;
         padding: 1rem;
         min-width: 90px;
@@ -254,6 +272,7 @@
 
     .time-val {
         font-family: 'JetBrains Mono', monospace;
+        font-variant-numeric: tabular-nums;
         font-size: 2rem;
         font-weight: 700;
         color: white;
@@ -262,97 +281,91 @@
 
     .time-label {
         font-size: 0.65rem;
-        color: #94a3b8;
+        color: var(--texto-secundario);
         text-transform: uppercase;
         font-weight: 600;
         letter-spacing: 2px;
         margin-top: 0.5rem;
     }
 
-    /* Adaptação do Pódio para Mobile */
     @media (max-width: 768px) {
-        .podium-container {
-            flex-direction: column;
-            align-items: center;
-            gap: 20px;
-        }
-        
-        .podium-center {
-            order: -1; 
-            border-radius: 1rem;
-            padding-bottom: 2rem;
-        }
-        
-        .podium-step {
-            border-radius: 1rem;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
-        
-        .podium-center::after, .podium-side::after {
-            display: none;
-        }
+        .podium-container { flex-direction: column; align-items: center; gap: 20px; }
+        .podium-center { order: -1; border-radius: 1rem; }
+        .podium-step { border-radius: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .podium-degrau { display: none; }
     }
 </style>
 
+<!-- Sprite de medalhas: definido uma única vez, referenciado por <use> — leve e nítido em qualquer tamanho -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+        <symbol id="medalha-base" viewBox="0 0 64 64">
+            <path d="M20 6 L32 26 L44 6" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" opacity="0.55"/>
+            <circle cx="32" cy="40" r="20" fill="currentColor" opacity="0.18"/>
+            <circle cx="32" cy="40" r="20" fill="none" stroke="currentColor" stroke-width="3"/>
+            <path d="M32 29 L35.1 36.2 L43 37 L37 42.3 L38.8 50 L32 45.9 L25.2 50 L27 42.3 L21 37 L28.9 36.2 Z" fill="currentColor"/>
+        </symbol>
+    </defs>
+</svg>
+
 <!-- O QUADRO DE HONRA -->
 <div class="quadro-honra" id="placa-campeoes">
-    <!-- Marca d'água discreta para screenshots -->
-    <div style="position: absolute; top: 20px; left: 20px; opacity: 0.2; font-size: 0.75rem; font-weight: 700; letter-spacing: 3px;">
-        <i class="fa-solid fa-shield-halved me-1"></i> CARTOLÂNDIA
+    <div class="marca-dagua">
+        <i class="fa-solid fa-shield-halved me-1" aria-hidden="true"></i> CARTOLÂNDIA
     </div>
 
-    <!-- Logo no topo -->
-    <img src="{% static 'media/logo.png' %}" alt="Cartolândia Logo" class="mural-logo">
+    <img src="{% static 'media/logo.png' %}" alt="Cartolândia" class="mural-logo" width="100" height="100" decoding="async">
 
-    <h1 class="mural-title">
-        HALL DA FAMA <span>COPA DO MUNDO</span>
-    </h1>
+    <h1 class="mural-title">HALL DA FAMA <span>COPA DO MUNDO</span></h1>
+    <p class="mural-subtitulo">Os craques da temporada</p>
 
-    <!-- PÓDIO DE VENCEDORES -->
     <div class="row podium-container">
-        
-        <!-- Lado Esquerdo: 2º Lugar - Lucas Rafael -->
+
+        <!-- 2º Lugar - Lucas Rafael -->
         <div class="col-12 col-md-4">
             <div class="podium-step podium-side podium-left">
-                <i class="fa-solid fa-chess-knight fs-1 mb-3" style="color: var(--prata);"></i>
+                <svg class="medalha" style="color: var(--prata);" aria-hidden="true"><use href="#medalha-base"/></svg>
                 <div class="podium-role">Rei dos Palpites</div>
                 <div class="podium-name">Lucas Rafael</div>
                 <div class="podium-tag" style="border-color: rgba(255,255,255,0.2); color: #cbd5e1;">
-                    <i class="fa-regular fa-futbol me-1"></i> Campeão do Bolão
+                    <i class="fa-regular fa-futbol" aria-hidden="true"></i> Campeão do Bolão
                 </div>
-                <div class="podium-tag d-block mt-2 mx-auto" style="border-color: rgba(255,255,255,0.1); color: #94a3b8; width: fit-content;">
-                    <i class="fa-solid fa-star me-1 text-warning"></i> 455 Pontos
+                <div class="podium-tag" style="border-color: rgba(255,255,255,0.1); color: var(--texto-secundario);">
+                    <i class="fa-solid fa-star text-warning" aria-hidden="true"></i> 455 Pontos
                 </div>
+                <div class="podium-degrau" aria-hidden="true"></div>
             </div>
         </div>
 
-        <!-- Centro: 1º Lugar - Yuri -->
+        <!-- 1º Lugar - Yuri -->
         <div class="col-12 col-md-4">
             <div class="podium-step podium-center">
-                <i class="fa-solid fa-crown gold-icon mb-3" style="font-size: 3.5rem;"></i>
+                <svg class="medalha" style="color: var(--ouro-claro);" aria-hidden="true"><use href="#medalha-base"/></svg>
                 <div class="podium-role">O Soberano Duplo</div>
                 <div class="podium-name">Yuri</div>
-                <div class="podium-tag w-100 mb-2" style="border-color: var(--dourado-premium); color: var(--dourado-claro);">
-                    <i class="fa-solid fa-hat-wizard me-1"></i> Campeão Cartola
+                <div class="podium-tag w-100 mb-2" style="border-color: var(--ouro); color: var(--ouro-claro);">
+                    <i class="fa-solid fa-hat-wizard" aria-hidden="true"></i> Campeão Cartola
                 </div>
                 <div class="podium-tag w-100" style="border-color: rgba(255,255,255,0.3); color: #cbd5e1;">
-                    <i class="fa-solid fa-check-double me-1"></i> Cravou Convocação
+                    <i class="fa-solid fa-check-double" aria-hidden="true"></i> Cravou Convocação
                 </div>
+                <div class="podium-degrau" aria-hidden="true"></div>
             </div>
         </div>
 
-        <!-- Lado Direito: 3º Lugar - William -->
+        <!-- 3º Lugar - William -->
         <div class="col-12 col-md-4">
             <div class="podium-step podium-side podium-right">
-                <i class="fa-solid fa-clipboard-check fs-1 mb-3" style="color: var(--bronze);"></i>
+                <svg class="medalha" style="color: var(--bronze);" aria-hidden="true"><use href="#medalha-base"/></svg>
                 <div class="podium-role">Visão de Técnico</div>
                 <div class="podium-name">William</div>
                 <div class="podium-tag" style="border-color: rgba(255,255,255,0.2); color: #cbd5e1;">
-                    <i class="fa-solid fa-check-double me-1"></i> Cravou Convocação
+                    <i class="fa-solid fa-check-double" aria-hidden="true"></i> Cravou Convocação
                 </div>
-                <div class="podium-tag d-block mt-2 mx-auto" style="border-color: rgba(255,255,255,0.1); color: #94a3b8; width: fit-content;">
-                    <i class="fa-solid fa-sack-dollar me-1 text-success"></i> Modo Pago
+                <div class="podium-tag" style="border-color: rgba(255,255,255,0.1); color: var(--texto-secundario);">
+                    <i class="fa-solid fa-sack-dollar text-success" aria-hidden="true"></i> Modo Pago
                 </div>
+                <div class="podium-degrau" aria-hidden="true"></div>
             </div>
         </div>
 
@@ -361,118 +374,122 @@
     <!-- MENÇÃO HONROSA -->
     <div class="mt-5">
         <div class="d-flex align-items-center justify-content-center mb-3">
-            <i class="fa-solid fa-star text-warning me-2" style="font-size: 0.8rem;"></i>
-            <h4 class="fw-bold mb-0" style="color: var(--dourado-premium); text-transform: uppercase; letter-spacing: 2px; font-size: 1rem;">Menção Honrosa</h4>
-            <i class="fa-solid fa-star text-warning ms-2" style="font-size: 0.8rem;"></i>
+            <i class="fa-solid fa-star text-warning me-2" style="font-size: 0.8rem;" aria-hidden="true"></i>
+            <h4 class="fw-bold mb-0" style="color: var(--ouro); text-transform: uppercase; letter-spacing: 2px; font-size: 1rem;">Menção Honrosa</h4>
+            <i class="fa-solid fa-star text-warning ms-2" style="font-size: 0.8rem;" aria-hidden="true"></i>
         </div>
-        
+
         <div class="honorable-card">
             <h3 class="text-white fw-bold mb-1" style="text-transform: uppercase; letter-spacing: 1px;">Matheus Santiago</h3>
             <p class="text-white-50 small mb-0 text-uppercase" style="letter-spacing: 1px;">
-                <i class="fa-solid fa-chart-line me-1"></i> Ficou no <strong>TOP 3</strong> de todas as competições
+                <i class="fa-solid fa-chart-line me-1" aria-hidden="true"></i> Ficou no <strong>TOP 3</strong> de todas as competições
             </p>
         </div>
     </div>
 
-    <!-- BOTÃO DE COMPARTILHAR -->
     <div id="container-btn-share" class="mt-5">
-        <button id="btnCompartilhar" class="btn-share">
-            <i class="fa-solid fa-camera me-2"></i> Compartilhar Placa
+        <button id="btnCompartilhar" class="btn-share" type="button">
+            <i class="fa-solid fa-camera me-2" aria-hidden="true"></i> Compartilhar Placa
         </button>
     </div>
 
     <div class="premium-divider"></div>
-    
-    <p class="small text-uppercase mb-4 fw-bold" style="letter-spacing: 3px; color: #94a3b8;">
-        <i class="fa-solid fa-hourglass-half me-2"></i> Contagem para 2030
+
+    <p class="small text-uppercase mb-4 fw-bold" style="letter-spacing: 3px; color: var(--texto-secundario);">
+        <i class="fa-solid fa-hourglass-half me-2" aria-hidden="true"></i> Contagem para 2030
     </p>
-    
-    <div class="countdown-wrapper" id="timer-copa-container">
-        <div class="time-box">
-            <div class="time-val" id="t-dias">00</div>
-            <div class="time-label">Dias</div>
-        </div>
-        <div class="time-box">
-            <div class="time-val" id="t-horas">00</div>
-            <div class="time-label">Horas</div>
-        </div>
-        <div class="time-box">
-            <div class="time-val" id="t-minutos">00</div>
-            <div class="time-label">Minutos</div>
-        </div>
-        <div class="time-box">
-            <div class="time-val" id="t-segundos">00</div>
-            <div class="time-label">Segundos</div>
-        </div>
+
+    <div class="countdown-wrapper" id="timer-copa-container" role="timer" aria-live="off">
+        <div class="time-box"><div class="time-val" id="t-dias">00</div><div class="time-label">Dias</div></div>
+        <div class="time-box"><div class="time-val" id="t-horas">00</div><div class="time-label">Horas</div></div>
+        <div class="time-box"><div class="time-val" id="t-minutos">00</div><div class="time-label">Minutos</div></div>
+        <div class="time-box"><div class="time-val" id="t-segundos">00</div><div class="time-label">Segundos</div></div>
     </div>
 </div>
 
 <div class="text-center mb-5">
     <a href="{% url 'convocacao:ranking_convocacao' %}" class="btn btn-outline-dark fw-bold rounded-pill px-4" style="border-width: 2px;">
-        <i class="fa-solid fa-list-ol me-2"></i> Ver histórico completo da Convocação
+        <i class="fa-solid fa-list-ol me-2" aria-hidden="true"></i> Ver histórico completo da Convocação
     </a>
 </div>
 
 <script>
-    // Lógica do Cronômetro
+(() => {
+    'use strict';
+
+    // ---------- Cronômetro ----------
     const deadlineCopa = new Date("{{ proxima_copa_iso }}").getTime();
-    
+    const els = {
+        d: document.getElementById('t-dias'),
+        h: document.getElementById('t-horas'),
+        m: document.getElementById('t-minutos'),
+        s: document.getElementById('t-segundos'),
+    };
+    let timerId = null;
+
+    function pad(n) { return n.toString().padStart(2, '0'); }
+
     function updateTimerCopa() {
-        const now = new Date().getTime();
-        const diff = deadlineCopa - now;
-        
+        const diff = deadlineCopa - Date.now();
+
         if (diff <= 0) {
-            document.getElementById("timer-copa-container").innerHTML = 
-                "<h3 class='fw-bold mt-3 mb-0' style='letter-spacing: 2px; color: var(--dourado-premium);'>A COPA COMEÇOU! <i class='fa-solid fa-futbol ms-2'></i></h3>";
+            clearInterval(timerId);
+            document.getElementById('timer-copa-container').innerHTML =
+                "<h3 class='fw-bold mt-3 mb-0' style='letter-spacing: 2px; color: var(--ouro);'>A COPA COMEÇOU! <i class='fa-solid fa-futbol ms-2'></i></h3>";
             return;
         }
-        
-        const d = Math.floor(diff / (1000 * 60 * 60 * 24)).toString().padStart(2, '0');
-        const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)).toString().padStart(2, '0');
-        const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0');
-        const s = Math.floor((diff % (1000 * 60)) / 1000).toString().padStart(2, '0');
-        
-        document.getElementById('t-dias').innerText = d;
-        document.getElementById('t-horas').innerText = h;
-        document.getElementById('t-minutos').innerText = m;
-        document.getElementById('t-segundos').innerText = s;
+
+        els.d.textContent = pad(Math.floor(diff / 86400000));
+        els.h.textContent = pad(Math.floor((diff % 86400000) / 3600000));
+        els.m.textContent = pad(Math.floor((diff % 3600000) / 60000));
+        els.s.textContent = pad(Math.floor((diff % 60000) / 1000));
     }
-    
-    setInterval(updateTimerCopa, 1000);
+
     updateTimerCopa();
+    timerId = setInterval(updateTimerCopa, 1000);
 
-    // ==========================================
-    // LÓGICA DE GERAR IMAGEM E COMPARTILHAR
-    // ==========================================
-    document.getElementById('btnCompartilhar').addEventListener('click', async () => {
-        const btnShare = document.getElementById('btnCompartilhar');
-        const containerBtn = document.getElementById('container-btn-share');
-        const placa = document.getElementById('placa-campeoes');
-        const originalText = btnShare.innerHTML;
+    // ---------- Compartilhar (carrega html2canvas só quando necessário) ----------
+    let html2canvasPromise = null;
+    function carregarHtml2Canvas() {
+        if (html2canvasPromise) return html2canvasPromise;
+        html2canvasPromise = new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+            script.onload = () => resolve(window.html2canvas);
+            script.onerror = () => reject(new Error('Falha ao carregar html2canvas'));
+            document.head.appendChild(script);
+        });
+        return html2canvasPromise;
+    }
 
+    const btnShare = document.getElementById('btnCompartilhar');
+    const containerBtn = document.getElementById('container-btn-share');
+    const placa = document.getElementById('placa-campeoes');
+    const originalText = btnShare.innerHTML;
+
+    btnShare.addEventListener('click', async () => {
         btnShare.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i> Gerando Placa...';
         btnShare.disabled = true;
 
         try {
+            const html2canvas = await carregarHtml2Canvas();
             containerBtn.style.display = 'none';
 
             const canvas = await html2canvas(placa, {
                 scale: 2,
-                backgroundColor: '#031406',
+                backgroundColor: '#030f05',
                 useCORS: true,
-                logging: false
+                logging: false,
             });
 
             containerBtn.style.display = 'block';
 
             canvas.toBlob(async (blob) => {
                 const file = new File([blob], 'cartolandia-hall-fama.png', { type: 'image/png' });
-                
-                // Texto otimizado sem emojis reais (evitando bugs em alguns celulares), usando pontuação clean.
                 const shareData = {
                     title: 'Hall da Fama - Cartolandia',
                     text: 'Hall da Fama Cartolandia!\n\n1º Yuri: Campeao Cartola e Convocacao\n2º Lucas Rafael: Campeao do Bolao (455 pts)\n3º William: Cravou Convocacao VIP\n\nMencao Honrosa: Matheus Santiago',
-                    files: [file]
+                    files: [file],
                 };
 
                 if (navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -492,7 +509,6 @@
                 btnShare.innerHTML = originalText;
                 btnShare.disabled = false;
             }, 'image/png');
-
         } catch (error) {
             console.error('Erro ao gerar imagem:', error);
             alert('Ops, ocorreu um erro ao gerar a imagem.');
@@ -501,5 +517,6 @@
             btnShare.disabled = false;
         }
     });
+})();
 </script>
 {% endblock %}

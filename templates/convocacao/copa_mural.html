@@ -87,7 +87,7 @@
         align-items: flex-end;
         justify-content: center;
         gap: 15px;
-        margin-bottom: 3rem;
+        margin-bottom: 2rem;
     }
 
     .podium-step {
@@ -107,7 +107,7 @@
         background: linear-gradient(180deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.02) 100%);
     }
 
-    /* O Centro (1º Lugar - Lucas Rafael) */
+    /* O Centro (1º Lugar - Yuri) */
     .podium-center {
         border-color: rgba(212, 175, 55, 0.4);
         box-shadow: 0 -10px 30px rgba(212, 175, 55, 0.15);
@@ -127,7 +127,7 @@
         line-height: 1;
     }
 
-    /* Laterais (Yuri e William) */
+    /* Laterais (Lucas Rafael e William) */
     .podium-side {
         padding-bottom: 2rem;
         z-index: 1;
@@ -175,11 +175,11 @@
     }
 
     .podium-tag {
-        font-size: 0.7rem;
+        font-size: 0.65rem;
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 1px;
-        padding: 4px 10px;
+        padding: 6px 12px;
         border-radius: 50px;
         background: rgba(0,0,0,0.5);
         display: inline-block;
@@ -193,6 +193,17 @@
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4));
+    }
+
+    /* Menção Honrosa */
+    .honorable-card {
+        background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%);
+        border: 1px solid rgba(212, 175, 55, 0.3);
+        border-radius: 1rem;
+        padding: 1.5rem;
+        max-width: 600px;
+        margin: 0 auto;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.2);
     }
 
     /* Botão de Compartilhar Moderno */
@@ -219,7 +230,7 @@
     .premium-divider {
         height: 1px;
         background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-        margin: 4rem 0 2rem;
+        margin: 3rem 0 2rem;
     }
 
     /* Relógio Digital / Placar */
@@ -300,47 +311,71 @@
     <!-- PÓDIO DE VENCEDORES -->
     <div class="row podium-container">
         
-        <!-- Lado Esquerdo: Yuri -->
+        <!-- Lado Esquerdo: 2º Lugar - Lucas Rafael -->
         <div class="col-12 col-md-4">
             <div class="podium-step podium-side podium-left">
                 <i class="fa-solid fa-chess-knight fs-1 mb-3" style="color: var(--prata);"></i>
-                <div class="podium-role">Cartola Copa</div>
-                <div class="podium-name">Yuri</div>
+                <div class="podium-role">Rei dos Palpites</div>
+                <div class="podium-name">Lucas Rafael</div>
                 <div class="podium-tag" style="border-color: rgba(255,255,255,0.2); color: #cbd5e1;">
-                    <i class="fa-solid fa-check-double me-1"></i> Cravou Escalação
+                    <i class="fa-regular fa-futbol me-1"></i> Campeão do Bolão
+                </div>
+                <div class="podium-tag d-block mt-2 mx-auto" style="border-color: rgba(255,255,255,0.1); color: #94a3b8; width: fit-content;">
+                    <i class="fa-solid fa-star me-1 text-warning"></i> 455 Pontos
                 </div>
             </div>
         </div>
 
-        <!-- Centro: Lucas Rafael -->
+        <!-- Centro: 1º Lugar - Yuri -->
         <div class="col-12 col-md-4">
             <div class="podium-step podium-center">
                 <i class="fa-solid fa-crown gold-icon mb-3" style="font-size: 3.5rem;"></i>
-                <div class="podium-role">Campeão do Bolão</div>
-                <div class="podium-name">Lucas Rafael</div>
-                <div class="podium-tag" style="border-color: var(--dourado-premium); color: var(--dourado-claro);">
-                    <i class="fa-solid fa-ranking-star me-1"></i> O Rei dos Palpites
+                <div class="podium-role">O Soberano Duplo</div>
+                <div class="podium-name">Yuri</div>
+                <div class="podium-tag w-100 mb-2" style="border-color: var(--dourado-premium); color: var(--dourado-claro);">
+                    <i class="fa-solid fa-hat-wizard me-1"></i> Campeão Cartola
+                </div>
+                <div class="podium-tag w-100" style="border-color: rgba(255,255,255,0.3); color: #cbd5e1;">
+                    <i class="fa-solid fa-check-double me-1"></i> Cravou Convocação
                 </div>
             </div>
         </div>
 
-        <!-- Lado Direito: William -->
+        <!-- Lado Direito: 3º Lugar - William -->
         <div class="col-12 col-md-4">
             <div class="podium-step podium-side podium-right">
                 <i class="fa-solid fa-clipboard-check fs-1 mb-3" style="color: var(--bronze);"></i>
-                <div class="podium-role">Convocação</div>
+                <div class="podium-role">Visão de Técnico</div>
                 <div class="podium-name">William</div>
                 <div class="podium-tag" style="border-color: rgba(255,255,255,0.2); color: #cbd5e1;">
-                    <i class="fa-solid fa-check-double me-1"></i> Cravou Escalação
+                    <i class="fa-solid fa-check-double me-1"></i> Cravou Convocação
+                </div>
+                <div class="podium-tag d-block mt-2 mx-auto" style="border-color: rgba(255,255,255,0.1); color: #94a3b8; width: fit-content;">
+                    <i class="fa-solid fa-sack-dollar me-1 text-success"></i> Modo Pago
                 </div>
             </div>
         </div>
 
     </div>
 
+    <!-- MENÇÃO HONROSA -->
+    <div class="mt-5">
+        <div class="d-flex align-items-center justify-content-center mb-3">
+            <i class="fa-solid fa-star text-warning me-2" style="font-size: 0.8rem;"></i>
+            <h4 class="fw-bold mb-0" style="color: var(--dourado-premium); text-transform: uppercase; letter-spacing: 2px; font-size: 1rem;">Menção Honrosa</h4>
+            <i class="fa-solid fa-star text-warning ms-2" style="font-size: 0.8rem;"></i>
+        </div>
+        
+        <div class="honorable-card">
+            <h3 class="text-white fw-bold mb-1" style="text-transform: uppercase; letter-spacing: 1px;">Matheus Santiago</h3>
+            <p class="text-white-50 small mb-0 text-uppercase" style="letter-spacing: 1px;">
+                <i class="fa-solid fa-chart-line me-1"></i> Ficou no <strong>TOP 3</strong> de todas as competições
+            </p>
+        </div>
+    </div>
+
     <!-- BOTÃO DE COMPARTILHAR -->
-    <!-- Este botão tem um id específico para ser capturado e escondido na hora da foto -->
-    <div id="container-btn-share" class="mt-4">
+    <div id="container-btn-share" class="mt-5">
         <button id="btnCompartilhar" class="btn-share">
             <i class="fa-solid fa-camera me-2"></i> Compartilhar Placa
         </button>
@@ -415,51 +450,45 @@
         const placa = document.getElementById('placa-campeoes');
         const originalText = btnShare.innerHTML;
 
-        // Feedback visual de carregamento
         btnShare.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i> Gerando Placa...';
         btnShare.disabled = true;
 
         try {
-            // Esconde o botão para ele não sair na foto!
             containerBtn.style.display = 'none';
 
-            // Tira a foto usando html2canvas
             const canvas = await html2canvas(placa, {
-                scale: 2, // Maior resolução
-                backgroundColor: '#031406', // Cor de fundo da imagem (caso seja transparente)
-                useCORS: true, // Permite carregar a logo via URL
+                scale: 2,
+                backgroundColor: '#031406',
+                useCORS: true,
                 logging: false
             });
 
-            // Restaura o botão após a foto
             containerBtn.style.display = 'block';
 
-            // Converte o canvas para Blob (Arquivo de imagem)
             canvas.toBlob(async (blob) => {
                 const file = new File([blob], 'cartolandia-hall-fama.png', { type: 'image/png' });
+                
+                // Texto otimizado sem emojis reais (evitando bugs em alguns celulares), usando pontuação clean.
                 const shareData = {
-                    title: 'Hall da Fama - Cartolândia',
-                    text: 'Confira as Lendas da Copa do Mundo no Mural da Cartolândia!',
-                    files: [file] // Anexando a imagem gerada
+                    title: 'Hall da Fama - Cartolandia',
+                    text: 'Hall da Fama Cartolandia!\n\n1º Yuri: Campeao Cartola e Convocacao\n2º Lucas Rafael: Campeao do Bolao (455 pts)\n3º William: Cravou Convocacao VIP\n\nMencao Honrosa: Matheus Santiago',
+                    files: [file]
                 };
 
-                // Tenta compartilhar nativamente com a imagem (suportado no Mobile: Chrome Android, Safari iOS)
                 if (navigator.canShare && navigator.canShare({ files: [file] })) {
                     try {
                         await navigator.share(shareData);
                     } catch (err) {
-                        console.log('Compartilhamento cancelado pelo usuário.', err);
+                        console.log('Compartilhamento cancelado.', err);
                     }
                 } else {
-                    // Fallback: Se estiver no PC ou navegador não suportar anexos, faz o Download da imagem
                     const link = document.createElement('a');
                     link.download = 'cartolandia-hall-fama.png';
                     link.href = canvas.toDataURL('image/png');
                     link.click();
-                    alert('Imagem da placa foi salva no seu dispositivo! Poste nas suas redes.');
+                    alert('A placa foi salva como imagem no seu dispositivo!');
                 }
 
-                // Reseta o estado do botão
                 btnShare.innerHTML = originalText;
                 btnShare.disabled = false;
             }, 'image/png');

@@ -1,17 +1,18 @@
 {% extends 'base.html' %}
-{% block title %}Mural da Copa - Cartolândia{% endblock %}
+{% block title %}Hall da Fama Copa - Cartolândia{% endblock %}
 
 {% block content %}
 <!-- Google Fonts: Poppins para texto, JetBrains Mono para o placar -->
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=JetBrains+Mono:wght@700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@700;800&display=swap" rel="stylesheet">
 
 <style>
     :root {
-        --dourado-premium: #d4af37;
+        --verde-supremo: #05220a;
+        --verde-escuro: #0a3d10;
+        --verde-campo: #1b5e20;
+        --dourado-premium: #eab308; /* Amarelo Dourado */
         --dourado-claro: #fef08a;
         --dourado-escuro: #a16207;
-        --bg-escuro: #0f172a;
-        --bg-card: #1e293b;
     }
 
     body {
@@ -19,93 +20,147 @@
         background-color: #f3f4f6;
     }
 
-    /* Card do Hall da Fama */
-    .hall-of-fame-card {
-        background: radial-gradient(circle at top center, #1e293b 0%, #0f172a 100%);
-        border: 2px solid rgba(212, 175, 55, 0.3);
+    /* O Quadro de Honra (Perfeito para Screenshot) */
+    .quadro-honra {
+        background: linear-gradient(135deg, var(--verde-supremo) 0%, var(--verde-escuro) 50%, var(--verde-campo) 100%);
+        border: 3px solid var(--dourado-escuro);
         border-radius: 1.5rem;
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), inset 0 0 40px rgba(212, 175, 55, 0.05);
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3), inset 0 0 60px rgba(234, 179, 8, 0.1);
         padding: 3rem 2rem;
         position: relative;
         overflow: hidden;
         text-align: center;
         margin-bottom: 2.5rem;
+        color: white;
     }
 
-    .hall-of-fame-card::before {
+    /* Efeito de Reflexo no Quadro */
+    .quadro-honra::before {
         content: '';
         position: absolute;
-        top: 0; left: 0; right: 0; height: 4px;
-        background: linear-gradient(90deg, transparent, var(--dourado-premium), transparent);
-        opacity: 0.8;
+        top: -50%; left: -50%; width: 200%; height: 200%;
+        background: linear-gradient(to bottom right, rgba(255,255,255,0) 40%, rgba(255,255,255,0.05) 50%, rgba(255,255,255,0) 60%);
+        transform: rotate(45deg);
+        pointer-events: none;
     }
 
-    .trophy-icon {
-        font-size: 4.5rem;
+    .mural-title {
+        color: var(--dourado-premium);
+        font-weight: 900;
+        letter-spacing: 4px;
+        font-size: 1.5rem;
+        text-transform: uppercase;
+        text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+        margin-bottom: 2rem;
+    }
+
+    /* Destaque Principal (Lucas Rafael) */
+    .hero-champion {
+        background: radial-gradient(circle, rgba(234, 179, 8, 0.15) 0%, transparent 70%);
+        padding: 2rem 1rem;
+        border-radius: 1rem;
+        margin-bottom: 2rem;
+        border-bottom: 1px solid rgba(234, 179, 8, 0.3);
+    }
+
+    .hero-name {
+        font-size: 3rem;
+        font-weight: 900;
+        color: white;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin: 0.5rem 0;
+        text-shadow: 0 4px 15px rgba(0,0,0,0.6);
+    }
+
+    .hero-title {
+        color: var(--dourado-claro);
+        font-size: 1.1rem;
+        font-weight: 700;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+    }
+
+    /* Destaques Secundários (Yuri e William) */
+    .sub-champion-card {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 1rem;
+        padding: 1.5rem;
+        height: 100%;
+        backdrop-filter: blur(5px);
+        transition: transform 0.3s ease;
+    }
+    
+    .sub-champion-card:hover {
+        transform: translateY(-5px);
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(234, 179, 8, 0.4);
+    }
+
+    .sub-name {
+        font-size: 1.8rem;
+        font-weight: 800;
+        color: white;
+        margin: 0.5rem 0;
+    }
+
+    .sub-title {
+        color: var(--dourado-premium);
+        font-size: 0.85rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    /* Ícones com gradiente Dourado */
+    .gold-icon {
         background: linear-gradient(135deg, var(--dourado-claro), var(--dourado-premium), var(--dourado-escuro));
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        filter: drop-shadow(0 0 15px rgba(212, 175, 55, 0.5));
-        animation: pulse-gold 2.5s infinite;
-        margin-bottom: 1.5rem;
+        filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4));
     }
 
-    @keyframes pulse-gold {
-        0% { filter: drop-shadow(0 0 10px rgba(212, 175, 55, 0.4)); transform: scale(1); }
-        50% { filter: drop-shadow(0 0 25px rgba(212, 175, 55, 0.8)); transform: scale(1.05); }
-        100% { filter: drop-shadow(0 0 10px rgba(212, 175, 55, 0.4)); transform: scale(1); }
-    }
-
-    .champion-name {
-        font-size: 2.5rem;
+    /* Botão de Compartilhar */
+    .btn-share {
+        background: linear-gradient(135deg, var(--dourado-premium), var(--dourado-escuro));
+        color: var(--verde-supremo);
+        border: none;
+        font-size: 1.1rem;
+        padding: 0.8rem 2.5rem;
+        border-radius: 50px;
         font-weight: 800;
         letter-spacing: 1px;
-        color: white;
+        box-shadow: 0 10px 20px rgba(234, 179, 8, 0.3);
+        transition: all 0.3s ease;
         text-transform: uppercase;
-        margin: 0.5rem 0;
-        text-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        margin-top: 1.5rem;
     }
 
-    .champion-stats {
-        display: inline-block;
-        background: rgba(255, 255, 255, 0.1);
-        backdrop-filter: blur(4px);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        color: #e2e8f0;
-        padding: 0.5rem 1.5rem;
-        border-radius: 50px;
-        font-size: 0.95rem;
-        font-weight: 600;
-        letter-spacing: 1px;
+    .btn-share:hover {
+        transform: scale(1.05);
+        box-shadow: 0 15px 25px rgba(234, 179, 8, 0.5);
+        color: var(--verde-supremo);
     }
 
-    /* Cards dos Top Pontuadores da Convocação */
-    .top-scorers-box {
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(212, 175, 55, 0.2);
-        border-radius: 1rem;
-        padding: 1.5rem;
-        margin-top: 2rem;
-        text-align: left;
-    }
-
+    /* Divisória */
     .premium-divider {
         height: 1px;
-        background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.5), transparent);
-        margin: 2.5rem 0;
+        background: linear-gradient(90deg, transparent, rgba(234, 179, 8, 0.5), transparent);
+        margin: 3rem 0 2rem;
     }
 
+    /* Relógio Digital / Placar */
     .countdown-wrapper {
         display: flex;
         justify-content: center;
         gap: 1rem;
         flex-wrap: wrap;
-        margin-top: 1rem;
     }
 
     .time-box {
-        background: rgba(0, 0, 0, 0.6);
-        border: 1px solid rgba(212, 175, 55, 0.2);
+        background: rgba(0, 0, 0, 0.5);
+        border: 1px solid rgba(255, 255, 255, 0.1);
         border-radius: 0.75rem;
         padding: 1rem;
         min-width: 85px;
@@ -119,93 +174,81 @@
         font-family: 'JetBrains Mono', monospace;
         font-size: 2.2rem;
         font-weight: 800;
-        color: var(--dourado-claro);
+        color: white;
         line-height: 1;
-        text-shadow: 0 0 10px rgba(254, 240, 138, 0.3);
     }
 
     .time-label {
         font-size: 0.65rem;
-        color: #94a3b8;
+        color: var(--dourado-premium);
         text-transform: uppercase;
         font-weight: 700;
         letter-spacing: 2px;
         margin-top: 0.4rem;
     }
-
-    .btn-ranking-dark {
-        background: var(--bg-escuro);
-        color: var(--dourado-premium);
-        border: 2px solid var(--dourado-premium);
-        font-size: 1rem;
-        padding: 0.75rem 2rem;
-        border-radius: 50px;
-        transition: all 0.3s ease;
-    }
-
-    .btn-ranking-dark:hover {
-        background: var(--dourado-premium);
-        color: var(--bg-escuro);
-        transform: translateY(-2px);
-        box-shadow: 0 10px 20px rgba(212, 175, 55, 0.2);
-    }
 </style>
 
-<div class="hall-of-fame-card">
-    <i class="fa-solid fa-trophy trophy-icon"></i>
-    
-    <h5 class="text-uppercase fw-bold mb-4" style="color: var(--dourado-premium); letter-spacing: 3px; font-size: 0.9rem;">
-        Bolão Copa — Modo Encerrado
-    </h5>
-
-    {% if campeao %}
-        <p class="text-white-50 mb-1 fw-medium" style="font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;">
-            O Craque da Convocação
-        </p>
-        <h2 class="champion-name">{{ campeao.usuario.first_name|default:campeao.usuario.username }}</h2>
-        <div class="champion-stats mt-3">
-            <i class="fa-solid fa-crosshairs text-warning me-2"></i> {{ campeao.acertos }} / {{ campeao.total_oficiais }} acertos
-        </div>
-    {% endif %}
-
-    <!-- DESTAQUE SOLICITADO: LUCAS RAFAEL, YURI E WILLIAM -->
-    <div class="top-scorers-box">
-        <div class="d-flex align-items-center mb-3">
-            <i class="fa-solid fa-fire text-warning fs-5 me-2"></i>
-            <h6 class="text-white fw-bold mb-0 text-uppercase" style="letter-spacing: 1px; font-size: 0.85rem;">
-                Destaques da Convocação (Top Pontuadores)
-            </h6>
-        </div>
-        <p class="text-white-50 small mb-3">Parabéns aos craques que dominaram as previsões e cravaram os nomes na história da convocação:</p>
-        <div class="row g-2 text-center">
-            <div class="col-12 col-md-4">
-                <div class="p-2 rounded bg-dark bg-opacity-50 border border-warning border-opacity-25">
-                    <i class="fa-solid fa-crown text-warning mb-1"></i>
-                    <span class="d-block text-white fw-bold">Lucas Rafael</span>
-                    <span class="small text-warning">Top Convocação</span>
-                </div>
-            </div>
-            <div class="col-12 col-md-4">
-                <div class="p-2 rounded bg-dark bg-opacity-50 border border-secondary border-opacity-25">
-                    <i class="fa-solid fa-medal text-secondary mb-1"></i>
-                    <span class="d-block text-white fw-bold">Yuri</span>
-                    <span class="small text-muted">Top Convocação</span>
-                </div>
-            </div>
-            <div class="col-12 col-md-4">
-                <div class="p-2 rounded bg-dark bg-opacity-50 border border-danger border-opacity-25">
-                    <i class="fa-solid fa-award text-danger mb-1"></i>
-                    <span class="d-block text-white fw-bold">William</span>
-                    <span class="small text-danger">Top Convocação</span>
-                </div>
-            </div>
-        </div>
+<!-- O QUADRO DE HONRA -->
+<div class="quadro-honra" id="placa-campeoes">
+    <!-- Marca d'água discreta para screenshots -->
+    <div style="position: absolute; top: 15px; left: 20px; opacity: 0.3; font-size: 0.8rem; font-weight: 800; letter-spacing: 2px;">
+        <i class="fa-regular fa-futbol"></i> CARTOLÂNDIA
     </div>
+
+    <h1 class="mural-title">
+        <i class="fa-solid fa-star me-2"></i> Hall da Fama - Copa do Mundo <i class="fa-solid fa-star ms-2"></i>
+    </h1>
+
+    <!-- 1. CAMPEÃO DO BOLÃO -->
+    <div class="hero-champion">
+        <i class="fa-solid fa-trophy gold-icon" style="font-size: 5rem; margin-bottom: 1rem; animation: pulse-gold 2s infinite;"></i>
+        <div class="hero-title">Campeão Absoluto do Bolão</div>
+        <h2 class="hero-name">Lucas Rafael</h2>
+        <span class="badge bg-warning text-dark fw-bold px-3 py-2 rounded-pill mt-2" style="font-size: 0.85rem;">
+            O Rei dos Palpites
+        </span>
+    </div>
+
+    <!-- 2. DESTAQUES CARTOLA E CONVOCAÇÃO -->
+    <div class="row g-4 justify-content-center">
+        
+        <!-- Yuri (Duplo Destaque) -->
+        <div class="col-12 col-md-6">
+            <div class="sub-champion-card">
+                <i class="fa-solid fa-hat-wizard gold-icon fs-1 mb-3"></i>
+                <div class="sub-title">Campeão Cartola Copa</div>
+                <h3 class="sub-name">Yuri</h3>
+                <hr style="border-color: rgba(255,255,255,0.2); margin: 1rem 0;">
+                <i class="fa-solid fa-clipboard-check text-success fs-5 mb-2"></i>
+                <div class="sub-title text-white-50" style="font-size: 0.75rem;">Mestre da Convocação</div>
+                <div class="text-white fw-bold small">Cravou a Escalação</div>
+            </div>
+        </div>
+
+        <!-- William (Convocação) -->
+        <div class="col-12 col-md-6">
+            <div class="sub-champion-card">
+                <i class="fa-solid fa-clipboard-check gold-icon fs-1 mb-3"></i>
+                <div class="sub-title">Mestre da Convocação</div>
+                <h3 class="sub-name">William</h3>
+                <hr style="border-color: rgba(255,255,255,0.2); margin: 1rem 0;">
+                <i class="fa-solid fa-bullseye text-danger fs-5 mb-2"></i>
+                <div class="sub-title text-white-50" style="font-size: 0.75rem;">Visão de Técnico</div>
+                <div class="text-white fw-bold small">Cravou a Escalação</div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- BOTÃO DE COMPARTILHAR -->
+    <button id="btnCompartilhar" class="btn-share">
+        <i class="fa-solid fa-share-nodes me-2"></i> Compartilhar Placa
+    </button>
 
     <div class="premium-divider"></div>
     
-    <p class="small text-uppercase mb-3 fw-bold" style="letter-spacing: 2px; color: #94a3b8;">
-        Contagem regressiva: Próxima Copa do Mundo
+    <p class="small text-uppercase mb-3 fw-bold" style="letter-spacing: 2px; color: rgba(255,255,255,0.7);">
+        <i class="fa-solid fa-earth-americas me-1"></i> Contagem para a Próxima Copa (2030)
     </p>
     
     <div class="countdown-wrapper" id="timer-copa-container">
@@ -228,13 +271,14 @@
     </div>
 </div>
 
-<div class="text-center">
-    <a href="{% url 'convocacao:ranking_convocacao' %}" class="btn btn-ranking-dark fw-bold">
-        <i class="fa-solid fa-list-ol me-2"></i> Ver ranking completo da Copa
+<div class="text-center mb-5">
+    <a href="{% url 'convocacao:ranking_convocacao' %}" class="btn btn-outline-dark fw-bold rounded-pill px-4">
+        <i class="fa-solid fa-list-ol me-2"></i> Ver histórico completo da Convocação
     </a>
 </div>
 
 <script>
+    // Lógica do Cronômetro
     const deadlineCopa = new Date("{{ proxima_copa_iso }}").getTime();
     
     function updateTimerCopa() {
@@ -243,7 +287,7 @@
         
         if (diff <= 0) {
             document.getElementById("timer-copa-container").innerHTML = 
-                "<h3 class='text-success fw-bold mt-3 mb-0' style='letter-spacing: 1px;'>A Copa Começou! <i class='fa-solid fa-earth-americas ms-2'></i></h3>";
+                "<h3 class='text-warning fw-bold mt-3 mb-0' style='letter-spacing: 1px;'>A Copa Começou! <i class='fa-solid fa-trophy ms-2'></i></h3>";
             return;
         }
         
@@ -260,5 +304,27 @@
     
     setInterval(updateTimerCopa, 1000);
     updateTimerCopa();
+
+    // Lógica de Compartilhamento Nativo (Web Share API)
+    document.getElementById('btnCompartilhar').addEventListener('click', async () => {
+        const shareData = {
+            title: 'Hall da Fama - Cartolândia',
+            text: '🏆 Confira os Lendas da Copa do Mundo no Mural da Cartolândia!\nLucas Rafael (Bolão), Yuri (Cartola) e William (Convocação).',
+            url: window.location.href
+        };
+
+        if (navigator.share) {
+            try {
+                await navigator.share(shareData);
+            } catch (err) {
+                console.log('Compartilhamento cancelado ou falhou.', err);
+            }
+        } else {
+            // Fallback para PC ou navegadores que não suportam (Copia o texto)
+            navigator.clipboard.writeText(`${shareData.text}\nLink: ${shareData.url}`).then(() => {
+                alert('🏆 Texto e Link copiados para a área de transferência! Cole no WhatsApp ou Instagram.');
+            });
+        }
+    });
 </script>
 {% endblock %}

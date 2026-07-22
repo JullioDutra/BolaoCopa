@@ -1,18 +1,25 @@
 {% extends 'base.html' %}
+{% load static %}
+
 {% block title %}Hall da Fama Copa - Cartolândia{% endblock %}
 
 {% block content %}
 <!-- Google Fonts: Poppins para texto, JetBrains Mono para o placar -->
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800;900&family=JetBrains+Mono:wght@700;800&display=swap" rel="stylesheet">
+
+<!-- html2canvas: Biblioteca para tirar o print da tela -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
 <style>
     :root {
-        --verde-supremo: #05220a;
+        --verde-supremo: #031406;
         --verde-escuro: #0a3d10;
         --verde-campo: #1b5e20;
-        --dourado-premium: #eab308; /* Amarelo Dourado */
+        --dourado-premium: #d4af37;
         --dourado-claro: #fef08a;
-        --dourado-escuro: #a16207;
+        --dourado-escuro: #855e05;
+        --prata: #e2e8f0;
+        --bronze: #cd7f32;
     }
 
     body {
@@ -20,13 +27,13 @@
         background-color: #f3f4f6;
     }
 
-    /* O Quadro de Honra (Perfeito para Screenshot) */
+    /* O Quadro de Honra - Estilo Premiação */
     .quadro-honra {
-        background: linear-gradient(135deg, var(--verde-supremo) 0%, var(--verde-escuro) 50%, var(--verde-campo) 100%);
-        border: 3px solid var(--dourado-escuro);
+        background: radial-gradient(circle at top center, var(--verde-escuro) 0%, var(--verde-supremo) 100%);
+        border: 1px solid rgba(212, 175, 55, 0.3);
         border-radius: 1.5rem;
-        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3), inset 0 0 60px rgba(234, 179, 8, 0.1);
-        padding: 3rem 2rem;
+        box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5), inset 0 0 80px rgba(0, 0, 0, 0.8);
+        padding: 4rem 2rem;
         position: relative;
         overflow: hidden;
         text-align: center;
@@ -34,83 +41,150 @@
         color: white;
     }
 
-    /* Efeito de Reflexo no Quadro */
+    /* Brilho Dourado Superior */
     .quadro-honra::before {
         content: '';
         position: absolute;
-        top: -50%; left: -50%; width: 200%; height: 200%;
-        background: linear-gradient(to bottom right, rgba(255,255,255,0) 40%, rgba(255,255,255,0.05) 50%, rgba(255,255,255,0) 60%);
-        transform: rotate(45deg);
-        pointer-events: none;
+        top: 0; left: 0; right: 0; height: 3px;
+        background: linear-gradient(90deg, transparent, var(--dourado-premium), transparent);
+        box-shadow: 0 0 20px var(--dourado-premium);
+    }
+
+    /* Logo da Cartolândia */
+    .mural-logo {
+        width: 100px;
+        height: 100px;
+        object-fit: contain;
+        margin-bottom: 1.5rem;
+        filter: drop-shadow(0 0 25px rgba(212, 175, 55, 0.5));
+        animation: float-logo 4s ease-in-out infinite;
+    }
+
+    @keyframes float-logo {
+        0% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); filter: drop-shadow(0 0 35px rgba(212, 175, 55, 0.8)); }
+        100% { transform: translateY(0px); }
     }
 
     .mural-title {
-        color: var(--dourado-premium);
-        font-weight: 900;
-        letter-spacing: 4px;
-        font-size: 1.5rem;
-        text-transform: uppercase;
-        text-shadow: 0 2px 10px rgba(0,0,0,0.5);
-        margin-bottom: 2rem;
-    }
-
-    /* Destaque Principal (Lucas Rafael) */
-    .hero-champion {
-        background: radial-gradient(circle, rgba(234, 179, 8, 0.15) 0%, transparent 70%);
-        padding: 2rem 1rem;
-        border-radius: 1rem;
-        margin-bottom: 2rem;
-        border-bottom: 1px solid rgba(234, 179, 8, 0.3);
-    }
-
-    .hero-name {
-        font-size: 3rem;
-        font-weight: 900;
         color: white;
+        font-weight: 900;
+        letter-spacing: 6px;
+        font-size: 1.6rem;
         text-transform: uppercase;
-        letter-spacing: 1px;
-        margin: 0.5rem 0;
-        text-shadow: 0 4px 15px rgba(0,0,0,0.6);
+        margin-bottom: 3rem;
     }
 
-    .hero-title {
-        color: var(--dourado-claro);
-        font-size: 1.1rem;
-        font-weight: 700;
-        letter-spacing: 2px;
-        text-transform: uppercase;
+    .mural-title span {
+        color: var(--dourado-premium);
     }
 
-    /* Destaques Secundários (Yuri e William) */
-    .sub-champion-card {
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 1rem;
-        padding: 1.5rem;
-        height: 100%;
-        backdrop-filter: blur(5px);
+    /* =========================================
+       ESTRUTURA DO PÓDIO (PODIUM)
+       ========================================= */
+    .podium-container {
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        gap: 15px;
+        margin-bottom: 3rem;
+    }
+
+    .podium-step {
+        background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-bottom: none;
+        border-radius: 1rem 1rem 0 0;
+        padding: 2rem 1rem;
+        width: 100%;
+        backdrop-filter: blur(10px);
+        position: relative;
         transition: transform 0.3s ease;
     }
-    
-    .sub-champion-card:hover {
+
+    .podium-step:hover {
         transform: translateY(-5px);
-        background: rgba(255, 255, 255, 0.08);
-        border-color: rgba(234, 179, 8, 0.4);
+        background: linear-gradient(180deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.02) 100%);
     }
 
-    .sub-name {
+    /* O Centro (1º Lugar - Lucas Rafael) */
+    .podium-center {
+        border-color: rgba(212, 175, 55, 0.4);
+        box-shadow: 0 -10px 30px rgba(212, 175, 55, 0.15);
+        padding-bottom: 3.5rem;
+        z-index: 2;
+    }
+
+    .podium-center::after {
+        content: '1';
+        position: absolute;
+        bottom: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 4rem;
+        font-weight: 900;
+        color: rgba(212, 175, 55, 0.1);
+        line-height: 1;
+    }
+
+    /* Laterais (Yuri e William) */
+    .podium-side {
+        padding-bottom: 2rem;
+        z-index: 1;
+    }
+
+    .podium-side::after {
+        position: absolute;
+        bottom: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 3rem;
+        font-weight: 900;
+        color: rgba(255, 255, 255, 0.05);
+        line-height: 1;
+    }
+    
+    .podium-left::after { content: '2'; }
+    .podium-right::after { content: '3'; }
+
+    /* Tipografia do Pódio */
+    .podium-name {
         font-size: 1.8rem;
         font-weight: 800;
         color: white;
+        text-transform: uppercase;
+        letter-spacing: 1px;
         margin: 0.5rem 0;
     }
 
-    .sub-title {
-        color: var(--dourado-premium);
-        font-size: 0.85rem;
+    .podium-center .podium-name {
+        font-size: 2.2rem;
+        color: var(--dourado-claro);
+    }
+
+    .podium-role {
+        font-size: 0.75rem;
         font-weight: 700;
         text-transform: uppercase;
+        letter-spacing: 2px;
+        color: #94a3b8;
+    }
+
+    .podium-center .podium-role {
+        color: var(--dourado-premium);
+    }
+
+    .podium-tag {
+        font-size: 0.7rem;
+        font-weight: 600;
+        text-transform: uppercase;
         letter-spacing: 1px;
+        padding: 4px 10px;
+        border-radius: 50px;
+        background: rgba(0,0,0,0.5);
+        display: inline-block;
+        margin-top: 10px;
+        border: 1px solid;
     }
 
     /* Ícones com gradiente Dourado */
@@ -121,33 +195,31 @@
         filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4));
     }
 
-    /* Botão de Compartilhar */
+    /* Botão de Compartilhar Moderno */
     .btn-share {
-        background: linear-gradient(135deg, var(--dourado-premium), var(--dourado-escuro));
-        color: var(--verde-supremo);
-        border: none;
-        font-size: 1.1rem;
+        background: transparent;
+        color: var(--dourado-premium);
+        border: 2px solid var(--dourado-premium);
+        font-size: 0.95rem;
         padding: 0.8rem 2.5rem;
         border-radius: 50px;
-        font-weight: 800;
-        letter-spacing: 1px;
-        box-shadow: 0 10px 20px rgba(234, 179, 8, 0.3);
+        font-weight: 700;
+        letter-spacing: 2px;
         transition: all 0.3s ease;
         text-transform: uppercase;
-        margin-top: 1.5rem;
     }
 
     .btn-share:hover {
-        transform: scale(1.05);
-        box-shadow: 0 15px 25px rgba(234, 179, 8, 0.5);
+        background: var(--dourado-premium);
         color: var(--verde-supremo);
+        box-shadow: 0 10px 20px rgba(212, 175, 55, 0.2);
     }
 
     /* Divisória */
     .premium-divider {
         height: 1px;
-        background: linear-gradient(90deg, transparent, rgba(234, 179, 8, 0.5), transparent);
-        margin: 3rem 0 2rem;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+        margin: 4rem 0 2rem;
     }
 
     /* Relógio Digital / Placar */
@@ -159,12 +231,11 @@
     }
 
     .time-box {
-        background: rgba(0, 0, 0, 0.5);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 0.75rem;
+        background: rgba(0, 0, 0, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 0.5rem;
         padding: 1rem;
-        min-width: 85px;
-        box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+        min-width: 90px;
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -172,83 +243,113 @@
 
     .time-val {
         font-family: 'JetBrains Mono', monospace;
-        font-size: 2.2rem;
-        font-weight: 800;
+        font-size: 2rem;
+        font-weight: 700;
         color: white;
         line-height: 1;
     }
 
     .time-label {
         font-size: 0.65rem;
-        color: var(--dourado-premium);
+        color: #94a3b8;
         text-transform: uppercase;
-        font-weight: 700;
+        font-weight: 600;
         letter-spacing: 2px;
-        margin-top: 0.4rem;
+        margin-top: 0.5rem;
+    }
+
+    /* Adaptação do Pódio para Mobile */
+    @media (max-width: 768px) {
+        .podium-container {
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .podium-center {
+            order: -1; 
+            border-radius: 1rem;
+            padding-bottom: 2rem;
+        }
+        
+        .podium-step {
+            border-radius: 1rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .podium-center::after, .podium-side::after {
+            display: none;
+        }
     }
 </style>
 
 <!-- O QUADRO DE HONRA -->
 <div class="quadro-honra" id="placa-campeoes">
     <!-- Marca d'água discreta para screenshots -->
-    <div style="position: absolute; top: 15px; left: 20px; opacity: 0.3; font-size: 0.8rem; font-weight: 800; letter-spacing: 2px;">
-        <i class="fa-regular fa-futbol"></i> CARTOLÂNDIA
+    <div style="position: absolute; top: 20px; left: 20px; opacity: 0.2; font-size: 0.75rem; font-weight: 700; letter-spacing: 3px;">
+        <i class="fa-solid fa-shield-halved me-1"></i> CARTOLÂNDIA
     </div>
+
+    <!-- Logo no topo -->
+    <img src="{% static 'media/logo.png' %}" alt="Cartolândia Logo" class="mural-logo">
 
     <h1 class="mural-title">
-        <i class="fa-solid fa-star me-2"></i> Hall da Fama - Copa do Mundo <i class="fa-solid fa-star ms-2"></i>
+        HALL DA FAMA <span>COPA DO MUNDO</span>
     </h1>
 
-    <!-- 1. CAMPEÃO DO BOLÃO -->
-    <div class="hero-champion">
-        <i class="fa-solid fa-trophy gold-icon" style="font-size: 5rem; margin-bottom: 1rem; animation: pulse-gold 2s infinite;"></i>
-        <div class="hero-title">Campeão Absoluto do Bolão</div>
-        <h2 class="hero-name">Lucas Rafael</h2>
-        <span class="badge bg-warning text-dark fw-bold px-3 py-2 rounded-pill mt-2" style="font-size: 0.85rem;">
-            O Rei dos Palpites
-        </span>
-    </div>
-
-    <!-- 2. DESTAQUES CARTOLA E CONVOCAÇÃO -->
-    <div class="row g-4 justify-content-center">
+    <!-- PÓDIO DE VENCEDORES -->
+    <div class="row podium-container">
         
-        <!-- Yuri (Duplo Destaque) -->
-        <div class="col-12 col-md-6">
-            <div class="sub-champion-card">
-                <i class="fa-solid fa-hat-wizard gold-icon fs-1 mb-3"></i>
-                <div class="sub-title">Campeão Cartola Copa</div>
-                <h3 class="sub-name">Yuri</h3>
-                <hr style="border-color: rgba(255,255,255,0.2); margin: 1rem 0;">
-                <i class="fa-solid fa-clipboard-check text-success fs-5 mb-2"></i>
-                <div class="sub-title text-white-50" style="font-size: 0.75rem;">Mestre da Convocação</div>
-                <div class="text-white fw-bold small">Cravou a Escalação</div>
+        <!-- Lado Esquerdo: Yuri -->
+        <div class="col-12 col-md-4">
+            <div class="podium-step podium-side podium-left">
+                <i class="fa-solid fa-chess-knight fs-1 mb-3" style="color: var(--prata);"></i>
+                <div class="podium-role">Cartola Copa</div>
+                <div class="podium-name">Yuri</div>
+                <div class="podium-tag" style="border-color: rgba(255,255,255,0.2); color: #cbd5e1;">
+                    <i class="fa-solid fa-check-double me-1"></i> Cravou Escalação
+                </div>
             </div>
         </div>
 
-        <!-- William (Convocação) -->
-        <div class="col-12 col-md-6">
-            <div class="sub-champion-card">
-                <i class="fa-solid fa-clipboard-check gold-icon fs-1 mb-3"></i>
-                <div class="sub-title">Mestre da Convocação</div>
-                <h3 class="sub-name">William</h3>
-                <hr style="border-color: rgba(255,255,255,0.2); margin: 1rem 0;">
-                <i class="fa-solid fa-bullseye text-danger fs-5 mb-2"></i>
-                <div class="sub-title text-white-50" style="font-size: 0.75rem;">Visão de Técnico</div>
-                <div class="text-white fw-bold small">Cravou a Escalação</div>
+        <!-- Centro: Lucas Rafael -->
+        <div class="col-12 col-md-4">
+            <div class="podium-step podium-center">
+                <i class="fa-solid fa-crown gold-icon mb-3" style="font-size: 3.5rem;"></i>
+                <div class="podium-role">Campeão do Bolão</div>
+                <div class="podium-name">Lucas Rafael</div>
+                <div class="podium-tag" style="border-color: var(--dourado-premium); color: var(--dourado-claro);">
+                    <i class="fa-solid fa-ranking-star me-1"></i> O Rei dos Palpites
+                </div>
+            </div>
+        </div>
+
+        <!-- Lado Direito: William -->
+        <div class="col-12 col-md-4">
+            <div class="podium-step podium-side podium-right">
+                <i class="fa-solid fa-clipboard-check fs-1 mb-3" style="color: var(--bronze);"></i>
+                <div class="podium-role">Convocação</div>
+                <div class="podium-name">William</div>
+                <div class="podium-tag" style="border-color: rgba(255,255,255,0.2); color: #cbd5e1;">
+                    <i class="fa-solid fa-check-double me-1"></i> Cravou Escalação
+                </div>
             </div>
         </div>
 
     </div>
 
     <!-- BOTÃO DE COMPARTILHAR -->
-    <button id="btnCompartilhar" class="btn-share">
-        <i class="fa-solid fa-share-nodes me-2"></i> Compartilhar Placa
-    </button>
+    <!-- Este botão tem um id específico para ser capturado e escondido na hora da foto -->
+    <div id="container-btn-share" class="mt-4">
+        <button id="btnCompartilhar" class="btn-share">
+            <i class="fa-solid fa-camera me-2"></i> Compartilhar Placa
+        </button>
+    </div>
 
     <div class="premium-divider"></div>
     
-    <p class="small text-uppercase mb-3 fw-bold" style="letter-spacing: 2px; color: rgba(255,255,255,0.7);">
-        <i class="fa-solid fa-earth-americas me-1"></i> Contagem para a Próxima Copa (2030)
+    <p class="small text-uppercase mb-4 fw-bold" style="letter-spacing: 3px; color: #94a3b8;">
+        <i class="fa-solid fa-hourglass-half me-2"></i> Contagem para 2030
     </p>
     
     <div class="countdown-wrapper" id="timer-copa-container">
@@ -272,7 +373,7 @@
 </div>
 
 <div class="text-center mb-5">
-    <a href="{% url 'convocacao:ranking_convocacao' %}" class="btn btn-outline-dark fw-bold rounded-pill px-4">
+    <a href="{% url 'convocacao:ranking_convocacao' %}" class="btn btn-outline-dark fw-bold rounded-pill px-4" style="border-width: 2px;">
         <i class="fa-solid fa-list-ol me-2"></i> Ver histórico completo da Convocação
     </a>
 </div>
@@ -287,7 +388,7 @@
         
         if (diff <= 0) {
             document.getElementById("timer-copa-container").innerHTML = 
-                "<h3 class='text-warning fw-bold mt-3 mb-0' style='letter-spacing: 1px;'>A Copa Começou! <i class='fa-solid fa-trophy ms-2'></i></h3>";
+                "<h3 class='fw-bold mt-3 mb-0' style='letter-spacing: 2px; color: var(--dourado-premium);'>A COPA COMEÇOU! <i class='fa-solid fa-futbol ms-2'></i></h3>";
             return;
         }
         
@@ -305,25 +406,70 @@
     setInterval(updateTimerCopa, 1000);
     updateTimerCopa();
 
-    // Lógica de Compartilhamento Nativo (Web Share API)
+    // ==========================================
+    // LÓGICA DE GERAR IMAGEM E COMPARTILHAR
+    // ==========================================
     document.getElementById('btnCompartilhar').addEventListener('click', async () => {
-        const shareData = {
-            title: 'Hall da Fama - Cartolândia',
-            text: '🏆 Confira os Lendas da Copa do Mundo no Mural da Cartolândia!\nLucas Rafael (Bolão), Yuri (Cartola) e William (Convocação).',
-            url: window.location.href
-        };
+        const btnShare = document.getElementById('btnCompartilhar');
+        const containerBtn = document.getElementById('container-btn-share');
+        const placa = document.getElementById('placa-campeoes');
+        const originalText = btnShare.innerHTML;
 
-        if (navigator.share) {
-            try {
-                await navigator.share(shareData);
-            } catch (err) {
-                console.log('Compartilhamento cancelado ou falhou.', err);
-            }
-        } else {
-            // Fallback para PC ou navegadores que não suportam (Copia o texto)
-            navigator.clipboard.writeText(`${shareData.text}\nLink: ${shareData.url}`).then(() => {
-                alert('🏆 Texto e Link copiados para a área de transferência! Cole no WhatsApp ou Instagram.');
+        // Feedback visual de carregamento
+        btnShare.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i> Gerando Placa...';
+        btnShare.disabled = true;
+
+        try {
+            // Esconde o botão para ele não sair na foto!
+            containerBtn.style.display = 'none';
+
+            // Tira a foto usando html2canvas
+            const canvas = await html2canvas(placa, {
+                scale: 2, // Maior resolução
+                backgroundColor: '#031406', // Cor de fundo da imagem (caso seja transparente)
+                useCORS: true, // Permite carregar a logo via URL
+                logging: false
             });
+
+            // Restaura o botão após a foto
+            containerBtn.style.display = 'block';
+
+            // Converte o canvas para Blob (Arquivo de imagem)
+            canvas.toBlob(async (blob) => {
+                const file = new File([blob], 'cartolandia-hall-fama.png', { type: 'image/png' });
+                const shareData = {
+                    title: 'Hall da Fama - Cartolândia',
+                    text: 'Confira as Lendas da Copa do Mundo no Mural da Cartolândia!',
+                    files: [file] // Anexando a imagem gerada
+                };
+
+                // Tenta compartilhar nativamente com a imagem (suportado no Mobile: Chrome Android, Safari iOS)
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    try {
+                        await navigator.share(shareData);
+                    } catch (err) {
+                        console.log('Compartilhamento cancelado pelo usuário.', err);
+                    }
+                } else {
+                    // Fallback: Se estiver no PC ou navegador não suportar anexos, faz o Download da imagem
+                    const link = document.createElement('a');
+                    link.download = 'cartolandia-hall-fama.png';
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                    alert('Imagem da placa foi salva no seu dispositivo! Poste nas suas redes.');
+                }
+
+                // Reseta o estado do botão
+                btnShare.innerHTML = originalText;
+                btnShare.disabled = false;
+            }, 'image/png');
+
+        } catch (error) {
+            console.error('Erro ao gerar imagem:', error);
+            alert('Ops, ocorreu um erro ao gerar a imagem.');
+            containerBtn.style.display = 'block';
+            btnShare.innerHTML = originalText;
+            btnShare.disabled = false;
         }
     });
 </script>

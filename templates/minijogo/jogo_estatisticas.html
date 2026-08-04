@@ -16,8 +16,8 @@
       <span class="placar-label">🔥 Sequência</span>
       <span class="placar-valor" id="sequencia">0</span>
     </div>
-    <!-- CORRETO -->
-      <a href="{% url 'minijogo:ranking_minijogo' %}">Ranking</a>
+    <!-- CORRETO: Link com namespace e classe CSS aplicada -->
+    <a href="{% url 'minijogo:ranking_minijogo' %}" class="btn-ranking">Ranking</a>
   </div>
 
   <h2 class="titulo-jogo">QUEM TEM MAIS?</h2>
@@ -63,8 +63,8 @@
     <p class="overlay-pontuacao">Pontuação final: <strong id="overlay-pontuacao-final">0</strong></p>
     <div class="overlay-botoes">
       <button id="btn-jogar-de-novo" class="btn-amarelo">Jogar de novo</button>
-      <!-- CORRETO -->
-    <a href="{% url 'minijogo:ranking_minijogo' %}">Ranking</a>
+      <!-- CORRETO: Link com namespace e classe CSS aplicada -->
+      <a href="{% url 'minijogo:ranking_minijogo' %}" class="btn-contorno">Ranking</a>
     </div>
   </div>
 </div>
@@ -362,8 +362,9 @@
 (function () {
   const TEMPO_RODADA = {{ tempo_rodada }};
   const csrfToken = "{{ csrf_token }}";
-  const urlDuelo = "{% url 'api_obter_duelo' %}";
-  const urlResponder = "{% url 'api_responder_duelo' %}";
+  // CORRETO: As URLs da API também precisam do namespace!
+  const urlDuelo = "{% url 'minijogo:api_obter_duelo' %}";
+  const urlResponder = "{% url 'minijogo:api_responder_duelo' %}";
 
   let tempoRestante = TEMPO_RODADA;
   let timer = null;

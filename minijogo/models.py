@@ -140,3 +140,61 @@ class Cobranca(models.Model):
     
     # O resultado que a matemática do Backend vai decidir
     resultado = models.CharField(max_length=15, choices=RESULTADO_CHOICES, null=True, blank=True)
+
+
+
+class EstatisticaJogador(models.Model):
+    """Um 'card' de jogador de futebol usado nos duelos do minijogo."""
+
+    nome = models.CharField(max_length=100)
+    clube = models.CharField(max_length=100, blank=True, help_text="Ex: Real Madrid, Flamengo...")
+    posicao = models.CharField(
+        max_length=20,
+        blank=True,
+        choices=[
+            ('GOL', 'Goleiro'),
+            ('ZAG', 'Zagueiro'),
+            ('LAT', 'Lateral'),
+            ('MEI', 'Meio-campo'),
+            ('ATA', 'Atacante'),
+        ],
+    )
+    foto = models.ImageField(upload_to='minijogo/jogadores/')
+
+    gols = models.PositiveIntegerField(default=0)
+    assistencias = models.PositiveIntegerField(default=0)
+    cartoes_amarelos = models.PositiveIntegerField(default=0)
+    cartoes_vermelhos = models.PositiveIntegerField(default=0)
+    jogos = models.PositiveIntegerField(default=0, help_text="Total de partidas na carreira")
+
+    ativo = models.BooleanField(default=True, help_text="Desmarque para tirar o jogador do jogo sem apagá-lo")
+
+    class Meta:
+        verbose_name = "Estatística de Jogador"
+        verbose_name_plural = "Estatísticas de Jogadores"
+        ordering = ['nome']
+
+    def __str__(self):
+        return f"{self.nome} ({self.clube})" if self.clube else self.nome
+
+    @property
+    def cartoes(self):
+        """Total de cartões (amarelos + vermelhos), usado como uma das categorias do duelo."""
+        return self.cartoes_amarelos + self.cartoes_vermelhos
+
+
+class RankingMinijogo(models.Model):
+    """Registra o resultado de cada partida jogada (fim de jogo = uma linha nova)."""
+
+    usuario = models.ForeignKey(User, on_delete=models.CASCADE, related_name='partidas_minijogo')
+    pontuacao = models.PositiveIntegerField(default=0)
+    maior_sequencia = models.PositiveIntegerField(default=0, help_text="Maior sequência de acertos seguidos na partida")
+    data_partida = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Partida do Ranking"
+        verbose_name_plural = "Ranking do Minijogo"
+        ordering = ['-pontuacao']
+
+    def __str__(self):
+        return f"{self.usuario.username} - {self.pontuacao} pts"

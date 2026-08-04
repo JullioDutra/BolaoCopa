@@ -21,4 +21,9 @@ urlpatterns = [
     path('api/partida/acao/', views.api_enviar_acao, name='api_enviar_acao'),
     path('api/partida/<int:partida_id>/status/', views.api_status_partida, name='api_status_partida'),
     path('api/usar-olheiro/', views.api_usar_olheiro, name='api_usar_olheiro'),
+
+    path('jogo-estatisticas/', views.tela_jogo_cartoes, name='jogo_estatisticas'),
+    path('jogo-estatisticas/ranking/', views.tela_ranking, name='ranking_minijogo'),
+    path('api/duelo/', views.api_obter_duelo, name='api_obter_duelo'),
+    path('api/responder/', views.api_responder_duelo, name='api_responder_duelo'),
 ]

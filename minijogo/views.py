@@ -469,7 +469,7 @@ def tela_ranking(request):
     """Ranking geral: melhor pontuação de cada usuário, ordenado do maior pro menor."""
     melhores = (
         RankingMinijogo.objects
-        .values('usuario__username')
+        .values('usuario__username', 'usuario__first_name')
         .annotate(melhor_pontuacao=Max('pontuacao'), partidas=Count('id'))
         .order_by('-melhor_pontuacao')[:20]
     )

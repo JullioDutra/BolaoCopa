@@ -63,7 +63,8 @@
     <p class="overlay-pontuacao">Pontuação final: <strong id="overlay-pontuacao-final">0</strong></p>
     <div class="overlay-botoes">
       <button id="btn-jogar-de-novo" class="btn-amarelo">Jogar de novo</button>
-      <a href="{% url 'ranking_minijogo' %}" class="btn-contorno">Ver ranking</a>
+      <!-- CORRETO -->
+    <a href="{% url 'minijogo:ranking_minijogo' %}">Ranking</a>
     </div>
   </div>
 </div>

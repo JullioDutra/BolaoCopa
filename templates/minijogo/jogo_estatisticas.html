@@ -1,0 +1,552 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Orbitron:wght@500;700&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+
+<div class="campo-jogo">
+
+  <div class="placar-topo">
+    <div class="placar-item">
+      <span class="placar-label">Pontuação</span>
+      <span class="placar-valor" id="pontuacao">0</span>
+    </div>
+    <div class="placar-item combo-item" id="combo-wrapper" style="display:none;">
+      <span class="placar-label">🔥 Sequência</span>
+      <span class="placar-valor" id="sequencia">0</span>
+    </div>
+    <a href="{% url 'ranking_minijogo' %}" class="btn-ranking">🏆 Ranking</a>
+  </div>
+
+  <h2 class="titulo-jogo">QUEM TEM MAIS?</h2>
+  <p class="pergunta-texto" id="pergunta-texto">Carregando confronto...</p>
+
+  <div class="cronometro-wrapper">
+    <svg class="cronometro-svg" viewBox="0 0 120 120">
+      <circle class="cronometro-fundo" cx="60" cy="60" r="52"></circle>
+      <circle class="cronometro-barra" id="cronometro-barra" cx="60" cy="60" r="52"></circle>
+    </svg>
+    <span class="cronometro-numero" id="tempo">10</span>
+  </div>
+
+  <div class="duelo-wrapper" id="duelo-wrapper">
+    <div class="card-jogador" id="card-j1" data-jogador="1">
+      <div class="foto-moldura">
+        <img id="foto-j1" src="" alt="">
+      </div>
+      <h4 id="nome-j1"></h4>
+      <span class="clube-texto" id="clube-j1"></span>
+    </div>
+
+    <div class="vs-selo">VS</div>
+
+    <div class="card-jogador" id="card-j2" data-jogador="2">
+      <div class="foto-moldura">
+        <img id="foto-j2" src="" alt="">
+      </div>
+      <h4 id="nome-j2"></h4>
+      <span class="clube-texto" id="clube-j2"></span>
+    </div>
+  </div>
+
+  <button id="btn-desistir" class="btn-desistir">🚩 Desistir e salvar pontuação</button>
+</div>
+
+<!-- Overlay de cartão vermelho ao errar -->
+<div id="overlay-cartao" class="overlay-cartao">
+  <div class="cartao-vermelho"></div>
+  <div class="overlay-texto">
+    <h2 id="overlay-titulo">CARTÃO VERMELHO!</h2>
+    <p id="overlay-subtitulo"></p>
+    <p class="overlay-pontuacao">Pontuação final: <strong id="overlay-pontuacao-final">0</strong></p>
+    <div class="overlay-botoes">
+      <button id="btn-jogar-de-novo" class="btn-amarelo">Jogar de novo</button>
+      <a href="{% url 'ranking_minijogo' %}" class="btn-contorno">Ver ranking</a>
+    </div>
+  </div>
+</div>
+
+<canvas id="confete-canvas"></canvas>
+
+<style>
+  :root {
+    --campo-escuro: #0b3d26;
+    --campo-listra: #0f4a2e;
+    --amarelo-canarinho: #ffcc29;
+    --azul-cbf: #0d3b66;
+    --vermelho-cartao: #e63946;
+    --branco-giz: #f5f5f0;
+    --dourado: #ffd60a;
+  }
+
+  body { background: var(--campo-escuro); }
+
+  .campo-jogo {
+    position: relative;
+    max-width: 720px;
+    margin: 2rem auto;
+    padding: 2rem 1.5rem 2.5rem;
+    border-radius: 18px;
+    background:
+      repeating-linear-gradient(
+        90deg,
+        var(--campo-escuro) 0px,
+        var(--campo-escuro) 60px,
+        var(--campo-listra) 60px,
+        var(--campo-listra) 120px
+      );
+    border: 3px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45), inset 0 0 0 8px rgba(255, 255, 255, 0.05);
+    color: var(--branco-giz);
+    font-family: 'Barlow Condensed', sans-serif;
+    text-align: center;
+    overflow: hidden;
+  }
+
+  .placar-topo {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    background: rgba(0, 0, 0, 0.35);
+    border-radius: 12px;
+    padding: 0.6rem 1rem;
+    margin-bottom: 1.25rem;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+  }
+
+  .placar-item { text-align: left; }
+
+  .placar-label {
+    display: block;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--amarelo-canarinho);
+  }
+
+  .placar-valor {
+    display: block;
+    font-family: 'Orbitron', monospace;
+    font-size: 1.6rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .combo-item .placar-valor { color: var(--dourado); }
+
+  .btn-ranking {
+    margin-left: auto;
+    background: var(--amarelo-canarinho);
+    color: #1a1a1a;
+    font-weight: 700;
+    text-decoration: none;
+    padding: 0.5rem 0.9rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    white-space: nowrap;
+    transition: transform 0.15s;
+  }
+  .btn-ranking:hover { transform: scale(1.05); color: #1a1a1a; }
+
+  .titulo-jogo {
+    font-family: 'Anton', sans-serif;
+    letter-spacing: 0.05em;
+    font-size: 2.1rem;
+    color: var(--amarelo-canarinho);
+    text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.4);
+    margin-bottom: 0.25rem;
+  }
+
+  .pergunta-texto {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    min-height: 1.6em;
+  }
+
+  .cronometro-wrapper {
+    position: relative;
+    width: 90px;
+    height: 90px;
+    margin: 0 auto 1.25rem;
+  }
+
+  .cronometro-svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+
+  .cronometro-fundo {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.15);
+    stroke-width: 8;
+  }
+
+  .cronometro-barra {
+    fill: none;
+    stroke: var(--amarelo-canarinho);
+    stroke-width: 8;
+    stroke-linecap: round;
+    stroke-dasharray: 326.7;
+    stroke-dashoffset: 0;
+    transition: stroke-dashoffset 1s linear, stroke 0.3s;
+  }
+
+  .cronometro-barra.alerta { stroke: var(--vermelho-cartao); }
+
+  .cronometro-numero {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Orbitron', monospace;
+    font-size: 1.6rem;
+    font-weight: 700;
+  }
+
+  .duelo-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+  }
+
+  .card-jogador {
+    flex: 1;
+    max-width: 220px;
+    background: linear-gradient(160deg, #ffffff 0%, #e9e9e9 100%);
+    color: #1a1a1a;
+    border-radius: 14px;
+    padding: 1rem 0.75rem 1.1rem;
+    cursor: pointer;
+    border: 3px solid transparent;
+    transition: transform 0.18s, border-color 0.18s, box-shadow 0.18s;
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35);
+  }
+
+  .card-jogador:hover {
+    transform: translateY(-6px) scale(1.03);
+    border-color: var(--amarelo-canarinho);
+  }
+
+  .card-jogador:active { transform: translateY(-2px) scale(0.99); }
+
+  .card-jogador.selecionado { border-color: var(--dourado); box-shadow: 0 0 0 4px rgba(255, 214, 10, 0.4); }
+  .card-jogador.correto { border-color: #2ecc71; box-shadow: 0 0 0 4px rgba(46, 204, 113, 0.45); }
+  .card-jogador.errado { border-color: var(--vermelho-cartao); box-shadow: 0 0 0 4px rgba(230, 57, 70, 0.45); }
+  .card-jogador.desabilitado { pointer-events: none; opacity: 0.85; }
+
+  .foto-moldura {
+    width: 110px;
+    height: 110px;
+    margin: 0 auto 0.6rem;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 4px solid var(--azul-cbf);
+  }
+
+  .foto-moldura img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+  .card-jogador h4 { font-family: 'Anton', sans-serif; font-size: 1.05rem; margin: 0.15rem 0 0; letter-spacing: 0.02em; }
+
+  .clube-texto { font-size: 0.8rem; color: #555; }
+
+  .vs-selo {
+    font-family: 'Anton', sans-serif;
+    font-size: 1.4rem;
+    color: var(--vermelho-cartao);
+    background: var(--branco-giz);
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+    flex-shrink: 0;
+  }
+
+  .btn-desistir {
+    margin-top: 1.75rem;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    color: rgba(255, 255, 255, 0.75);
+    padding: 0.45rem 1rem;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-desistir:hover { border-color: var(--vermelho-cartao); color: var(--vermelho-cartao); }
+
+  /* Overlay de fim de jogo */
+  .overlay-cartao {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.75);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    z-index: 1000;
+    text-align: center;
+    padding: 1.5rem;
+  }
+  .overlay-cartao.visivel { display: flex; }
+
+  .cartao-vermelho {
+    width: 90px;
+    height: 120px;
+    background: var(--vermelho-cartao);
+    border-radius: 8px;
+    box-shadow: 0 0 40px rgba(230, 57, 70, 0.8);
+    animation: cair-cartao 0.5s ease-out;
+    margin-bottom: 1.25rem;
+  }
+
+  @keyframes cair-cartao {
+    from { transform: translateY(-120px) rotate(-15deg); opacity: 0; }
+    to { transform: translateY(0) rotate(-8deg); opacity: 1; }
+  }
+
+  .overlay-texto h2 {
+    font-family: 'Anton', sans-serif;
+    color: var(--vermelho-cartao);
+    font-size: 2rem;
+    margin-bottom: 0.4rem;
+  }
+  .overlay-texto p { color: var(--branco-giz); font-family: 'Barlow Condensed', sans-serif; font-size: 1.1rem; }
+  .overlay-pontuacao strong { color: var(--amarelo-canarinho); font-size: 1.4rem; }
+
+  .overlay-botoes { margin-top: 1.25rem; display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }
+
+  .btn-amarelo {
+    background: var(--amarelo-canarinho);
+    color: #1a1a1a;
+    border: none;
+    font-weight: 700;
+    padding: 0.6rem 1.3rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+  }
+  .btn-amarelo:hover { filter: brightness(1.05); }
+
+  .btn-contorno {
+    border: 1px solid var(--branco-giz);
+    color: var(--branco-giz);
+    padding: 0.6rem 1.3rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 1rem;
+  }
+  .btn-contorno:hover { background: rgba(255, 255, 255, 0.1); color: var(--branco-giz); }
+
+  #confete-canvas {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 999;
+  }
+
+  @media (max-width: 560px) {
+    .duelo-wrapper { flex-direction: column; }
+    .vs-selo { order: 2; margin: -0.25rem 0; }
+    .card-jogador { max-width: 260px; width: 100%; }
+  }
+</style>
+
+<script>
+(function () {
+  const TEMPO_RODADA = {{ tempo_rodada }};
+  const csrfToken = "{{ csrf_token }}";
+  const urlDuelo = "{% url 'api_obter_duelo' %}";
+  const urlResponder = "{% url 'api_responder_duelo' %}";
+
+  let tempoRestante = TEMPO_RODADA;
+  let timer = null;
+  let jogadorIds = { 1: null, 2: null };
+  let travado = false; // impede clique duplo enquanto processa
+
+  const el = (id) => document.getElementById(id);
+  const barraCronometro = el('cronometro-barra');
+  const CIRCUNFERENCIA = 2 * Math.PI * 52;
+  barraCronometro.style.strokeDasharray = CIRCUNFERENCIA;
+
+  function atualizarCronometroVisual() {
+    const fracao = tempoRestante / TEMPO_RODADA;
+    barraCronometro.style.strokeDashoffset = CIRCUNFERENCIA * (1 - fracao);
+    barraCronometro.classList.toggle('alerta', tempoRestante <= 3);
+    el('tempo').textContent = tempoRestante;
+  }
+
+  function carregarDuelo() {
+    travado = false;
+    limparSelecaoVisual();
+    el('pergunta-texto').textContent = 'Carregando confronto...';
+
+    fetch(urlDuelo)
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.erro) {
+          el('pergunta-texto').textContent = data.erro;
+          return;
+        }
+        el('pergunta-texto').textContent = data.pergunta;
+
+        el('nome-j1').textContent = data.jogador1.nome;
+        el('clube-j1').textContent = data.jogador1.clube || '';
+        el('foto-j1').src = data.jogador1.foto;
+        jogadorIds[1] = data.jogador1.id;
+
+        el('nome-j2').textContent = data.jogador2.nome;
+        el('clube-j2').textContent = data.jogador2.clube || '';
+        el('foto-j2').src = data.jogador2.foto;
+        jogadorIds[2] = data.jogador2.id;
+
+        el('pontuacao').textContent = data.pontuacao;
+        atualizarCombo(data.sequencia);
+
+        reiniciarCronometro();
+      });
+  }
+
+  function atualizarCombo(sequencia) {
+    el('sequencia').textContent = sequencia;
+    el('combo-wrapper').style.display = sequencia > 0 ? 'block' : 'none';
+  }
+
+  function reiniciarCronometro() {
+    clearInterval(timer);
+    tempoRestante = TEMPO_RODADA;
+    atualizarCronometroVisual();
+
+    timer = setInterval(() => {
+      tempoRestante--;
+      atualizarCronometroVisual();
+      if (tempoRestante <= 0) {
+        clearInterval(timer);
+        enviarResposta(null, 'tempo_esgotado');
+      }
+    }, 1000);
+  }
+
+  function limparSelecaoVisual() {
+    el('card-j1').className = 'card-jogador';
+    el('card-j2').className = 'card-jogador';
+  }
+
+  function marcarResultadoVisual(escolhaNumero, acertou) {
+    const cardEscolhido = el('card-j' + escolhaNumero);
+    const cardOutro = el('card-j' + (escolhaNumero === 1 ? 2 : 1));
+    cardEscolhido.classList.add(acertou ? 'correto' : 'errado');
+    if (!acertou) cardOutro.classList.add('correto');
+    el('card-j1').classList.add('desabilitado');
+    el('card-j2').classList.add('desabilitado');
+  }
+
+  function enviarResposta(escolhaNumero, motivo) {
+    if (travado) return;
+    travado = true;
+    clearInterval(timer);
+
+    const jogadorEscolhidoId = escolhaNumero ? jogadorIds[escolhaNumero] : '';
+
+    const formData = new FormData();
+    formData.append('jogador_id', jogadorEscolhidoId);
+    formData.append('tempo_restante', tempoRestante);
+    formData.append('motivo_fim', motivo || '');
+    formData.append('csrfmiddlewaretoken', csrfToken);
+
+    fetch(urlResponder, { method: 'POST', body: formData })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.fim_de_jogo) {
+          if (escolhaNumero) marcarResultadoVisual(escolhaNumero, false);
+          mostrarFimDeJogo(data);
+          return;
+        }
+        if (data.correto) {
+          if (escolhaNumero) marcarResultadoVisual(escolhaNumero, true);
+          el('pontuacao').textContent = data.pontuacao_total;
+          atualizarCombo(data.sequencia);
+          dispararConfete();
+          setTimeout(carregarDuelo, 700);
+        }
+      })
+      .catch(() => { travado = false; });
+  }
+
+  function mostrarFimDeJogo(data) {
+    const desistiu = data.desistiu;
+    el('overlay-titulo').textContent = desistiu ? 'VOCÊ ENCERROU A PARTIDA' : 'CARTÃO VERMELHO!';
+    el('overlay-subtitulo').textContent = desistiu
+      ? 'Sua pontuação foi salva no ranking.'
+      : 'Resposta errada ou tempo esgotado.';
+    el('overlay-pontuacao-final').textContent = data.pontuacao_final;
+    setTimeout(() => el('overlay-cartao').classList.add('visivel'), desistiu ? 0 : 600);
+  }
+
+  el('card-j1').addEventListener('click', () => {
+    el('card-j1').classList.add('selecionado');
+    enviarResposta(1);
+  });
+  el('card-j2').addEventListener('click', () => {
+    el('card-j2').classList.add('selecionado');
+    enviarResposta(2);
+  });
+
+  el('btn-desistir').addEventListener('click', () => {
+    if (!confirm('Encerrar a partida agora e salvar sua pontuação no ranking?')) return;
+    enviarResposta(null, 'desistiu');
+  });
+
+  el('btn-jogar-de-novo').addEventListener('click', () => {
+    el('overlay-cartao').classList.remove('visivel');
+    carregarDuelo();
+  });
+
+  // Confete simples em canvas, só nas cores da torcida
+  const canvas = el('confete-canvas');
+  const ctx = canvas.getContext('2d');
+  let particulas = [];
+  function redimensionarCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', redimensionarCanvas);
+  redimensionarCanvas();
+
+  function dispararConfete() {
+    const cores = ['#FFCC29', '#0D3B66', '#F5F5F0', '#2ecc71'];
+    for (let i = 0; i < 40; i++) {
+      particulas.push({
+        x: canvas.width / 2 + (Math.random() - 0.5) * 200,
+        y: canvas.height * 0.35,
+        vx: (Math.random() - 0.5) * 6,
+        vy: Math.random() * -6 - 2,
+        cor: cores[Math.floor(Math.random() * cores.length)],
+        vida: 60,
+      });
+    }
+  }
+
+  function loopConfete() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    particulas = particulas.filter((p) => p.vida > 0);
+    particulas.forEach((p) => {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += 0.25;
+      p.vida--;
+      ctx.fillStyle = p.cor;
+      ctx.fillRect(p.x, p.y, 6, 6);
+    });
+    requestAnimationFrame(loopConfete);
+  }
+  loopConfete();
+
+  carregarDuelo();
+})();
+</script>
+{% endblock %}

@@ -8,7 +8,7 @@ from django.shortcuts import get_object_or_404
 from django.shortcuts import render, redirect
 from .engine import sortear_novo_elenco
 # Importe seus modelos e o motor lógico que criamos
-from .models import MeuDraft, CartaJogador, PartidaPenalti
+from .models import MeuDraft, CartaJogador, PartidaPenalti, EstatisticaJogador, RankingMinijogo
 from .engine import selecionar_carta, calcular_resultado_penalti, processar_cobranca, sortear_novo_elenco
 from django.db.models import Q, Count, Sum, Max
 from django.contrib.auth.models import User
@@ -435,3 +435,174 @@ def api_usar_tatica(request):
         
     partida.save()
     return JsonResponse({'sucesso': True, 'mensagem': 'Tática ativada! O OVR do adversário cairá nesta cobrança!'})
+
+
+CHAVE_SESSAO = 'minijogo_estado'
+
+ESTATISTICAS_POSSIVEIS = ['gols', 'assistencias', 'cartoes']
+TEXTOS_PERGUNTA = {
+    'gols': 'Quem tem mais gols na carreira?',
+    'assistencias': 'Quem tem mais assistências?',
+    'cartoes': 'Quem tem mais cartões (amarelos + vermelhos)?',
+}
+
+PONTOS_BASE = 10
+BONUS_MAXIMO_VELOCIDADE = 10  # pontos extras se acertar instantaneamente
+TEMPO_RODADA = 10  # segundos
+SEQUENCIA_PARA_COMBO = 3
+BONUS_COMBO = 15
+
+
+def _estado_inicial():
+    return {'pontuacao': 0, 'sequencia': 0, 'maior_sequencia': 0, 'duelo': None}
+
+
+@login_required
+def tela_jogo_cartoes(request):
+    """Renderiza a tela do jogo e zera o estado da partida na sessão."""
+    request.session[CHAVE_SESSAO] = _estado_inicial()
+    return render(request, 'minijogo/jogo_estatisticas.html', {'tempo_rodada': TEMPO_RODADA})
+
+
+@login_required
+def tela_ranking(request):
+    """Ranking geral: melhor pontuação de cada usuário, ordenado do maior pro menor."""
+    melhores = (
+        RankingMinijogo.objects
+        .values('usuario__username')
+        .annotate(melhor_pontuacao=Max('pontuacao'), partidas=Count('id'))
+        .order_by('-melhor_pontuacao')[:20]
+    )
+    lider = melhores[0] if melhores else None
+    contexto = {'melhores': melhores, 'lider': lider}
+    return render(request, 'minijogo/ranking.html', contexto)
+
+
+def _sortear_duelo():
+    """Sorteia 2 jogadores e uma estatística, evitando empates (senão a pergunta não tem resposta certa)."""
+    jogadores_ativos = list(EstatisticaJogador.objects.filter(ativo=True))
+    if len(jogadores_ativos) < 2:
+        return None
+
+    for _ in range(15):  # algumas tentativas para achar um confronto sem empate
+        j1, j2 = random.sample(jogadores_ativos, 2)
+        estatistica = random.choice(ESTATISTICAS_POSSIVEIS)
+        val_1 = getattr(j1, estatistica)
+        val_2 = getattr(j2, estatistica)
+        if val_1 != val_2:
+            vencedor_id = j1.id if val_1 > val_2 else j2.id
+            return {
+                'estatistica': estatistica,
+                'vencedor_id': vencedor_id,
+                'jogador1_id': j1.id,
+                'jogador2_id': j2.id,
+                'jogador1': j1,
+                'jogador2': j2,
+            }
+    return None  # base de jogadores muito parecida; raro, mas tratamos no chamador
+
+
+@login_required
+def api_obter_duelo(request):
+    duelo = _sortear_duelo()
+    if duelo is None:
+        return JsonResponse(
+            {'erro': 'Não foi possível montar um confronto justo. Cadastre mais jogadores variados.'},
+            status=400,
+        )
+
+    estado = request.session.get(CHAVE_SESSAO) or _estado_inicial()
+    estado['duelo'] = {
+        'estatistica': duelo['estatistica'],
+        'vencedor_id': duelo['vencedor_id'],
+        'jogador1_id': duelo['jogador1_id'],
+        'jogador2_id': duelo['jogador2_id'],
+    }
+    request.session[CHAVE_SESSAO] = estado
+    request.session.modified = True
+
+    j1, j2 = duelo['jogador1'], duelo['jogador2']
+    dados = {
+        'pergunta': TEXTOS_PERGUNTA[duelo['estatistica']],
+        'jogador1': {'id': j1.id, 'nome': j1.nome, 'clube': j1.clube, 'foto': j1.foto.url},
+        'jogador2': {'id': j2.id, 'nome': j2.nome, 'clube': j2.clube, 'foto': j2.foto.url},
+        'pontuacao': estado['pontuacao'],
+        'sequencia': estado['sequencia'],
+        'tempo_rodada': TEMPO_RODADA,
+    }
+    return JsonResponse(dados)
+
+
+@login_required
+def api_responder_duelo(request):
+    if request.method != 'POST':
+        return JsonResponse({'erro': 'Método não permitido.'}, status=405)
+
+    estado = request.session.get(CHAVE_SESSAO) or _estado_inicial()
+    duelo = estado.get('duelo')
+    motivo_fim = request.POST.get('motivo_fim', '')  # 'tempo_esgotado', 'desistiu' ou ''
+
+    # Desistência: encerra e salva o que já foi conquistado, sem exigir escolha de jogador.
+    if motivo_fim == 'desistiu':
+        return _finalizar_partida(request, estado, venceu=False, desistiu=True)
+
+    if duelo is None:
+        return JsonResponse({'erro': 'Sessão de jogo expirada. Recarregue a página.'}, status=400)
+
+    tempo_restante_raw = request.POST.get('tempo_restante', '0')
+    try:
+        tempo_restante = max(0, min(TEMPO_RODADA, float(tempo_restante_raw)))
+    except ValueError:
+        tempo_restante = 0
+
+    if motivo_fim == 'tempo_esgotado':
+        acertou = False
+    else:
+        jogador_id_raw = request.POST.get('jogador_id')
+        try:
+            jogador_escolhido_id = int(jogador_id_raw)
+        except (TypeError, ValueError):
+            return JsonResponse({'erro': 'jogador_id inválido.'}, status=400)
+        acertou = jogador_escolhido_id == duelo['vencedor_id']
+
+    if not acertou:
+        return _finalizar_partida(request, estado, venceu=False, desistiu=False)
+
+    # Acertou: soma pontos (base + bônus de velocidade) e atualiza sequência/combo.
+    bonus_velocidade = round((tempo_restante / TEMPO_RODADA) * BONUS_MAXIMO_VELOCIDADE)
+    estado['sequencia'] += 1
+    ganhou_combo = estado['sequencia'] > 0 and estado['sequencia'] % SEQUENCIA_PARA_COMBO == 0
+    bonus_combo = BONUS_COMBO if ganhou_combo else 0
+
+    pontos_ganhos = PONTOS_BASE + bonus_velocidade + bonus_combo
+    estado['pontuacao'] += pontos_ganhos
+    estado['maior_sequencia'] = max(estado['maior_sequencia'], estado['sequencia'])
+    estado['duelo'] = None
+    request.session[CHAVE_SESSAO] = estado
+    request.session.modified = True
+
+    return JsonResponse({
+        'correto': True,
+        'pontos_ganhos': pontos_ganhos,
+        'bonus_velocidade': bonus_velocidade,
+        'bonus_combo': bonus_combo,
+        'pontuacao_total': estado['pontuacao'],
+        'sequencia': estado['sequencia'],
+    })
+
+
+def _finalizar_partida(request, estado, venceu, desistiu):
+    RankingMinijogo.objects.create(
+        usuario=request.user,
+        pontuacao=estado['pontuacao'],
+        maior_sequencia=estado['maior_sequencia'],
+    )
+    pontuacao_final = estado['pontuacao']
+    request.session[CHAVE_SESSAO] = _estado_inicial()
+    request.session.modified = True
+    return JsonResponse({
+        'correto': False,
+        'fim_de_jogo': True,
+        'desistiu': desistiu,
+        'pontuacao_final': pontuacao_final,
+    })

@@ -5,7 +5,7 @@ from datetime import timedelta
 from django.db import transaction
 from django.db.models import Max
 from decimal import Decimal
-from accounts.models import Transacao
+#from accounts.models import Transacao
 
 class Jogo(models.Model):
     time_casa = models.CharField(max_length=100)    
@@ -97,6 +97,9 @@ class Jogo(models.Model):
                             carteira = palpite.usuario.carteira
                             carteira.saldo += premio_individual
                             carteira.save()
+
+                            # IMPORTAÇÃO LOCAL: Resolve o import circular e evita o NameError
+                            from accounts.models import Transacao 
 
                             # Gera o extrato de recebimento para o usuário
                             Transacao.objects.create(

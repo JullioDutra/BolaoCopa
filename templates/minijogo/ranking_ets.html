@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Orbitron:wght@500;700&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+
+<div class="painel-ranking">
+  <a href="{% url 'jogo_estatisticas' %}" class="btn-voltar">← Voltar ao jogo</a>
+  <h2 class="titulo-ranking">🏆 CLASSIFICAÇÃO GERAL</h2>
+
+  {% if lider %}
+    <div class="lider-card">
+      <span class="lider-selo">LÍDER GERAL</span>
+      <span class="lider-nome">{{ lider.usuario__username }}</span>
+      <span class="lider-pontos">{{ lider.melhor_pontuacao }} pts</span>
+    </div>
+  {% endif %}
+
+  {% if melhores %}
+    <table class="tabela-ranking">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Jogador</th>
+          <th>Melhor pontuação</th>
+          <th>Partidas</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in melhores %}
+          <tr class="{% if forloop.counter == 1 %}linha-ouro{% elif forloop.counter == 2 %}linha-prata{% elif forloop.counter == 3 %}linha-bronze{% endif %}">
+            <td>
+              {% if forloop.counter == 1 %}🥇{% elif forloop.counter == 2 %}🥈{% elif forloop.counter == 3 %}🥉{% else %}{{ forloop.counter }}{% endif %}
+            </td>
+            <td>{{ item.usuario__username }}</td>
+            <td class="pontos-td">{{ item.melhor_pontuacao }}</td>
+            <td>{{ item.partidas }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="vazio-texto">Ainda ninguém jogou. Seja o primeiro a entrar em campo!</p>
+  {% endif %}
+</div>
+
+<style>
+  :root {
+    --campo-escuro: #0b3d26;
+    --amarelo-canarinho: #ffcc29;
+    --azul-cbf: #0d3b66;
+    --branco-giz: #f5f5f0;
+    --dourado: #ffd60a;
+  }
+
+  body { background: var(--campo-escuro); }
+
+  .painel-ranking {
+    max-width: 640px;
+    margin: 2rem auto;
+    padding: 2rem 1.5rem;
+    background: rgba(0, 0, 0, 0.35);
+    border-radius: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: var(--branco-giz);
+    font-family: 'Barlow Condensed', sans-serif;
+  }
+
+  .btn-voltar {
+    color: var(--amarelo-canarinho);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+  .btn-voltar:hover { text-decoration: underline; color: var(--amarelo-canarinho); }
+
+  .titulo-ranking {
+    font-family: 'Anton', sans-serif;
+    text-align: center;
+    color: var(--amarelo-canarinho);
+    font-size: 1.9rem;
+    margin: 0.75rem 0 1.5rem;
+    letter-spacing: 0.03em;
+  }
+
+  .lider-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: linear-gradient(135deg, var(--dourado), #f7a600);
+    color: #1a1a1a;
+    border-radius: 14px;
+    padding: 1.1rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 10px 25px rgba(255, 214, 10, 0.35);
+  }
+
+  .lider-selo {
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    font-weight: 700;
+    opacity: 0.75;
+  }
+
+  .lider-nome {
+    font-family: 'Anton', sans-serif;
+    font-size: 1.6rem;
+    margin-top: 0.15rem;
+  }
+
+  .lider-pontos {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.1rem;
+    margin-top: 0.15rem;
+  }
+
+  .tabela-ranking {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 1.05rem;
+  }
+
+  .tabela-ranking th {
+    text-align: left;
+    padding: 0.6rem 0.5rem;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+    color: var(--amarelo-canarinho);
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 0.05em;
+  }
+
+  .tabela-ranking td {
+    padding: 0.55rem 0.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .pontos-td { font-family: 'Orbitron', monospace; font-weight: 700; }
+
+  .linha-ouro { background: rgba(255, 214, 10, 0.12); }
+  .linha-prata { background: rgba(192, 192, 192, 0.12); }
+  .linha-bronze { background: rgba(205, 127, 50, 0.12); }
+
+  .vazio-texto { text-align: center; opacity: 0.8; margin-top: 1.5rem; }
+</style>
+{% endblock %}

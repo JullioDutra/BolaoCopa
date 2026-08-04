@@ -6,7 +6,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Orbitron:wght@500;700&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
 
 <div class="painel-ranking">
-  <!-- CORREÇÃO: Adicionado o prefixo minijogo: na URL -->
   <a href="{% url 'minijogo:jogo_estatisticas' %}" class="btn-voltar">← Voltar ao jogo</a>
   <h2 class="titulo-ranking">🏆 CLASSIFICAÇÃO GERAL</h2>
 
@@ -17,7 +16,7 @@
         {% if lider.usuario__first_name %}
           {{ lider.usuario__first_name }}
         {% else %}
-          {{ lider.usuario__username }}
+          Jogador
         {% endif %}
       </span>
       <span class="lider-pontos">{{ lider.melhor_pontuacao }} pts</span>
@@ -44,7 +43,7 @@
               {% if item.usuario__first_name %}
                 {{ item.usuario__first_name }}
               {% else %}
-                {{ item.usuario__username }}
+                Jogador
               {% endif %}
             </td>
             <td class="pontos-td">{{ item.melhor_pontuacao }}</td>

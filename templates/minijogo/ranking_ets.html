@@ -6,7 +6,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Orbitron:wght@500;700&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
 
 <div class="painel-ranking">
-  <a href="{% url 'jogo_estatisticas' %}" class="btn-voltar">← Voltar ao jogo</a>
+  <!-- CORREÇÃO: Adicionado o prefixo minijogo: na URL -->
+  <a href="{% url 'minijogo:jogo_estatisticas' %}" class="btn-voltar">← Voltar ao jogo</a>
   <h2 class="titulo-ranking">🏆 CLASSIFICAÇÃO GERAL</h2>
 
   {% if lider %}

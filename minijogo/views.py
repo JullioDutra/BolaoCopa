@@ -475,7 +475,7 @@ def tela_ranking(request):
     )
     lider = melhores[0] if melhores else None
     contexto = {'melhores': melhores, 'lider': lider}
-    return render(request, 'minijogo/ranking.html', contexto)
+    return render(request, 'minijogo/ranking_ets.html', contexto)
 
 
 def _sortear_duelo():

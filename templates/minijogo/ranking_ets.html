@@ -13,7 +13,13 @@
   {% if lider %}
     <div class="lider-card">
       <span class="lider-selo">LÍDER GERAL</span>
-      <span class="lider-nome">{{ lider.usuario__first_name }}</span>
+      <span class="lider-nome">
+        {% if lider.usuario__first_name %}
+          {{ lider.usuario__first_name }}
+        {% else %}
+          {{ lider.usuario__username }}
+        {% endif %}
+      </span>
       <span class="lider-pontos">{{ lider.melhor_pontuacao }} pts</span>
     </div>
   {% endif %}
@@ -34,7 +40,13 @@
             <td>
               {% if forloop.counter == 1 %}🥇{% elif forloop.counter == 2 %}🥈{% elif forloop.counter == 3 %}🥉{% else %}{{ forloop.counter }}{% endif %}
             </td>
-            <td>{{ item.usuario__first_name }}</td>
+            <td>
+              {% if item.usuario__first_name %}
+                {{ item.usuario__first_name }}
+              {% else %}
+                {{ item.usuario__username }}
+              {% endif %}
+            </td>
             <td class="pontos-td">{{ item.melhor_pontuacao }}</td>
             <td>{{ item.partidas }}</td>
           </tr>

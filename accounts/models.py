@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from decimal import Decimal
 from django.dispatch import receiver
 from django.db.models.signals import post_save
-from palpites.models import Clube
+#from palpites.models import Clube
 
 @receiver(post_save, sender=User)
 def create_user_wallet(sender, instance, created, **kwargs):
@@ -37,7 +37,7 @@ class Transacao(models.Model):
 
 class PerfilUsuario(models.Model):
     usuario = models.OneToOneField(User, on_delete=models.CASCADE, related_name='perfil')
-    time_coracao = models.ForeignKey(Clube, on_delete=models.SET_NULL, null=True, blank=True)
+    time_coracao = models.ForeignKey('palpites.Clube', on_delete=models.SET_NULL, null=True, blank=True)
     viu_efeito_hoje = models.BooleanField(default=False) 
 
     def __str__(self):

@@ -166,6 +166,7 @@ class EstatisticaJogador(models.Model):
     cartoes_amarelos = models.PositiveIntegerField(default=0)
     cartoes_vermelhos = models.PositiveIntegerField(default=0)
     jogos = models.PositiveIntegerField(default=0, help_text="Total de partidas na carreira")
+    titulos = models.PositiveIntegerField(default=0, help_text="Total de títulos oficiais na carreira")
 
     ativo = models.BooleanField(default=True, help_text="Desmarque para tirar o jogador do jogo sem apagá-lo")
 
@@ -198,3 +199,24 @@ class RankingMinijogo(models.Model):
 
     def __str__(self):
         return f"{self.usuario.username} - {self.pontuacao} pts"
+
+class EsquadraoHistorico(models.Model):
+    """Cards de Clubes/Temporadas específicas para o minijogo."""
+    nome = models.CharField(max_length=100, help_text="Ex: Galo 2013, Flamengo 2019")
+    clube = models.CharField(max_length=100, help_text="Nome do clube para buscar o escudo genérico se precisar")
+    ano = models.IntegerField()
+    escudo = models.ImageField(upload_to='minijogo/escudos_esquadroes/', blank=True, null=True)
+    
+    gols_pro = models.PositiveIntegerField(default=0, help_text="Gols marcados na temporada")
+    gols_sofridos = models.PositiveIntegerField(default=0, help_text="Gols sofridos na temporada")
+    titulos = models.PositiveIntegerField(default=0, help_text="Títulos conquistados nesta temporada específica")
+    
+    ativo = models.BooleanField(default=True)
+
+    class Meta:
+        verbose_name = "Esquadrão Histórico"
+        verbose_name_plural = "Esquadrões Históricos"
+        ordering = ['-ano', 'nome']
+
+    def __str__(self):
+        return self.nome

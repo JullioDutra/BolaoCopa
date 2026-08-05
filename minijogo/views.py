@@ -8,7 +8,7 @@ from django.shortcuts import get_object_or_404
 from django.shortcuts import render, redirect
 from .engine import sortear_novo_elenco
 # Importe seus modelos e o motor lógico que criamos
-from .models import MeuDraft, CartaJogador, PartidaPenalti, EstatisticaJogador, RankingMinijogo
+from .models import MeuDraft, CartaJogador, PartidaPenalti, EstatisticaJogador, RankingMinijogo, EsquadraoHistorico
 from .engine import selecionar_carta, calcular_resultado_penalti, processar_cobranca, sortear_novo_elenco
 from django.db.models import Q, Count, Sum, Max
 from django.contrib.auth.models import User

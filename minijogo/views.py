@@ -504,33 +504,76 @@ def _sortear_duelo():
 
 @login_required
 def api_obter_duelo(request):
-    duelo = _sortear_duelo()
-    if duelo is None:
-        return JsonResponse(
-            {'erro': 'Não foi possível montar um confronto justo. Cadastre mais jogadores variados.'},
-            status=400,
-        )
+    # 1. Sorteia o MODO da rodada (ex: 75% de chance de ser jogador, 25% de ser Esquadrão)
+    modo_rodada = random.choices(['jogador', 'esquadrao'], weights=[75, 25])[0]
 
-    estado = request.session.get(CHAVE_SESSAO) or _estado_inicial()
-    estado['duelo'] = {
-        'estatistica': duelo['estatistica'],
-        'vencedor_id': duelo['vencedor_id'],
-        'jogador1_id': duelo['jogador1_id'],
-        'jogador2_id': duelo['jogador2_id'],
-    }
-    request.session[CHAVE_SESSAO] = estado
-    request.session.modified = True
+    if modo_rodada == 'jogador':
+        # --- LÓGICA DE JOGADORES ---
+        jogadores = list(EstatisticaJogador.objects.filter(ativo=True).order_by('?'))[:2]
+        j1, j2 = jogadores[0], jogadores[1]
+        
+        # Novas categorias incluindo Títulos
+        categorias = [
+            ('gols', 'Quem tem MAIS GOLS na carreira?'),
+            ('assistencias', 'Quem tem MAIS ASSISTÊNCIAS na carreira?'),
+            ('jogos', 'Quem tem MAIS PARTIDAS OFICIAIS na carreira?'),
+            ('cartoes', 'Quem tomou MAIS CARTÕES (Amarelos + Vermelhos)?'),
+            ('titulos', 'Quem conquistou MAIS TÍTULOS na carreira?')
+        ]
+        cat_escolhida, pergunta = random.choice(categorias)
+        
+        # Como o jogador processa a propriedade cartoes dinamicamente:
+        val1 = getattr(j1, cat_escolhida) if cat_escolhida != 'cartoes' else j1.cartoes
+        val2 = getattr(j2, cat_escolhida) if cat_escolhida != 'cartoes' else j2.cartoes
+        
+        # O maior valor vence
+        vencedor_id = j1.id if val1 > val2 else j2.id if val2 > val1 else None
 
-    j1, j2 = duelo['jogador1'], duelo['jogador2']
-    dados = {
-        'pergunta': TEXTOS_PERGUNTA[duelo['estatistica']],
-        'jogador1': {'id': j1.id, 'nome': j1.nome, 'clube': j1.clube, 'foto': j1.foto.url},
-        'jogador2': {'id': j2.id, 'nome': j2.nome, 'clube': j2.clube, 'foto': j2.foto.url},
-        'pontuacao': estado['pontuacao'],
-        'sequencia': estado['sequencia'],
-        'tempo_rodada': TEMPO_RODADA,
+        # Monta o JSON de resposta (adapte para o seu padrão atual)
+        dados_j1 = {'id': j1.id, 'nome': j1.nome, 'clube': j1.clube, 'foto': j1.foto.url if j1.foto else ''}
+        dados_j2 = {'id': j2.id, 'nome': j2.nome, 'clube': j2.clube, 'foto': j2.foto.url if j2.foto else ''}
+
+    else:
+        # --- LÓGICA DE ESQUADRÕES ---
+        esquadroes = list(EsquadraoHistorico.objects.filter(ativo=True).order_by('?'))[:2]
+        e1, e2 = esquadroes[0], esquadroes[1]
+        
+        categorias = [
+            ('gols_pro', 'Qual esquadrão marcou MAIS GOLS no ano?'),
+            ('titulos', 'Qual esquadrão ganhou MAIS TÍTULOS no ano?'),
+            ('gols_sofridos', 'Qual esquadrão sofreu MENOS GOLS no ano?') # Pegadinha!
+        ]
+        cat_escolhida, pergunta = random.choice(categorias)
+        
+        val1 = getattr(e1, cat_escolhida)
+        val2 = getattr(e2, cat_escolhida)
+        
+        # LÓGICA INVERSA SE FOR GOLS SOFRIDOS (O menor vence)
+        if cat_escolhida == 'gols_sofridos':
+            vencedor_id = e1.id if val1 < val2 else e2.id if val2 < val1 else None
+        else:
+            vencedor_id = e1.id if val1 > val2 else e2.id if val2 > val1 else None
+
+        dados_j1 = {'id': e1.id, 'nome': e1.nome, 'clube': e1.clube, 'foto': e1.escudo.url if e1.escudo else ''}
+        dados_j2 = {'id': e2.id, 'nome': e2.nome, 'clube': e2.clube, 'foto': e2.escudo.url if e2.escudo else ''}
+
+    # Tratamento de Empate (Se val1 == val2, você pode sortear de novo ou aceitar qualquer resposta como correta)
+    if vencedor_id is None:
+        vencedor_id = 'empate' # Sua view api_responder_duelo precisa aceitar isso
+
+    # Salva na sessão o ID correto e o tipo do duelo (para a view de validação saber)
+    request.session['duelo_atual'] = {
+        'vencedor_id': vencedor_id,
+        'modo': modo_rodada
     }
-    return JsonResponse(dados)
+
+    return JsonResponse({
+        'pergunta': pergunta,
+        'jogador1': dados_j1,
+        'jogador2': dados_j2,
+        'pontuacao': request.session.get('pontuacao_atual', 0),
+        'sequencia': request.session.get('sequencia_atual', 0),
+    })
 
 
 @login_required

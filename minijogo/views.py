@@ -504,7 +504,10 @@ def _sortear_duelo():
 
 @login_required
 def api_obter_duelo(request):
-    # 1. Sorteia o MODO da rodada (ex: 75% de chance de ser jogador, 25% de ser Esquadrão)
+    # 1. Recupera o ESTADO oficial do jogo (onde o api_responder vai ler depois)
+    estado = request.session.get(CHAVE_SESSAO) or _estado_inicial()
+
+    # 2. Sorteia o MODO da rodada (ex: 75% de chance de ser jogador, 25% de ser Esquadrão)
     modo_rodada = random.choices(['jogador', 'esquadrao'], weights=[75, 25])[0]
 
     if modo_rodada == 'jogador':
@@ -512,7 +515,6 @@ def api_obter_duelo(request):
         jogadores = list(EstatisticaJogador.objects.filter(ativo=True).order_by('?'))[:2]
         j1, j2 = jogadores[0], jogadores[1]
         
-        # Novas categorias incluindo Títulos
         categorias = [
             ('gols', 'Quem tem MAIS GOLS na carreira?'),
             ('assistencias', 'Quem tem MAIS ASSISTÊNCIAS na carreira?'),
@@ -522,14 +524,11 @@ def api_obter_duelo(request):
         ]
         cat_escolhida, pergunta = random.choice(categorias)
         
-        # Como o jogador processa a propriedade cartoes dinamicamente:
         val1 = getattr(j1, cat_escolhida) if cat_escolhida != 'cartoes' else j1.cartoes
         val2 = getattr(j2, cat_escolhida) if cat_escolhida != 'cartoes' else j2.cartoes
         
-        # O maior valor vence
-        vencedor_id = j1.id if val1 > val2 else j2.id if val2 > val1 else None
+        vencedor_id = j1.id if val1 > val2 else j2.id if val2 > val1 else 'empate'
 
-        # Monta o JSON de resposta (adapte para o seu padrão atual)
         dados_j1 = {'id': j1.id, 'nome': j1.nome, 'clube': j1.clube, 'foto': j1.foto.url if j1.foto else ''}
         dados_j2 = {'id': j2.id, 'nome': j2.nome, 'clube': j2.clube, 'foto': j2.foto.url if j2.foto else ''}
 
@@ -550,29 +549,29 @@ def api_obter_duelo(request):
         
         # LÓGICA INVERSA SE FOR GOLS SOFRIDOS (O menor vence)
         if cat_escolhida == 'gols_sofridos':
-            vencedor_id = e1.id if val1 < val2 else e2.id if val2 < val1 else None
+            vencedor_id = e1.id if val1 < val2 else e2.id if val2 < val1 else 'empate'
         else:
-            vencedor_id = e1.id if val1 > val2 else e2.id if val2 > val1 else None
+            vencedor_id = e1.id if val1 > val2 else e2.id if val2 > val1 else 'empate'
 
         dados_j1 = {'id': e1.id, 'nome': e1.nome, 'clube': e1.clube, 'foto': e1.escudo.url if e1.escudo else ''}
         dados_j2 = {'id': e2.id, 'nome': e2.nome, 'clube': e2.clube, 'foto': e2.escudo.url if e2.escudo else ''}
 
-    # Tratamento de Empate (Se val1 == val2, você pode sortear de novo ou aceitar qualquer resposta como correta)
-    if vencedor_id is None:
-        vencedor_id = 'empate' # Sua view api_responder_duelo precisa aceitar isso
-
-    # Salva na sessão o ID correto e o tipo do duelo (para a view de validação saber)
-    request.session['duelo_atual'] = {
+    # SALVA O DUELO NA CHAVE CORRETA PARA A OUTRA FUNÇÃO ENCONTRAR
+    estado['duelo'] = {
         'vencedor_id': vencedor_id,
         'modo': modo_rodada
     }
+    
+    # Atualiza a sessão
+    request.session[CHAVE_SESSAO] = estado
+    request.session.modified = True
 
     return JsonResponse({
         'pergunta': pergunta,
         'jogador1': dados_j1,
         'jogador2': dados_j2,
-        'pontuacao': request.session.get('pontuacao_atual', 0),
-        'sequencia': request.session.get('sequencia_atual', 0),
+        'pontuacao': estado.get('pontuacao', 0),
+        'sequencia': estado.get('sequencia', 0),
     })
 
 
@@ -606,7 +605,12 @@ def api_responder_duelo(request):
             jogador_escolhido_id = int(jogador_id_raw)
         except (TypeError, ValueError):
             return JsonResponse({'erro': 'jogador_id inválido.'}, status=400)
-        acertou = jogador_escolhido_id == duelo['vencedor_id']
+        
+        # Correção do Empate: Se os valores forem iguais, qualquer escolha do jogador é considerada correta!
+        if duelo['vencedor_id'] == 'empate':
+            acertou = True
+        else:
+            acertou = (jogador_escolhido_id == duelo['vencedor_id'])
 
     if not acertou:
         return _finalizar_partida(request, estado, venceu=False, desistiu=False)
@@ -620,7 +624,10 @@ def api_responder_duelo(request):
     pontos_ganhos = PONTOS_BASE + bonus_velocidade + bonus_combo
     estado['pontuacao'] += pontos_ganhos
     estado['maior_sequencia'] = max(estado['maior_sequencia'], estado['sequencia'])
+    
+    # Limpa o duelo para obrigar a requisição de um novo
     estado['duelo'] = None
+    
     request.session[CHAVE_SESSAO] = estado
     request.session.modified = True
 
@@ -632,7 +639,6 @@ def api_responder_duelo(request):
         'pontuacao_total': estado['pontuacao'],
         'sequencia': estado['sequencia'],
     })
-
 
 def _finalizar_partida(request, estado, venceu, desistiu):
     RankingMinijogo.objects.create(

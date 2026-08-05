@@ -517,8 +517,8 @@ def api_obter_duelo(request):
             ('gols', 'Quem tem MAIS GOLS na carreira?'),
             ('assistencias', 'Quem tem MAIS ASSISTÊNCIAS na carreira?'),
             ('jogos', 'Quem tem MAIS PARTIDAS OFICIAIS na carreira?'),
-            ('cartoes', 'Quem tomou MAIS CARTÕES (Amarelos + Vermelhos)?'),
-            ('titulos', 'Quem conquistou MAIS TÍTULOS na carreira?')
+            ('cartoes', 'Quem tomou MAIS CARTÕES (Amarelos + Vermelhos)?')
+            # ('titulos', 'Quem conquistou MAIS TÍTULOS na carreira?')
         ]
         cat_escolhida, pergunta = random.choice(categorias)
         

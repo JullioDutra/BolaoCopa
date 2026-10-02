@@ -411,3 +411,23 @@ class EscudosGlobaisTests(TestCase):
                             escudo_casa_url='https://x.test/santos.png')
         call_command('consolidar_escudos', '--aplicar', stdout=__import__('io').StringIO())
         self.assertTrue(Escudo.objects.filter(chave='santos', url='https://x.test/santos.png').exists())
+
+
+class BancoUnicoJogadoresTests(TestCase):
+    def test_trunfo_e_selecao_apontam_para_o_mesmo_atleta(self):
+        import io
+        from django.core.management import call_command
+        from convocacao.models import Jogador
+        from duelos.models import ClubeFutebol, CartaTrunfo
+        from futebol.models import Atleta, FonteAtleta
+        Jogador.objects.create(nome='Gabigol', posicao='Atacante', clube_atual='Flamengo')
+        clube = ClubeFutebol.objects.create(nome='Flamengo')
+        CartaTrunfo.objects.create(nome='Gabigol', posicao='ATA', overall=84, clube=clube)
+        out = io.StringIO()
+        call_command('consolidar_jogadores', stdout=out)  # simulação
+        self.assertEqual(Atleta.objects.count(), 0)
+        call_command('consolidar_jogadores', '--aplicar', stdout=out)
+        self.assertEqual(Atleta.objects.filter(nome='Gabigol').count(), 1)
+        self.assertEqual(FonteAtleta.objects.count(), 2)
+        call_command('consolidar_jogadores', '--aplicar', stdout=out)
+        self.assertEqual(FonteAtleta.objects.count(), 2)

@@ -13,7 +13,7 @@ from datetime import date
 
 from accounts.temas import normalizar
 
-from .models import Atleta, Time
+from .models import Atleta, FonteAtleta, Time
 from .posicoes import mapear_posicao
 from .provedores import api_football, espn, football_data, thesportsdb
 from .provedores.base import ProvedorIndisponivel
@@ -98,6 +98,12 @@ class Resumo(dict):
             self['atualizados'] += 1
 
 
+def vincular(atleta, origem, ref_id):
+    """ Registra de onde veio o atleta (idempotente) para o banco único apontar de volta aos jogos. """
+    if atleta is not None:
+        FonteAtleta.objects.get_or_create(origem=origem, ref_id=ref_id, defaults={'atleta': atleta})
+
+
 def importar_internos():
     """ Aproveita os dados que o site já tem. Roda quantas vezes quiser (não duplica). """
     from convocacao.models import Jogador
@@ -118,6 +124,7 @@ def importar_internos():
         time, criado_t = salvar_time({'nome': j.clube_atual.strip()}, 'interno')
         r.contar(criado_t, 'times')
         atleta, criado = salvar_atleta({'nome': j.nome, 'posicao': BUCKET_PT.get(j.posicao, ''), 'detalhe': j.posicao}, time, 'interno')
+        vincular(atleta, 'convocacao.Jogador', j.pk)
         if atleta is not None:
             if j.foto and not atleta.foto:
                 atleta.foto = j.foto.name
@@ -128,6 +135,7 @@ def importar_internos():
         time, criado_t = salvar_time({'nome': carta.clube.nome}, 'interno')
         r.contar(criado_t, 'times')
         atleta, criado = salvar_atleta({'nome': carta.nome, 'posicao': mapear_posicao(carta.posicao), 'overall': carta.overall}, time, 'interno')
+        vincular(atleta, 'duelos.CartaTrunfo', carta.pk)
         if atleta is not None:
             if atleta.overall is None:
                 atleta.overall = carta.overall
@@ -136,6 +144,19 @@ def importar_internos():
                 atleta.foto = carta.foto.name
                 atleta.save(update_fields=['foto'])
             r.contar(criado, 'atletas')
+
+    # Draft/Mini-jogo: goleiros têm posição certa; jogadores de linha só se o atleta já existir (posição desconhecida)
+    try:
+        from minijogo.models import CartaJogador
+        for c in CartaJogador.objects.select_related('elenco'):
+            chave = normalizar(c.nome)
+            atleta = next((a for a in Atleta.objects.filter(busca=chave)), None)
+            if atleta is None and c.posicao == 'goleiro':
+                atleta, criado = salvar_atleta({'nome': c.nome, 'posicao': 'GOL'}, None, 'interno')
+                r.contar(criado, 'atletas')
+            vincular(atleta, 'minijogo.CartaJogador', c.pk)
+    except Exception as e:  # tabela ausente antes do migrate
+        r['erros'].append(f'minijogo: {e}')
     return r
 
 

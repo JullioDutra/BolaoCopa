@@ -179,3 +179,20 @@ class Escudo(models.Model):
     @property
     def src(self):
         return self.arquivo.url if self.arquivo else (self.url or None)
+
+
+class FonteAtleta(models.Model):
+    """
+    Liga cada registro dos jogos antigos (Trunfo, Seleção, Draft…) ao atleta do banco único.
+    Os jogos continuam usando as suas próprias tabelas (nada quebra); o banco único é a fonte
+    de consulta para pesquisa, estatísticas e novos modos.
+    """
+    atleta = models.ForeignKey(Atleta, on_delete=models.CASCADE, related_name='fontes')
+    origem = models.CharField(max_length=40, help_text="Ex.: duelos.CartaTrunfo")
+    ref_id = models.PositiveIntegerField()
+
+    class Meta:
+        unique_together = [('origem', 'ref_id')]
+
+    def __str__(self):
+        return f"{self.origem}#{self.ref_id} -> {self.atleta}"

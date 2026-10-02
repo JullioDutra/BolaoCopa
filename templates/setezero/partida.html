@@ -1,0 +1,202 @@
+{% extends 'base.html' %}
+{% block title %}7 a 0 - Partida{% endblock %}
+{% block content %}
+{% include 'setezero/_estilo.html' %}
+<div class="mt-3"></div>
+<div class="sz-placar mb-3" id="placar">
+    <div class="sz-lado" id="ladoCasa"></div>
+    <div class="sz-centro"><div class="sz-gols"><span id="gCasa">0</span> : <span id="gFora">0</span></div><span class="sz-relogio pausa" id="relogio">0'</span></div>
+    <div class="sz-lado fora" id="ladoFora"></div>
+</div>
+
+<div class="row g-3 mb-5">
+  <div class="col-lg-7">
+    <div class="sz-feed" id="feed" aria-live="polite"></div>
+    <div class="sz-ctrl" id="ctrl">
+        <button class="principal" id="bJogar"><i class="fa-solid fa-play"></i> Jogar</button>
+        <button id="bPausar" disabled><i class="fa-solid fa-pause"></i> Pausar</button>
+        <button id="bVel" title="Velocidade">1x</button>
+        <button id="bIntervalo"><i class="fa-solid fa-forward-step"></i> Até o intervalo</button>
+        <button id="bSimular" title="Deixa as IAs jogarem o resto"><i class="fa-solid fa-bolt"></i> Simular</button>
+    </div>
+    <div id="fim"></div>
+  </div>
+  <div class="col-lg-5">
+    <div class="sz-painel">
+      <div class="sz-abas"><button class="on" data-aba="tatica">Tática</button><button data-aba="escalacao">Escalação</button><button data-aba="stats">Números</button></div>
+      <div id="aba-tatica">
+        <div class="small fw-bold text-muted mb-1">MENTALIDADE</div>
+        <div class="sz-seg mb-3" id="segMent">{% for k, m in mentalidades.items %}<button data-m="{{ k }}">{{ m.nome }}</button>{% endfor %}</div>
+        <div class="small fw-bold text-muted mb-1">ESTILO</div>
+        <div class="sz-seg" id="segEst">{% for k, e in estilos.items %}<button data-e="{{ k }}">{{ e.nome }}</button>{% endfor %}</div>
+        <div class="small text-muted mt-3" id="dicaTatica">Mexa na tática a qualquer momento — o efeito vale a partir do minuto atual.</div>
+      </div>
+      <div id="aba-escalacao" hidden>
+        <div class="sz-campo" id="campo"></div>
+        <div class="small text-muted mt-2" id="dicaSub">Toque num titular e depois num reserva para substituir. <b id="subsUsadas">0</b>/5 trocas.</div>
+        <div class="sz-banco" id="banco"></div>
+      </div>
+      <div id="aba-stats" hidden></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const ID = {{ partida.pk }};
+  const URL_ESTADO = "{% url 'setezero:api_estado' partida.pk %}";
+  const URL_AVANCAR = "{% url 'setezero:api_avancar' partida.pk %}";
+  const URL_SIMULAR = "{% url 'setezero:api_simular' partida.pk %}";
+  const CSRF = "{{ csrf_token }}";
+  const VOLTAR = "{% if partida.temporada_id %}{% url 'setezero:temporada' partida.temporada_id %}{% else %}{% url 'setezero:hub' %}{% endif %}";
+  const ICONES = {gol:'fa-futbol', amarelo:'fa-square', vermelho:'fa-square', defesa:'fa-hands', trave:'fa-bullseye', fora:'fa-arrow-up-right-from-square',
+    penalti:'fa-circle-exclamation', penalti_perdido:'fa-hands', substituicao:'fa-arrows-rotate', lesao:'fa-kit-medical', tatica:'fa-chess',
+    info:'fa-microphone', intervalo:'fa-pause', fim:'fa-flag-checkered', desarme:'fa-shield'};
+  const CORES = {gol:'#22c55e', amarelo:'#facc15', vermelho:'#ef4444', trave:'#f59e0b', penalti:'#f59e0b', lesao:'#f87171'};
+  const el = (id) => document.getElementById(id);
+  let V = null, fila = [], auto = false, ocupado = false, vel = 1, idx = 0, sai = null, minutoShow = null, mostrando = false;
+  const VEL = [1, 2, 4];
+
+  function api(url, corpo) {
+    return fetch(url, {method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken':CSRF}, body: JSON.stringify(corpo || {})})
+      .then(r => r.json().then(j => { if (!r.ok) throw new Error(j.erro || 'Erro'); return j; }));
+  }
+  function escudo(l) {
+    return l.escudo ? `<img class="sz-escudo" src="${l.escudo}" alt="">` :
+      `<span class="sz-escudo-fb" style="background:${l.cor}">${l.nome.charAt(0)}</span>`;
+  }
+  function cabecalho() {
+    for (const [lado, id] of [['casa','ladoCasa'],['fora','ladoFora']]) {
+      const l = V.lados[lado];
+      el(id).innerHTML = `${escudo(l)}<div style="min-width:0"><div class="nome">${l.nome}</div><small>${l.formacao}${V.lado_usuario===lado?' · VOCÊ':''}</small></div>`;
+    }
+  }
+  function relogio(texto, classe) {
+    const r = el('relogio'); r.textContent = texto + "'"; r.className = 'sz-relogio ' + (classe || '');
+  }
+  function addEvento(ev, animar) {
+    const meu = ev.lado === V.lado_usuario;
+    const d = document.createElement('div');
+    d.className = `sz-ev ${ev.tipo}${ev.tipo==='gol' && meu ? ' eu' : ''}`;
+    if (ev.tipo === 'intervalo' || ev.tipo === 'fim') {
+      d.innerHTML = ev.texto;
+    } else {
+      const cor = CORES[ev.tipo] || '#94a3b8';
+      d.innerHTML = `<span class="min">${ev.min}'</span><span class="ico" style="color:${cor}"><i class="fa-solid ${ICONES[ev.tipo]||'fa-circle'}"></i></span><span>${ev.texto}${ev.tipo==='gol'?`<span class="placar-tag">${ev.placar}</span>`:''}</span>`;
+    }
+    if (!animar) d.style.animation = 'none';
+    const feed = el('feed'); feed.appendChild(d); feed.scrollTop = feed.scrollHeight;
+  }
+  function placar(ev) {
+    if (ev && ev.placar) { const [c,f] = ev.placar.split('-'); el('gCasa').textContent = c; el('gFora').textContent = f; }
+  }
+  function placarFinal() { el('gCasa').textContent = V.placar.casa; el('gFora').textContent = V.placar.fora; }
+
+  // ---- exibição "ao vivo": solta os eventos aos poucos
+  function gotejar() {
+    if (mostrando) return; mostrando = true;
+    (function passo() {
+      if (!fila.length) { mostrando = false; aposFila(); return; }
+      const ev = fila.shift(); addEvento(ev, true); placar(ev);
+      if (ev.tipo !== 'intervalo' && ev.tipo !== 'fim') relogio(ev.min, ''); 
+      setTimeout(passo, (ev.tipo === 'gol' ? 1700 : 650) / vel);
+    })();
+  }
+  function aposFila() {
+    placarFinal(); relogio(V.minuto, V.status === 'jogando' ? '' : V.status === 'fim' ? 'fim' : 'pausa');
+    desenhar();
+    if (V.status === 'fim') { mostrarFim(); parar(); return; }
+    if (V.status === 'intervalo') { auto = false; parar(); relogio('INT', 'pausa'); el('bJogar').innerHTML = '<i class="fa-solid fa-play"></i> 2º tempo'; return; }
+    if (auto && !ocupado) buscar(5);
+  }
+  function parar() { auto = false; el('bPausar').disabled = true; el('bJogar').disabled = V && V.status === 'fim'; }
+
+  function buscar(maximo, ate) {
+    if (ocupado || (V && V.status === 'fim')) return;
+    ocupado = true;
+    api(URL_AVANCAR, {ate: ate || 'fim', maximo: maximo, desde: idx}).then(j => {
+      ocupado = false; V = j.visao; idx += j.eventos.length; fila.push(...j.eventos); gotejar();
+    }).catch(e => { ocupado = false; alert(e.message); });
+  }
+  function ajustar(ajuste) {
+    return api(URL_AVANCAR, {ajuste: ajuste, desde: idx}).then(j => {
+      V = j.visao; idx += j.eventos.length; fila.push(...j.eventos); desenhar(); gotejar();
+    }).catch(e => alert(e.message));
+  }
+
+  // ---- painel
+  function desenhar() {
+    const eu = V.lados[V.lado_usuario];
+    document.querySelectorAll('#segMent button').forEach(b => b.classList.toggle('on', b.dataset.m === eu.mentalidade));
+    document.querySelectorAll('#segEst button').forEach(b => b.classList.toggle('on', b.dataset.e === eu.estilo));
+    el('subsUsadas').textContent = eu.subs;
+    // campo agrupado por linha
+    const grupos = [['ATA','PON'],['MEI','VOL'],['ZAG','LAT'],['GOL']];
+    const campo = el('campo'); campo.innerHTML = '';
+    for (const g of grupos) {
+      const linha = document.createElement('div'); linha.className = 'sz-linha';
+      eu.titulares.filter(j => g.includes(j.pos)).forEach(j => {
+        const d = document.createElement('div');
+        const fora = j.expulso || j.lesionado;
+        d.className = 'sz-jog' + (fora ? ' fora-de-campo' : '') + (sai === j.nome ? ' sel' : '');
+        d.innerHTML = `<div class="bola">${j.nome.split(' ').slice(-1)[0].charAt(0)}${j.amarelo ? '<span class="am"></span>' : ''}</div><div class="n">${j.nome}</div><span class="nt">${j.pos} ${j.nota.toFixed(1)}</span>`;
+        if (!fora && V.status !== 'fim') d.onclick = () => { sai = sai === j.nome ? null : j.nome; desenhar(); };
+        linha.appendChild(d);
+      });
+      campo.appendChild(linha);
+    }
+    const banco = el('banco'); banco.innerHTML = '';
+    eu.banco.forEach(b => {
+      const btn = document.createElement('button'); btn.textContent = `${b.nome} · ${b.pos} ${b.nota_base}`;
+      btn.className = sai ? 'alvo' : '';
+      btn.onclick = () => { if (!sai) { alert('Escolha primeiro quem sai (toque num titular).'); return; }
+        const s = sai; sai = null; ajustar({sai: s, entra: b.nome}); };
+      banco.appendChild(btn);
+    });
+    // números
+    const c = V.stats.casa, f = V.stats.fora, n = V.lados.casa.nome, m = V.lados.fora.nome;
+    const linhaS = (rot, a, b) => `<div class="sz-stat"><b>${a}</b><span class="text-muted">${rot}</span><b>${b}</b></div>`;
+    el('aba-stats').innerHTML = `<div class="small d-flex justify-content-between fw-bold"><span>${n}</span><span>${m}</span></div>
+      <div class="sz-posse"><span style="width:${c.posse}%;background:${V.lados.casa.cor}"></span><span style="width:${100-c.posse}%;background:${V.lados.fora.cor}"></span></div>`
+      + linhaS('Posse', c.posse + '%', f.posse + '%') + linhaS('Finalizações', c.chutes, f.chutes) + linhaS('No alvo', c.no_alvo, f.no_alvo)
+      + linhaS('Defesas', c.defesas, f.defesas) + linhaS('Escanteios', c.escanteios, f.escanteios) + linhaS('Faltas', c.faltas, f.faltas)
+      + linhaS('Amarelos', c.amarelos, f.amarelos) + linhaS('Vermelhos', c.vermelhos, f.vermelhos);
+  }
+  function mostrarFim() {
+    const eu = V.lado_usuario, rival = eu === 'casa' ? 'fora' : 'casa';
+    const gp = V.placar[eu], gc = V.placar[rival], saldo = gp - gc;
+    const titulo = saldo >= 7 ? '7 A 0! LENDÁRIO!' : saldo > 0 ? 'Vitória!' : saldo === 0 ? 'Empate' : 'Derrota';
+    const premio = V.premio ? `<div class="mt-2"><i class="fa-solid fa-coins text-warning"></i> +${V.premio} Cartola Coins</div>` : '';
+    const craque = V.craque ? `<div class="small opacity-75 mt-1">Craque do jogo: <b>${V.craque}</b> (${V.nota_craque.toFixed(1)})</div>` : '';
+    el('fim').innerHTML = `<div class="sz-fim ${V.resultado}"><h2>${titulo}</h2><div style="font-family:var(--fonte-titulo);font-size:2.6rem">${V.lados.casa.nome} ${V.placar.casa} x ${V.placar.fora} ${V.lados.fora.nome}</div>${craque}${premio}
+      <div class="d-flex gap-2 justify-content-center flex-wrap mt-3"><a class="ar-btn" style="width:auto" href="${VOLTAR}"><i class="fa-solid fa-arrow-left"></i> Continuar</a>
+      ${V.modo !== 'temporada' ? `<a class="ar-btn sec" style="width:auto" href="{% url 'setezero:novo' 'amistoso' %}">Nova partida</a>` : ''}</div></div>`;
+    el('bJogar').disabled = true; el('bIntervalo').disabled = true; el('bSimular').disabled = true;
+    el('fim').scrollIntoView({behavior:'smooth', block:'center'});
+  }
+
+  // ---- ligações
+  el('bJogar').onclick = () => { if (V.status === 'fim') return; auto = true; el('bPausar').disabled = false;
+    el('bJogar').innerHTML = '<i class="fa-solid fa-play"></i> Jogar'; if (!mostrando && !ocupado) buscar(5); };
+  el('bPausar').onclick = () => { auto = false; el('bPausar').disabled = true; };
+  el('bVel').onclick = () => { vel = VEL[(VEL.indexOf(vel) + 1) % VEL.length]; el('bVel').textContent = vel + 'x'; };
+  el('bIntervalo').onclick = () => { auto = false; if (V.status === 'intervalo') return; buscar(45, 'intervalo'); };
+  el('bSimular').onclick = () => { if (!confirm('Deixar as IAs jogarem o resto da partida?')) return; auto = false;
+    api(URL_SIMULAR).then(j => { V = j.visao; fila = []; mostrando = false; const novos = j.eventos.slice(idx); idx = j.eventos.length; novos.forEach(e => addEvento(e, false)); placarFinal(); relogio(V.minuto, 'fim'); desenhar(); mostrarFim(); }).catch(e => alert(e.message)); };
+  document.querySelectorAll('#segMent button').forEach(b => b.onclick = () => ajustar({mentalidade: b.dataset.m}));
+  document.querySelectorAll('#segEst button').forEach(b => b.onclick = () => ajustar({estilo: b.dataset.e}));
+  document.querySelectorAll('.sz-abas button').forEach(b => b.onclick = () => {
+    document.querySelectorAll('.sz-abas button').forEach(x => x.classList.toggle('on', x === b));
+    for (const a of ['tatica','escalacao','stats']) el('aba-' + a).hidden = a !== b.dataset.aba; });
+
+  // ---- carga inicial: mostra tudo que já aconteceu sem animar
+  fetch(URL_ESTADO + '?desde=0').then(r => r.json()).then(j => {
+    V = j.visao; cabecalho(); idx = j.eventos.length; j.eventos.forEach(e => addEvento(e, false));
+    placarFinal(); relogio(V.minuto, V.status === 'fim' ? 'fim' : 'pausa'); desenhar();
+    if (V.status === 'fim') { mostrarFim(); parar(); }
+    else if (V.status === 'intervalo') { el('bJogar').innerHTML = '<i class="fa-solid fa-play"></i> 2º tempo'; relogio('INT', 'pausa'); }
+    else if (V.status === 'pre') { relogio('0', 'pausa'); }
+  });
+})();
+</script>
+{% endblock %}

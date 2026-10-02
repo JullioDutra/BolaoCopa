@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block title %}Meu Time do Coração - Cartolândia{% endblock %}
+
+{% block content %}
+<style>
+    .time-card { cursor: pointer; border: 3px solid transparent; border-radius: 16px; transition: all .15s ease; background:#fff; }
+    .time-card:hover { transform: translateY(-3px); box-shadow: 0 .6rem 1.2rem rgba(0,0,0,.12); }
+    .time-card .escudo { width: 64px; height: 64px; object-fit: contain; }
+    .time-card .escudo-fallback { width: 64px; height: 64px; border-radius: 50%; display:inline-flex; align-items:center; justify-content:center; color:#fff; font-weight:800; font-size:1.4rem; }
+    input.time-radio { position:absolute; opacity:0; pointer-events:none; }
+    input.time-radio:checked + .time-card { border-color: var(--verde-campo); box-shadow: 0 0 0 4px rgba(0,0,0,.06); background: #fafafa; }
+    input.time-radio:focus-visible + .time-card { outline: 3px solid var(--dourado); }
+</style>
+
+<div class="text-center mb-4">
+    <h3 class="fw-bold" style="color: var(--verde-escuro);">❤️ Qual é o seu time?</h3>
+    <p class="text-muted mb-1">O site inteiro veste as cores do seu clube e o feed mostra as notícias dele.</p>
+    {% if not perfil.time_coracao %}
+        <span class="badge rounded-pill text-bg-warning fs-6">🎁 +{{ recompensa }} Cartola Coins ao escolher</span>
+    {% endif %}
+</div>
+
+<form method="post">
+    {% csrf_token %}
+    <div class="row g-3 row-cols-2 row-cols-md-4 row-cols-lg-5">
+        {% for c in clubes %}
+        <div class="col">
+            <label class="d-block position-relative h-100 m-0">
+                <input type="radio" name="clube" value="{{ c.id }}" class="time-radio" {% if perfil.time_coracao_id == c.id %}checked{% endif %} required>
+                <div class="time-card text-center p-3 h-100">
+                    {% if c.escudo %}
+                        <img src="{{ c.escudo.url }}" alt="{{ c.nome }}" class="escudo mb-2">
+                    {% else %}
+                        <span class="escudo-fallback mb-2" style="background: {{ c.cor_hexadecimal }};">{{ c.nome|slice:":1" }}</span>
+                    {% endif %}
+                    <div class="fw-bold small">{{ c.nome }}</div>
+                </div>
+            </label>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="form-check form-switch mt-4 d-flex justify-content-center gap-2">
+        <input type="hidden" name="usar_tema_do_time" value="off">
+        <input class="form-check-input" type="checkbox" role="switch" id="usarTema" name="usar_tema_do_time" value="on" {% if perfil.usar_tema_do_time %}checked{% endif %}>
+        <label class="form-check-label fw-bold" for="usarTema">Vestir o site com as cores do meu time</label>
+    </div>
+
+    <div class="text-center mt-4">
+        <button class="btn btn-success btn-lg rounded-pill fw-bold px-5 shadow-sm">Salvar meu time</button>
+    </div>
+</form>
+{% endblock %}

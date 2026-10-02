@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Jogo, Palpite, OscarCartolandia, Clube, Temporada, PalpiteLongoPrazo, MuralCampeoes, TorneioLongoPrazo, PalpiteTorneioExtra
+from .models import Jogo, Palpite, OscarCartolandia, Clube, Temporada, PalpiteLongoPrazo, MuralCampeoes, TorneioLongoPrazo, PalpiteTorneioExtra, RodadaBolao, InscricaoRodada
 from .ranking_utils import calcular_ranking_geral
 
 from convocacao.models import SelecaoBrasileirao
@@ -91,16 +91,16 @@ admin.site.register(Clube, ClubeAdmin)
 
 @admin.register(Jogo)
 class JogoAdmin(admin.ModelAdmin):
-    list_display = ('time_casa', 'gols_casa_real', 'gols_fora_real', 'time_fora', 'data_hora', 'finalizado')
-    list_filter = ('finalizado', 'data_hora')
+    list_display = ('time_casa', 'gols_casa_real', 'gols_fora_real', 'time_fora', 'data_hora', 'finalizado', 'rodada', 'status_externo')
+    list_filter = ('finalizado', 'campeonato', 'rodada', 'data_hora')
     list_editable = ('gols_casa_real', 'gols_fora_real', 'finalizado')
 
 
 @admin.register(Palpite)
 class PalpiteAdmin(admin.ModelAdmin):
-    list_display = ('usuario', 'jogo', 'gols_casa', 'gols_fora', 'pontuacao_obtida')
+    list_display = ('usuario', 'jogo', 'gols_casa', 'gols_fora', 'modalidade', 'pontuacao_obtida')
     search_fields = ('usuario__username', 'jogo__time_casa')
-    list_filter = ('jogo',)
+    list_filter = ('modalidade', 'jogo')
 
 
 @admin.register(OscarCartolandia)
@@ -124,3 +124,31 @@ class SelecaoBrasileiraoAdmin(admin.ModelAdmin):
 
 admin.site.register(TorneioLongoPrazo)
 admin.site.register(PalpiteTorneioExtra)
+
+
+
+@admin.action(description='💰 Encerrar rodada e pagar o pote agora (use se algum jogo foi adiado/cancelado)')
+def encerrar_rodada_agora(modeladmin, request, queryset):
+    for rodada in queryset:
+        if rodada.premio_distribuido:
+            modeladmin.message_user(request, f"{rodada.nome}: prêmio já foi pago.", level='WARNING')
+            continue
+        # Jogos que não vão mais acontecer não podem travar o pagamento
+        pendentes = rodada.jogos.filter(finalizado=False)
+        if pendentes.exists():
+            pendentes.update(rodada=None)
+        rodada.encerrar_se_possivel()
+        modeladmin.message_user(request, f"{rodada.nome}: pote pago aos líderes.")
+
+
+@admin.register(RodadaBolao)
+class RodadaBolaoAdmin(admin.ModelAdmin):
+    list_display = ('nome', 'campeonato', 'numero', 'valor_entrada', 'taxa_casa', 'premio_distribuido')
+    list_filter = ('campeonato', 'premio_distribuido')
+    actions = [encerrar_rodada_agora]
+
+
+@admin.register(InscricaoRodada)
+class InscricaoRodadaAdmin(admin.ModelAdmin):
+    list_display = ('usuario', 'rodada', 'valor_pago', 'criada_em')
+    list_filter = ('rodada',)

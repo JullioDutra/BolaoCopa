@@ -9,11 +9,18 @@ from django.contrib.admin.views.decorators import staff_member_required
 
 from .forms import ResultadosFinaisForm, PalpiteLongoPrazoForm, PalpiteForm
 from .engine import processar_pontuacoes_longo_prazo
-from .models import Jogo, Palpite, OscarCartolandia, PalpiteLongoPrazo, Temporada, MuralCampeoes, Clube, PalpiteTorneioExtra
+from .models import (
+    Jogo, Palpite, OscarCartolandia, PalpiteLongoPrazo, Temporada, MuralCampeoes, Clube, PalpiteTorneioExtra,
+    RodadaBolao, InscricaoRodada,
+)
 from .ranking_utils import calcular_ranking_geral
 
 from bolao.decorators import acesso_liberado_required
-from accounts.models import Transacao
+from accounts.models import Carteira, Transacao
+import secrets
+from django.conf import settings
+from django.http import Http404, JsonResponse
+from django.views.decorators.http import require_POST
 
 
 @acesso_liberado_required
@@ -37,8 +44,28 @@ def listar_jogos(request):
     return render(request, 'palpites/listar_jogos.html', {
         'jogos': jogos,
         'jogadores_pago': jogadores_pago,
-        'jogadores_resenha': jogadores_resenha
+        'jogadores_resenha': jogadores_resenha,
+        'rodadas': _rodadas_em_destaque(request.user),
     })
+
+
+def _rodadas_em_destaque(usuario):
+    """ Bolões da Rodada que ainda aceitam entrada ou estão em andamento (com dados do usuário). """
+    inscritas = set(InscricaoRodada.objects.filter(usuario=usuario).values_list('rodada_id', flat=True))
+    destaque = []
+    for rodada in RodadaBolao.objects.filter(premio_distribuido=False).prefetch_related('jogos'):
+        if not rodada.jogos.exists():
+            continue
+        destaque.append({
+            'obj': rodada,
+            'inscrito': rodada.id in inscritas,
+            'inscritos': rodada.inscricoes.count(),
+            'abertas': rodada.inscricoes_abertas,
+            'pote': rodada.premio_liquido,
+            'jogos': rodada.jogos.count(),
+        })
+    destaque.sort(key=lambda r: r['obj'].numero or 0)
+    return destaque
 
 
 @acesso_liberado_required
@@ -50,6 +77,9 @@ def fazer_palpite(request, jogo_id):
         return redirect('palpites:listar_jogos')
 
     palpite_existente = Palpite.objects.filter(usuario=request.user, jogo=jogo).first()
+    rodada_inscrito = bool(
+        jogo.rodada_id and InscricaoRodada.objects.filter(usuario=request.user, rodada_id=jogo.rodada_id).exists()
+    )
 
     if request.method == 'POST':
         form = PalpiteForm(request.POST, instance=palpite_existente, jogo=jogo)
@@ -61,8 +91,16 @@ def fazer_palpite(request, jogo_id):
             palpite.jogo = jogo
 
             ja_era_pago = palpite_existente and palpite_existente.modalidade == 'pago'
+            ja_era_rodada = palpite_existente and palpite_existente.modalidade == 'rodada'
 
-            if tipo_aposta == 'pago' and not ja_era_pago:
+            if tipo_aposta == 'rodada' and not ja_era_pago:
+                if not rodada_inscrito:
+                    messages.error(request, "Entre no Bolão da Rodada antes de palpitar nessa modalidade.")
+                    return redirect('palpites:listar_jogos')
+                palpite.modalidade = 'rodada'
+                palpite.save()
+                messages.success(request, "Palpite registrado no Bolão da Rodada!")
+            elif tipo_aposta == 'pago' and not ja_era_pago and not ja_era_rodada:
                 custo = Decimal('10.00')
                 if request.user.carteira.saldo < custo:
                     messages.error(request, "Saldo insuficiente! Deposite R$ 10,00 ou jogue no Modo Resenha.")
@@ -82,7 +120,7 @@ def fazer_palpite(request, jogo_id):
 
                 messages.success(request, "Palpite registrado Valendo Prêmio! (R$ 10,00 descontados)")
             else:
-                if not ja_era_pago:
+                if not ja_era_pago and not ja_era_rodada:
                     palpite.modalidade = 'resenha'
                 palpite.save()
 
@@ -98,8 +136,71 @@ def fazer_palpite(request, jogo_id):
     return render(request, 'palpites/fazer_palpite.html', {
         'form': form,
         'jogo': jogo,
-        'palpite_existente': palpite_existente
+        'palpite_existente': palpite_existente,
+        'rodada_inscrito': rodada_inscrito,
     })
+
+
+@acesso_liberado_required
+@require_POST
+def entrar_rodada(request, rodada_id):
+    """ Paga a entrada do Bolão da Rodada (uma vez) e converte palpites já feitos na rodada. """
+    rodada = get_object_or_404(RodadaBolao, pk=rodada_id)
+
+    if InscricaoRodada.objects.filter(usuario=request.user, rodada=rodada).exists():
+        messages.info(request, "Você já está nesse bolão.")
+        return redirect('palpites:listar_jogos')
+    if not rodada.inscricoes_abertas:
+        messages.error(request, "As inscrições dessa rodada já encerraram (fecham 1h antes do 1º jogo).")
+        return redirect('palpites:listar_jogos')
+
+    with transaction.atomic():
+        carteira = Carteira.objects.select_for_update().get(pk=request.user.carteira.pk)
+        if carteira.saldo < rodada.valor_entrada:
+            messages.error(request, f"Saldo insuficiente! A entrada custa R$ {rodada.valor_entrada}.")
+            return redirect('pagamentos:solicitar_deposito')
+
+        carteira.saldo -= rodada.valor_entrada
+        carteira.save()
+        Transacao.objects.create(
+            carteira=carteira, tipo='aposta', valor=rodada.valor_entrada,
+            descricao=f"Entrada Bolão da Rodada: {rodada.nome}",
+        )
+        InscricaoRodada.objects.create(usuario=request.user, rodada=rodada, valor_pago=rodada.valor_entrada)
+        # Palpites grátis já feitos nessa rodada passam a valer no bolão
+        Palpite.objects.filter(usuario=request.user, jogo__rodada=rodada, modalidade='resenha').update(modalidade='rodada')
+
+    messages.success(request, f"Você está dentro do {rodada.nome}! R$ {rodada.valor_entrada} descontados. Agora é palpitar em todos os jogos 🔥")
+    return redirect('palpites:listar_jogos')
+
+
+@acesso_liberado_required
+def ranking_rodada(request, rodada_id):
+    rodada = get_object_or_404(RodadaBolao, pk=rodada_id)
+    return render(request, 'palpites/ranking_rodada.html', {
+        'rodada': rodada,
+        'ranking': rodada.ranking(),
+        'jogos': rodada.jogos.order_by('data_hora'),
+        'inscrito': InscricaoRodada.objects.filter(usuario=request.user, rodada=rodada).exists(),
+    })
+
+
+def api_sincronizar(request, token):
+    """
+    Endpoint para cron externo (cron-job.org etc.). Só existe se SYNC_SECRET_TOKEN
+    estiver definido no ambiente; o token da URL é comparado em tempo constante.
+    """
+    esperado = getattr(settings, 'SYNC_SECRET_TOKEN', None)
+    if not esperado or not secrets.compare_digest(token, esperado):
+        raise Http404()
+
+    from . import api_futebol
+    from .sincronizacao import sincronizar
+    try:
+        resumo = sincronizar(competicao=request.GET.get('competicao', api_futebol.COMPETICAO_PADRAO))
+    except api_futebol.ApiIndisponivel as erro:
+        return JsonResponse({'ok': False, 'erro': str(erro)}, status=503)
+    return JsonResponse({'ok': True, **resumo})
 
 
 @acesso_liberado_required

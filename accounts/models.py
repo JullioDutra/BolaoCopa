@@ -40,5 +40,41 @@ class PerfilUsuario(models.Model):
     time_coracao = models.ForeignKey('palpites.Clube', on_delete=models.SET_NULL, null=True, blank=True)
     viu_efeito_hoje = models.BooleanField(default=False) 
 
+    # Tema do site: se True, o visual segue as cores do time do coração
+    usar_tema_do_time = models.BooleanField(default=True)
+
+    # Retenção: sequência de dias seguidos acessando o app
+    streak_dias = models.PositiveIntegerField(default=0)
+    maior_streak = models.PositiveIntegerField(default=0)
+    ultimo_acesso_dia = models.DateField(null=True, blank=True)
+
     def __str__(self):
         return f"Perfil de {self.usuario.username}"
+
+
+class CarteiraCoins(models.Model):
+    """
+    Moeda virtual do app (NÃO é dinheiro real, não tem relação com a Carteira em R$).
+    Usada nas brincadeiras do grupo: apostas dos Melhores do Ano, bônus diário, etc.
+    """
+    SALDO_INICIAL = 1000
+
+    usuario = models.OneToOneField(User, on_delete=models.CASCADE, related_name='carteira_coins')
+    saldo = models.IntegerField(default=SALDO_INICIAL)
+
+    def __str__(self):
+        return f"{self.usuario.username}: {self.saldo} Cartola Coins"
+
+
+class MovimentoCoins(models.Model):
+    """ Extrato da CarteiraCoins (toda entrada/saída fica registrada). """
+    carteira = models.ForeignKey(CarteiraCoins, on_delete=models.CASCADE, related_name='movimentos')
+    valor = models.IntegerField(help_text="Positivo = entrada, negativo = saída")
+    motivo = models.CharField(max_length=255)
+    data = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-data', '-id']
+
+    def __str__(self):
+        return f"{self.carteira.usuario.username} {self.valor:+d} ({self.motivo})"

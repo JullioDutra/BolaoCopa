@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block title %}Staff - Melhores do Ano{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="fw-bold mb-0 text-danger"><i class="fa-solid fa-gears"></i> Staff · Melhores do Ano {{ edicao.ano }}</h3>
+    <a href="{% url 'melhores:home' %}" class="btn btn-sm btn-outline-secondary rounded-pill"><i class="fa-solid fa-arrow-left"></i> Voltar</a>
+</div>
+<p class="text-muted">Defina o vencedor de cada categoria para pagar as apostas (valor × odd travada). Candidatos, votos históricos e prazos são editados no <a href="/admin/melhores/">Admin</a>.</p>
+
+<div class="row g-3">
+    {% for cat in categorias %}
+    <div class="col-12 col-lg-6">
+        <div class="card card-clean p-3 h-100">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <h6 class="fw-bold mb-0">{{ cat.emoji }} {{ cat.nome }}</h6>
+                {% if cat.liquidada %}<span class="badge text-bg-warning">Liquidada: {{ cat.vencedor.nome }}</span>
+                {% elif cat.aberta %}<span class="badge text-bg-success">Aberta</span>
+                {% else %}<span class="badge text-bg-secondary">Fechada</span>{% endif %}
+            </div>
+            {% if not cat.liquidada %}
+            <form method="post" action="{% url 'melhores:staff_acao' cat.id %}" class="d-flex gap-2 mb-2">
+                {% csrf_token %}
+                <input type="hidden" name="acao" value="liquidar">
+                <select name="vencedor" class="form-select form-select-sm" required>
+                    <option value="">Vencedor…</option>
+                    {% for c in cat.candidatos.all %}<option value="{{ c.id }}">{{ c.nome }}</option>{% endfor %}
+                </select>
+                <button class="btn btn-sm btn-success fw-bold" onclick="return confirm('Liquidar {{ cat.nome|escapejs }}? Isso paga as apostas e não pode ser desfeito.')">Liquidar</button>
+            </form>
+            <div class="d-flex gap-2">
+                <form method="post" action="{% url 'melhores:staff_acao' cat.id %}">{% csrf_token %}
+                    <input type="hidden" name="acao" value="{% if cat.aberta %}fechar{% else %}abrir{% endif %}">
+                    <button class="btn btn-sm btn-outline-secondary">{% if cat.aberta %}Fechar apostas{% else %}Reabrir apostas{% endif %}</button>
+                </form>
+                <form method="post" action="{% url 'melhores:staff_acao' cat.id %}" onsubmit="return confirm('Anular a categoria e devolver todas as apostas?')">{% csrf_token %}
+                    <input type="hidden" name="acao" value="anular">
+                    <button class="btn btn-sm btn-outline-danger">Anular</button>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

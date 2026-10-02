@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% load l10n %}
+{% block title %}Minhas Apostas - Melhores do Ano{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="fw-bold mb-0" style="color: var(--verde-escuro);">🎟️ Minhas apostas</h3>
+    <a href="{% url 'melhores:home' %}" class="btn btn-sm btn-outline-secondary rounded-pill"><i class="fa-solid fa-arrow-left"></i> Voltar</a>
+</div>
+
+<div class="row g-3 mb-4 text-center">
+    <div class="col-6 col-md-3"><div class="card card-clean p-3"><small class="text-muted fw-bold">SALDO</small><div class="fs-4 fw-bold">🪙 {{ saldo }}</div></div></div>
+    <div class="col-6 col-md-3"><div class="card card-clean p-3"><small class="text-muted fw-bold">EM JOGO</small><div class="fs-4 fw-bold">🪙 {{ resumo.em_jogo }}</div></div></div>
+    <div class="col-6 col-md-3"><div class="card card-clean p-3"><small class="text-muted fw-bold">GANHOS</small><div class="fs-4 fw-bold text-success">🪙 {{ resumo.ganhos }}</div></div></div>
+    <div class="col-6 col-md-3"><div class="card card-clean p-3"><small class="text-muted fw-bold">ACERTOS</small><div class="fs-4 fw-bold">{{ resumo.acertos }}/{{ resumo.resolvidas }}</div></div></div>
+</div>
+
+<div class="card card-clean">
+    <ul class="list-group list-group-flush">
+        {% for a in apostas %}
+        <li class="list-group-item d-flex justify-content-between align-items-center gap-3 py-3">
+            <div>
+                <div class="small text-muted">{{ a.categoria.emoji }} {{ a.categoria.nome }}</div>
+                <div class="fw-bold">{{ a.candidato.nome }}</div>
+                <small>🪙 {{ a.valor }} × {{ a.odd_travada|unlocalize }} → 🪙 {{ a.retorno_potencial }}</small>
+            </div>
+            <div class="text-end">
+                {% if a.status == 'ganha' %}<span class="badge text-bg-success">Ganhou +{{ a.retorno }}</span>
+                {% elif a.status == 'perdida' %}<span class="badge text-bg-danger">Perdeu</span>
+                {% elif a.status == 'anulada' %}<span class="badge text-bg-secondary">Anulada</span>
+                {% else %}<span class="badge text-bg-warning">Em aberto</span>{% endif %}
+            </div>
+        </li>
+        {% empty %}
+        <li class="list-group-item text-center text-muted py-5">
+            Você ainda não apostou em nada. <a href="{% url 'melhores:home' %}">Bora escolher seus favoritos!</a>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}

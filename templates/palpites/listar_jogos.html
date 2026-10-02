@@ -67,6 +67,43 @@
     </div>
 </div>
 
+{% if rodadas %}
+<div class="row px-2 mb-4">
+    <div class="col-12">
+        <h5 class="fw-bold mb-3" style="color: var(--verde-escuro);"><i class="fa-solid fa-trophy text-warning"></i> Bolão da Rodada</h5>
+        <div class="row g-3">
+            {% for r in rodadas %}
+            <div class="col-12 col-md-6">
+                <div class="card card-clean shadow-sm border-0 rounded-4 p-3 h-100" style="border-left: 6px solid var(--verde-campo) !important;">
+                    <div class="d-flex justify-content-between align-items-start gap-2">
+                        <div>
+                            <div class="fw-bold">{{ r.obj.nome }}</div>
+                            <small class="text-muted">{{ r.jogos }} jogo{{ r.jogos|pluralize }} · {{ r.inscritos }} na disputa</small>
+                        </div>
+                        <span class="badge text-bg-warning fs-6">Pote R$ {{ r.pote }}</span>
+                    </div>
+                    <p class="small text-muted my-2">Uma entrada, a rodada inteira: some pontos em todos os jogos e leve o pote.</p>
+                    <div class="d-flex gap-2 flex-wrap">
+                        {% if r.inscrito %}
+                            <span class="btn btn-sm btn-success disabled fw-bold rounded-pill"><i class="fa-solid fa-circle-check"></i> Você está dentro</span>
+                        {% elif r.abertas %}
+                            <form method="post" action="{% url 'palpites:entrar_rodada' r.obj.id %}" onsubmit="return confirm('Entrar no {{ r.obj.nome|escapejs }} por R$ {{ r.obj.valor_entrada }}?')">
+                                {% csrf_token %}
+                                <button class="btn btn-sm btn-success fw-bold rounded-pill">Entrar por R$ {{ r.obj.valor_entrada }}</button>
+                            </form>
+                        {% else %}
+                            <span class="btn btn-sm btn-secondary disabled rounded-pill"><i class="fa-solid fa-lock"></i> Inscrições encerradas</span>
+                        {% endif %}
+                        <a href="{% url 'palpites:ranking_rodada' r.obj.id %}" class="btn btn-sm btn-outline-secondary rounded-pill fw-bold">Classificação</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <div class="row px-2">
     <!-- ========================================== -->
     <!-- COLUNA PRINCIPAL: LISTA DE JOGOS           -->
@@ -91,8 +128,8 @@
                             <div class="d-flex justify-content-center align-items-center mb-4">
                                 <!-- Time da Casa -->
                                 <div class="text-center" style="flex: 1; min-width: 0;">
-                                    {% if jogo.escudo_casa %}
-                                        <img src="{{ jogo.escudo_casa.url }}" alt="{{ jogo.time_casa }}" class="mb-2 team-logo-arena">
+                                    {% if jogo.escudo_casa_src %}
+                                        <img src="{{ jogo.escudo_casa_src }}" alt="{{ jogo.time_casa }}" class="mb-2 team-logo-arena">
                                     {% else %}
                                         <div class="bg-secondary bg-opacity-10 rounded-circle mx-auto mb-2 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
                                             <i class="fa-solid fa-shield-halved text-muted fs-4"></i>
@@ -108,8 +145,8 @@
                                 
                                 <!-- Time de Fora -->
                                 <div class="text-center" style="flex: 1; min-width: 0;">
-                                    {% if jogo.escudo_fora %}
-                                        <img src="{{ jogo.escudo_fora.url }}" alt="{{ jogo.time_fora }}" class="mb-2 team-logo-arena">
+                                    {% if jogo.escudo_fora_src %}
+                                        <img src="{{ jogo.escudo_fora_src }}" alt="{{ jogo.time_fora }}" class="mb-2 team-logo-arena">
                                     {% else %}
                                         <div class="bg-secondary bg-opacity-10 rounded-circle mx-auto mb-2 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
                                             <i class="fa-solid fa-shield-halved text-muted fs-4"></i>
@@ -121,9 +158,9 @@
 
                             <!-- "Ticket" com o Palpite do Usuário -->
                             {% if jogo.meu_palpite %}
-                                <div class="p-3 rounded-4 mb-3 position-relative shadow-sm {% if jogo.meu_palpite.modalidade == 'pago' %}bg-success text-white{% else %}bg-secondary text-white{% endif %}" style="border: 2px dashed rgba(255,255,255,0.4);">
+                                <div class="p-3 rounded-4 mb-3 position-relative shadow-sm {% if jogo.meu_palpite.modalidade == 'pago' %}bg-success text-white{% elif jogo.meu_palpite.modalidade == 'rodada' %}bg-primary text-white{% else %}bg-secondary text-white{% endif %}" style="border: 2px dashed rgba(255,255,255,0.4);">
                                     <span class="d-block mb-1 text-uppercase fw-bold" style="font-size: 0.65rem; letter-spacing: 1px; opacity: 0.9;">
-                                        Seu Palpite ({{ jogo.meu_palpite.modalidade|title }})
+                                        Seu Palpite ({% if jogo.meu_palpite.modalidade == 'rodada' %}Bolão da Rodada{% else %}{{ jogo.meu_palpite.modalidade|title }}{% endif %})
                                     </span>
                                     <h3 class="fw-bold mb-0 tracking-wider">{{ jogo.meu_palpite.gols_casa }} x {{ jogo.meu_palpite.gols_fora }}</h3>
                                     

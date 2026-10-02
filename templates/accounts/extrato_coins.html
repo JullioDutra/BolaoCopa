@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block title %}Extrato de Cartola Coins{% endblock %}
+
+{% block content %}
+<div class="card card-clean p-4 mb-4 text-center">
+    <p class="text-muted small text-uppercase fw-bold mb-1">Seu saldo</p>
+    <h2 class="fw-bold mb-1" style="color: var(--verde-escuro);">🪙 {{ carteira.saldo }} Cartola Coins</h2>
+    <small class="text-muted">Moeda virtual de brincadeira — não vale dinheiro real.</small>
+</div>
+
+<div class="card card-clean">
+    <ul class="list-group list-group-flush">
+        {% for m in movimentos %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+                <div class="fw-bold">{{ m.motivo }}</div>
+                <small class="text-muted">{{ m.data|date:"d/m/Y H:i" }}</small>
+            </div>
+            <span class="fw-bold {% if m.valor > 0 %}text-success{% else %}text-danger{% endif %}">{{ m.valor|stringformat:"+d" }}</span>
+        </li>
+        {% empty %}
+        <li class="list-group-item text-center text-muted py-4">Nenhuma movimentação ainda.</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}

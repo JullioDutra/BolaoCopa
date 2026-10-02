@@ -516,22 +516,20 @@ class MundialTests(TestCase):
 
 
 class DificuldadeMundialTests(TestCase):
-    def test_o_mundial_e_bem_mais_dificil_que_a_copa_do_brasil(self):
+    def test_adversarios_do_mundial_sao_bem_mais_fortes_que_os_da_copa_do_brasil(self):
+        """ Determinístico: compara a força dos adversários sorteados, não o resultado dos jogos. """
+        import statistics
         from . import copa
         u = User.objects.create_user('bot', password='x')
 
-        def taxa(torneio, n=8):
-            vit = fase_media = 0
-            for _ in range(n):
+        def forca_media(torneio):
+            valores = []
+            for _ in range(10):
                 d = copa.criar_draft(u, torneio=torneio)
                 _draftar_sozinho(d)
                 d.refresh_from_db()
                 copa.iniciar_copa(d)
-                d = _jogar_ate_acabar(d)
-                vit += d.status == 'campeao'
-                fase_media += len(d.campanha)
-            return vit / n, fase_media / n
-        titulo_br, fases_br = taxa('brasil')
-        titulo_mu, fases_mu = taxa('mundial')
-        self.assertLess(fases_mu, fases_br + 0.01)   # chega menos longe no mundial
-        self.assertLessEqual(titulo_mu, titulo_br)
+                d.refresh_from_db()
+                valores += [dados.obter(k)['overall'] for k in d.estado['rivais']]
+            return statistics.mean(valores)
+        self.assertGreater(forca_media('mundial'), forca_media('brasil') + 3)

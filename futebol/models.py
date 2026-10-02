@@ -45,7 +45,8 @@ class Time(models.Model):
         """ Escudo enviado no Admin (se houver) tem prioridade sobre o da API. """
         if self.clube_local_id and self.clube_local.escudo:
             return self.clube_local.escudo.url
-        return self.escudo_url or None
+        from .escudos import escudo_url
+        return escudo_url(self.nome) or self.escudo_url or None
 
     @property
     def cor_hex(self):
@@ -148,3 +149,33 @@ class Voto(models.Model):
 
     class Meta:
         unique_together = [('comparativo', 'usuario', 'atleta')]
+
+
+class Escudo(models.Model):
+    """
+    Catálogo GLOBAL de escudos: um registro por clube, reaproveitado por todos os jogos
+    (bolão, X1, draft, trunfo, carreira…). `chave` é o nome normalizado, então
+    "Flamengo", "CR Flamengo" e "FLAMENGO" apontam para o mesmo escudo.
+    """
+    chave = models.CharField(max_length=120, unique=True, editable=False)
+    nome = models.CharField(max_length=120)
+    apelidos = models.CharField(max_length=300, blank=True, help_text="Outros nomes separados por vírgula")
+    arquivo = models.ImageField(upload_to='escudos/global/', blank=True, null=True)
+    url = models.URLField(max_length=300, blank=True, help_text="Usado quando não há arquivo enviado")
+    atualizado_em = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['nome']
+
+    def __str__(self):
+        return self.nome
+
+    def save(self, *args, **kwargs):
+        from .escudos import chave_time, limpar_cache
+        self.chave = chave_time(self.nome)
+        super().save(*args, **kwargs)
+        limpar_cache()
+
+    @property
+    def src(self):
+        return self.arquivo.url if self.arquivo else (self.url or None)

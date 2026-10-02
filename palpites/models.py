@@ -36,11 +36,17 @@ class Jogo(models.Model):
     @property
     def escudo_casa_src(self):
         """ URL do escudo: imagem enviada no Admin tem prioridade sobre a da API. """
-        return self.escudo_casa.url if self.escudo_casa else (self.escudo_casa_url or None)
+        if self.escudo_casa:
+            return self.escudo_casa.url
+        from futebol.escudos import escudo_url
+        return escudo_url(self.time_casa) or self.escudo_casa_url or None
 
     @property
     def escudo_fora_src(self):
-        return self.escudo_fora.url if self.escudo_fora else (self.escudo_fora_url or None)
+        if self.escudo_fora:
+            return self.escudo_fora.url
+        from futebol.escudos import escudo_url
+        return escudo_url(self.time_fora) or self.escudo_fora_url or None
 
     @property
     def ao_vivo(self):

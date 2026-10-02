@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Atleta, Comparativo, Escalacao, Time, Voto
+from .models import Atleta, Comparativo, Escalacao, Escudo, Time, Voto
 
 
 class AtletaInline(admin.TabularInline):
@@ -38,3 +38,9 @@ class ComparativoAdmin(admin.ModelAdmin):
 
 
 admin.site.register(Voto)
+
+
+@admin.register(Escudo)
+class EscudoAdmin(admin.ModelAdmin):
+    list_display = ('nome', 'chave', 'arquivo', 'url', 'atualizado_em')
+    search_fields = ('nome', 'apelidos', 'chave')

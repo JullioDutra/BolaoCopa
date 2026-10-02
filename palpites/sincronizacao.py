@@ -12,6 +12,7 @@ from datetime import datetime, timezone as dt_timezone
 
 from django.db import transaction
 
+from futebol import escudos as catalogo_escudos
 from . import api_futebol
 from .models import Clube, Jogo, RodadaBolao
 
@@ -56,6 +57,11 @@ def sincronizar(competicao=api_futebol.COMPETICAO_PADRAO, rodada=None, finalizar
             'escudo_fora_url': p['escudo_fora'],
             'rodada': grupo,
         }
+
+        # Catálogo global: o escudo da API entra uma vez e vale para todos os jogos do site
+        for nome_time, url_time in ((p['casa'], p['escudo_casa']), (p['fora'], p['escudo_fora'])):
+            if nome_time and url_time:
+                catalogo_escudos.registrar(nome_time, url=url_time)
 
         with transaction.atomic():
             jogo = Jogo.objects.select_for_update().filter(external_id=p['external_id']).first()

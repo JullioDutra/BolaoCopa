@@ -382,3 +382,32 @@ class ViewsFutebolTests(TestCase):
         with override_settings(FOOTBALL_DATA_TOKEN=None, APIFOOTBALL_KEY=None):
             d = self.client.get(reverse('futebol:api_raio_x', args=[jogo.id])).json()
         self.assertEqual(d['casa'], 'Flamengo')
+
+
+class EscudosGlobaisTests(TestCase):
+    def test_chave_ignora_ruido_e_acentos(self):
+        from futebol.escudos import chave_time
+        self.assertEqual(chave_time('C.R. Flamengo'), chave_time('Flamengo'))
+        self.assertEqual(chave_time('São Paulo FC'), 'sao paulo')
+        self.assertNotEqual(chave_time('Atlético-MG'), chave_time('Atlético-GO'))
+
+    def test_jogo_usa_escudo_global(self):
+        from datetime import timedelta
+        from django.utils import timezone
+        from futebol.escudos import registrar
+        from palpites.models import Jogo
+        registrar('Flamengo', url='https://x.test/fla.png')
+        j = Jogo.objects.create(time_casa='CR Flamengo', time_fora='Vasco', data_hora=timezone.now() + timedelta(days=1))
+        self.assertEqual(j.escudo_casa_src, 'https://x.test/fla.png')
+        self.assertIsNone(j.escudo_fora_src)
+
+    def test_comando_aplicar_registra_urls_de_jogos(self):
+        from datetime import timedelta
+        from django.core.management import call_command
+        from django.utils import timezone
+        from futebol.models import Escudo
+        from palpites.models import Jogo
+        Jogo.objects.create(time_casa='Santos', time_fora='Bahia', data_hora=timezone.now() + timedelta(days=1),
+                            escudo_casa_url='https://x.test/santos.png')
+        call_command('consolidar_escudos', '--aplicar', stdout=__import__('io').StringIO())
+        self.assertTrue(Escudo.objects.filter(chave='santos', url='https://x.test/santos.png').exists())

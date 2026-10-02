@@ -3,204 +3,89 @@
 {% block title %}Arena do X1 - Cartolândia{% endblock %}
 
 {% block content %}
-<!-- Estilos para animação dos cards -->
-<style>
-    .card-action { transition: transform 0.2s ease, box-shadow 0.2s ease; }
-    .card-action:hover { transform: translateY(-5px); box-shadow: 0 1rem 3rem rgba(0,0,0,.175)!important; }
-    .letter-spacing-1 { letter-spacing: 1px; }
-</style>
-
-<!-- Cabeçalho da Arena -->
-<div class="row mt-4 mb-4 px-2">
-    <div class="col-12 d-flex flex-column flex-md-row justify-content-between align-items-center gap-3 text-center text-md-start">
+<section class="ar-hero">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end gap-3">
         <div>
-            <h2 class="fw-bold mb-1" style="color: var(--verde-escuro);">
-                <i class="fa-solid fa-trophy text-warning"></i> Arena do X1
-            </h2>
-            <p class="text-muted fs-6 mb-0">Crie uma sala privada para desafiar um amigo ou inscreva-se nas copas!</p>
+            <h1><i class="fa-solid fa-gamepad"></i> Arena do X1</h1>
+            <p>Crie uma sala, mande o link pro rival e prove quem entende mais de bola.</p>
         </div>
-        <div>
-            <a href="{% url 'duelos:historico_duelos' %}" class="btn btn-outline-success fw-bold shadow-sm rounded-pill px-4">
-                <i class="fa-solid fa-book-open"></i> Minha Súmula
-            </a>
-        </div>
+        <a href="{% url 'duelos:historico_duelos' %}" class="ar-btn sec" style="width:auto;margin:0;padding:10px 20px;">
+            <i class="fa-solid fa-book-open"></i> Minha Súmula
+        </a>
     </div>
-</div>
+    <div class="ar-chips">
+        <span class="ar-chip"><i class="fa-solid fa-crown"></i> Rei do X1: {% if top_invicto_nome %}{{ top_invicto_nome }} · {{ top_invicto_streak }} seguidas{% else %}ninguém ainda{% endif %}</span>
+        <span class="ar-chip"><i class="fa-solid fa-medal"></i> {{ campeonatos_abertos|length }} torneio{{ campeonatos_abertos|length|pluralize }}</span>
+        <span class="ar-chip"><i class="fa-solid fa-bolt"></i> 7 modos de jogo</span>
+    </div>
+</section>
 
-<!-- ========================================== -->
-<!-- CARDS DE MODOS DE JOGO                     -->
-<!-- ========================================== -->
-<div class="row justify-content-center g-4 px-2 mb-4">
-    
-    <!-- Card Elencos -->
-    <div class="col-12 col-md-6 col-lg-4">
-        <div class="card card-action card-clean h-100 text-center p-4 shadow-sm border-0 border-top border-4 border-success rounded-4">
-            <div class="mb-3 mt-2">
-                <div class="bg-success bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
-                    <i class="fa-solid fa-clipboard-list text-success" style="font-size: 2.5rem;"></i>
-                </div>
-            </div>
-            <h4 class="fw-bold">Prancheta do Professor</h4>
-            <p class="text-muted small mb-4">
-                Lembra de cor a escalação daquele esquadrão inesquecível? Cada titular que você cravar é caixa.
-            </p>
-            
-            <div class="mt-auto pt-2">
-                <form method="POST" action="{% url 'duelos:criar_duelo' 'elenco' %}">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-success btn-lg w-100 fw-bold shadow-sm rounded-pill fs-6 text-uppercase letter-spacing-1">
-                        <i class="fa-solid fa-plus-circle"></i> Criar Sala Privada
-                    </button>
-                </form>
-            </div>
-        </div>
+<h2 class="ar-secao"><i class="fa-solid fa-dice"></i> Escolha o modo</h2>
+<div class="ar-grid mb-4">
+
+    <div class="ar-card" style="--cor:#15803d;">
+        <span class="ar-tag">1 x 1</span>
+        <div class="ar-ico"><i class="fa-solid fa-clipboard-list"></i></div>
+        <h3>Prancheta do Professor</h3>
+        <p>Lembra de cor a escalação daquele esquadrão inesquecível? Cada titular que você cravar é caixa.</p>
+        <form method="POST" action="{% url 'duelos:criar_duelo' 'elenco' %}">{% csrf_token %}
+            <button type="submit" class="ar-btn"><i class="fa-solid fa-plus"></i> Criar sala</button>
+        </form>
     </div>
 
-    <!-- Card Trajetória -->
-    <div class="col-12 col-md-6 col-lg-4">
-        <div class="card card-action card-clean h-100 text-center p-4 shadow-sm border-0 border-top border-4 border-primary rounded-4">
-            <div class="mb-3 mt-2">
-                <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
-                    <i class="fa-solid fa-shoe-prints text-primary" style="font-size: 2.5rem;"></i>
-                </div>
-            </div>
-            <h4 class="fw-bold">Carreira Misteriosa</h4>
-            <p class="text-muted small mb-4">
-                Onde esse bagre (ou craque) desfilou seu futebol? Os escudos vão aparecendo no telão.
-            </p>
-            
-            <div class="mt-auto pt-2">
-                <form method="POST" action="{% url 'duelos:criar_duelo' 'trajetoria' %}">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold shadow-sm rounded-pill fs-6 text-uppercase letter-spacing-1">
-                        <i class="fa-solid fa-plus-circle"></i> Criar Sala Privada
-                    </button>
-                </form>
-            </div>
-        </div>
+    <div class="ar-card" style="--cor:#1d4ed8;">
+        <span class="ar-tag">1 x 1</span>
+        <div class="ar-ico"><i class="fa-solid fa-shoe-prints"></i></div>
+        <h3>Carreira Misteriosa</h3>
+        <p>Onde esse bagre (ou craque) desfilou seu futebol? Os escudos vão aparecendo no telão.</p>
+        <form method="POST" action="{% url 'duelos:criar_duelo' 'trajetoria' %}">{% csrf_token %}
+            <button type="submit" class="ar-btn"><i class="fa-solid fa-plus"></i> Criar sala</button>
+        </form>
     </div>
 
-    <!-- Card Mini Fanáticos -->
-    <div class="col-12 col-md-6 col-lg-4">
-        <div class="card card-action card-clean h-100 text-center p-4 shadow-sm border-0 border-top border-4 border-danger rounded-4">
-            <div class="mb-3 mt-2">
-                <div class="bg-danger bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
-                    <i class="fa-solid fa-people-group text-danger" style="font-size: 2.5rem;"></i>
-                </div>
-            </div>
-            <h4 class="fw-bold">Mini Fanáticos (2v2)</h4>
-            <p class="text-muted small mb-4">
-                Duelo de duplas! Escolha seu time do coração e mostre quem sabe mais da história do clube.
-            </p>
-            
-            <div class="mt-auto pt-2">
-                <form method="POST" action="{% url 'duelos:criar_mini_fanaticos' %}">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-danger btn-lg w-100 fw-bold shadow-sm rounded-pill fs-6 text-uppercase letter-spacing-1">
-                        <i class="fa-solid fa-plus-circle"></i> Criar Sala 2v2
-                    </button>
-                </form>
-            </div>
-        </div>
+    <div class="ar-card" style="--cor:#b91c1c;">
+        <span class="ar-tag">2 x 2</span>
+        <div class="ar-ico"><i class="fa-solid fa-people-group"></i></div>
+        <h3>Mini Fanáticos</h3>
+        <p>Duelo de duplas! Escolha seu time do coração e mostre quem sabe mais da história do clube.</p>
+        <form method="POST" action="{% url 'duelos:criar_mini_fanaticos' %}">{% csrf_token %}
+            <button type="submit" class="ar-btn"><i class="fa-solid fa-plus"></i> Criar sala 2v2</button>
+        </form>
     </div>
 
-    <!-- Card: Draft X1 Pênaltis -->
-    <div class="col-12 col-md-6 col-lg-4">
-        <div class="card card-action card-clean h-100 text-center p-4 shadow-sm border-0 border-top border-4 border-warning rounded-4">
-            <div class="mb-3 mt-2">
-                <div class="bg-warning bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
-                    <i class="fa-solid fa-futbol text-warning" style="font-size: 2.5rem;"></i>
-                </div>
-            </div>
-            <h4 class="fw-bold">Draft X1 Pênaltis</h4>
-            <p class="text-muted small mb-3">
-                Sorteio insano! Escale seus 5 batedores lendários e 1 goleiro, e decida tudo na marca da cal.
-            </p>
-            
-            <!-- EXIBIÇÃO DO RECORDE ATUAL -->
-            <div class="bg-dark bg-opacity-75 text-white rounded-4 p-2 mb-4 w-100 mx-auto shadow-sm">
-                <span class="small text-uppercase text-white-50 fw-bold d-block mb-1" style="font-size: 0.7rem; letter-spacing: 1px;">
-                    <i class="fa-solid fa-crown text-warning"></i> Atual Rei do X1
-                </span>
-                
-                <div class="d-flex justify-content-center align-items-center gap-2">
-                    {% if top_invicto_nome %}
-                        <span class="fw-bold text-warning fs-5">{{ top_invicto_nome }}</span> 
-                        <span class="badge bg-danger rounded-pill shadow-sm"><i class="fa-solid fa-fire"></i> {{ top_invicto_streak }}</span>
-                    {% else %}
-                        <span class="fw-bold text-light fs-5">Ninguém</span> 
-                        <span class="badge bg-secondary rounded-pill"><i class="fa-solid fa-fire"></i> 0</span>
-                    {% endif %}
-                </div>
-            </div>
-            
-            <div class="mt-auto d-flex flex-column gap-2 pt-2">
-                <button type="button" class="btn btn-warning w-100 fw-bold shadow-sm rounded-pill text-dark text-uppercase letter-spacing-1" data-bs-toggle="modal" data-bs-target="#modalConfigPenaltis">
-                    <i class="fa-solid fa-play"></i> Iniciar Draft
-                </button>
-                <a href="{% url 'minijogo:ranking_x1' %}" class="btn btn-outline-secondary text-dark w-100 fw-bold shadow-sm rounded-pill border-2">
-                    <i class="fa-solid fa-ranking-star"></i> Ver Hall da Fama
-                </a>
-            </div>
-        </div>
+    <div class="ar-card" style="--cor:#b45309;">
+        <span class="ar-tag">1 x 1</span>
+        <div class="ar-ico"><i class="fa-solid fa-bullseye"></i></div>
+        <h3>Draft X1 Pênaltis</h3>
+        <p>Sorteio insano! Escale 5 batedores lendários e 1 goleiro e decida tudo na marca da cal.</p>
+        <div class="ar-rei"><span><i class="fa-solid fa-crown text-warning"></i> Atual Rei</span>
+            <strong>{% if top_invicto_nome %}{{ top_invicto_nome }} <i class="fa-solid fa-fire"></i> {{ top_invicto_streak }}{% else %}Ninguém{% endif %}</strong></div>
+        <button type="button" class="ar-btn" data-bs-toggle="modal" data-bs-target="#modalConfigPenaltis"><i class="fa-solid fa-play"></i> Iniciar draft</button>
+        <a href="{% url 'minijogo:ranking_x1' %}" class="ar-btn sec"><i class="fa-solid fa-ranking-star"></i> Hall da Fama</a>
     </div>
 
-    <!-- Card: Super Trunfo -->
-    <div class="col-12 col-md-6 col-lg-4">
-        <div class="card card-action card-clean h-100 text-center p-4 shadow-sm border-0 border-top border-4 border-dark rounded-4">
-            <div class="mb-3 mt-2">
-                <div class="bg-dark bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
-                    <i class="fa-solid fa-bolt text-dark" style="font-size: 2.5rem;"></i>
-                </div>
-            </div>
-            <h4 class="fw-bold">Super Trunfo</h4>
-            <p class="text-muted small mb-4">Batalha de atributos! Receba sua carta, escolha o melhor status e vença seu adversário.</p>
-            <div class="mt-auto pt-2">
-                <form method="POST" action="{% url 'duelos:criar_trunfo' %}">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-dark btn-lg w-100 fw-bold shadow-sm rounded-pill fs-6 text-uppercase letter-spacing-1">
-                        <i class="fa-solid fa-plus-circle"></i> Criar Mesa
-                    </button>
-                </form>
-            </div>
-        </div>
+    <div class="ar-card" style="--cor:#6d28d9;">
+        <span class="ar-tag">1 x 1</span>
+        <div class="ar-ico"><i class="fa-solid fa-bolt"></i></div>
+        <h3>Super Trunfo</h3>
+        <p>Batalha de atributos! Escolha o melhor status da sua carta e roube o monte do adversário.</p>
+        <form method="POST" action="{% url 'duelos:criar_trunfo' %}">{% csrf_token %}
+            <button type="submit" class="ar-btn"><i class="fa-solid fa-plus"></i> Criar mesa</button>
+        </form>
     </div>
 
-    <!-- Card: Batalha de Estatísticas (NOVO JOGUINHO) -->
-    <div class="col-12 col-md-6 col-lg-4">
-        <div class="card card-action card-clean h-100 text-center p-4 shadow-sm border-0 border-top border-4 border-info rounded-4">
-            <div class="mb-3 mt-2">
-                <div class="bg-info bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
-                    <i class="fa-solid fa-chart-simple text-info" style="font-size: 2.5rem;"></i>
-                </div>
-            </div>
-            <h4 class="fw-bold">Batalha de Estatísticas</h4>
-            <p class="text-muted small mb-4">
-                Cartas na mesa! Compare gols, assistências, cartões e partidas de lendas e bagres. Escolha o melhor atributo e amasse o adversário.
-            </p>
-            
-            <!-- Agora com d-flex, flex-column e gap-2 para acomodar os dois botões -->
-            <div class="mt-auto d-flex flex-column gap-2 pt-2">
-                <a href="{% url 'minijogo:jogo_estatisticas' %}" class="btn btn-info text-white btn-lg w-100 fw-bold shadow-sm rounded-pill fs-6 text-uppercase letter-spacing-1">
-                    <i class="fa-solid fa-gamepad"></i> Jogar Agora
-                </a>
-                <a href="{% url 'minijogo:ranking_minijogo' %}" class="btn btn-outline-secondary text-dark w-100 fw-bold shadow-sm rounded-pill border-2">
-                    <i class="fa-solid fa-ranking-star"></i> Ver Ranking
-                </a>
-            </div>
-        </div>
+    <div class="ar-card" style="--cor:#0e7490;">
+        <span class="ar-tag">SOLO</span>
+        <div class="ar-ico"><i class="fa-solid fa-chart-simple"></i></div>
+        <h3>Batalha de Estatísticas</h3>
+        <p>Gols, assistências, cartões e partidas de lendas e bagres. Escolha o melhor número e amasse o adversário.</p>
+        <a href="{% url 'minijogo:jogo_estatisticas' %}" class="ar-btn"><i class="fa-solid fa-play"></i> Jogar agora</a>
+        <a href="{% url 'minijogo:ranking_minijogo' %}" class="ar-btn sec"><i class="fa-solid fa-ranking-star"></i> Ver ranking</a>
     </div>
 
 </div>
 
-<!-- Aviso Criação de Sala -->
-<div class="row justify-content-center mt-3 mb-5 px-3">
-    <div class="col-12 col-md-8 text-center">
-        <div class="alert bg-light border border-secondary border-opacity-25 rounded-pill shadow-sm small text-muted fst-italic">
-            <i class="fa-solid fa-bullhorn text-warning me-1"></i> Ao criar uma sala privada, você receberá um link secreto para enviar ao seu rival.
-        </div>
-    </div>
-</div>
+<p class="text-center small text-muted mb-4"><i class="fa-solid fa-link"></i> Ao criar uma sala, você recebe um link secreto para mandar ao seu rival.</p>
 
 <hr class="text-muted my-5 opacity-25">
 

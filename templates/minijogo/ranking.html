@@ -1,77 +1,38 @@
 {% extends 'base.html' %}
 
-{% block title %}Hall da Fama - La Décima{% endblock %}
+{% block title %}Hall da Fama - Cartolândia{% endblock %}
 
 {% block content %}
-<div class="row mt-5">
-    <div class="col-md-10 mx-auto text-center">
-        <h1 class="fw-bold text-uppercase" style="color: var(--ouro); font-size: 3.5rem; letter-spacing: 2px;">
-            <i class="fa-solid fa-crown"></i> Hall da Fama
-        </h1>
-        <p class="text-muted fs-5">Olimpo dos treinadores que alcançaram a glória absoluta de <strong class="text-warning">La Décima</strong>.</p>
+<section class="ar-hero">
+    <h1><i class="fa-solid fa-crown"></i> Hall da Fama</h1>
+    <p>O olimpo dos treinadores que alcançaram a glória absoluta de <strong>La Décima</strong> no Draft X1.</p>
+    <div class="ar-chips">
+        <a href="{% url 'duelos:listar_desafios' %}" class="ar-chip text-decoration-none text-white"><i class="fa-solid fa-arrow-left"></i> Arena</a>
     </div>
-</div>
+</section>
 
-<div class="row mt-4 mb-5">
-    <div class="col-md-10 mx-auto">
-        <div class="card bg-dark text-white shadow-lg border-warning" style="border-radius: 15px;">
-            <div class="card-body p-0 table-responsive">
-                <table class="table table-dark table-hover table-borderless mb-0 rounded-3 text-center align-middle" style="white-space: nowrap;">
-                    <thead class="text-uppercase small" style="background-color: #111;">
-                        <tr>
-                            <th class="py-3" style="width: 10%;">Posição</th>
-                            <th class="py-3 text-start">Treinador</th>
-                            <th class="py-3 text-warning" title="Títulos de La Décima">🏆 Títulos</th>
-                            <th class="py-3 text-info" title="Sequência de vitórias atual">🔥 Streak</th>
-                            <th class="py-3 text-secondary">Jogos</th>
-                            <th class="py-3 text-success">V</th>
-                            <th class="py-3 text-danger">D</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for lenda in top_lendas %}
-                            <tr class="border-bottom border-secondary">
-                                <td class="py-3 fw-bold fs-5">
-                                    {% if forloop.counter == 1 %}
-                                        <i class="fa-solid fa-trophy" style="color: #ffd700; text-shadow: 0 0 10px #ffd700;"></i>
-                                    {% elif forloop.counter == 2 %}
-                                        <i class="fa-solid fa-medal" style="color: #c0c0c0;"></i>
-                                    {% elif forloop.counter == 3 %}
-                                        <i class="fa-solid fa-medal" style="color: #cd7f32;"></i>
-                                    {% else %}
-                                        <span class="text-muted">{{ forloop.counter }}º</span>
-                                    {% endif %}
-                                </td>
-                                <td class="py-3 text-start fw-bold fs-5">
-                                    {{ lenda.first_name|default:lenda.username }}
-                                </td>
-                                <td class="py-3">
-                                    <span class="badge bg-warning text-dark fs-6 rounded-pill px-3 shadow-sm">
-                                        {{ lenda.titulos_lenda|default:"0" }}
-                                    </span>
-                                </td>
-                                <td class="py-3">
-                                    <span class="fw-bold text-info fs-6">
-                                        <i class="fa-solid fa-fire"></i> {{ lenda.max_streak|default:"0" }}
-                                    </span>
-                                </td>
-                                <td class="py-3 text-secondary fw-bold">{{ lenda.total_jogos|default:"0" }}</td>
-                                <td class="py-3 text-success fw-bold">{{ lenda.total_vitorias|default:"0" }}</td>
-                                <td class="py-3 text-danger fw-bold">{{ lenda.total_derrotas|default:"0" }}</td>
-                            </tr>
-                        {% empty %}
-                            <tr>
-                                <td colspan="7" class="py-5 text-muted">
-                                    <i class="fa-solid fa-ghost fs-1 mb-3 opacity-50"></i>
-                                    <h5>A História ainda não foi escrita!</h5>
-                                    <p>Jogue algumas partidas para aparecer no placar global.</p>
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
+{% if top_lendas %}
+    {% with a=top_lendas.0 b=top_lendas.1 c=top_lendas.2 %}
+    <div class="ar-podio">
+        <div class="ar-pod p2">{% if b %}<div class="medalha">🥈</div><div class="nome">{{ b.first_name|default:b.username }}</div><div class="valor">{{ b.titulos_lenda|default:0 }} títulos</div>{% endif %}</div>
+        <div class="ar-pod p1"><div class="medalha">🏆</div><div class="nome">{{ a.first_name|default:a.username }}</div><div class="valor">{{ a.titulos_lenda|default:0 }} títulos</div></div>
+        <div class="ar-pod p3">{% if c %}<div class="medalha">🥉</div><div class="nome">{{ c.first_name|default:c.username }}</div><div class="valor">{{ c.titulos_lenda|default:0 }} títulos</div>{% endif %}</div>
     </div>
+    {% endwith %}
+{% endif %}
+
+<div class="ar-tabela mb-5">
+    {% for lenda in top_lendas %}
+        <div class="ar-linha {% if lenda.id == request.user.id %}eu{% endif %}">
+            <span class="pos">{{ forloop.counter }}º</span>
+            <span>
+                <span class="nome">{{ lenda.first_name|default:lenda.username }}</span>
+                <span class="d-block sub">{{ lenda.total_jogos|default:0 }} jogos · {{ lenda.total_vitorias|default:0 }}V {{ lenda.total_derrotas|default:0 }}D · <i class="fa-solid fa-fire"></i> melhor sequência {{ lenda.max_streak|default:0 }}</span>
+            </span>
+            <span class="pts"><i class="fa-solid fa-trophy" style="font-size:.9rem"></i> {{ lenda.titulos_lenda|default:0 }}</span>
+        </div>
+    {% empty %}
+        <div class="ar-vazio"><i class="fa-solid fa-ghost fs-1 mb-2 opacity-50"></i><h5>A história ainda não foi escrita!</h5><p class="mb-0">Jogue o Draft X1 para aparecer no placar global.</p></div>
+    {% endfor %}
 </div>
 {% endblock %}

@@ -1,157 +1,36 @@
 {% extends 'base.html' %}
-{% load static %}
+
+{% block title %}Ranking - Batalha de Estatísticas{% endblock %}
 
 {% block content %}
-<div class="painel-ranking">
-  <a href="{% url 'minijogo:jogo_estatisticas' %}" class="btn-voltar">← Voltar ao jogo</a>
-  <h2 class="titulo-ranking"><i class="fa-solid fa-trophy"></i> CLASSIFICAÇÃO GERAL</h2>
-
-  {% if lider %}
-    <div class="lider-card">
-      <span class="lider-selo">LÍDER GERAL</span>
-      <span class="lider-nome">
-        {% if lider.usuario__first_name %}
-          {{ lider.usuario__first_name }}
-        {% else %}
-          Jogador
-        {% endif %}
-      </span>
-      <span class="lider-pontos">{{ lider.melhor_pontuacao }} pts</span>
+<section class="ar-hero">
+    <h1><i class="fa-solid fa-ranking-star"></i> Classificação Geral</h1>
+    <p>Batalha de Estatísticas: a melhor pontuação de cada craque da resenha.</p>
+    <div class="ar-chips">
+        <a href="{% url 'minijogo:jogo_estatisticas' %}" class="ar-chip text-decoration-none text-white"><i class="fa-solid fa-play"></i> Voltar ao jogo</a>
+        {% if lider %}<span class="ar-chip"><i class="fa-solid fa-crown"></i> Líder: {{ lider.usuario__first_name|default:lider.usuario__username }} · {{ lider.melhor_pontuacao }} pts</span>{% endif %}
     </div>
-  {% endif %}
+</section>
 
-  {% if melhores %}
-    <table class="tabela-ranking">
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Jogador</th>
-          <th>Melhor pontuação</th>
-          <th>Partidas</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for item in melhores %}
-          <tr class="{% if forloop.counter == 1 %}linha-ouro{% elif forloop.counter == 2 %}linha-prata{% elif forloop.counter == 3 %}linha-bronze{% endif %}">
-            <td>
-              {% if forloop.counter == 1 %}🥇{% elif forloop.counter == 2 %}🥈{% elif forloop.counter == 3 %}🥉{% else %}{{ forloop.counter }}{% endif %}
-            </td>
-            <td>
-              {% if item.usuario__first_name %}
-                {{ item.usuario__first_name }}
-              {% else %}
-                Jogador
-              {% endif %}
-            </td>
-            <td class="pontos-td">{{ item.melhor_pontuacao }}</td>
-            <td>{{ item.partidas }}</td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  {% else %}
-    <p class="vazio-texto">Ainda ninguém jogou. Seja o primeiro a entrar em campo!</p>
-  {% endif %}
+{% if melhores %}
+    {% with a=melhores.0 b=melhores.1 c=melhores.2 %}
+    <div class="ar-podio">
+        <div class="ar-pod p2">{% if b %}<div class="medalha">🥈</div><div class="nome">{{ b.usuario__first_name|default:b.usuario__username }}</div><div class="valor">{{ b.melhor_pontuacao }} pts</div>{% endif %}</div>
+        <div class="ar-pod p1"><div class="medalha">🏆</div><div class="nome">{{ a.usuario__first_name|default:a.usuario__username }}</div><div class="valor">{{ a.melhor_pontuacao }} pts</div></div>
+        <div class="ar-pod p3">{% if c %}<div class="medalha">🥉</div><div class="nome">{{ c.usuario__first_name|default:c.usuario__username }}</div><div class="valor">{{ c.melhor_pontuacao }} pts</div>{% endif %}</div>
+    </div>
+    {% endwith %}
+{% endif %}
+
+<div class="ar-tabela mb-5">
+    {% for item in melhores %}
+        <div class="ar-linha {% if item.usuario__username == request.user.username %}eu{% endif %}">
+            <span class="pos">{{ forloop.counter }}º</span>
+            <span><span class="nome">{{ item.usuario__first_name|default:item.usuario__username }}</span><span class="d-block sub">{{ item.partidas }} partida{{ item.partidas|pluralize }}</span></span>
+            <span class="pts">{{ item.melhor_pontuacao }}</span>
+        </div>
+    {% empty %}
+        <div class="ar-vazio"><i class="fa-solid fa-futbol fs-1 mb-2 opacity-50"></i><p class="mb-0">Ainda ninguém jogou. Seja o primeiro a entrar em campo!</p></div>
+    {% endfor %}
 </div>
-
-<style>
-  :root {
-    --campo-escuro: #0b3d26;
-    --amarelo-canarinho: #ffcc29;
-    --azul-cbf: #0d3b66;
-    --branco-giz: #f5f5f0;
-    --dourado: #ffd60a;
-  }
-
-  body { background: var(--campo-escuro); }
-
-  .painel-ranking {
-    max-width: 640px;
-    margin: 2rem auto;
-    padding: 2rem 1.5rem;
-    background: rgba(0, 0, 0, 0.35);
-    border-radius: 18px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    color: var(--branco-giz);
-    font-family: 'Barlow Condensed', sans-serif;
-  }
-
-  .btn-voltar {
-    color: var(--amarelo-canarinho);
-    text-decoration: none;
-    font-weight: 600;
-    font-size: 0.95rem;
-  }
-  .btn-voltar:hover { text-decoration: underline; color: var(--amarelo-canarinho); }
-
-  .titulo-ranking {
-    font-family: 'Barlow Condensed', sans-serif; font-weight: 800;
-    text-align: center;
-    color: var(--amarelo-canarinho);
-    font-size: 1.9rem;
-    margin: 0.75rem 0 1.5rem;
-    letter-spacing: 0.03em;
-  }
-
-  .lider-card {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    background: linear-gradient(135deg, var(--dourado), #f7a600);
-    color: #1a1a1a;
-    border-radius: 14px;
-    padding: 1.1rem;
-    margin-bottom: 1.5rem;
-    box-shadow: 0 10px 25px rgba(255, 214, 10, 0.35);
-  }
-
-  .lider-selo {
-    font-size: 0.75rem;
-    letter-spacing: 0.12em;
-    font-weight: 700;
-    opacity: 0.75;
-  }
-
-  .lider-nome {
-    font-family: 'Barlow Condensed', sans-serif; font-weight: 800;
-    font-size: 1.6rem;
-    margin-top: 0.15rem;
-  }
-
-  .lider-pontos {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 1.1rem;
-    margin-top: 0.15rem;
-  }
-
-  .tabela-ranking {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 1.05rem;
-  }
-
-  .tabela-ranking th {
-    text-align: left;
-    padding: 0.6rem 0.5rem;
-    border-bottom: 2px solid rgba(255, 255, 255, 0.2);
-    color: var(--amarelo-canarinho);
-    font-weight: 700;
-    text-transform: uppercase;
-    font-size: 0.8rem;
-    letter-spacing: 0.05em;
-  }
-
-  .tabela-ranking td {
-    padding: 0.55rem 0.5rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  }
-
-  .pontos-td { font-family: 'JetBrains Mono', monospace; font-weight: 700; }
-
-  .linha-ouro { background: rgba(255, 214, 10, 0.12); }
-  .linha-prata { background: rgba(192, 192, 192, 0.12); }
-  .linha-bronze { background: rgba(205, 127, 50, 0.12); }
-
-  .vazio-texto { text-align: center; opacity: 0.8; margin-top: 1.5rem; }
-</style>
 {% endblock %}

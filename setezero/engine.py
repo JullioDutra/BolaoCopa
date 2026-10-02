@@ -39,24 +39,25 @@ MAX_ACRESCIMO = {1: 3, 2: 6}
 
 # ------------------------------------------------------------------ estado
 
-def novo_estado(casa, fora, seed, usuario_lado=None):
+def novo_estado(casa, fora, seed, usuario_lado=None, mata_mata=False):
     """ casa/fora: dict {'time': chave, 'formacao', 'mentalidade', 'estilo', 'titulares': [nomes] ou None}. """
     rng = random.Random(f'acrescimos-{seed}')
     estado = {
-        'seed': seed, 'periodo': 1, 'minuto': 0, 'status': 'pre', 'usuario_lado': usuario_lado,
+        'seed': seed, 'periodo': 1, 'minuto': 0, 'status': 'pre', 'usuario_lado': usuario_lado, 'mata_mata': mata_mata,
         'acrescimo': {'1': rng.randint(1, MAX_ACRESCIMO[1]), '2': rng.randint(2, MAX_ACRESCIMO[2])},
         'placar': {'casa': 0, 'fora': 0}, 'eventos': [], 'lados': {}, 'notas': {},
         'stats': {l: {'chutes': 0, 'no_alvo': 0, 'posse': 0.0, 'faltas': 0, 'escanteios': 0,
                       'amarelos': 0, 'vermelhos': 0, 'defesas': 0} for l in LADOS},
     }
     for lado, cfg in (('casa', casa), ('fora', fora)):
-        time = dados.obter(cfg['time'])
+        time = cfg.get('time_obj') or dados.obter(cfg['time'])
         formacao = cfg.get('formacao') or time['formacao']
         xi = dados.escalar(time, formacao, cfg.get('titulares'))
         nomes = [j['nome'] for j in xi]
         estado['lados'][lado] = {
             'time': cfg['time'], 'formacao': formacao,
             'mentalidade': cfg.get('mentalidade') or 'equilibrado', 'estilo': cfg.get('estilo') or 'posse',
+            'nome_time': time['nome'], 'cor': time['cor'], 'clube': time['clube'], 'ano': time['ano'], 'elenco': time['elenco'],
             'titulares': nomes, 'banco': [j['nome'] for j in time['elenco'] if j['nome'] not in nomes],
             'expulsos': [], 'lesionados': [], 'subs': 0, 'amarelos': {}, 'saiu': [],
         }
@@ -66,8 +67,8 @@ def novo_estado(casa, fora, seed, usuario_lado=None):
 
 
 def _jogador(lado_estado, nome):
-    time = dados.obter(lado_estado['time'])
-    return next(j for j in time['elenco'] if j['nome'] == nome)
+    elenco = lado_estado.get('elenco') or dados.obter(lado_estado['time'])['elenco']
+    return next(j for j in elenco if j['nome'] == nome)
 
 
 def em_campo(estado, lado):
@@ -127,7 +128,8 @@ def _evento(estado, tipo, lado, texto, jogador=None, extra=None):
 
 
 def _nome_time(estado, lado):
-    return dados.obter(estado['lados'][lado]['time'])['nome']
+    l = estado['lados'][lado]
+    return l.get('nome_time') or dados.obter(l['time'])['nome']
 
 
 # ------------------------------------------------------------------ um minuto
@@ -169,7 +171,7 @@ def _finalizar(estado, rng, lado, rival, fa, fr, xi_a, xi_r, penalti=False):
     conv = ESTILOS[l['estilo']]['conv']
     if estado['lados'][rival]['mentalidade'] in ('ofensivo', 'tudo') and l['estilo'] == 'contra':
         conv *= 1.08
-    p_gol = (0.27 + (batedor['fin'] - fr['gol']) * 0.0075) * conv
+    p_gol = (0.27 + (batedor['fin'] - fr['gol']) * 0.009) * conv
     p_gol = max(0.08, min(0.62, p_gol))
     if rng.random() < p_gol:
         return _gol(estado, rng, lado, batedor, xi_a, nome_t)
@@ -229,7 +231,7 @@ def simular_minuto(estado):
         p_ataque = BASE_ATAQUE * 2 * share[lado] * ment[lado]['ataque'] * ment[rival]['expo']
         if rng.random() < p_ataque:
             ratio = fa['atq'] / max(30, fr['def'])
-            p_chute = max(0.30, min(0.88, 0.52 + 1.1 * (ratio - 1)))
+            p_chute = max(0.30, min(0.90, 0.52 + 1.5 * (ratio - 1)))
             if rng.random() < p_chute:
                 # falta dentro da área? vira pênalti
                 if rng.random() < 0.035:
@@ -415,7 +417,68 @@ def avancar(estado, ate='fim', maximo_minutos=None):
         estado['status'] = 'fim'
         _evento(estado, 'fim', None, narracao.fim_de_jogo(_nome_time(estado, 'casa'), _nome_time(estado, 'fora'),
                                                           estado['placar']['casa'], estado['placar']['fora']), None)
+        if estado.get('mata_mata') and estado['placar']['casa'] == estado['placar']['fora']:
+            decidir_penaltis(estado)
     return estado['eventos'][inicio:]
+
+
+def decidir_penaltis(estado):
+    """ Disputa de pênaltis: 5 cobranças alternadas (para antes se já decidiu) e depois morte súbita. """
+    rng = random.Random(f"pen-{estado['seed']}")
+    placar = {'casa': 0, 'fora': 0}
+    cobrancas = {'casa': 0, 'fora': 0}
+    batedores, goleiros = {}, {}
+    for lado in LADOS:
+        xi = [j for j in em_campo(estado, lado) if j['pos'] != 'GOL']
+        batedores[lado] = sorted(xi, key=lambda j: -j['fin'])
+        goleiros[lado] = next((j for j in em_campo(estado, lado) if j['pos'] == 'GOL'), None)
+    _evento(estado, 'info', None, narracao.disputa_penaltis(), None)
+
+    def bater(lado):
+        rival = 'fora' if lado == 'casa' else 'casa'
+        lista = batedores[lado]
+        b = lista[cobrancas[lado] % len(lista)]
+        cobrancas[lado] += 1
+        gk = goleiros[rival]['gol'] if goleiros[rival] else 40
+        p = max(0.55, min(0.93, 0.78 + (b['fin'] - gk) * 0.003))
+        gol = rng.random() < p
+        if gol:
+            placar[lado] += 1
+        _nota(estado, b['nome'], 0.3 if gol else -0.4)
+        _evento(estado, 'pen_gol' if gol else 'pen_erro', lado, narracao.cobranca(rng, b['nome'], gol, placar['casa'], placar['fora']),
+                b['nome'], {'penaltis': f"{placar['casa']}-{placar['fora']}"})
+
+    decidido = False
+    for rodada in range(5):
+        for lado in LADOS:
+            bater(lado)
+            restantes = {l: 5 - cobrancas[l] for l in LADOS}
+            if placar['casa'] > placar['fora'] + restantes['fora'] or placar['fora'] > placar['casa'] + restantes['casa']:
+                decidido = True
+                break
+        if decidido:
+            break
+    extras = 0
+    while not decidido:
+        for lado in LADOS:
+            bater(lado)
+        if placar['casa'] != placar['fora']:
+            decidido = True
+        extras += 1
+        if extras > 15 and not decidido:
+            placar['casa' if rng.random() < 0.5 else 'fora'] += 1
+            decidido = True
+    vencedor = 'casa' if placar['casa'] > placar['fora'] else 'fora'
+    estado['penaltis'] = {'casa': placar['casa'], 'fora': placar['fora'], 'vencedor': vencedor}
+    _evento(estado, 'fim', vencedor, narracao.vencedor_penaltis(_nome_time(estado, vencedor), placar['casa'], placar['fora']), None)
+
+
+def vencedor(estado):
+    """ 'casa' | 'fora' | None (empate sem pênaltis). """
+    p = estado['placar']
+    if p['casa'] != p['fora']:
+        return 'casa' if p['casa'] > p['fora'] else 'fora'
+    return (estado.get('penaltis') or {}).get('vencedor')
 
 
 def simular_completo(estado):

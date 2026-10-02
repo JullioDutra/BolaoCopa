@@ -14,4 +14,9 @@ urlpatterns = [
     path('temporada/<int:pk>/', views.temporada, name='temporada'),
     path('temporada/<int:pk>/jogar/', views.temporada_jogar, name='temporada_jogar'),
     path('ranking/', views.ranking, name='ranking'),
+    path('copa/novo/', views.draft_novo, name='draft_novo'),
+    path('copa/<int:pk>/', views.draft, name='draft'),
+    path('copa/<int:pk>/api/<str:acao>/', views.api_draft, name='api_draft'),
+    path('copa/<int:pk>/jogar/', views.draft_jogar, name='draft_jogar'),
+    path('r/<uuid:codigo>/', views.retrospecto, name='retrospecto'),
 ]

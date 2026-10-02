@@ -101,3 +101,19 @@ def intervalo(casa, fora, pc, pf):
 
 def fim_de_jogo(casa, fora, pc, pf):
     return f"Fim de papo! {casa} {pc} x {pf} {fora}."
+
+
+def disputa_penaltis():
+    return "Empatou no tempo normal! Vai decidir nos pênaltis!"
+
+
+def cobranca(rng, nome, gol, pc, pf):
+    if gol:
+        return _e(rng, [f"{nome} converte com categoria! ({pc}-{pf})", f"GOL! {nome} bate firme no canto! ({pc}-{pf})",
+                        f"{nome} cobra no meio e o goleiro pula pro lado errado! ({pc}-{pf})"])
+    return _e(rng, [f"PERDEU! {nome} bate mal e o goleiro defende! ({pc}-{pf})", f"{nome} isola a cobrança! ({pc}-{pf})",
+                    f"Na trave! {nome} desperdiça! ({pc}-{pf})"])
+
+
+def vencedor_penaltis(time, pc, pf):
+    return f"{time} vence nos pênaltis por {max(pc, pf)} a {min(pc, pf)}!"

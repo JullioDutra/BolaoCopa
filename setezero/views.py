@@ -1,15 +1,15 @@
 import json
 
 from django.contrib import messages
-from django.http import JsonResponse
+from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
 from bolao.decorators import acesso_liberado_required
 from futebol.escudos import escudo_url
 
-from . import dados, engine, servico
-from .models import Partida7a0, Temporada7a0
+from . import copa, dados, engine, servico
+from .models import DraftCopa7a0, Partida7a0, Temporada7a0
 
 
 def _card(time):
@@ -23,14 +23,16 @@ def _times_cards():
 @acesso_liberado_required
 def hub(request):
     partidas = Partida7a0.objects.filter(usuario=request.user)
-    abertas = partidas.exclude(status='fim').exclude(modo='temporada')[:3]
+    abertas = partidas.exclude(status='fim').exclude(modo__in=['temporada', 'copa'])[:3]
+    drafts = DraftCopa7a0.objects.filter(usuario=request.user, status__in=['montando', 'copa'])
     temporadas = Temporada7a0.objects.filter(usuario=request.user, status='andamento')
-    recentes = partidas.filter(status='fim')[:5]
+    recentes = partidas.filter(status='fim').exclude(modo='copa')[:5]
+    copas = DraftCopa7a0.objects.filter(usuario=request.user).exclude(status__in=['montando', 'copa'])[:4]
     return render(request, 'setezero/hub.html', {
-        'abertas': abertas, 'temporadas': temporadas, 'recentes': recentes,
+        'abertas': abertas, 'drafts': drafts, 'copas': copas, 'temporadas': temporadas, 'recentes': recentes,
         'dados': dados, 'total_times': len(dados.TIMES),
         'jogos': partidas.filter(status='fim').count(),
-        'melhor_saldo': max([p.saldo for p in partidas.filter(status='fim')], default=0),
+        'melhor_saldo': max([p.saldo for p in partidas.filter(status='fim').exclude(modo='copa')], default=0),
         'nomes': {k: dados.obter(k)['nome'] for k in dados.TIMES} | {k: dados.obter(k)['nome'] for k in dados.FREGUESES},
     })
 
@@ -63,7 +65,6 @@ def partida(request, pk):
     p = get_object_or_404(Partida7a0, pk=pk, usuario=request.user)
     return render(request, 'setezero/partida.html', {
         'partida': p, 'mentalidades': engine.MENTALIDADES, 'estilos': engine.ESTILOS,
-        'voltar': ('setezero:temporada', p.temporada_id) if p.temporada_id else ('setezero:hub', None),
     })
 
 
@@ -156,3 +157,105 @@ def ranking(request):
         p.meu_nome = dados.obter(p.time_usuario)['nome']
         p.rival_nome = dados.obter(p.time_rival)['nome']
     return render(request, 'setezero/ranking.html', dados_rank)
+
+
+# ------------------------------------------------------------------ Draft Copa do Brasil
+
+def _brief(time):
+    """ Time sorteado pronto para o front: elenco agrupado por posição. """
+    return {'chave': time['chave'], 'nome': time['nome'], 'clube': time['clube'], 'ano': time['ano'], 'apelido': time.get('apelido', ''),
+            'cor': time['cor'], 'escudo': escudo_url(time['clube']) or '', 'overall': time['overall'],
+            'elenco': sorted(time['elenco'], key=lambda j: (['GOL', 'ZAG', 'LAT', 'VOL', 'MEI', 'PON', 'ATA'].index(j['pos']), -j['nota']))}
+
+
+def _visao_draft(d):
+    e = d.estado
+    pend = dados.obter(e['pendente']) if e['pendente'] else None
+    return {'status': d.status, 'formacao': d.formacao, 'slots': e['slots'], 'banco': e['banco'],
+            'posicoes': copa.posicoes_slots(d), 'skips': e['skips'], 'pendente': _brief(pend) if pend else None,
+            'completo': copa.completo(d), 'escolhidos': sum(1 for j in e['slots'] + e['banco'] if j)}
+
+
+@acesso_liberado_required
+def draft_novo(request):
+    if request.method == 'POST':
+        d = copa.criar_draft(request.user, request.POST.get('formacao', '4-3-3'), request.POST.get('mentalidade', 'equilibrado'),
+                             eliminatorio=request.POST.get('modo', 'mata') == 'mata')
+        return redirect('setezero:draft', pk=d.pk)
+    return render(request, 'setezero/draft_novo.html', {
+        'formacoes': list(dados.FORMACOES), 'mentalidades': engine.MENTALIDADES, 'total_times': len(dados.TIMES), 'fases': copa.FASES})
+
+
+@acesso_liberado_required
+def draft(request, pk):
+    d = get_object_or_404(DraftCopa7a0, pk=pk, usuario=request.user)
+    if d.status in ('campeao', 'eliminado', 'terminou'):
+        return redirect('setezero:retrospecto', codigo=d.codigo)
+    if d.status == 'copa':
+        return render(request, 'setezero/copa.html', _contexto_copa(d))
+    return render(request, 'setezero/draft.html', {'d': d, 'visao': _visao_draft(d), 'fases': copa.FASES, 'banco_total': copa.BANCO})
+
+
+def _contexto_copa(d):
+    fases = []
+    for i, nome in enumerate(copa.FASES):
+        feito = d.campanha[i] if i < len(d.campanha) else None
+        rival = dados.obter(d.estado['rivais'][i])
+        fases.append({'nome': nome, 'feito': feito, 'atual': i == d.fase, 'rival': {**rival, 'escudo': escudo_url(rival['clube']) or ''}})
+    meu = copa.time_do_draft(d)
+    return {'d': d, 'fases': fases, 'meu': meu, 'titulares': d.estado['slots'], 'banco': d.estado['banco']}
+
+
+def _json(request):
+    try:
+        return json.loads(request.body or '{}')
+    except ValueError:
+        return {}
+
+
+@acesso_liberado_required
+@require_POST
+def api_draft(request, pk, acao):
+    d = get_object_or_404(DraftCopa7a0, pk=pk, usuario=request.user)
+    corpo = _json(request)
+    try:
+        if acao == 'sortear':
+            copa.sortear(d)
+        elif acao == 'pular':
+            copa.pular(d)
+        elif acao == 'escolher':
+            copa.escolher(d, corpo.get('nome'), corpo.get('destino'))
+        elif acao == 'iniciar':
+            copa.iniciar_copa(d)
+        else:
+            return JsonResponse({'erro': 'Ação inválida.'}, status=400)
+    except copa.ErroDraft as e:
+        return JsonResponse({'erro': str(e), 'visao': _visao_draft(d)}, status=400)
+    d.refresh_from_db()
+    return JsonResponse({'visao': _visao_draft(d), 'status': d.status})
+
+
+@acesso_liberado_required
+@require_POST
+def draft_jogar(request, pk):
+    d = get_object_or_404(DraftCopa7a0, pk=pk, usuario=request.user)
+    p = copa.partida_da_fase(d)
+    if p is None:
+        return redirect('setezero:draft', pk=d.pk)
+    return redirect('setezero:partida', pk=p.pk)
+
+
+def retrospecto(request, codigo):
+    """ Página pública (por link secreto) para compartilhar no grupo. """
+    d = get_object_or_404(DraftCopa7a0, codigo=codigo)
+    if d.status in ('montando', 'copa'):
+        if request.user.is_authenticated and d.usuario_id == request.user.id:
+            return redirect('setezero:draft', pk=d.pk)
+        raise Http404
+    r = copa.retrospecto(d)
+    url = request.build_absolute_uri()
+    t = r['titulo']
+    texto = (f"🏆 {t['manchete'].title()} no 7 a 0 da Cartolândia! {r['vitorias']}V {r['derrotas']}D, "
+             f"{r['gols_pro']} gols marcados. Duvido você fazer melhor 👉 {url}")
+    r.update(url=url, texto_whats=texto, meu=request.user.is_authenticated and d.usuario_id == request.user.id)
+    return render(request, 'setezero/retrospecto.html', r)

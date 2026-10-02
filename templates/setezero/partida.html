@@ -48,11 +48,11 @@
   const URL_AVANCAR = "{% url 'setezero:api_avancar' partida.pk %}";
   const URL_SIMULAR = "{% url 'setezero:api_simular' partida.pk %}";
   const CSRF = "{{ csrf_token }}";
-  const VOLTAR = "{% if partida.temporada_id %}{% url 'setezero:temporada' partida.temporada_id %}{% else %}{% url 'setezero:hub' %}{% endif %}";
+  const VOLTAR = "{% if partida.draft_id %}{% url 'setezero:draft' partida.draft_id %}{% elif partida.temporada_id %}{% url 'setezero:temporada' partida.temporada_id %}{% else %}{% url 'setezero:hub' %}{% endif %}";
   const ICONES = {gol:'fa-futbol', amarelo:'fa-square', vermelho:'fa-square', defesa:'fa-hands', trave:'fa-bullseye', fora:'fa-arrow-up-right-from-square',
     penalti:'fa-circle-exclamation', penalti_perdido:'fa-hands', substituicao:'fa-arrows-rotate', lesao:'fa-kit-medical', tatica:'fa-chess',
-    info:'fa-microphone', intervalo:'fa-pause', fim:'fa-flag-checkered', desarme:'fa-shield'};
-  const CORES = {gol:'#22c55e', amarelo:'#facc15', vermelho:'#ef4444', trave:'#f59e0b', penalti:'#f59e0b', lesao:'#f87171'};
+    info:'fa-microphone', pen_gol:'fa-futbol', pen_erro:'fa-hands', intervalo:'fa-pause', fim:'fa-flag-checkered', desarme:'fa-shield'};
+  const CORES = {pen_gol:'#22c55e', pen_erro:'#ef4444', gol:'#22c55e', amarelo:'#facc15', vermelho:'#ef4444', trave:'#f59e0b', penalti:'#f59e0b', lesao:'#f87171'};
   const el = (id) => document.getElementById(id);
   let V = null, fila = [], auto = false, ocupado = false, vel = 1, idx = 0, sai = null, minutoShow = null, mostrando = false;
   const VEL = [1, 2, 4];
@@ -165,12 +165,14 @@
   function mostrarFim() {
     const eu = V.lado_usuario, rival = eu === 'casa' ? 'fora' : 'casa';
     const gp = V.placar[eu], gc = V.placar[rival], saldo = gp - gc;
-    const titulo = saldo >= 7 ? '7 A 0! LENDÁRIO!' : saldo > 0 ? 'Vitória!' : saldo === 0 ? 'Empate' : 'Derrota';
+    const pen = V.penaltis ? ` (${V.penaltis[eu]}-${V.penaltis[rival]} nos pênaltis)` : '';
+    const venceu = V.mata_mata ? V.vencedor === eu : saldo > 0;
+    const titulo = saldo >= 7 ? '7 A 0! LENDÁRIO!' : V.mata_mata ? (venceu ? (V.penaltis ? 'Passou nos pênaltis!' : 'Classificado!') : 'Eliminado' ) : saldo > 0 ? 'Vitória!' : saldo === 0 ? 'Empate' : 'Derrota';
     const premio = V.premio ? `<div class="mt-2"><i class="fa-solid fa-coins text-warning"></i> +${V.premio} Cartola Coins</div>` : '';
     const craque = V.craque ? `<div class="small opacity-75 mt-1">Craque do jogo: <b>${V.craque}</b> (${V.nota_craque.toFixed(1)})</div>` : '';
-    el('fim').innerHTML = `<div class="sz-fim ${V.resultado}"><h2>${titulo}</h2><div style="font-family:var(--fonte-titulo);font-size:2.6rem">${V.lados.casa.nome} ${V.placar.casa} x ${V.placar.fora} ${V.lados.fora.nome}</div>${craque}${premio}
+    el('fim').innerHTML = `<div class="sz-fim ${V.resultado}"><h2>${titulo}</h2><div style="font-family:var(--fonte-titulo);font-size:2.6rem">${V.lados.casa.nome} ${V.placar.casa} x ${V.placar.fora} ${V.lados.fora.nome}</div><div class="opacity-75">${pen}</div>${craque}${premio}
       <div class="d-flex gap-2 justify-content-center flex-wrap mt-3"><a class="ar-btn" style="width:auto" href="${VOLTAR}"><i class="fa-solid fa-arrow-left"></i> Continuar</a>
-      ${V.modo !== 'temporada' ? `<a class="ar-btn sec" style="width:auto" href="{% url 'setezero:novo' 'amistoso' %}">Nova partida</a>` : ''}</div></div>`;
+      ${V.modo === 'amistoso' || V.modo === 'desafio' ? `<a class="ar-btn sec" style="width:auto" href="{% url 'setezero:novo' 'amistoso' %}">Nova partida</a>` : ''}</div></div>`;
     el('bJogar').disabled = true; el('bIntervalo').disabled = true; el('bSimular').disabled = true;
     el('fim').scrollIntoView({behavior:'smooth', block:'center'});
   }

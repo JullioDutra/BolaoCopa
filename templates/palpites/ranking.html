@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load avatares %}
 
 {% block title %}Ranking Global - Cartolândia{% endblock %}
 
@@ -77,12 +78,10 @@
 
                             <td class="text-start">
                                 <div class="d-flex align-items-center">
-                                    <div class="bg-secondary bg-opacity-10 rounded-circle d-flex justify-content-center align-items-center me-2 me-sm-3 shadow-sm" style="width: 35px; height: 35px;">
-                                        <i class="fa-solid fa-user-tie text-secondary small"></i>
-                                    </div>
+                                    <span class="me-2 me-sm-3">{% avatar posicao.usuario.perfil.avatar 36 %}</span>
                                     <div>
                                         <span class="fw-bold text-dark d-block" style="line-height: 1.2;">
-                                            {{ posicao.usuario.first_name|default:posicao.usuario.username|title }}
+                                            <a class="nome-jogador" href="{% url 'conta:perfil_publico' posicao.usuario.pk %}">{{ posicao.usuario.first_name|default:posicao.usuario.username|title }}</a>
                                         </span>
                                         {% if posicao.usuario.username == request.user.username %}
                                             <span class="badge bg-success rounded-pill" style="font-size: 0.6rem;">Você</span>

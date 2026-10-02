@@ -1,6 +1,7 @@
-{% load avisos_extras %}
+{% load avisos_extras avatares %}
 {% for i in itens %}
 <a href="{{ i.a.url|default:'#' }}" class="d-flex align-items-center gap-3 px-3 py-2 text-decoration-none text-dark {% if not forloop.first %}border-top{% endif %}">
+    {% avatar i.a.usuario.perfil.avatar 34 %}
     <span class="d-inline-flex align-items-center justify-content-center rounded-circle text-white" style="width:34px;height:34px;flex:none;background:{{ i.icone.1 }};"><i class="fa-solid {{ i.icone.0 }} small"></i></span>
     <span class="flex-grow-1 small">{{ i.a.texto|sem_emoji }}</span>
     <small class="text-muted text-nowrap">{{ i.a.criada_em|timesince }}</small>

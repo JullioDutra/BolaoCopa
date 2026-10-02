@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load avatares %}
 {% block title %}Meu perfil - Cartolândia{% endblock %}
 
 {% block content %}
@@ -16,9 +17,10 @@
 
 <div class="card border-0 rounded-4 shadow-sm text-white p-4 mb-4" style="background: linear-gradient(135deg, var(--verde-escuro), var(--verde-campo));">
     <div class="d-flex align-items-center gap-3 flex-wrap">
-        <div class="avatar-grande">{{ perfil.avatar }}</div>
+        {% avatar perfil.avatar 84 %}
         <div class="flex-grow-1">
             <h3 class="mb-0">{{ user.first_name|default:user.username }}</h3>
+            <a class="small text-white fw-bold" href="{% url 'conta:perfil_publico' user.pk %}"><i class="fa-solid fa-eye"></i> Ver como os outros veem</a>
             <div class="opacity-75">{% if perfil.frase %}“{{ perfil.frase }}”{% else %}Adicione uma frase de torcedor{% endif %}</div>
             {% if perfil.time_coracao %}<div class="small mt-1"><i class="fa-solid fa-heart"></i> {{ perfil.time_coracao.nome }}
                 · <a class="text-white fw-bold" href="{% url 'conta:escolher_time' %}">trocar time</a></div>
@@ -64,12 +66,13 @@
     <form method="post" novalidate>
         {% csrf_token %}<input type="hidden" name="acao" value="dados">
         <div class="mb-4">
-            <label class="form-label fw-bold">Avatar</label>
+            <label class="form-label fw-bold">Avatar <small class="text-muted fw-normal">— desbloqueie novos ícones com as conquistas</small></label>
             <div class="d-flex flex-wrap gap-2">
-                {% for valor, rotulo in form_dados.fields.avatar.choices %}
+                {% for a in avatares %}
                 <div class="avatar-op position-relative">
-                    <input type="radio" name="avatar" id="av{{ forloop.counter }}" value="{{ valor }}" {% if form_dados.avatar.value == valor %}checked{% endif %}>
-                    <label for="av{{ forloop.counter }}">{{ rotulo }}</label>
+                    <input type="radio" name="avatar" id="av{{ forloop.counter }}" value="{{ a.codigo }}" {% if form_dados.avatar.value == a.codigo %}checked{% endif %} {% if not a.liberado %}disabled{% endif %}>
+                    <label for="av{{ forloop.counter }}" title="{{ a.nome }}{% if not a.liberado %} — bloqueado: {{ a.dica }}{% endif %}" style="{% if not a.liberado %}opacity:.4;filter:grayscale(1);cursor:not-allowed;{% endif %}">
+                        {% avatar a.codigo 38 %}{% if not a.liberado %}<i class="fa-solid fa-lock position-absolute" style="right:-2px;bottom:-2px;font-size:.7rem;background:#fff;border-radius:50%;padding:3px"></i>{% endif %}</label>
                 </div>
                 {% endfor %}
             </div>

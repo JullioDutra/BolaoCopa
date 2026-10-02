@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load avatares %}
 {% block title %}{{ rodada.nome }} - Classificação{% endblock %}
 
 {% block content %}
@@ -15,8 +16,9 @@
         {% for l in ranking %}
         <li class="list-group-item d-flex align-items-center gap-3 py-3 {% if l.usuario == user %}bg-warning bg-opacity-10{% endif %}">
             <div class="fs-4 fw-bold" style="width:44px;">{% if forloop.counter == 1 %}🥇{% elif forloop.counter == 2 %}🥈{% elif forloop.counter == 3 %}🥉{% else %}{{ forloop.counter }}º{% endif %}</div>
+            {% avatar l.usuario.perfil.avatar 38 %}
             <div class="flex-grow-1">
-                <div class="fw-bold">{{ l.usuario.first_name|default:l.usuario.username }}</div>
+                <div class="fw-bold"><a class="nome-jogador" href="{% url 'conta:perfil_publico' l.usuario.pk %}">{{ l.usuario.first_name|default:l.usuario.username }}</a></div>
                 <small class="text-muted">{{ l.exatos }} placar{{ l.exatos|pluralize:",es" }} exato{{ l.exatos|pluralize }} · {{ l.acertos }} acerto{{ l.acertos|pluralize }} · {{ l.palpites }}/{{ jogos|length }} palpites</small>
             </div>
             <div class="fs-5 fw-bold">{{ l.pontos }} pts</div>

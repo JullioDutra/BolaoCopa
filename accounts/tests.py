@@ -157,7 +157,7 @@ class PerfilTests(TestCase):
     def test_atualiza_dados_e_login_acompanha_o_email(self):
         r = self.client.post(reverse('conta:perfil'), {
             'acao': 'dados', 'nome': 'Aninha', 'email': 'nova@x.com', 'telefone': '(21) 98888-7777',
-            'frase': 'Bora!', 'avatar': '🦁', 'avisos_whatsapp': 'on'})
+            'frase': 'Bora!', 'avatar': 'bola', 'avisos_whatsapp': 'on'})
         self.assertEqual(r.status_code, 302)
         self.u.refresh_from_db()
         self.assertEqual((self.u.first_name, self.u.email, self.u.username), ('Aninha', 'nova@x.com', 'nova@x.com'))
@@ -165,12 +165,12 @@ class PerfilTests(TestCase):
 
     def test_email_de_outra_conta_e_recusado(self):
         User.objects.create_user('outro@x.com', email='outro@x.com', password='x')
-        r = self.client.post(reverse('conta:perfil'), {'acao': 'dados', 'nome': 'Ana', 'email': 'OUTRO@x.com', 'avatar': '⚽'})
+        r = self.client.post(reverse('conta:perfil'), {'acao': 'dados', 'nome': 'Ana', 'email': 'OUTRO@x.com', 'avatar': 'bola'})
         self.assertContains(r, 'já está em uso')
 
     def test_bonus_de_perfil_completo_uma_unica_vez(self):
         self.client.post(reverse('conta:perfil'), {'acao': 'dados', 'nome': 'Ana', 'email': 'ana@x.com',
-                                                   'telefone': '21988887777', 'avatar': '⚽'})
+                                                   'telefone': '21988887777', 'avatar': 'bola'})
         self.assertEqual(coins.saldo(self.u), 1000)
         for resp in ('zico', 'pele'):
             self.client.post(reverse('conta:perfil'), {'acao': 'pergunta', 'pergunta': 'craque', 'resposta': resp})
@@ -242,3 +242,58 @@ class NpcTests(TestCase):
         self.assertContains(self.client.get(reverse('gestao:usuarios') + '?f=npcs'), 'Vini Jr')
         self.assertContains(self.client.get(reverse('gestao:hub')), 'NPCs do carreira')
         self.assertEqual(self.client.get('/admin/auth/user/').status_code, 200)
+
+
+class AvataresEPerfilPublicoTests(TestCase):
+    def setUp(self):
+        self.u = User.objects.create_user('ana@x.com', password='x', first_name='Ana')
+        self.o = User.objects.create_user('beto@x.com', password='x', first_name='Beto')
+        self.client.force_login(self.u)
+
+    def test_catalogo_codigos_curtos_e_unicos(self):
+        from accounts import avatares
+        cat = avatares.catalogo()
+        self.assertTrue(all(len(c) <= 8 for c in cat), [c for c in cat if len(c) > 8])
+        self.assertEqual(len(cat), len(set(cat)))
+        from avisos.conquistas import CATALOGO
+        self.assertEqual(set(avatares.POR_CONQUISTA) - set(CATALOGO), set())    # nenhuma conquista inexistente
+        self.assertEqual(set(CATALOGO) - set(avatares.POR_CONQUISTA), set())    # toda conquista libera um avatar
+
+    def test_emoji_antigo_vira_avatar_padrao(self):
+        from accounts import avatares
+        self.assertEqual(avatares.normalizar('🦁'), avatares.PADRAO)
+        self.assertEqual(avatares.info('xxx')['codigo'], avatares.PADRAO)
+
+    def test_so_usa_avatar_desbloqueado(self):
+        from accounts import avatares
+        from avisos.models import Conquista
+        dados = {'acao': 'dados', 'nome': 'Ana', 'email': 'ana@x.com', 'avatar': 'mundo'}
+        r = self.client.post(reverse('conta:perfil'), dados)
+        self.assertContains(r, 'bloqueado')
+        self.u.perfil.refresh_from_db() if hasattr(self.u, 'perfil') else None
+        self.assertNotEqual(PerfilUsuario.objects.filter(usuario=self.u, avatar='mundo').count(), 1)
+        Conquista.objects.create(usuario=self.u, slug='campeao_mundo')
+        self.assertIn('mundo', avatares.liberados(self.u))
+        r = self.client.post(reverse('conta:perfil'), dados)
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(PerfilUsuario.objects.get(usuario=self.u).avatar, 'mundo')
+        self.assertContains(self.client.get(reverse('conta:perfil')), 'fa-earth-americas')
+
+    def test_perfil_publico(self):
+        from avisos.models import Conquista
+        Conquista.objects.create(usuario=self.o, slug='cravador')
+        r = self.client.get(reverse('conta:perfil_publico', args=[self.o.pk]))
+        self.assertContains(r, 'Beto')
+        self.assertContains(r, 'Cravador')
+        self.assertNotContains(r, 'beto@x.com')               # nada de e-mail/telefone
+        self.assertEqual(self.client.get(reverse('conta:perfil_publico', args=[self.u.pk])).status_code, 200)
+        self.client.logout()
+        self.assertEqual(self.client.get(reverse('conta:perfil_publico', args=[self.o.pk])).status_code, 302)
+
+    def test_perfil_publico_nao_mostra_npc_nem_inativo(self):
+        from accounts import npc
+        n = npc.criar_usuario_npc('neymar_san', 'Neymar')
+        self.assertEqual(self.client.get(reverse('conta:perfil_publico', args=[n.pk])).status_code, 404)
+        self.o.is_active = False
+        self.o.save()
+        self.assertEqual(self.client.get(reverse('conta:perfil_publico', args=[self.o.pk])).status_code, 404)

@@ -404,10 +404,37 @@ def _jogar_ate_acabar(d):
     return d
 
 
+def _liberar_mundial(usuario):
+    from .models import DraftCopa7a0
+    DraftCopa7a0.objects.create(usuario=usuario, torneio='brasil', status='campeao', estado={})
+
+
 class MundialTests(TestCase):
     def setUp(self):
         self.u = User.objects.create_user('tec', password='x', first_name='Tec')
         self.client.force_login(self.u)
+        _liberar_mundial(self.u)
+
+    def test_mundial_so_para_quem_foi_campeao_da_copa_do_brasil(self):
+        from . import copa
+        novo = User.objects.create_user('novato', password='x')
+        self.client.force_login(novo)
+        r = self.client.get(reverse('setezero:mundial_novo'))
+        self.assertRedirects(r, reverse('setezero:hub'))
+        r = self.client.post(reverse('setezero:mundial_novo'), {'formacao': '4-3-3'})
+        self.assertEqual(r.status_code, 302)
+        self.assertFalse(copa.DraftCopa7a0.objects.filter(usuario=novo, torneio='mundial').exists())
+        with self.assertRaises(copa.ErroDraft):
+            copa.criar_draft(novo, torneio='mundial')
+        self.assertContains(self.client.get(reverse('setezero:hub')), 'bloqueado')
+        # vice-campeão ou eliminado não destrava
+        copa.DraftCopa7a0.objects.create(usuario=novo, torneio='brasil', status='eliminado', estado={})
+        self.assertFalse(copa.mundial_liberado(novo))
+        copa.DraftCopa7a0.objects.create(usuario=novo, torneio='mundial', status='campeao', estado={})
+        self.assertFalse(copa.mundial_liberado(novo))   # campeão do Mundial não conta como da Copa do Brasil
+        copa.DraftCopa7a0.objects.create(usuario=novo, torneio='brasil', status='campeao', estado={})
+        self.assertTrue(copa.mundial_liberado(novo))
+        self.assertEqual(self.client.get(reverse('setezero:mundial_novo')).status_code, 200)
 
     def test_times_do_mundo_sao_mais_fortes_e_completos(self):
         import statistics
@@ -503,7 +530,7 @@ class MundialTests(TestCase):
         self.assertContains(r, 'Barcelona 2012')
         self.assertContains(r, 'hino-mundial')
         r = self.client.post(reverse('setezero:mundial_novo'), {'formacao': '4-3-3', 'mentalidade': 'equilibrado'})
-        d = copa.DraftCopa7a0.objects.get()
+        d = copa.DraftCopa7a0.objects.get(torneio='mundial')
         self.assertEqual(d.torneio, 'mundial')
         self.assertContains(self.client.get(reverse('setezero:draft', args=[d.pk])), 'Busca pelo Mundial')
         _draftar_sozinho(d)
@@ -521,6 +548,7 @@ class DificuldadeMundialTests(TestCase):
         import statistics
         from . import copa
         u = User.objects.create_user('bot', password='x')
+        _liberar_mundial(u)
 
         def forca_media(torneio):
             valores = []

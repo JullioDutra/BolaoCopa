@@ -39,6 +39,7 @@
   </div>
 </div>
 
+{% if meu and draft.torneio == 'brasil' and draft.status == 'campeao' %}<div class="alert alert-warning text-center mt-3 fw-bold" data-html2canvas-ignore>🔓 Você desbloqueou a <a href="{% url 'setezero:mundial_novo' %}">Busca pelo Mundial</a>!</div>{% endif %}
 <div class="d-flex flex-wrap justify-content-center gap-2 my-4" data-html2canvas-ignore>
   <a class="btn btn-whatsapp fw-bold rounded-pill px-4" target="_blank" rel="noopener" href="https://wa.me/?text={{ texto_whats|urlencode }}"><i class="fa-brands fa-whatsapp"></i> Mandar no grupo</a>
   <button class="btn btn-dark fw-bold rounded-pill px-4" id="bImagem"><i class="fa-solid fa-image"></i> Baixar imagem</button>

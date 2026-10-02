@@ -1,6 +1,7 @@
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.contrib.auth.models import User
+from accounts.npc import criar_usuario_npc
 from modocarreira.models import ServidorConfig, Campeonato, Clube, Avatar
 import random
 
@@ -306,7 +307,7 @@ class Command(BaseCommand):
         }
 
         with transaction.atomic():
-            user_bot, _ = User.objects.get_or_create(username='cbf_oficial', defaults={'email': 'cbf@cartolandia.com'})
+            user_bot = criar_usuario_npc('cbf_oficial', 'CBF')
             if not user_bot.password:
                 user_bot.set_password('senha_segura_123')
                 user_bot.save()
@@ -345,7 +346,7 @@ class Command(BaseCommand):
 
                         if not Avatar.objects.filter(nome_camisa=nome_jogador, clube_atual=clube).exists():
                             username_jogador = f"{nome_jogador.replace(' ', '').lower()}_{info['sigla'].lower()}"
-                            user_jogador, _ = User.objects.get_or_create(username=username_jogador)
+                            user_jogador = criar_usuario_npc(username_jogador, nome_jogador)
 
                             Avatar.objects.create(
                                 usuario=user_jogador,

@@ -1,6 +1,8 @@
 from datetime import date, timedelta
 
+from django.utils import timezone
 from django.contrib.auth.models import User
+from django.urls import reverse
 from django.test import SimpleTestCase, TestCase
 
 from palpites.models import Clube
@@ -193,3 +195,50 @@ class PerfilTests(TestCase):
         self.assertContains(r, 'reset-senha/confirmar/')
         self.client.logout(); self.client.force_login(self.u)
         self.assertEqual(self.client.get(reverse('conta:staff_links_senha')).status_code, 302)
+
+
+class NpcTests(TestCase):
+    def test_usuario_npc_e_inativo_sem_senha_e_fora_das_listas(self):
+        from accounts import npc
+        u = npc.criar_usuario_npc('neymar_san', 'Neymar')
+        self.assertFalse(u.is_active)
+        self.assertFalse(u.has_usable_password())
+        self.assertTrue(npc.eh_npc(u))
+        self.assertEqual(npc.criar_usuario_npc('neymar_san').pk, u.pk)   # idempotente
+        pessoa = User.objects.create_user('ana@x.com', password='x')
+        self.assertIn(pessoa, npc.usuarios_reais())
+        self.assertNotIn(u, npc.usuarios_reais())
+
+    def test_comando_ajusta_so_quem_nunca_entrou_e_nao_tem_atividade(self):
+        import io
+        from django.core.management import call_command
+        from accounts import npc
+        from modocarreira.models import Avatar
+        antigo = User.objects.create_user('gabigol_fla')            # criado pelo script antigo
+        real = User.objects.create_user('joao@x.com', password='x')  # humano com avatar no carreira
+        for usuario in (antigo, real):
+            Avatar.objects.create(usuario=usuario, nome_camisa=usuario.username[:20], arquetipo='matador', posicao_preferida='ST',
+                                  temporada_nascimento=2026)
+        real.last_login = timezone.now()
+        real.save()
+        out = io.StringIO()
+        call_command('ajustar_npcs', stdout=out)
+        antigo.refresh_from_db()
+        self.assertTrue(antigo.is_active)                      # simulação não grava
+        call_command('ajustar_npcs', '--aplicar', stdout=out)
+        antigo.refresh_from_db(); real.refresh_from_db()
+        self.assertFalse(antigo.is_active)
+        self.assertTrue(npc.eh_npc(antigo))
+        self.assertTrue(real.is_active)                        # pessoa de verdade fica intacta
+        self.assertFalse(npc.eh_npc(real))
+
+    def test_painel_da_staff_esconde_npcs(self):
+        from accounts import npc
+        npc.criar_usuario_npc('vinijr_fla', 'Vini Jr')
+        staff = User.objects.create_user('chefe', password='x', is_staff=True, is_superuser=True, first_name='Chefe')
+        self.client.force_login(staff)
+        r = self.client.get(reverse('gestao:usuarios'))
+        self.assertNotContains(r, 'Vini Jr')
+        self.assertContains(self.client.get(reverse('gestao:usuarios') + '?f=npcs'), 'Vini Jr')
+        self.assertContains(self.client.get(reverse('gestao:hub')), 'NPCs do carreira')
+        self.assertEqual(self.client.get('/admin/auth/user/').status_code, 200)

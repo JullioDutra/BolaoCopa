@@ -30,7 +30,7 @@ def hub(request):
     copas = DraftCopa7a0.objects.filter(usuario=request.user).exclude(status__in=['montando', 'copa'])[:4]
     return render(request, 'setezero/hub.html', {
         'abertas': abertas, 'drafts': drafts, 'copas': copas, 'temporadas': temporadas, 'recentes': recentes,
-        'dados': dados, 'total_times': len(dados.TIMES),
+        'dados': dados, 'total_times': len(dados.TIMES), 'mundial_liberado': copa.mundial_liberado(request.user),
         'jogos': partidas.filter(status='fim').count(),
         'melhor_saldo': max([p.saldo for p in partidas.filter(status='fim').exclude(modo='copa')], default=0),
         'nomes': {k: dados.obter(k)['nome'] for k in dados.TIMES} | {k: dados.obter(k)['nome'] for k in dados.FREGUESES},
@@ -178,8 +178,15 @@ def _visao_draft(d):
 
 @acesso_liberado_required
 def draft_novo(request, torneio='brasil'):
+    if torneio == 'mundial' and not copa.mundial_liberado(request.user):
+        messages.warning(request, 'A Busca pelo Mundial está bloqueada: seja campeão da Copa do Brasil para desbloquear!')
+        return redirect('setezero:hub')
     if request.method == 'POST':
-        d = copa.criar_draft(request.user, request.POST.get('formacao', '4-3-3'), request.POST.get('mentalidade', 'equilibrado'), torneio=torneio)
+        try:
+            d = copa.criar_draft(request.user, request.POST.get('formacao', '4-3-3'), request.POST.get('mentalidade', 'equilibrado'), torneio=torneio)
+        except copa.ErroDraft as e:
+            messages.error(request, str(e))
+            return redirect('setezero:hub')
         return redirect('setezero:draft', pk=d.pk)
     mundial = torneio == 'mundial'
     return render(request, 'setezero/draft_mundial_novo.html' if mundial else 'setezero/draft_novo.html', {

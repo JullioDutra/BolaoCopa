@@ -2,6 +2,7 @@
 {% block title %}7 a 0 - Cartolândia{% endblock %}
 {% block content %}
 {% include 'setezero/_estilo.html' %}
+{% if messages %}{% for m in messages %}<div class="alert alert-{% if m.tags == 'error' %}danger{% else %}{{ m.tags|default:'info' }}{% endif %}">{{ m }}</div>{% endfor %}{% endif %}
 <section class="ar-hero sz-hero">
     <h1><span class="sete">7 a 0</span> · Brasileirão Histórico</h1>
     <p>Comande {{ total_times }} esquadrões lendares em simulações minuto a minuto: escale, mude a tática no intervalo e tente a goleada impossível.</p>
@@ -31,11 +32,19 @@
 {% endif %}
 
 <h2 class="ar-secao"><i class="fa-solid fa-dice"></i> Escolha o modo</h2>
+{% if mundial_liberado %}
 <a class="d-block text-decoration-none mb-3" href="{% url 'setezero:mundial_novo' %}">
   <div class="sz-mundo-hero" style="margin:0;padding:22px 18px"><div class="estrela" style="font-size:2rem">★</div>
     <h1 style="font-size:clamp(1.6rem,5vw,2.6rem)">Busca pelo Mundial</h1>
     <p class="mb-2">O modo mais difícil: Brasil vs. o resto do mundo. Barcelona 2012, Milan 1989, Real Madrid 2002… fase de grupos e mata-mata.</p>
     <span class="sz-btn-ouro"><i class="fa-solid fa-earth-americas"></i> Encarar a Europa</span></div></a>
+{% else %}
+<div class="sz-mundo-hero mb-3" style="margin-top:0;padding:22px 18px;filter:saturate(.45)">
+  <div class="estrela" style="font-size:2rem"><i class="fa-solid fa-lock"></i></div>
+  <h1 style="font-size:clamp(1.6rem,5vw,2.6rem)">Busca pelo Mundial</h1>
+  <p class="mb-2">Modo lendário, <b>bloqueado</b>. Seja <b>campeão da Copa do Brasil</b> no draft para desbloquear o desafio contra os melhores times da Europa.</p>
+  <a class="sz-btn-ouro" href="{% url 'setezero:draft_novo' %}"><i class="fa-solid fa-trophy"></i> Ir atrás do título</a></div>
+{% endif %}
 <div class="ar-grid mb-4">
     <a class="ar-card text-decoration-none" style="--cor:#9a3412" href="{% url 'setezero:draft_novo' %}"><span class="ar-tag">NOVO · 7 JOGOS</span>
         <div class="ar-ico"><i class="fa-solid fa-dice"></i></div><h3>Draft Copa do Brasil</h3>

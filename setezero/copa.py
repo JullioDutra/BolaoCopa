@@ -42,6 +42,11 @@ def grupo_ativo(draft):
     return draft.torneio == 'mundial' and draft.fase < JOGOS_DE_GRUPO
 
 
+def mundial_liberado(usuario):
+    """ A Busca pelo Mundial só abre para quem já foi campeão da Copa do Brasil. """
+    return DraftCopa7a0.objects.filter(usuario=usuario, torneio='brasil', status='campeao').exists()
+
+
 def criar_draft(usuario, formacao='4-3-3', mentalidade='equilibrado', torneio='brasil'):
     """ Sempre mata-mata: perdeu uma fase, está eliminado. """
     if formacao not in dados.FORMACOES:
@@ -50,6 +55,8 @@ def criar_draft(usuario, formacao='4-3-3', mentalidade='equilibrado', torneio='b
         mentalidade = 'equilibrado'
     if torneio not in TORNEIOS:
         torneio = 'brasil'
+    if torneio == 'mundial' and not mundial_liberado(usuario):
+        raise ErroDraft('A Busca pelo Mundial só abre para quem foi campeão da Copa do Brasil.')
     estado = {'slots': [None] * 11, 'banco': [None] * BANCO, 'sorteadas': [], 'pendente': None, 'skips': TORNEIOS[torneio].get('skips', SKIPS), 'rivais': []}
     return DraftCopa7a0.objects.create(usuario=usuario, torneio=torneio, formacao=formacao, mentalidade=mentalidade,
                                        eliminatorio=True, estado=estado)

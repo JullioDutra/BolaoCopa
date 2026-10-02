@@ -15,7 +15,7 @@ from django.urls import reverse
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 
-from accounts import coins
+from accounts import coins, npc
 from accounts.models import PerfilUsuario
 from palpites.models import Clube
 
@@ -24,6 +24,7 @@ from . import auditoria
 FILTROS = {
     'ativos': Q(is_active=True), 'inativos': Q(is_active=False), 'staff': Q(is_staff=True),
     'sem-telefone': Q(perfil__telefone='') | Q(perfil__isnull=True),
+    'npcs': Q(),
 }
 
 
@@ -34,8 +35,9 @@ def _nome(u):
 @staff_member_required
 def hub(request):
     return render(request, 'gestao/hub.html', {
-        'total_usuarios': User.objects.count(),
-        'inativos': User.objects.filter(is_active=False).count(),
+        'total_usuarios': npc.usuarios_reais().count(),
+        'inativos': npc.usuarios_reais().filter(is_active=False).count(),
+        'total_npcs': User.objects.filter(last_name=npc.MARCA).count(),
         'ultimas_acoes': auditoria.recentes(5),
     })
 
@@ -44,7 +46,8 @@ def hub(request):
 def usuarios(request):
     busca = (request.GET.get('q') or '').strip()
     filtro = request.GET.get('f') or ''
-    qs = User.objects.select_related('perfil').order_by('first_name', 'username')
+    # NPCs do modo carreira ficam fora da lista (filtro "npcs" mostra só eles)
+    qs = (User.objects.filter(last_name=npc.MARCA) if filtro == 'npcs' else npc.usuarios_reais()).select_related('perfil').order_by('first_name', 'username')
     if busca:
         qs = qs.filter(Q(first_name__icontains=busca) | Q(last_name__icontains=busca)
                        | Q(username__icontains=busca) | Q(email__icontains=busca))
@@ -194,6 +197,8 @@ def sistema(request):
                 call_command('consolidar_escudos', '--aplicar', stdout=buffer)
             elif acao == 'jogadores':
                 call_command('consolidar_jogadores', '--aplicar', stdout=buffer)
+            elif acao == 'npcs':
+                call_command('ajustar_npcs', '--aplicar', stdout=buffer)
             elif acao == 'baralho':
                 from duelos.baralho import garantir_cartas
                 buffer.write(f'{garantir_cartas(40)} cartas criadas.')

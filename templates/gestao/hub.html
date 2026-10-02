@@ -7,6 +7,7 @@
     <div class="ar-chips">
         <span class="ar-chip"><i class="fa-solid fa-users"></i> {{ total_usuarios }} participantes</span>
         {% if inativos %}<span class="ar-chip"><i class="fa-solid fa-user-slash"></i> {{ inativos }} inativo{{ inativos|pluralize }}</span>{% endif %}
+        {% if total_npcs %}<a class="ar-chip text-decoration-none text-white" href="{% url 'gestao:usuarios' %}?f=npcs"><i class="fa-solid fa-robot"></i> {{ total_npcs }} NPCs do carreira (fora da lista)</a>{% endif %}
     </div>
 </section>
 

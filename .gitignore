@@ -5,3 +5,6 @@ db.sqlite3
 media/
 cache_django/
 .env
+
+# a logo do PWA fica em static_files/media (não confundir com o media/ de uploads)
+!static_files/media/

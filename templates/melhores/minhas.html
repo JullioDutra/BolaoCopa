@@ -22,6 +22,32 @@
         <div class="col-6 col-md-3"><div class="stat"><small>Saldo</small><div>🪙 {{ saldo }}</div></div></div>
     </div>
 
+    {% if multiplas %}
+    <h6 class="mt-3 mb-2" style="color:var(--b-mudo);text-transform:uppercase;font-size:.75rem;">Múltiplas</h6>
+    <div class="tabela">
+        {% for m in multiplas %}
+        <div class="row-t" style="align-items:flex-start;">
+            <div class="flex-grow-1">
+                <div class="fw-bold">Múltipla ×{{ m.selecoes.all|length }} <span style="color:var(--b-amar)">@{{ m.odd_total|unlocalize }}</span></div>
+                <div style="color:var(--b-mudo);font-size:.75rem;">🪙 {{ m.valor }} → 🪙 {{ m.retorno_potencial }}</div>
+                {% for sl in m.selecoes.all %}
+                <div style="font-size:.78rem;margin-top:3px;">
+                    {% if sl.status == 'ganha' %}✅{% elif sl.status == 'perdida' %}❌{% elif sl.status == 'anulada' %}↩️{% else %}⏳{% endif %}
+                    {{ sl.candidato.nome }} <span style="color:var(--b-amar)">@{{ sl.odd_travada|unlocalize }}</span>
+                    <span style="color:var(--b-mudo)">— {{ sl.categoria.nome }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% if m.status == 'ganha' %}<span class="tag ganha">Ganhou +{{ m.retorno }}</span>
+            {% elif m.status == 'perdida' %}<span class="tag perdida">Perdeu</span>
+            {% elif m.status == 'anulada' %}<span class="tag anulada">Anulada</span>
+            {% else %}<span class="tag aberta">Em aberto</span>{% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    <h6 class="mt-3 mb-2" style="color:var(--b-mudo);text-transform: uppercase;font-size:.75rem;">Simples</h6>
+    {% endif %}
+
     <div class="tabela mt-3">
         {% for a in apostas %}
         <div class="row-t">
@@ -36,7 +62,7 @@
             {% else %}<span class="tag aberta">Em aberto</span>{% endif %}
         </div>
         {% empty %}
-        <div class="cupom-vazio py-5">Você ainda não apostou. <a href="{% url 'melhores:home' %}">Ver mercados</a></div>
+        <div class="cupom-vazio py-5">Você ainda não fez apostas simples. <a href="{% url 'melhores:home' %}">Ver mercados</a></div>
         {% endfor %}
     </div>
 </div>

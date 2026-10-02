@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+{% block title %}Central do Futebol - Cartolândia{% endblock %}
+
+{% block content %}
+{% include 'futebol/_estilo.html' %}
+
+<div class="fb-hero text-center mb-4">
+    <h1>Central do Futebol</h1>
+    <div class="opacity-75">Pesquise times e jogadores, compare elencos e abra votações com a galera</div>
+    <div class="fb-busca">
+        <i class="fa-solid fa-magnifying-glass lupa"></i>
+        <input id="busca" type="search" autocomplete="off" placeholder="Busque um time ou jogador… (ex.: Flamengo, Gabigol)">
+        <div class="fb-sugestoes" id="sugestoes"></div>
+    </div>
+    <div class="small mt-2 opacity-75">{{ total_times }} times · {{ total_atletas }} jogadores no banco</div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3"><a class="fb-tile" href="{% url 'futebol:comparar' %}" style="background: linear-gradient(135deg,#b45309,#f59e0b);"><i class="fa-solid fa-scale-balanced fundo"></i><h5>Comparar times</h5><small>Elencos lado a lado e votação do 11 ideal</small></a></div>
+    <div class="col-6 col-lg-3"><a class="fb-tile" href="{% url 'futebol:tabela' %}" style="background: linear-gradient(135deg,#1e3a8a,#3b82f6);"><i class="fa-solid fa-table-list fundo"></i><h5>Tabela</h5><small>Classificação do Brasileirão</small></a></div>
+    <div class="col-6 col-lg-3"><a class="fb-tile" href="{% url 'futebol:artilharia' %}" style="background: linear-gradient(135deg,#7f1d1d,#ef4444);"><i class="fa-solid fa-bullseye fundo"></i><h5>Artilharia</h5><small>Quem mais balança a rede</small></a></div>
+    <div class="col-6 col-lg-3"><a class="fb-tile" href="{% url 'futebol:comparativo_lista' %}" style="background: linear-gradient(135deg,#14532d,#22c55e);"><i class="fa-solid fa-square-poll-vertical fundo"></i><h5>Votações</h5><small>11 ideais eleitos pela galera</small></a></div>
+</div>
+
+<div id="blocoAoVivo" class="mb-4" style="display:none;">
+    <h5 class="mb-2"><span class="badge text-bg-danger me-1">AO VIVO</span> Jogos de hoje</h5>
+    <div class="row g-2" id="aoVivo"></div>
+</div>
+
+{% if comparativos %}
+<h5 class="mb-2">Votações abertas</h5>
+<div class="row g-3 mb-4">
+    {% for c in comparativos %}
+    <div class="col-md-6"><a href="{% url 'futebol:comparativo' c.pk %}" class="fb-card p-3 d-flex align-items-center gap-3 text-decoration-none text-dark">
+        {% include 'futebol/_escudo.html' with time=c.time_a tam=44 %}<span class="fw-bold fs-5" style="font-family:var(--fonte-titulo)">x</span>{% include 'futebol/_escudo.html' with time=c.time_b tam=44 %}
+        <div class="flex-grow-1"><div class="fw-bold">{{ c }}</div><small class="text-muted">por {{ c.criador.first_name|default:c.criador.username }}</small></div>
+        <span class="fb-pill">Votar</span></a></div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<h5 class="mb-2"><i class="fa-regular fa-newspaper me-1"></i> Notícias do futebol</h5>
+<div class="row g-3" id="noticias"><div class="col-12 text-muted small">Carregando…</div></div>
+
+<script>
+(function () {
+    const q = document.getElementById('busca'), box = document.getElementById('sugestoes');
+    let timer = null;
+    function linha(href, titulo, sub, img) {
+        const a = document.createElement('a'); a.href = href;
+        if (img) { const i = document.createElement('img'); i.src = img; i.width = 28; i.height = 28; i.style.objectFit = 'contain'; a.appendChild(i); }
+        else { const i = document.createElement('i'); i.className = 'fa-solid fa-user text-muted'; i.style.width = '28px'; i.style.textAlign = 'center'; a.appendChild(i); }
+        const d = document.createElement('div'); const t = document.createElement('div'); t.className = 'fw-bold'; t.textContent = titulo;
+        const s = document.createElement('small'); s.className = 'text-muted'; s.textContent = sub || '';
+        d.appendChild(t); d.appendChild(s); a.appendChild(d); return a;
+    }
+    function cab(txt) { const d = document.createElement('div'); d.className = 'cab'; d.textContent = txt; return d; }
+    q.addEventListener('input', () => {
+        clearTimeout(timer);
+        const v = q.value.trim();
+        if (v.length < 2) { box.style.display = 'none'; return; }
+        timer = setTimeout(async () => {
+            try {
+                const r = await fetch("{% url 'futebol:api_buscar' %}?q=" + encodeURIComponent(v));
+                const d = await r.json();
+                box.textContent = '';
+                if (d.times.length) { box.appendChild(cab('Times')); d.times.forEach(t => box.appendChild(linha(t.url, t.nome, t.sub, t.escudo))); }
+                if (d.jogadores.length) { box.appendChild(cab('Jogadores')); d.jogadores.forEach(j => box.appendChild(linha(j.url, j.nome, j.sub))); }
+                if (!d.times.length && !d.jogadores.length) { const n = document.createElement('div'); n.className = 'p-3 text-muted small'; n.textContent = 'Nada encontrado. Tente outro nome.'; box.appendChild(n); }
+                box.style.display = 'block';
+            } catch (e) { box.style.display = 'none'; }
+        }, 200);
+    });
+    q.addEventListener('keydown', e => { if (e.key === 'Enter' && q.value.trim().length >= 2) location.href = "{% url 'futebol:buscar' %}?q=" + encodeURIComponent(q.value.trim()); });
+    document.addEventListener('click', e => { if (!box.contains(e.target) && e.target !== q) box.style.display = 'none'; });
+
+    fetch("{% url 'futebol:api_ao_vivo' %}").then(r => r.json()).then(d => {
+        if (!d.jogos.length) return;
+        const alvo = document.getElementById('aoVivo');
+        d.jogos.slice(0, 10).forEach(j => {
+            const col = document.createElement('div'); col.className = 'col-md-6 col-lg-4';
+            const c = document.createElement('div'); c.className = 'fb-card p-2 px-3 d-flex align-items-center justify-content-between gap-2';
+            const nome = document.createElement('div'); nome.className = 'small fw-bold'; nome.textContent = j.casa + ' x ' + j.fora;
+            const placar = document.createElement('div'); placar.className = 'text-end';
+            const pl = document.createElement('div'); pl.className = 'fw-bold'; pl.style.fontFamily = 'var(--fonte-mono)';
+            pl.textContent = (j.estado === 'pre') ? '—' : (j.gols_casa + ' - ' + j.gols_fora);
+            const st = document.createElement('small'); st.className = 'text-muted'; st.textContent = j.detalhe;
+            placar.appendChild(pl); placar.appendChild(st); c.appendChild(nome); c.appendChild(placar); col.appendChild(c); alvo.appendChild(col);
+        });
+        document.getElementById('blocoAoVivo').style.display = '';
+    }).catch(() => {});
+
+    fetch("{% url 'futebol:api_noticias' %}").then(r => r.json()).then(d => {
+        const alvo = document.getElementById('noticias'); alvo.textContent = '';
+        if (!d.noticias.length) { const c = document.createElement('div'); c.className = 'col-12 text-muted small'; c.textContent = 'Sem notícias agora.'; alvo.appendChild(c); return; }
+        d.noticias.slice(0, 6).forEach(n => {
+            const col = document.createElement('div'); col.className = 'col-md-6 col-lg-4';
+            const a = document.createElement('a'); a.href = n.link; a.target = '_blank'; a.rel = 'noopener noreferrer'; a.className = 'fb-card d-block text-decoration-none text-dark overflow-hidden h-100';
+            if (n.imagem) { const i = document.createElement('img'); i.src = n.imagem; i.loading = 'lazy'; i.style.cssText = 'width:100%;height:150px;object-fit:cover;'; a.appendChild(i); }
+            const b = document.createElement('div'); b.className = 'p-3';
+            const t = document.createElement('div'); t.className = 'fw-bold'; t.textContent = n.titulo;
+            const f = document.createElement('small'); f.className = 'text-muted'; f.textContent = n.fonte;
+            b.appendChild(t); b.appendChild(f); a.appendChild(b); col.appendChild(a); alvo.appendChild(col);
+        });
+    }).catch(() => { document.getElementById('noticias').textContent = ''; });
+})();
+</script>
+{% endblock %}

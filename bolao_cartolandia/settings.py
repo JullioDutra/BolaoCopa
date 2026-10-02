@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     'minijogo',
     'modocarreira', # <-- ADICIONADO O NOVO APP AQUI!
     'melhores',     # Bet dos Melhores do Ano (Cartola Coins)
+    'futebol',      # Dados de futebol, pesquisa e comparativo de times
 ]
 
 MIDDLEWARE = [
@@ -160,7 +161,7 @@ X_FRAME_OPTIONS = 'SAMEORIGIN'
 # Email Configs
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 585
+EMAIL_PORT = 587  # (era 585, porta inexistente: os e-mails de recuperação nunca saíam)
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'jullio.dutra1@gmail.com'
 EMAIL_HOST_PASSWORD = 'uwdj zucn mnip gdqu'
@@ -227,6 +228,10 @@ CRON_SECRET_TOKEN = os.environ.get('CRON_SECRET_TOKEN', '3yrktOdann3sqSCRUoVqzCn
 # Token da API football-data.org (jogos/resultados/tabela automáticos). Grátis em
 # https://www.football-data.org/client/register — coloque no .env como FOOTBALL_DATA_TOKEN.
 FOOTBALL_DATA_TOKEN = os.environ.get('FOOTBALL_DATA_TOKEN')
+
+# Outras fontes de dados de futebol (todas opcionais; sem chave a fonte simplesmente é ignorada)
+APIFOOTBALL_KEY = os.environ.get('APIFOOTBALL_KEY')       # api-sports.io (grátis: 100 req/dia)
+THESPORTSDB_KEY = os.environ.get('THESPORTSDB_KEY')       # vazio = chave pública de testes
 
 # Token secreto do endpoint /palpites/api/sincronizar/<token>/ (para cron externo).
 # Sem a variável definida o endpoint fica desligado.

@@ -1,0 +1,14 @@
+{# Campo com o 11 eleito. Espera `ap` (apuração) e `comp`. #}
+<div class="campo">
+    {% for linha in ap.linhas %}
+    <div class="linha-jog">
+        {% for j in linha.jogadores %}
+        <div class="jog" style="--aro: {% if j.lado == 'A' %}{{ comp.time_a.cor_hex }}{% else %}{{ comp.time_b.cor_hex }}{% endif %};">
+            <div class="foto">{% if j.atleta.foto_src %}<img src="{{ j.atleta.foto_src }}" alt="">{% else %}{{ j.atleta.numero|default:j.atleta.nome|slice:":2" }}{% endif %}</div>
+            <div class="nome">{{ j.atleta.nome }}</div>
+            <span class="pct">{{ j.pct }}%</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% endfor %}
+</div>

@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block title %}Recuperar senha - Cartolândia{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center my-4">
+    <div class="col-md-8 col-lg-6">
+        <div class="card card-clean p-4 p-md-5 shadow-lg border-0 rounded-4">
+            <div class="text-center mb-4">
+                <i class="fa-solid fa-unlock-keyhole text-success mb-2" style="font-size: 3rem;"></i>
+                <h3 class="fw-bold" style="color: var(--verde-escuro);">Esqueceu a senha?</h3>
+                <p class="text-muted mb-0">Prove que é você com <strong>um</strong> dado do seu cadastro. Sem precisar de e-mail.</p>
+            </div>
+
+            <form method="post" novalidate>
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label class="form-label fw-bold" for="{{ form.email.id_for_label }}">E-mail da conta</label>
+                    {{ form.email }}
+                    {% for e in form.email.errors %}<div class="text-danger small mt-1">{{ e }}</div>{% endfor %}
+                </div>
+
+                <div class="rounded-4 p-3 mb-3" style="background:#f4f7f6;">
+                    <div class="fw-bold mb-2"><i class="fa-brands fa-whatsapp text-success me-1"></i> Opção 1: seu WhatsApp cadastrado</div>
+                    {{ form.telefone }}
+                    {% for e in form.telefone.errors %}<div class="text-danger small mt-1">{{ e }}</div>{% endfor %}
+                </div>
+                <div class="text-center text-muted small fw-bold mb-3">— ou —</div>
+                <div class="rounded-4 p-3 mb-4" style="background:#f4f7f6;">
+                    <div class="fw-bold mb-2"><i class="fa-solid fa-circle-question text-success me-1"></i> Opção 2: sua pergunta secreta</div>
+                    <div class="mb-2">{{ form.pergunta }}</div>
+                    {{ form.resposta }}
+                </div>
+
+                <button class="btn btn-success btn-lg w-100 fw-bold rounded-pill shadow-sm text-uppercase">
+                    <i class="fa-solid fa-shield-halved"></i> Verificar e criar nova senha
+                </button>
+            </form>
+
+            <div class="mt-4 pt-3 border-top small text-muted">
+                <p class="mb-2"><i class="fa-solid fa-circle-info"></i> Nunca cadastrou WhatsApp nem pergunta secreta? Peça um link para a staff do grupo —
+                    ela gera um link na hora e te manda pelo WhatsApp.</p>
+                <a href="{% url 'password_reset' %}" class="fw-bold text-decoration-none" style="color: var(--verde-escuro);"><i class="fa-solid fa-envelope"></i> Prefiro receber por e-mail</a>
+                <span class="mx-2">·</span>
+                <a href="{% url 'login' %}" class="fw-bold text-decoration-none" style="color: var(--verde-escuro);"><i class="fa-solid fa-arrow-left"></i> Voltar ao login</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

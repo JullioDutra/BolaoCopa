@@ -48,6 +48,28 @@ class PerfilUsuario(models.Model):
     maior_streak = models.PositiveIntegerField(default=0)
     ultimo_acesso_dia = models.DateField(null=True, blank=True)
 
+    # Perfil editável
+    telefone = models.CharField(max_length=20, blank=True, help_text="WhatsApp só com dígitos, com DDI (55...)")
+    avatar = models.CharField(max_length=8, default='⚽')
+    frase = models.CharField(max_length=80, blank=True, help_text="Frase de torcedor mostrada no seu cartão")
+    avisos_whatsapp = models.BooleanField(default=True, help_text="Permite que a staff chame você pelo WhatsApp")
+
+    # Recuperação de senha por dados do participante
+    PERGUNTAS_SECRETAS = [
+        ('craque', 'Quem é o maior craque que você já viu jogar?'),
+        ('estadio', 'Qual foi o primeiro estádio que você foi?'),
+        ('gol', 'Qual foi o gol mais marcante da sua vida?'),
+        ('apelido', 'Qual era seu apelido de infância?'),
+        ('pet', 'Qual o nome do seu primeiro bicho de estimação?'),
+    ]
+    pergunta_secreta = models.CharField(max_length=10, choices=PERGUNTAS_SECRETAS, blank=True)
+    resposta_secreta_hash = models.CharField(max_length=128, blank=True)
+    bonus_perfil_pago = models.BooleanField(default=False)
+
+    @property
+    def perfil_completo(self):
+        return bool(self.telefone and self.resposta_secreta_hash)
+
     def __str__(self):
         return f"Perfil de {self.usuario.username}"
 

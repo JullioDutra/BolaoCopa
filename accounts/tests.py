@@ -73,3 +73,122 @@ class TemasTests(TestCase):
 
     def test_sem_clube_devolve_tema_padrao(self):
         self.assertEqual(tema_para_clube(None)['chave'], 'cartolandia')
+
+
+from django.core.cache import cache
+from django.urls import reverse
+
+from . import dados, recuperacao
+
+
+class DadosTests(SimpleTestCase):
+    def test_telefone_normaliza_e_valida(self):
+        self.assertEqual(dados.normalizar_telefone('(21) 98888-7777'), '5521988887777')
+        self.assertEqual(dados.normalizar_telefone('+55 21 98888-7777'), '5521988887777')
+        self.assertEqual(dados.normalizar_telefone(''), '')
+        for ruim in ('123', '+1 202 555 010099', 'abc'):
+            with self.assertRaises(ValueError):
+                dados.normalizar_telefone(ruim)
+        self.assertEqual(dados.telefone_formatado('5521988887777'), '(21) 98888-7777')
+
+    def test_resposta_ignora_acento_caixa_e_espaco(self):
+        h = dados.hash_resposta('Pelé')
+        self.assertTrue(dados.resposta_confere('  pele ', h))
+        self.assertFalse(dados.resposta_confere('garrincha', h))
+        self.assertFalse(dados.resposta_confere('', h))
+
+
+class RecuperacaoTests(TestCase):
+    def setUp(self):
+        cache.clear()
+        self.u = User.objects.create_user('ana@x.com', email='ana@x.com', password='antiga123', first_name='Ana')
+        p = PerfilUsuario.objects.create(usuario=self.u, telefone='5521988887777', pergunta_secreta='craque',
+                                         resposta_secreta_hash=dados.hash_resposta('Zico'))
+
+    def test_whatsapp_correto_libera_e_troca_a_senha(self):
+        r = self.client.post(reverse('conta:recuperar'), {'email': 'ANA@x.com', 'telefone': '(21) 98888-7777'})
+        self.assertEqual(r.status_code, 302)
+        url = r['Location']
+        r2 = self.client.post(url, {'new_password1': 'SenhaNova#2026x', 'new_password2': 'SenhaNova#2026x'})
+        self.assertRedirects(r2, reverse('login'))
+        self.u.refresh_from_db()
+        self.assertTrue(self.u.check_password('SenhaNova#2026x'))
+        # token de uso único
+        self.assertEqual(self.client.get(url).status_code, 302)
+
+    def test_pergunta_secreta_libera(self):
+        r = self.client.post(reverse('conta:recuperar'), {'email': 'ana@x.com', 'pergunta': 'craque', 'resposta': 'zico'})
+        self.assertEqual(r.status_code, 302)
+
+    def test_dado_errado_e_email_inexistente_dao_a_mesma_mensagem(self):
+        for email, tel in (('ana@x.com', '(21) 90000-0000'), ('ninguem@x.com', '(21) 98888-7777')):
+            r = self.client.post(reverse('conta:recuperar'), {'email': email, 'telefone': tel}, follow=True)
+            self.assertContains(r, 'não conferem')
+
+    def test_sem_dado_nenhum_pede_um(self):
+        r = self.client.post(reverse('conta:recuperar'), {'email': 'ana@x.com'}, follow=True)
+        self.assertContains(r, 'Informe o WhatsApp')
+
+    def test_bloqueia_apos_5_tentativas_mesmo_com_dado_certo(self):
+        for _ in range(5):
+            self.client.post(reverse('conta:recuperar'), {'email': 'ana@x.com', 'telefone': '(21) 90000-0000'})
+        r = self.client.post(reverse('conta:recuperar'), {'email': 'ana@x.com', 'telefone': '(21) 98888-7777'}, follow=True)
+        self.assertContains(r, 'Muitas tentativas')
+
+    def test_perfil_sem_dados_cadastrados_nao_e_adivinhavel(self):
+        outro = User.objects.create_user('b@x.com', password='x')
+        r = self.client.post(reverse('conta:recuperar'), {'email': 'b@x.com', 'telefone': '(21) 98888-7777'}, follow=True)
+        self.assertContains(r, 'não conferem')
+
+    def test_token_adulterado_ou_trocado_nao_vale(self):
+        self.assertIsNone(recuperacao.usuario_do_token('lixo'))
+        token = recuperacao.gerar_token(self.u)
+        self.u.set_password('outra'); self.u.save()
+        self.assertIsNone(recuperacao.usuario_do_token(token))
+
+
+class PerfilTests(TestCase):
+    def setUp(self):
+        self.u = User.objects.create_user('ana@x.com', email='ana@x.com', password='antiga123', first_name='Ana')
+        self.client.force_login(self.u)
+
+    def test_atualiza_dados_e_login_acompanha_o_email(self):
+        r = self.client.post(reverse('conta:perfil'), {
+            'acao': 'dados', 'nome': 'Aninha', 'email': 'nova@x.com', 'telefone': '(21) 98888-7777',
+            'frase': 'Bora!', 'avatar': '🦁', 'avisos_whatsapp': 'on'})
+        self.assertEqual(r.status_code, 302)
+        self.u.refresh_from_db()
+        self.assertEqual((self.u.first_name, self.u.email, self.u.username), ('Aninha', 'nova@x.com', 'nova@x.com'))
+        self.assertEqual(self.u.perfil.telefone, '5521988887777')
+
+    def test_email_de_outra_conta_e_recusado(self):
+        User.objects.create_user('outro@x.com', email='outro@x.com', password='x')
+        r = self.client.post(reverse('conta:perfil'), {'acao': 'dados', 'nome': 'Ana', 'email': 'OUTRO@x.com', 'avatar': '⚽'})
+        self.assertContains(r, 'já está em uso')
+
+    def test_bonus_de_perfil_completo_uma_unica_vez(self):
+        self.client.post(reverse('conta:perfil'), {'acao': 'dados', 'nome': 'Ana', 'email': 'ana@x.com',
+                                                   'telefone': '21988887777', 'avatar': '⚽'})
+        self.assertEqual(coins.saldo(self.u), 1000)
+        for resp in ('zico', 'pele'):
+            self.client.post(reverse('conta:perfil'), {'acao': 'pergunta', 'pergunta': 'craque', 'resposta': resp})
+        self.assertEqual(coins.saldo(self.u), 1050)
+
+    def test_troca_de_senha_mantem_logado(self):
+        r = self.client.post(reverse('conta:perfil'), {'acao': 'senha', 'old_password': 'antiga123',
+                                                      'new_password1': 'Nova#Senha2026', 'new_password2': 'Nova#Senha2026'})
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(self.client.get(reverse('conta:perfil')).status_code, 200)
+
+    def test_abas_renderizam(self):
+        for aba in ('dados', 'seguranca'):
+            self.assertEqual(self.client.get(reverse('conta:perfil') + f'?aba={aba}').status_code, 200)
+
+    def test_staff_gera_link_de_senha(self):
+        self.client.logout()
+        staff = User.objects.create_user('staff', password='x', is_staff=True)
+        self.client.force_login(staff)
+        r = self.client.post(reverse('conta:staff_links_senha'), {'usuario': self.u.pk})
+        self.assertContains(r, 'reset-senha/confirmar/')
+        self.client.logout(); self.client.force_login(self.u)
+        self.assertEqual(self.client.get(reverse('conta:staff_links_senha')).status_code, 302)

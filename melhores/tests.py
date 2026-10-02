@@ -243,3 +243,96 @@ class CupomTests(TestCase):
             services.apostar(self.user, self.cat1.id, outro.id, 100, odd_esperada=atual + 1)
         self.assertEqual(coins.saldo(self.user), 700)
         self.assertEqual(Aposta.objects.get().candidato, self.c1)
+
+
+class MultiplaTests(TestCase):
+    def setUp(self):
+        call_command('seed_melhores', '--ano', '2026', verbosity=0)
+        self.edicao = Edicao.objects.get(ano=2026)
+        self.user = User.objects.create_user('craque', password='x')
+        self.c = [Categoria.objects.get(slug=s) for s in ('vagabundo', 'mais-chato', 'cartoleiro')]
+        self.mark = [cat.candidatos.get(nome='Mark') for cat in self.c]
+
+    def sels(self, n=3):
+        return [(self.c[i].id, self.mark[i].id, None) for i in range(n)]
+
+    def test_aposta_multipla_debita_e_multiplica_odds(self):
+        from .models import Multipla
+        m = services.apostar_multipla(self.user, self.edicao.id, self.sels(), 100)
+        self.assertEqual(coins.saldo(self.user), 900)
+        esperado = services.odd_da_multipla(s.odd_travada for s in m.selecoes.all())
+        self.assertEqual(m.odd_total, esperado)
+        self.assertEqual(m.selecoes.count(), 3)
+
+    def test_regras_de_entrada(self):
+        casos = [
+            (self.sels(1), 100),                                            # poucas seleções
+            ([(self.c[0].id, self.mark[0].id, None)] * 2, 100),            # categoria repetida
+            (self.sels(3), 5),                                              # valor mínimo
+            (self.sels(3), 5000),                                           # saldo
+        ]
+        for sels, valor in casos:
+            with self.assertRaises(services.ApostaInvalida):
+                services.apostar_multipla(self.user, self.edicao.id, sels, valor)
+        self.assertEqual(coins.saldo(self.user), 1000)
+
+    def test_odd_que_caiu_recusa_tudo(self):
+        sels = [(self.c[0].id, self.mark[0].id, Decimal('99')), (self.c[1].id, self.mark[1].id, None)]
+        with self.assertRaises(services.OddMudou):
+            services.apostar_multipla(self.user, self.edicao.id, sels, 100)
+        self.assertEqual(coins.saldo(self.user), 1000)
+
+    def test_ganha_so_quando_todas_acertam(self):
+        m = services.apostar_multipla(self.user, self.edicao.id, self.sels(), 100)
+        services.liquidar(self.c[0].id, self.mark[0].id)
+        services.liquidar(self.c[1].id, self.mark[1].id)
+        m.refresh_from_db()
+        self.assertEqual(m.status, 'aberta')                      # falta a última
+        services.liquidar(self.c[2].id, self.mark[2].id)
+        m.refresh_from_db()
+        self.assertEqual(m.status, 'ganha')
+        self.assertEqual(coins.saldo(self.user), 900 + m.retorno)
+        self.assertGreater(m.retorno, 100)
+
+    def test_uma_errada_perde_na_hora_e_nao_paga_depois(self):
+        m = services.apostar_multipla(self.user, self.edicao.id, self.sels(), 100)
+        outro = self.c[0].candidatos.exclude(pk=self.mark[0].pk).first()
+        services.liquidar(self.c[0].id, outro.id)
+        m.refresh_from_db()
+        self.assertEqual(m.status, 'perdida')
+        services.liquidar(self.c[1].id, self.mark[1].id)
+        services.liquidar(self.c[2].id, self.mark[2].id)
+        self.assertEqual(coins.saldo(self.user), 900)
+
+    def test_selecao_anulada_vira_odd_1_e_tudo_anulado_devolve(self):
+        m = services.apostar_multipla(self.user, self.edicao.id, self.sels(2), 100)
+        services.anular(self.c[0].id)
+        services.liquidar(self.c[1].id, self.mark[1].id)
+        m.refresh_from_db()
+        self.assertEqual(m.status, 'ganha')
+        self.assertEqual(m.odd_total, self.c[1].selecoes_multipla.get().odd_travada)
+
+        m2 = services.apostar_multipla(self.user, self.edicao.id, [(self.c[2].id, self.mark[2].id, None),
+                                       (Categoria.objects.get(slug='rei-das-fakes').id,
+                                        Categoria.objects.get(slug='rei-das-fakes').candidatos.first().id, None)], 100)
+        saldo = coins.saldo(self.user)
+        services.anular(self.c[2].id)
+        services.anular(Categoria.objects.get(slug='rei-das-fakes').id)
+        m2.refresh_from_db()
+        self.assertEqual(m2.status, 'anulada')
+        self.assertEqual(coins.saldo(self.user), saldo + 100)
+
+    def test_teto_de_odd(self):
+        self.assertEqual(services.odd_da_multipla([Decimal('10')] * 5), Decimal('100.00'))
+
+    def test_cupom_modo_multipla_via_post(self):
+        self.client.force_login(self.user)
+        sel = [f'{self.c[i].id}:{self.mark[i].id}:1.00' for i in range(3)]
+        r = self.client.post(reverse('melhores:apostar_cupom'), {'modo': 'multipla', 'sel': sel, 'valor': 200})
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(coins.saldo(self.user), 800)
+        for nome in ('melhores:home', 'melhores:minhas', 'melhores:ranking'):
+            self.assertEqual(self.client.get(reverse(nome)).status_code, 200)
+        from .models import Multipla
+        self.assertEqual(Multipla.objects.get().valor, 200)
+        self.assertEqual(services.ranking(self.edicao)[0]['em_jogo'], 200)

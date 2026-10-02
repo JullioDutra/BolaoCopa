@@ -1,0 +1,44 @@
+<style>
+    .fb-hero { background: repeating-linear-gradient(90deg, #1b6b2a 0 60px, #1f7a30 60px 120px); border-radius: 22px; color:#fff; position:relative; overflow:hidden; padding: 28px 24px; }
+    .fb-hero::before { content:""; position:absolute; inset: 14px; border: 2px solid rgba(255,255,255,.28); border-radius: 14px; pointer-events:none; }
+    .fb-hero::after { content:""; position:absolute; left:50%; top:14px; bottom:14px; border-left: 2px solid rgba(255,255,255,.28); pointer-events:none; }
+    .fb-hero > * { position:relative; z-index:1; }
+    .fb-hero h1, .fb-hero h2 { text-shadow: 0 2px 10px rgba(0,0,0,.35); margin-bottom:.25rem; text-transform: uppercase; letter-spacing: 1px; }
+    .fb-busca { position:relative; max-width: 640px; margin: 14px auto 0; }
+    .fb-busca input { width:100%; border:0; border-radius: 50rem; padding: 14px 22px 14px 48px; font-size:1.05rem; box-shadow: 0 8px 24px rgba(0,0,0,.25); }
+    .fb-busca .lupa { position:absolute; left:18px; top:50%; transform: translateY(-50%); color:#6b7280; }
+    .fb-sugestoes { position:absolute; left:0; right:0; top: calc(100% + 6px); background:#fff; color:#111; border-radius: 16px; box-shadow: 0 14px 34px rgba(0,0,0,.28); overflow:hidden; z-index: 20; text-align:left; display:none; }
+    .fb-sugestoes a { display:flex; align-items:center; gap:10px; padding: 9px 14px; color:#111; text-decoration:none; border-top: 1px solid #f1f3f5; }
+    .fb-sugestoes a:hover, .fb-sugestoes a.ativo { background:#f4f7f6; }
+    .fb-sugestoes .cab { font-size:.65rem; font-weight:800; color:#6b7280; letter-spacing:1px; text-transform:uppercase; padding: 8px 14px 2px; }
+    .fb-tile { display:block; border-radius: 18px; padding: 18px; color:#fff; text-decoration:none; height:100%; transition: transform .15s, box-shadow .15s; position:relative; overflow:hidden; }
+    .fb-tile:hover { transform: translateY(-4px) rotate(-.4deg); box-shadow: 0 14px 28px rgba(0,0,0,.2); color:#fff; }
+    .fb-tile i.fundo { position:absolute; right:-10px; bottom:-14px; font-size: 5.5rem; opacity:.18; }
+    .fb-tile h5 { margin:0; text-transform: uppercase; letter-spacing:.6px; }
+    .fb-tile small { opacity:.85; }
+    .fb-escudo { object-fit: contain; flex:none; }
+    .fb-escudo-fallback { border-radius:50%; color:#fff; font-weight:800; display:inline-flex; align-items:center; justify-content:center; flex:none; font-family: var(--fonte-titulo); }
+    .fb-card { background:#fff; border-radius:18px; box-shadow: 0 4px 14px rgba(0,0,0,.05); }
+    .fb-pill { display:inline-block; font-size:.7rem; font-weight:800; padding: 3px 9px; border-radius: 50rem; background:#eef2ef; color: var(--verde-escuro); text-transform: uppercase; letter-spacing:.4px; }
+    .forma { display:inline-flex; gap:4px; }
+    .forma span { width:24px; height:24px; border-radius:6px; color:#fff; font-weight:800; font-size:.75rem; display:inline-flex; align-items:center; justify-content:center; }
+    .forma .V { background:#16a34a; } .forma .E { background:#9ca3af; } .forma .D { background:#dc2626; }
+
+    /* Campo de futebol (11 eleito / escalação) */
+    .campo { background: repeating-linear-gradient(0deg, #1b6b2a 0 56px, #1f7a30 56px 112px); border-radius: 18px; padding: 18px 8px; position:relative; border: 3px solid #fff; box-shadow: 0 10px 30px rgba(0,0,0,.18); }
+    .campo::before { content:""; position:absolute; left:8%; right:8%; top:50%; border-top: 2px solid rgba(255,255,255,.55); }
+    .campo::after { content:""; position:absolute; left:50%; top:50%; width:90px; height:90px; margin:-45px 0 0 -45px; border: 2px solid rgba(255,255,255,.55); border-radius:50%; }
+    .campo .linha-jog { display:flex; justify-content:space-around; align-items:flex-start; margin: 14px 0; position:relative; z-index:1; }
+    .jog { text-align:center; width: 86px; color:#fff; }
+    .jog .foto { width: 54px; height:54px; border-radius:50%; margin: 0 auto 4px; background:#fff; border: 3px solid var(--aro, #fff); display:flex; align-items:center; justify-content:center; overflow:hidden; font-family: var(--fonte-titulo); font-weight:800; color:#111; font-size:1.2rem; box-shadow: 0 4px 10px rgba(0,0,0,.35); }
+    .jog .foto img { width:100%; height:100%; object-fit: cover; }
+    .jog .nome { font-size:.72rem; font-weight:700; line-height:1.1; text-shadow: 0 1px 4px rgba(0,0,0,.6); }
+    .jog .pct { font-size:.68rem; background: rgba(0,0,0,.45); border-radius: 50rem; padding: 1px 7px; display:inline-block; margin-top:2px; }
+    .jog-voto { display:block; position:relative; cursor:pointer; margin:0; }
+    .jog-voto input { position:absolute; opacity:0; pointer-events:none; }
+    .jog-voto .corpo { display:flex; align-items:center; gap:10px; border: 2px solid #e5e7eb; border-radius: 12px; padding: 7px 10px; background:#fff; transition: all .12s; }
+    .jog-voto:hover .corpo { border-color: var(--verde-claro); }
+    .jog-voto input:checked + .corpo { border-color: var(--verde-campo); background:#f0f7f1; box-shadow: 0 0 0 3px rgba(0,0,0,.05); }
+    .jog-voto input:focus-visible + .corpo { outline:3px solid var(--dourado); }
+    .jog-voto .num { font-family: var(--fonte-titulo); font-weight:700; font-size:1.15rem; width: 28px; text-align:center; color:#6b7280; }
+</style>

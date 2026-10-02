@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block title %}Votações - Futebol{% endblock %}
+{% block content %}
+{% include 'futebol/_estilo.html' %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="mb-0"><i class="fa-solid fa-square-poll-vertical text-success"></i> Votações do 11 ideal</h2>
+    <a href="{% url 'futebol:comparar' %}" class="btn btn-success rounded-pill fw-bold"><i class="fa-solid fa-plus"></i> Nova</a>
+</div>
+<div class="row g-3">{% for c in comparativos %}
+    <div class="col-md-6"><a href="{% url 'futebol:comparativo' c.pk %}" class="fb-card p-3 d-flex align-items-center gap-3 text-decoration-none text-dark">
+        {% include 'futebol/_escudo.html' with time=c.time_a tam=46 %}<span class="fw-bold fs-4" style="font-family:var(--fonte-titulo)">x</span>{% include 'futebol/_escudo.html' with time=c.time_b tam=46 %}
+        <div class="flex-grow-1"><div class="fw-bold">{{ c }}</div><small class="text-muted">{{ c.votantes }} voto{{ c.votantes|pluralize }} · por {{ c.criador.first_name|default:c.criador.username }}</small></div>
+        {% if c.aberto %}<span class="badge text-bg-success">Aberta</span>{% else %}<span class="badge text-bg-secondary">Encerrada</span>{% endif %}</a></div>
+{% empty %}<div class="col-12"><div class="fb-card p-5 text-center text-muted">Nenhuma votação ainda. <a href="{% url 'futebol:comparar' %}">Crie a primeira!</a></div></div>{% endfor %}</div>
+{% endblock %}

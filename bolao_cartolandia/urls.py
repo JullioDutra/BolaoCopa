@@ -40,6 +40,7 @@ urlpatterns = [
     path('melhores/', include('melhores.urls')),
     path('conta/', include('accounts.urls')),
     path('feed/', include('core.urls')),
+    path('futebol/', include('futebol.urls')),
 ]
 
 

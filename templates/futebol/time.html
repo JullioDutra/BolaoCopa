@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block title %}{{ time.nome }} - Futebol{% endblock %}
+{% block content %}
+{% include 'futebol/_estilo.html' %}
+<div class="fb-hero mb-4" style="background: linear-gradient(135deg, {{ time.cor_hex }}, #111);">
+    <div class="d-flex align-items-center gap-3 flex-wrap">
+        {% include 'futebol/_escudo.html' with time=time tam=84 %}
+        <div class="flex-grow-1">
+            <h1 class="mb-0">{{ time.nome }}</h1>
+            <div class="opacity-75">{{ time.liga }}{% if time.liga and time.pais %} · {% endif %}{{ time.pais }}</div>
+            <div class="small mt-1">{% if time.estadio %}<i class="fa-solid fa-landmark me-1"></i>{{ time.estadio }}{% endif %}{% if time.fundacao %} · fundado em {{ time.fundacao }}{% endif %}</div>
+        </div>
+        <a class="btn btn-light fw-bold rounded-pill" href="{% url 'futebol:comparar' %}?a={{ time.id }}"><i class="fa-solid fa-scale-balanced"></i> Comparar</a>
+    </div>
+</div>
+
+{% if forma %}<div class="fb-card p-3 mb-4 d-flex align-items-center gap-3"><b>Forma recente</b><div class="forma">{% for f in forma %}<span class="{{ f.resultado }}" title="{{ f.casa }} {{ f.placar }} {{ f.fora }}">{{ f.resultado }}</span>{% endfor %}</div></div>{% endif %}
+
+{% if proximos %}<div class="fb-card p-3 mb-4"><b>Próximos jogos no Bolão</b>
+    {% for j in proximos %}<div class="d-flex justify-content-between border-top pt-2 mt-2"><span>{{ j.time_casa }} x {{ j.time_fora }}</span><small class="text-muted">{{ j.data_hora|date:"d/m H:i" }}</small></div>{% endfor %}</div>{% endif %}
+
+<h5 class="mb-2">Elenco <small class="text-muted">({{ total }})</small></h5>
+{% for g in grupos %}
+<div class="fb-card mb-3 overflow-hidden"><div class="px-3 py-2 fw-bold" style="background:#f4f7f6;font-family:var(--fonte-titulo);font-size:1.1rem;text-transform:uppercase;letter-spacing:.5px;">{{ g.nome }}s</div>
+    {% for a in g.atletas %}<a href="{% url 'futebol:jogador' a.id %}" class="d-flex align-items-center gap-3 px-3 py-2 border-top text-decoration-none text-dark">
+        <span class="text-muted fw-bold" style="width:28px;text-align:center;font-family:var(--fonte-titulo);font-size:1.15rem;">{{ a.numero|default:"–" }}</span>
+        <span class="flex-grow-1 fw-semibold">{{ a.nome }}{% if a.detalhe and a.detalhe != g.nome %}<small class="text-muted d-block">{{ a.detalhe }}</small>{% endif %}</span>
+        {% if a.overall %}<span class="fb-pill">{{ a.overall }}</span>{% endif %}</a>{% endfor %}</div>
+{% empty %}<div class="fb-card p-4 text-center text-muted">Sem jogadores cadastrados para este time ainda.</div>{% endfor %}
+{% endblock %}

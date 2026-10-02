@@ -9,7 +9,7 @@ from accounts import coins
 from bolao.decorators import acesso_liberado_required
 
 from . import services
-from .models import Aposta, Categoria, Edicao
+from .models import Aposta, Categoria, Edicao, Multipla
 from .odds import calcular_odds, distribuicao_da_galera
 
 
@@ -54,6 +54,10 @@ def home(request):
         'aposta_minima': services.APOSTA_MINIMA,
         'tem_apostas': bool(minhas),
         'abertas': [a for a in minhas.values() if a.status == 'aberta'],
+        'multiplas_abertas': Multipla.objects.filter(usuario=request.user, edicao=edicao, status='aberta')
+                              .prefetch_related('selecoes__candidato', 'selecoes__categoria'),
+        'mult_min': Multipla.MIN_SELECOES, 'mult_max': Multipla.MAX_SELECOES,
+        'mult_teto': Multipla.ODD_TOTAL_MAX,
     })
 
 
@@ -82,6 +86,8 @@ def apostar_cupom(request):
     Confirma o cupom: várias seleções de uma vez. Cada linha de `sel` é
     "categoria:candidato:valor:odd". Cada aposta é independente (uma recusada não derruba as outras).
     """
+    if request.POST.get('modo') == 'multipla':
+        return _apostar_multipla(request)
     feitas, erros = [], []
     for linha in request.POST.getlist('sel')[:40]:
         partes = linha.split(':')
@@ -98,6 +104,28 @@ def apostar_cupom(request):
         messages.success(request, f"{len(feitas)} aposta(s) confirmada(s) — 🪙 {total} apostados. Boa sorte!")
     for erro in erros:
         messages.error(request, erro)
+    return redirect('melhores:home')
+
+
+def _apostar_multipla(request):
+    """ Cupom no modo Múltipla: cada `sel` é "categoria:candidato:odd" e `valor` é um só. """
+    selecoes = []
+    for linha in request.POST.getlist('sel')[:20]:
+        partes = linha.split(':')
+        if len(partes) >= 3:
+            selecoes.append((partes[0], partes[1], partes[2]))
+    edicao = _edicao_ativa()
+    try:
+        if edicao is None:
+            raise services.ApostaInvalida("A votação ainda não abriu.")
+        multipla = services.apostar_multipla(request.user, edicao.id, selecoes, request.POST.get('valor'))
+        messages.success(
+            request,
+            f"Múltipla confirmada: {multipla.selecoes.count()} seleções × odd {multipla.odd_total} — "
+            f"🪙 {multipla.valor} podem virar 🪙 {multipla.retorno_potencial}.",
+        )
+    except (services.ApostaInvalida, ValueError) as erro:
+        messages.error(request, str(erro) or "Múltipla inválida.")
     return redirect('melhores:home')
 
 
@@ -119,14 +147,16 @@ def minhas_apostas(request):
         Aposta.objects.filter(usuario=request.user, categoria__edicao=edicao)
         .select_related('categoria', 'candidato') if edicao else Aposta.objects.none()
     )
+    multiplas = (Multipla.objects.filter(usuario=request.user, edicao=edicao)
+                 .prefetch_related('selecoes__candidato', 'selecoes__categoria') if edicao else Multipla.objects.none())
     resumo = {
-        'em_jogo': sum(a.valor for a in apostas if a.status == 'aberta'),
-        'ganhos': sum(a.retorno for a in apostas if a.status == 'ganha'),
-        'acertos': sum(1 for a in apostas if a.status == 'ganha'),
-        'resolvidas': sum(1 for a in apostas if a.status in ('ganha', 'perdida')),
+        'em_jogo': sum(a.valor for a in apostas if a.status == 'aberta') + sum(m.valor for m in multiplas if m.status == 'aberta'),
+        'ganhos': sum(a.retorno for a in apostas if a.status == 'ganha') + sum(m.retorno for m in multiplas if m.status == 'ganha'),
+        'acertos': sum(1 for a in apostas if a.status == 'ganha') + sum(1 for m in multiplas if m.status == 'ganha'),
+        'resolvidas': sum(1 for a in apostas if a.status in ('ganha', 'perdida')) + sum(1 for m in multiplas if m.status in ('ganha', 'perdida')),
     }
     return render(request, 'melhores/minhas.html', {
-        'edicao': edicao, 'apostas': apostas, 'resumo': resumo, 'saldo': coins.saldo(request.user),
+        'edicao': edicao, 'apostas': apostas, 'multiplas': multiplas, 'resumo': resumo, 'saldo': coins.saldo(request.user),
     })
 
 

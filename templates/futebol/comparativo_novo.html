@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block title %}Abrir votação - {{ a.nome }} x {{ b.nome }}{% endblock %}
+{% block content %}
+{% include 'futebol/_estilo.html' %}
+<h2 class="mb-1">Escolha os 11 iniciais</h2>
+<p class="text-muted">Marque exatamente 11 jogadores de cada time (1 goleiro). Já deixei a sugestão em 4-3-3 pelos melhores overalls.</p>
+
+<form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="a" value="{{ a.id }}"><input type="hidden" name="b" value="{{ b.id }}">
+    <div class="row g-3">
+        <div class="col-lg-6">
+            <div class="fb-card p-3" data-lado="a">
+                <div class="d-flex align-items-center gap-2 mb-2">{% include 'futebol/_escudo.html' with time=a tam=40 %}<h4 class="mb-0 flex-grow-1">{{ a.nome_exibicao }}</h4><span class="fb-pill contador">0/11</span></div>
+                {% for g in grupos_a %}{% if g.atletas %}<div class="small fw-bold text-muted text-uppercase mt-2 mb-1">{{ g.nome }}s</div>
+                    <div class="d-grid gap-1">{% for atleta, marcado in g.atletas %}<label class="jog-voto"><input type="checkbox" name="lado_a" value="{{ atleta.id }}" {% if marcado %}checked{% endif %}>
+                        <span class="corpo"><span class="num">{{ atleta.numero|default:"–" }}</span><span class="flex-grow-1 fw-semibold">{{ atleta.nome }}</span>{% if atleta.overall %}<span class="fb-pill">{{ atleta.overall }}</span>{% endif %}</span></label>{% endfor %}</div>{% endif %}{% endfor %}
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="fb-card p-3" data-lado="b">
+                <div class="d-flex align-items-center gap-2 mb-2">{% include 'futebol/_escudo.html' with time=b tam=40 %}<h4 class="mb-0 flex-grow-1">{{ b.nome_exibicao }}</h4><span class="fb-pill contador">0/11</span></div>
+                {% for g in grupos_b %}{% if g.atletas %}<div class="small fw-bold text-muted text-uppercase mt-2 mb-1">{{ g.nome }}s</div>
+                    <div class="d-grid gap-1">{% for atleta, marcado in g.atletas %}<label class="jog-voto"><input type="checkbox" name="lado_b" value="{{ atleta.id }}" {% if marcado %}checked{% endif %}>
+                        <span class="corpo"><span class="num">{{ atleta.numero|default:"–" }}</span><span class="flex-grow-1 fw-semibold">{{ atleta.nome }}</span>{% if atleta.overall %}<span class="fb-pill">{{ atleta.overall }}</span>{% endif %}</span></label>{% endfor %}</div>{% endif %}{% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="fb-card p-3 mt-3">
+        <div class="row g-2">
+            <div class="col-md-6"><label class="form-label fw-bold">Título (opcional)</label><input class="form-control" name="titulo" maxlength="120" placeholder="Ex.: Quem tem o melhor time, Mengão ou Verdão?"></div>
+            <div class="col-md-6"><label class="form-label fw-bold">Encerra em (opcional)</label><input type="datetime-local" class="form-control" name="encerra_em"></div>
+        </div>
+        <button class="btn btn-success btn-lg rounded-pill fw-bold w-100 mt-3" id="btnCriar"><i class="fa-solid fa-square-poll-vertical"></i> Abrir votação</button>
+    </div>
+</form>
+<script>
+document.querySelectorAll('[data-lado]').forEach(box => {
+    const contador = box.querySelector('.contador');
+    const atualiza = () => { const n = box.querySelectorAll('input:checked').length; contador.textContent = n + '/11'; contador.style.background = n === 11 ? '#bbf7d0' : '#fee2e2'; };
+    box.addEventListener('change', e => {
+        if (box.querySelectorAll('input:checked').length > 11) { e.target.checked = false; }
+        atualiza();
+    });
+    atualiza();
+});
+</script>
+{% endblock %}

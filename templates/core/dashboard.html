@@ -77,6 +77,14 @@
     </div>
 </div>
 
+{% if whatsapp_grupo %}
+<a href="{{ whatsapp_grupo }}" target="_blank" rel="noopener" class="d-flex align-items-center gap-3 text-decoration-none text-white rounded-4 p-3 mb-3 shadow-sm" style="background: linear-gradient(135deg,#128c7e,#25d366);">
+    <i class="fa-brands fa-whatsapp fs-1"></i>
+    <div class="flex-grow-1"><div class="fw-bold">Grupo da Cartolândia no WhatsApp</div><small class="opacity-75">Resenha, provocação e aviso de rodada. Entra aí!</small></div>
+    <i class="fa-solid fa-arrow-up-right-from-square"></i>
+</a>
+{% endif %}
+
 <!-- Bônus diário / sequência -->
 {% if streak_resultado %}
 <div class="alert border-0 shadow-sm rounded-4 d-flex align-items-center gap-3 mb-3" style="background: linear-gradient(135deg,#fff8e1,#ffe082);">
@@ -139,6 +147,15 @@
     </div>
 </div>
 {% endif %}
+
+<!-- Resenha ao vivo -->
+<div class="card card-clean mb-4 overflow-hidden">
+    <div class="d-flex justify-content-between align-items-center px-3 pt-3 pb-2">
+        <h6 class="fw-bold mb-0"><span class="badge text-bg-danger me-1">AO VIVO</span> Resenha da galera</h6>
+        <a href="{% url 'avisos:resenha' %}" class="small fw-bold text-decoration-none">ver tudo</a>
+    </div>
+    {% include 'avisos/_feed_itens.html' with itens=resenha %}
+</div>
 
 <!-- Mural dos Campeões (resumo) -->
 {% if ultimo_campeao %}

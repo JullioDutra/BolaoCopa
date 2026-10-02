@@ -92,6 +92,8 @@ def escolher_time(request):
         perfil.save()
         if primeira_vez:
             coins.creditar(request.user, RECOMPENSA_ESCOLHER_TIME, "❤️ Bônus por escolher o time do coração")
+            from avisos import conquistas
+            conquistas.checar(request.user)
             messages.success(request, f"Time escolhido! +{RECOMPENSA_ESCOLHER_TIME} Cartola Coins pra você.")
         else:
             messages.success(request, "Preferências salvas!")
@@ -174,9 +176,12 @@ def perfil(request):
                 messages.success(request, "Pergunta secreta salva. Ela ajuda a recuperar sua senha.")
                 return redirect(f"{reverse('conta:perfil')}?aba=seguranca")
 
+    from avisos import conquistas
     from palpites.models import Palpite
+    conquistas.checar(usuario)
     palpites = Palpite.objects.filter(usuario=usuario)
     return render(request, 'accounts/perfil.html', {
+        'conquistas': conquistas.do_usuario(usuario),
         'perfil': perfil, 'aba': aba,
         'form_dados': form_dados, 'form_senha': form_senha, 'form_pergunta': form_pergunta,
         'avatares': AVATARES,
@@ -189,6 +194,8 @@ def perfil(request):
 
 
 def _bonus_perfil(request, perfil):
+    from avisos import conquistas
+    conquistas.checar(request.user)
     if perfil.perfil_completo and not perfil.bonus_perfil_pago:
         perfil.bonus_perfil_pago = True
         perfil.save(update_fields=['bonus_perfil_pago'])

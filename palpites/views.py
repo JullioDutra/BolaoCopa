@@ -23,30 +23,88 @@ from django.http import Http404, JsonResponse
 from django.views.decorators.http import require_POST
 
 
+def _distribuicao_galera(palpites):
+    """ % da galera que palpitou em casa / empate / fora. """
+    total = len(palpites)
+    if not total:
+        return None
+    casa = sum(1 for p in palpites if p.gols_casa > p.gols_fora)
+    fora = sum(1 for p in palpites if p.gols_fora > p.gols_casa)
+    empate = total - casa - fora
+    pct = lambda n: round(n * 100 / total)
+    return {'total': total, 'casa': pct(casa), 'empate': pct(empate), 'fora': pct(fora)}
+
+
 @acesso_liberado_required
 def listar_jogos(request):
-    jogos = Jogo.objects.all().order_by('data_hora')
-    meus_palpites = Palpite.objects.filter(usuario=request.user)
-    palpites_dict = {palpite.jogo.id: palpite for palpite in meus_palpites}
+    from accounts.temas import cor_por_nome, normalizar
 
+    jogos = list(Jogo.objects.all().order_by('data_hora').select_related('rodada').prefetch_related('palpites__usuario'))
+    palpites_dict = {p.jogo_id: p for p in Palpite.objects.filter(usuario=request.user)}
+    cores = {normalizar(c.nome): c.cor_hexadecimal for c in Clube.objects.all()}
+
+    abertos = feitos = 0
     for jogo in jogos:
         jogo.meu_palpite = palpites_dict.get(jogo.id)
-        if jogo.finalizado and jogo.premio_distribuido:
-            maior_pontuacao = Palpite.objects.filter(jogo=jogo, modalidade='pago').aggregate(Max('pontuacao_obtida'))['pontuacao_obtida__max']
-            if maior_pontuacao is not None and maior_pontuacao > 0:
-                jogo.ganhadores = Palpite.objects.filter(jogo=jogo, modalidade='pago', pontuacao_obtida=maior_pontuacao)
-            else:
-                jogo.ganhadores = []
+        jogo.cor_casa = cor_por_nome(jogo.time_casa, cores)
+        jogo.cor_fora = cor_por_nome(jogo.time_fora, cores)
+        todos = list(jogo.palpites.all())
+        jogo.galera = _distribuicao_galera(todos)
+        # só mostra a tendência da galera depois que o usuário palpitou (ou o jogo fechou) — evita "copiar"
+        jogo.mostra_galera = bool(jogo.meu_palpite) or not jogo.aceita_palpite
+        jogo.estado = 'encerrado' if jogo.finalizado else ('aovivo' if jogo.ao_vivo else ('aberto' if jogo.aceita_palpite else 'fechado'))
+        if jogo.estado == 'aberto':
+            abertos += 1
+            feitos += 1 if jogo.meu_palpite else 0
+        if jogo.finalizado:
+            jogo.cravaram = [p for p in todos if p.pontuacao_obtida == 15]
+            jogo.resultado_meu = None
+            if jogo.meu_palpite:
+                pts = jogo.meu_palpite.pontuacao_obtida
+                jogo.resultado_meu = 'cravou' if pts == 15 else 'acertou' if pts else 'errou'
 
     jogadores_pago = User.objects.filter(palpites__modalidade='pago').distinct()
-    jogadores_resenha = User.objects.filter(palpites__modalidade='resenha').exclude(id__in=jogadores_pago).distinct()
+    jogadores_rodada = User.objects.filter(palpites__modalidade='rodada').exclude(id__in=jogadores_pago).distinct()
+    jogadores_resenha = (User.objects.filter(palpites__modalidade='resenha')
+                         .exclude(id__in=jogadores_pago).exclude(id__in=jogadores_rodada).distinct())
 
     return render(request, 'palpites/listar_jogos.html', {
         'jogos': jogos,
         'jogadores_pago': jogadores_pago,
+        'jogadores_rodada': jogadores_rodada,
         'jogadores_resenha': jogadores_resenha,
         'rodadas': _rodadas_em_destaque(request.user),
+        'abertos': abertos, 'feitos': feitos,
+        'pct_feitos': round(feitos * 100 / abertos) if abertos else 0,
     })
+
+
+@acesso_liberado_required
+@require_POST
+def palpite_rapido(request, jogo_id):
+    """
+    Palpite direto da lista de jogos (stepper + botão), sem sair da página.
+    Mantém a modalidade já paga (pago/rodada); palpite novo entra na Resenha (grátis).
+    """
+    jogo = get_object_or_404(Jogo, id=jogo_id)
+    if not jogo.aceita_palpite:
+        return JsonResponse({'ok': False, 'erro': 'Os palpites desse jogo já fecharam.'}, status=400)
+    try:
+        casa, fora = int(request.POST.get('gols_casa')), int(request.POST.get('gols_fora'))
+    except (TypeError, ValueError):
+        return JsonResponse({'ok': False, 'erro': 'Placar inválido.'}, status=400)
+    if not (0 <= casa <= 20 and 0 <= fora <= 20):
+        return JsonResponse({'ok': False, 'erro': 'O placar vai de 0 a 20.'}, status=400)
+
+    palpite, criado = Palpite.objects.get_or_create(
+        usuario=request.user, jogo=jogo, defaults={'gols_casa': casa, 'gols_fora': fora, 'modalidade': 'resenha'})
+    if not criado:
+        palpite.gols_casa, palpite.gols_fora = casa, fora
+        palpite.save(update_fields=['gols_casa', 'gols_fora'])
+    from avisos import conquistas
+    conquistas.checar(request.user)
+    return JsonResponse({'ok': True, 'novo': criado, 'modalidade': palpite.modalidade,
+                         'mensagem': 'Palpite cravado!' if criado else 'Palpite atualizado!'})
 
 
 def _rodadas_em_destaque(usuario):
@@ -133,11 +191,16 @@ def fazer_palpite(request, jogo_id):
     else:
         form = PalpiteForm(instance=palpite_existente)
 
+    from accounts.temas import cor_por_nome, normalizar
+    cores = {normalizar(c.nome): c.cor_hexadecimal for c in Clube.objects.all()}
     return render(request, 'palpites/fazer_palpite.html', {
         'form': form,
         'jogo': jogo,
         'palpite_existente': palpite_existente,
         'rodada_inscrito': rodada_inscrito,
+        'cor_casa': cor_por_nome(jogo.time_casa, cores),
+        'cor_fora': cor_por_nome(jogo.time_fora, cores),
+        'galera': _distribuicao_galera(list(jogo.palpites.all())) if palpite_existente else None,
     })
 
 

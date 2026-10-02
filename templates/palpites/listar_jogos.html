@@ -1,390 +1,358 @@
 {% extends 'base.html' %}
-
 {% block title %}Arena de Palpites - Cartolândia{% endblock %}
 
 {% block content %}
 <style>
-    /* Transições e Animações dos Cards */
-    .card-action { transition: transform 0.2s ease, box-shadow 0.2s ease; }
-    .card-action:hover { transform: translateY(-3px); box-shadow: 0 0.5rem 1rem rgba(0,0,0,.15)!important; }
-    
-    /* Padronização dos Escudos na Arena */
-    .team-logo-arena { max-height: 55px; width: auto; object-fit: contain; }
+    /* ====== Arena: hero de gramado + ingressos de jogo ====== */
+    .arena-hero { background: repeating-linear-gradient(90deg, #1b6b2a 0 56px, #1f7a30 56px 112px); border-radius: 22px; color:#fff; position:relative; overflow:hidden; padding: 22px 22px 18px; margin-bottom: 18px; }
+    .arena-hero::before { content:""; position:absolute; inset: 12px; border: 2px solid rgba(255,255,255,.25); border-radius: 14px; pointer-events:none; }
+    .arena-hero > * { position:relative; z-index:1; }
+    .arena-hero h1 { text-transform: uppercase; letter-spacing: 1px; text-shadow: 0 2px 10px rgba(0,0,0,.35); margin:0; }
+    .trave { height: 12px; background: rgba(255,255,255,.28); border-radius: 50rem; position:relative; margin-top: 10px; }
+    .trave > span { display:block; height:100%; background: #fde047; border-radius: 50rem; transition: width .5s; }
+    .trave .bola { position:absolute; top:50%; transform: translate(-50%,-50%); font-size: 1.25rem; transition: left .5s; filter: drop-shadow(0 2px 3px rgba(0,0,0,.4)); }
 
-    /* Truque CSS: Se a caixa de vencedores não possuir nenhuma badge, altera para o estado "Sem Vencedores" */
-    .caixa-vencedores:not(:has(.badge)) {
-        background-color: #f8f9fa !important;
-        border-color: #dee2e6 !important;
-        text-align: center !important;
-        padding: 1rem !important;
-    }
-    .caixa-vencedores:not(:has(.badge))::after {
-        content: "\f071  Ninguém cravou o placar exato!";
-        font-family: "FontAwesome", "Font Awesome 6 Free"; /* Garante renderização do ícone FA */
-        display: block;
-        color: #6c757d;
-        font-weight: bold;
-        font-size: 0.85rem;
-    }
-    .caixa-vencedores:not(:has(.badge)) .titulo-vencedores {
-        display: none !important;
-    }
+    .filtros { display:flex; gap:8px; overflow-x:auto; padding-bottom: 6px; scrollbar-width: none; }
+    .filtros button { border:0; background:#fff; color:#374151; font-weight:700; border-radius: 50rem; padding: 7px 16px; white-space:nowrap; box-shadow: 0 2px 6px rgba(0,0,0,.06); font-size:.88rem; }
+    .filtros button.ativo { background: var(--verde-campo); color:#fff; }
+    .filtros .n { opacity:.7; font-weight:600; margin-left:4px; }
 
-    /* Estilo do Toggle Switch estilo App */
-    .toggle-app-container {
-        background-color: #f8f9fa;
-        border: 1px solid #dee2e6;
-        padding: 0.5rem 1rem;
-        border-radius: 50rem;
-        display: inline-flex;
-        align-items: center;
-    }
+    .ticket { background:#fff; border-radius: 20px; box-shadow: 0 6px 18px rgba(0,0,0,.08); position:relative; overflow:hidden; height:100%; display:flex; flex-direction:column; transition: transform .15s; }
+    .ticket:hover { transform: translateY(-3px); }
+    .ticket-top { color:#fff; padding: 14px 14px 16px; background: linear-gradient(100deg, var(--c1) 0 47%, #0f172a 49%, var(--c2) 51% 100%); position:relative; }
+    .ticket-top::after { content:""; position:absolute; inset:0; background: radial-gradient(circle at 50% -20%, rgba(255,255,255,.28), transparent 60%); pointer-events:none; }
+    .ticket-top > * { position:relative; z-index:1; }
+    .meta { display:flex; justify-content: space-between; align-items:center; gap:6px; font-size:.7rem; font-weight:800; text-transform: uppercase; letter-spacing:.5px; margin-bottom: 10px; }
+    .meta .chip { background: rgba(0,0,0,.35); border-radius: 50rem; padding: 3px 9px; white-space: nowrap; }
+    .meta .chip.verde { background:#16a34a; } .meta .chip.verm { background:#dc2626; } .meta .chip.cinza { background:#475569; } .meta .chip.ouro { background:#ca8a04; }
+    .chip.aovivo { background:#dc2626; animation: piscar 1.2s infinite; }
+    @keyframes piscar { 50% { opacity:.55; } }
+    .times { display:grid; grid-template-columns: 1fr auto 1fr; align-items:center; gap: 6px; text-align:center; }
+    .time .escudo { width: 58px; height: 58px; border-radius:50%; background:#fff; display:flex; align-items:center; justify-content:center; margin: 0 auto 6px; box-shadow: 0 4px 10px rgba(0,0,0,.3); overflow:hidden; }
+    .time .escudo img { max-width: 40px; max-height: 40px; object-fit: contain; }
+    .time .escudo i { color:#9ca3af; font-size: 1.4rem; }
+    .time .nome { font-family: var(--fonte-titulo); font-weight:700; font-size: 1.15rem; line-height: 1.05; text-transform: uppercase; text-shadow: 0 1px 4px rgba(0,0,0,.45); }
+    .centro { font-family: var(--fonte-titulo); font-weight:800; font-size: 1.7rem; min-width: 64px; text-shadow: 0 2px 8px rgba(0,0,0,.5); }
+    .centro small { display:block; font-size:.6rem; letter-spacing:1px; opacity:.85; font-weight:700; }
+
+    .ticket-corte { position:relative; height: 0; border-top: 2px dashed #e5e7eb; margin: 0 14px; }
+    .ticket-corte::before, .ticket-corte::after { content:""; position:absolute; top:-11px; width:20px; height:20px; border-radius:50%; background: var(--fundo-app); }
+    .ticket-corte::before { left:-24px; } .ticket-corte::after { right:-24px; }
+    .ticket-corpo { padding: 16px 14px 14px; flex:1; display:flex; flex-direction:column; gap: 10px; }
+
+    .stepper { display:flex; align-items:center; justify-content:center; gap: 8px; }
+    .stepper .grupo { display:flex; align-items:center; gap:4px; }
+    .stepper button.mm { width: 34px; height: 34px; border-radius: 50%; border: 2px solid #e5e7eb; background:#fff; font-weight:800; font-size:1.1rem; line-height:1; color:#374151; }
+    .stepper button.mm:active { transform: scale(.9); background:#f3f4f6; }
+    .stepper input { width: 52px; height: 52px; text-align:center; font-family: var(--fonte-titulo); font-weight:800; font-size: 2rem; border: 2px solid #d1d5db; border-radius: 14px; background:#f9fafb; color: var(--verde-escuro); padding:0; }
+    .stepper input:focus { outline:none; border-color: var(--verde-campo); background:#fff; box-shadow: 0 0 0 4px rgba(0,0,0,.06); }
+    .stepper .x { font-family: var(--fonte-titulo); font-weight:700; color:#9ca3af; font-size:1.4rem; }
+    .btn-cravar { width:100%; border:0; border-radius: 50rem; padding: 11px; font-weight: 800; color:#fff; text-transform: uppercase; letter-spacing:.5px; background: linear-gradient(135deg, var(--verde-campo), var(--verde-escuro)); box-shadow: 0 6px 14px rgba(0,0,0,.18); transition: transform .12s; }
+    .btn-cravar:hover { transform: translateY(-2px); } .btn-cravar:disabled { opacity:.6; transform:none; }
+    .btn-cravar.salvo { background: linear-gradient(135deg,#0ea5e9,#2563eb); }
+
+    .galera { font-size:.7rem; color:#6b7280; }
+    .galera .barra { display:flex; height:8px; border-radius: 50rem; overflow:hidden; background:#e5e7eb; margin-top:4px; }
+    .galera .barra span:nth-child(1) { background: var(--c1); } .galera .barra span:nth-child(2) { background:#9ca3af; } .galera .barra span:nth-child(3) { background: var(--c2); }
+    .galera .legenda { display:flex; justify-content: space-between; font-weight:700; margin-top:3px; }
+    .selo-res { display:inline-flex; align-items:center; gap:6px; border-radius: 50rem; padding: 6px 14px; font-weight:800; text-transform: uppercase; font-size:.8rem; letter-spacing:.4px; }
+    .selo-res.cravou { background:#fee2e2; color:#b91c1c; } .selo-res.acertou { background:#dcfce7; color:#15803d; } .selo-res.errou { background:#f3f4f6; color:#6b7280; }
+    .mod { font-size:.65rem; font-weight:800; text-transform: uppercase; letter-spacing:.5px; border-radius:50rem; padding: 2px 8px; background:#e5e7eb; color:#374151; }
+    .mod.pago { background:#dcfce7; color:#166534; } .mod.rodada { background:#dbeafe; color:#1e40af; }
+    .rodape-ticket { display:flex; justify-content: space-between; gap:8px; font-size:.78rem; font-weight:700; }
+    .rodape-ticket a, .rodape-ticket button { color: var(--verde-campo); background:none; border:0; padding:0; text-decoration:none; font-weight:700; }
+    .caixa-vencedores:not(:has(.badge)) { display:none; }
+    .jogo-card { transition: opacity .2s; }
+    #confete { position: fixed; inset: 0; pointer-events:none; z-index: 2000; }
 </style>
 
-<!-- ========================================== -->
-<!-- CABEÇALHO DA ARENA                         -->
-<!-- ========================================== -->
-<div class="row mt-4 mb-4 px-2">
-    <div class="col-12 text-center text-md-start d-md-flex justify-content-between align-items-center">
-        <div class="mb-3 mb-md-0">
-            <h2 class="fw-bold mb-1" style="color: var(--verde-escuro);">
-                <i class="fa-regular fa-futbol text-success"></i> Arena de Palpites
-            </h2>
-            <p class="text-muted small mb-0">
-                Apostas e edições encerram exatamente <strong>1 hora antes</strong> do apito inicial.
-            </p>
+<canvas id="confete"></canvas>
+
+<div class="arena-hero">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+        <div>
+            <h1>Arena de Palpites</h1>
+            <div class="opacity-75 small">Palpites fecham <b>1 hora antes</b> do apito. Placar exato = 15 pts + 🪙 50.</div>
         </div>
-        
-        <!-- Switch para ocultar jogos encerrados -->
-        <div class="toggle-app-container shadow-sm mt-2 mt-md-0">
-            <div class="form-check form-switch m-0 d-flex align-items-center gap-2">
-                <input class="form-check-input mt-0" type="checkbox" id="toggleEncerrados" style="cursor: pointer; width: 2.5em; height: 1.25em;">
-                <label class="form-check-label text-muted fw-bold small text-uppercase" for="toggleEncerrados" style="cursor: pointer; letter-spacing: 0.5px;">
-                    Ocultar Encerrados
-                </label>
-            </div>
-        </div>
+        <a class="btn btn-light btn-sm rounded-pill fw-bold" href="{% url 'futebol:hub' %}"><i class="fa-solid fa-earth-americas"></i> Central do Futebol</a>
     </div>
+    {% if abertos %}
+    <div class="mt-3 small fw-bold">{{ feitos }} de {{ abertos }} jogos abertos palpitados</div>
+    <div class="trave"><span style="width: {{ pct_feitos }}%"></span><i class="bola" style="left: {{ pct_feitos }}%;">⚽</i></div>
+    {% endif %}
 </div>
 
 {% if rodadas %}
-<div class="row px-2 mb-4">
-    <div class="col-12">
-        <h5 class="fw-bold mb-3" style="color: var(--verde-escuro);"><i class="fa-solid fa-trophy text-warning"></i> Bolão da Rodada</h5>
-        <div class="row g-3">
-            {% for r in rodadas %}
-            <div class="col-12 col-md-6">
-                <div class="card card-clean shadow-sm border-0 rounded-4 p-3 h-100" style="border-left: 6px solid var(--verde-campo) !important;">
-                    <div class="d-flex justify-content-between align-items-start gap-2">
-                        <div>
-                            <div class="fw-bold">{{ r.obj.nome }}</div>
-                            <small class="text-muted">{{ r.jogos }} jogo{{ r.jogos|pluralize }} · {{ r.inscritos }} na disputa</small>
-                        </div>
-                        <span class="badge text-bg-warning fs-6">Pote R$ {{ r.pote }}</span>
-                    </div>
-                    <p class="small text-muted my-2">Uma entrada, a rodada inteira: some pontos em todos os jogos e leve o pote.</p>
-                    <div class="d-flex gap-2 flex-wrap">
-                        {% if r.inscrito %}
-                            <span class="btn btn-sm btn-success disabled fw-bold rounded-pill"><i class="fa-solid fa-circle-check"></i> Você está dentro</span>
-                        {% elif r.abertas %}
-                            <form method="post" action="{% url 'palpites:entrar_rodada' r.obj.id %}" onsubmit="return confirm('Entrar no {{ r.obj.nome|escapejs }} por R$ {{ r.obj.valor_entrada }}?')">
-                                {% csrf_token %}
-                                <button class="btn btn-sm btn-success fw-bold rounded-pill">Entrar por R$ {{ r.obj.valor_entrada }}</button>
-                            </form>
-                        {% else %}
-                            <span class="btn btn-sm btn-secondary disabled rounded-pill"><i class="fa-solid fa-lock"></i> Inscrições encerradas</span>
-                        {% endif %}
-                        <a href="{% url 'palpites:ranking_rodada' r.obj.id %}" class="btn btn-sm btn-outline-secondary rounded-pill fw-bold">Classificação</a>
-                    </div>
+<div class="row g-3 mb-4">
+    {% for r in rodadas %}
+    <div class="col-12 col-md-6">
+        <div class="card card-clean shadow-sm border-0 rounded-4 p-3 h-100" style="border-left: 6px solid var(--verde-campo) !important;">
+            <div class="d-flex justify-content-between align-items-start gap-2">
+                <div>
+                    <div class="fw-bold"><i class="fa-solid fa-trophy text-warning"></i> {{ r.obj.nome }}</div>
+                    <small class="text-muted">{{ r.jogos }} jogo{{ r.jogos|pluralize }} · {{ r.inscritos }} na disputa</small>
                 </div>
+                <span class="badge text-bg-warning fs-6">Pote R$ {{ r.pote }}</span>
             </div>
-            {% endfor %}
+            <p class="small text-muted my-2">Uma entrada, a rodada inteira: some pontos em todos os jogos e leve o pote.</p>
+            <div class="d-flex gap-2 flex-wrap">
+                {% if r.inscrito %}
+                    <span class="btn btn-sm btn-success disabled fw-bold rounded-pill"><i class="fa-solid fa-circle-check"></i> Você está dentro</span>
+                {% elif r.abertas %}
+                    <form method="post" action="{% url 'palpites:entrar_rodada' r.obj.id %}" onsubmit="return confirm('Entrar no {{ r.obj.nome|escapejs }} por R$ {{ r.obj.valor_entrada }}?')">
+                        {% csrf_token %}
+                        <button class="btn btn-sm btn-success fw-bold rounded-pill">Entrar por R$ {{ r.obj.valor_entrada }}</button>
+                    </form>
+                {% else %}
+                    <span class="btn btn-sm btn-secondary disabled rounded-pill"><i class="fa-solid fa-lock"></i> Inscrições encerradas</span>
+                {% endif %}
+                <a href="{% url 'palpites:ranking_rodada' r.obj.id %}" class="btn btn-sm btn-outline-secondary rounded-pill fw-bold">Classificação</a>
+            </div>
         </div>
     </div>
+    {% endfor %}
 </div>
 {% endif %}
 
-<div class="row px-2">
-    <!-- ========================================== -->
-    <!-- COLUNA PRINCIPAL: LISTA DE JOGOS           -->
-    <!-- ========================================== -->
+<div class="filtros mb-3" id="filtros">
+    <button class="ativo" data-f="todos">Todos <span class="n"></span></button>
+    <button data-f="aberto">Abertos <span class="n"></span></button>
+    <button data-f="aovivo">Ao vivo <span class="n"></span></button>
+    <button data-f="fechado">Fechados <span class="n"></span></button>
+    <button data-f="encerrado">Encerrados <span class="n"></span></button>
+</div>
+
+<div class="row g-4">
     <div class="col-12 col-lg-8">
-        <div class="row row-cols-1 row-cols-md-2 g-4 mb-5">
+        <div class="row row-cols-1 row-cols-md-2 g-4 mb-5" id="gradeJogos">
             {% for jogo in jogos %}
-                <!-- A classe 'jogo-encerrado' é usada no Javascript -->
-                <div class="col {% if jogo.finalizado %}jogo-encerrado{% endif %}">
-                    
-                    <div class="card card-action card-clean h-100 shadow-sm border-0 rounded-4 {% if not jogo.aceita_palpite %}bg-light{% endif %}">
-                        
-                        <!-- Header do Card: Data e Status -->
-                        <div class="card-header bg-transparent border-0 pt-3 pb-0 text-center">
-                            <span class="badge {% if jogo.aceita_palpite %}bg-success{% else %}bg-danger opacity-75{% endif %} rounded-pill px-3 py-2 shadow-sm">
-                                <i class="fa-regular fa-calendar-days"></i> {{ jogo.data_hora|date:"d/m/Y às H:i" }}
-                            </span>
+            <div class="col jogo-card" data-estado="{{ jogo.estado }}">
+                <article class="ticket" style="--c1: {{ jogo.cor_casa }}; --c2: {{ jogo.cor_fora }};" data-jogo="{{ jogo.id }}">
+                    <header class="ticket-top">
+                        <div class="meta">
+                            <span class="chip"><i class="fa-regular fa-calendar"></i> {{ jogo.data_hora|date:"d/m · H:i" }}</span>
+                            {% if jogo.estado == 'aovivo' %}<span class="chip aovivo"><i class="fa-solid fa-circle fa-beat-fade" style="font-size:.5rem"></i> Ao vivo</span>
+                            {% elif jogo.estado == 'encerrado' %}<span class="chip cinza">Encerrado</span>
+                            {% elif jogo.estado == 'aberto' %}<span class="chip verde"><i class="fa-regular fa-clock"></i> fecha em <span class="cd" data-fecha="{{ jogo.fecha_em|date:'c' }}">--</span></span>
+                            {% else %}<span class="chip verm"><i class="fa-solid fa-lock"></i> Fechado</span>{% endif %}
                         </div>
-                        
-                        <!-- Corpo do Card: Times e Placar -->
-                        <div class="card-body text-center mt-2 px-3">
-                            <div class="d-flex justify-content-center align-items-center mb-4">
-                                <!-- Time da Casa -->
-                                <div class="text-center" style="flex: 1; min-width: 0;">
-                                    {% if jogo.escudo_casa_src %}
-                                        <img src="{{ jogo.escudo_casa_src }}" alt="{{ jogo.time_casa }}" class="mb-2 team-logo-arena">
-                                    {% else %}
-                                        <div class="bg-secondary bg-opacity-10 rounded-circle mx-auto mb-2 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
-                                            <i class="fa-solid fa-shield-halved text-muted fs-4"></i>
-                                        </div>
-                                    {% endif %}
-                                    <h6 class="fw-bold mb-0 text-truncate px-1" title="{{ jogo.time_casa }}">{{ jogo.time_casa }}</h6>
-                                </div>
-                                
-                                <!-- O "X" Central -->
-                                <div class="px-2">
-                                    <span class="fs-4 fw-black text-muted opacity-50">X</span>
-                                </div>
-                                
-                                <!-- Time de Fora -->
-                                <div class="text-center" style="flex: 1; min-width: 0;">
-                                    {% if jogo.escudo_fora_src %}
-                                        <img src="{{ jogo.escudo_fora_src }}" alt="{{ jogo.time_fora }}" class="mb-2 team-logo-arena">
-                                    {% else %}
-                                        <div class="bg-secondary bg-opacity-10 rounded-circle mx-auto mb-2 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
-                                            <i class="fa-solid fa-shield-halved text-muted fs-4"></i>
-                                        </div>
-                                    {% endif %}
-                                    <h6 class="fw-bold mb-0 text-truncate px-1" title="{{ jogo.time_fora }}">{{ jogo.time_fora }}</h6>
-                                </div>
+                        <div class="times">
+                            <div class="time">
+                                <div class="escudo">{% if jogo.escudo_casa_src %}<img src="{{ jogo.escudo_casa_src }}" alt="" loading="lazy">{% else %}<i class="fa-solid fa-shield-halved"></i>{% endif %}</div>
+                                <div class="nome">{{ jogo.time_casa }}</div>
                             </div>
-
-                            <!-- "Ticket" com o Palpite do Usuário -->
-                            {% if jogo.meu_palpite %}
-                                <div class="p-3 rounded-4 mb-3 position-relative shadow-sm {% if jogo.meu_palpite.modalidade == 'pago' %}bg-success text-white{% elif jogo.meu_palpite.modalidade == 'rodada' %}bg-primary text-white{% else %}bg-secondary text-white{% endif %}" style="border: 2px dashed rgba(255,255,255,0.4);">
-                                    <span class="d-block mb-1 text-uppercase fw-bold" style="font-size: 0.65rem; letter-spacing: 1px; opacity: 0.9;">
-                                        Seu Palpite ({% if jogo.meu_palpite.modalidade == 'rodada' %}Bolão da Rodada{% else %}{{ jogo.meu_palpite.modalidade|title }}{% endif %})
-                                    </span>
-                                    <h3 class="fw-bold mb-0 tracking-wider">{{ jogo.meu_palpite.gols_casa }} x {{ jogo.meu_palpite.gols_fora }}</h3>
-                                    
-                                    {% if jogo.finalizado %}
-                                        <div class="mt-2 pt-2 border-top border-light border-opacity-25">
-                                            <p class="fw-bold mb-0" style="color: #ffeaa7;">
-                                                <i class="fa-solid fa-star"></i> Pontos ganhos: {{ jogo.meu_palpite.pontuacao_obtida }}
-                                            </p>
-                                        </div>
-                                    {% endif %}
-                                </div>
-                            {% else %}
-                                <div class="p-3 rounded-4 mb-3 bg-light border border-dashed">
-                                    <p class="text-muted small mb-0 fw-bold"><i class="fa-solid fa-pen-nib me-1"></i> Você ainda não palpitou.</p>
-                                </div>
-                            {% endif %}
-
-                            <!-- Botão Ver Galera -->
-                            <button type="button" class="btn btn-sm btn-outline-secondary fw-bold rounded-pill px-4 shadow-sm w-100" data-bs-toggle="modal" data-bs-target="#modalPalpites{{ jogo.id }}">
-                                <i class="fa-regular fa-eye"></i> Ver Palpites da Galera
-                            </button>
+                            <div class="centro">{% if jogo.finalizado or jogo.ao_vivo %}{{ jogo.gols_casa_real|default:0 }} <small>×</small> {{ jogo.gols_fora_real|default:0 }}{% else %}VS{% endif %}</div>
+                            <div class="time">
+                                <div class="escudo">{% if jogo.escudo_fora_src %}<img src="{{ jogo.escudo_fora_src }}" alt="" loading="lazy">{% else %}<i class="fa-solid fa-shield-halved"></i>{% endif %}</div>
+                                <div class="nome">{{ jogo.time_fora }}</div>
+                            </div>
                         </div>
-                        
-                        <!-- Footer do Card: Ações ou Placar Real -->
-                        <div class="card-footer bg-transparent border-0 pb-4 text-center px-3">
-                            {% if jogo.finalizado %}
-                                <div class="bg-light rounded-4 p-3 border">
-                                    <span class="fw-bold text-success d-block mb-1 text-uppercase" style="font-size: 0.8rem; letter-spacing: 1px;">
-                                        <i class="fa-solid fa-check-double"></i> Jogo Finalizado
-                                    </span>
-                                    <h5 class="text-dark fw-bold mb-0">Placar Real: {{ jogo.gols_casa_real }} x {{ jogo.gols_fora_real }}</h5>
+                    </header>
+                    <div class="ticket-corte"></div>
+                    <div class="ticket-corpo">
+                        {% if jogo.estado == 'aberto' %}
+                            <form class="form-rapido" data-url="{% url 'palpites:palpite_rapido' jogo.id %}">
+                                <div class="stepper">
+                                    <div class="grupo"><button type="button" class="mm" data-d="-1" aria-label="menos um gol {{ jogo.time_casa }}">−</button>
+                                        <input type="text" inputmode="numeric" maxlength="2" name="gols_casa" value="{{ jogo.meu_palpite.gols_casa|default:'0' }}" aria-label="Gols {{ jogo.time_casa }}">
+                                        <button type="button" class="mm" data-d="1" aria-label="mais um gol {{ jogo.time_casa }}">+</button></div>
+                                    <span class="x">×</span>
+                                    <div class="grupo"><button type="button" class="mm" data-d="-1" aria-label="menos um gol {{ jogo.time_fora }}">−</button>
+                                        <input type="text" inputmode="numeric" maxlength="2" name="gols_fora" value="{{ jogo.meu_palpite.gols_fora|default:'0' }}" aria-label="Gols {{ jogo.time_fora }}">
+                                        <button type="button" class="mm" data-d="1" aria-label="mais um gol {{ jogo.time_fora }}">+</button></div>
                                 </div>
-                                
-                                <!-- Lógica dos Acertadores -->
-                                <div class="mt-3 p-3 bg-success bg-opacity-10 border border-success border-opacity-25 rounded-4 text-start caixa-vencedores shadow-sm">
-                                    <small class="fw-bold text-success d-block mb-2 text-uppercase titulo-vencedores" style="font-size: 0.75rem; letter-spacing: 0.5px;">
-                                        <i class="fa-solid fa-trophy"></i> Cravaram o Placar:
-                                    </small>
-                                    
-                                    <div>
-                                        {% for palpite in jogo.palpites.all %}
-                                            {% if palpite.pontuacao_obtida == 15 %}
-                                                <span class="badge bg-success me-1 mb-1 fs-6 shadow-sm py-2 px-3 rounded-pill">
-                                                    <i class="fa-solid fa-crown text-warning me-1"></i> {{ palpite.usuario.first_name|default:palpite.usuario.username }}
-                                                </span>
-                                            {% endif %}
-                                        {% endfor %}
-                                    </div>
+                                <button class="btn-cravar mt-3 {% if jogo.meu_palpite %}salvo{% endif %}" type="submit"><i class="fa-solid fa-futbol me-1"></i> <span class="rotulo">{% if jogo.meu_palpite %}Atualizar palpite{% else %}Cravar palpite{% endif %}</span></button>
+                                <div class="text-center mt-2 small msg-rapido" style="min-height:18px;">
+                                    {% if jogo.meu_palpite %}<span class="mod {{ jogo.meu_palpite.modalidade }}">{% if jogo.meu_palpite.modalidade == 'rodada' %}Bolão da Rodada{% elif jogo.meu_palpite.modalidade == 'pago' %}Valendo prêmio{% else %}Resenha{% endif %}</span>{% endif %}
                                 </div>
-                            
-                            {% elif jogo.aceita_palpite %}
+                            </form>
+                        {% elif jogo.estado == 'encerrado' %}
+                            <div class="text-center">
                                 {% if jogo.meu_palpite %}
-                                    <a href="{% url 'palpites:fazer_palpite' jogo.id %}" class="btn btn-outline-primary w-100 fw-bold rounded-pill shadow-sm">
-                                        <i class="fa-solid fa-pen-to-square"></i> Editar Palpite
-                                    </a>
-                                {% else %}
-                                    <a href="{% url 'palpites:fazer_palpite' jogo.id %}" class="btn btn-success w-100 fw-bold rounded-pill shadow-sm text-uppercase" style="letter-spacing: 0.5px;">
-                                        <i class="fa-solid fa-check-circle"></i> Fazer Palpite
-                                    </a>
-                                {% endif %}
-                                
-                            {% else %}
-                                <button class="btn btn-secondary w-100 fw-bold rounded-pill shadow-sm opacity-75" disabled>
-                                    <i class="fa-solid fa-lock"></i> Palpites Encerrados
-                                </button>
-                                <small class="text-danger fw-bold d-block mt-2">
-                                    <i class="fa-solid fa-stopwatch pulse-dot"></i> A bola já vai rolar!
-                                </small>
-                            {% endif %}
-                        </div>
-                    </div>
-
-                    <!-- ========================================== -->
-                    <!-- MODAL: PALPITES DA GALERA                  -->
-                    <!-- ========================================== -->
-                    <div class="modal fade" id="modalPalpites{{ jogo.id }}" tabindex="-1" aria-labelledby="modalPalpitesLabel{{ jogo.id }}" aria-hidden="true">
-                        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-                            <div class="modal-content border-0 shadow-lg rounded-4">
-                                <div class="modal-header bg-light border-bottom border-opacity-10 p-4">
-                                    <h5 class="modal-title fw-bold" id="modalPalpitesLabel{{ jogo.id }}" style="color: var(--verde-escuro);">
-                                        <i class="fa-solid fa-users-viewfinder text-success"></i> Palpites da Galera
-                                    </h5>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                </div>
-                                
-                                <div class="modal-body p-0">
-                                    <div class="text-center p-3 bg-white border-bottom shadow-sm">
-                                        <h6 class="fw-bold mb-0 text-muted">{{ jogo.time_casa }} x {{ jogo.time_fora }}</h6>
-                                    </div>
-                                    
-                                    <ul class="list-group list-group-flush">
-                                        {% for palpite in jogo.palpites.all %}
-                                            <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4 border-bottom border-light">
-                                                <div>
-                                                    <strong class="text-dark fs-6">{{ palpite.usuario.first_name|default:palpite.usuario.username }}</strong>
-                                                    <br>
-                                                    <span class="badge {% if palpite.modalidade == 'pago' %}bg-success bg-opacity-10 text-success border border-success{% else %}bg-secondary bg-opacity-10 text-secondary border border-secondary{% endif %} mt-1 rounded-pill px-2">
-                                                        {% if palpite.modalidade == 'pago' %}
-                                                            <i class="fa-solid fa-sack-dollar"></i> Valendo Prêmio
-                                                        {% else %}
-                                                            <i class="fa-regular fa-face-laugh-squint"></i> Modo Resenha
-                                                        {% endif %}
-                                                    </span>
-                                                </div>
-                                                <div class="text-end">
-                                                    <span class="fw-bold fs-4 bg-light px-3 py-2 rounded-3 border text-dark shadow-sm">
-                                                        {{ palpite.gols_casa }} <span class="text-muted fs-6 mx-1">x</span> {{ palpite.gols_fora }}
-                                                    </span>
-                                                </div>
-                                            </li>
-                                        {% empty %}
-                                            <li class="list-group-item text-center text-muted py-5 border-0">
-                                                <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
-                                                    <i class="fa-solid fa-ghost text-muted opacity-50 fs-1"></i>
-                                                </div>
-                                                <h6 class="fw-bold">O silêncio do estádio...</h6>
-                                                <p class="mb-0 small">Ninguém palpitou neste jogo ainda.</p>
-                                            </li>
-                                        {% endfor %}
-                                    </ul>
-                                </div>
-                                
-                                <div class="modal-footer bg-light border-0 p-3">
-                                    <button type="button" class="btn btn-secondary fw-bold rounded-pill px-4 w-100" data-bs-dismiss="modal">Fechar</button>
-                                </div>
+                                    <div class="small text-muted mb-1">Seu palpite: <b>{{ jogo.meu_palpite.gols_casa }} x {{ jogo.meu_palpite.gols_fora }}</b></div>
+                                    <span class="selo-res {{ jogo.resultado_meu }}" {% if jogo.resultado_meu == 'cravou' %}data-confete="{{ jogo.id }}"{% endif %}>
+                                        {% if jogo.resultado_meu == 'cravou' %}<i class="fa-solid fa-bullseye"></i> Cravou! +{{ jogo.meu_palpite.pontuacao_obtida }} pts
+                                        {% elif jogo.resultado_meu == 'acertou' %}<i class="fa-solid fa-check"></i> Acertou o vencedor +{{ jogo.meu_palpite.pontuacao_obtida }}
+                                        {% else %}<i class="fa-solid fa-xmark"></i> Dessa vez não deu{% endif %}</span>
+                                {% else %}<span class="selo-res errou"><i class="fa-regular fa-face-meh"></i> Você não palpitou</span>{% endif %}
                             </div>
+                            {% if jogo.cravaram %}<div class="text-center small"><i class="fa-solid fa-crown text-warning"></i> Cravaram: {% for p in jogo.cravaram %}<span class="badge text-bg-success rounded-pill">{{ p.usuario.first_name|default:p.usuario.username }}</span> {% endfor %}</div>{% endif %}
+                        {% else %}
+                            <div class="text-center">
+                                {% if jogo.meu_palpite %}<div class="small text-muted">Seu palpite</div><div style="font-family:var(--fonte-titulo);font-size:2rem;font-weight:800;color:var(--verde-escuro);">{{ jogo.meu_palpite.gols_casa }} × {{ jogo.meu_palpite.gols_fora }}</div>
+                                {% else %}<span class="selo-res errou"><i class="fa-solid fa-lock"></i> Você não palpitou</span>{% endif %}
+                                <div class="small fw-bold text-danger mt-1">{% if jogo.estado == 'aovivo' %}Bola rolando! Torce aí 📣{% else %}A bola já vai rolar!{% endif %}</div>
+                            </div>
+                        {% endif %}
+
+                        {% if jogo.galera and jogo.mostra_galera %}
+                        <div class="galera">
+                            <div class="legenda"><span>{{ jogo.galera.casa }}% {{ jogo.time_casa|truncatechars:10 }}</span><span>{{ jogo.galera.empate }}% emp.</span><span>{{ jogo.galera.fora }}% {{ jogo.time_fora|truncatechars:10 }}</span></div>
+                            <div class="barra"><span style="width:{{ jogo.galera.casa }}%"></span><span style="width:{{ jogo.galera.empate }}%"></span><span style="width:{{ jogo.galera.fora }}%"></span></div>
+                            <div class="text-center mt-1">{{ jogo.galera.total }} palpite{{ jogo.galera.total|pluralize }} da galera</div>
+                        </div>
+                        {% endif %}
+
+                        <div class="rodape-ticket mt-auto">
+                            <button type="button" data-bs-toggle="modal" data-bs-target="#modalPalpites{{ jogo.id }}"><i class="fa-solid fa-users"></i> Palpites da galera</button>
+                            {% if jogo.estado == 'aberto' %}<a href="{% url 'palpites:fazer_palpite' jogo.id %}">Raio‑X e prêmio <i class="fa-solid fa-angle-right"></i></a>
+                            {% else %}<a href="{% url 'palpites:fazer_palpite' jogo.id %}" class="{% if jogo.finalizado %}d-none{% endif %}">Detalhes</a>{% endif %}
                         </div>
                     </div>
+                </article>
 
-                </div>
-            {% empty %}
-                <div class="col-12 text-center py-5">
-                    <div class="bg-light border border-dashed rounded-4 p-5 mx-auto shadow-sm" style="max-width: 600px;">
-                        <i class="fa-solid fa-calendar-xmark text-muted opacity-50 mb-3" style="font-size: 3rem;"></i>
-                        <h4 class="fw-bold text-dark">Agenda Vazia</h4>
-                        <p class="text-muted mb-0">Nenhum jogo foi cadastrado para essa rodada ainda. Avise o Professor!</p>
+                <!-- Modal: palpites da galera -->
+                <div class="modal fade" id="modalPalpites{{ jogo.id }}" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+                        <div class="modal-content border-0 shadow-lg rounded-4">
+                            <div class="modal-header bg-light p-4">
+                                <h5 class="modal-title fw-bold" style="color: var(--verde-escuro);"><i class="fa-solid fa-users-viewfinder text-success"></i> Palpites da Galera</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                            </div>
+                            <div class="modal-body p-0">
+                                <div class="text-center p-3 bg-white border-bottom"><h6 class="fw-bold mb-0 text-muted">{{ jogo.time_casa }} x {{ jogo.time_fora }}</h6></div>
+                                <ul class="list-group list-group-flush">
+                                    {% for palpite in jogo.palpites.all %}
+                                    <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
+                                        <div><strong>{{ palpite.usuario.first_name|default:palpite.usuario.username }}</strong><br>
+                                            <span class="mod {{ palpite.modalidade }}">{% if palpite.modalidade == 'pago' %}Valendo prêmio{% elif palpite.modalidade == 'rodada' %}Bolão da Rodada{% else %}Resenha{% endif %}</span></div>
+                                        <span class="fw-bold bg-light px-3 py-2 rounded-3 border" style="font-family:var(--fonte-titulo);font-size:1.6rem;">{{ palpite.gols_casa }} <span class="text-muted fs-6">×</span> {{ palpite.gols_fora }}</span>
+                                    </li>
+                                    {% empty %}
+                                    <li class="list-group-item text-center text-muted py-5 border-0"><i class="fa-solid fa-ghost fs-1 opacity-50 mb-2"></i><h6 class="fw-bold">O silêncio do estádio…</h6><p class="mb-0 small">Ninguém palpitou neste jogo ainda.</p></li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            <div class="modal-footer bg-light border-0 p-3"><button type="button" class="btn btn-secondary fw-bold rounded-pill px-4 w-100" data-bs-dismiss="modal">Fechar</button></div>
+                        </div>
                     </div>
                 </div>
+            </div>
+            {% empty %}
+            <div class="col-12 text-center py-5">
+                <div class="bg-white rounded-4 p-5 mx-auto shadow-sm" style="max-width: 600px;">
+                    <i class="fa-solid fa-calendar-xmark text-muted opacity-50 mb-3" style="font-size: 3rem;"></i>
+                    <h4 class="fw-bold">Agenda vazia</h4>
+                    <p class="text-muted mb-0">Nenhum jogo cadastrado ainda. Avise o Professor!</p>
+                </div>
+            </div>
             {% endfor %}
         </div>
     </div>
 
-    <!-- ========================================== -->
-    <!-- COLUNA LATERAL: PARTICIPANTES ATIVOS       -->
-    <!-- ========================================== -->
     <div class="col-12 col-lg-4 mb-5">
-        <div class="card card-clean border-0 shadow-sm rounded-4 p-4 sticky-top" style="top: 20px;">
-            <div class="text-center mb-4">
-                <h4 class="fw-bold mb-1" style="color: var(--verde-escuro);">Tabela de Inscritos</h4>
-                <p class="text-muted small mb-0">Veja quem já carimbou o passaporte</p>
-            </div>
-            
-            <!-- Lista: Valendo Prêmio -->
-            <div class="mb-4">
-                <h6 class="fw-bold text-success border-bottom border-success border-opacity-25 pb-2 mb-3 text-uppercase" style="font-size: 0.85rem; letter-spacing: 1px;">
-                    <i class="fa-solid fa-trophy text-warning me-1"></i> Valendo Prêmio (R$ 10)
-                </h6>
-                <ul class="list-group list-group-flush gap-1">
-                    {% for jogador in jogadores_pago %}
-                        <li class="list-group-item bg-success bg-opacity-10 border-0 rounded-3 py-2 px-3 fw-bold text-dark d-flex align-items-center shadow-sm">
-                            <i class="fa-solid fa-circle-check text-success me-2"></i> {{ jogador.first_name|default:jogador.username }}
-                        </li>
-                    {% empty %}
-                        <li class="list-group-item text-muted small bg-transparent px-2 border-0 fst-italic">
-                            Nenhum apostador oficial ainda.
-                        </li>
-                    {% endfor %}
-                </ul>
-            </div>
+        <div class="card card-clean border-0 shadow-sm rounded-4 p-4 sticky-top" style="top: 80px;">
+            <h4 class="fw-bold mb-1 text-center" style="color: var(--verde-escuro);">Quem está na disputa</h4>
+            <p class="text-muted small text-center mb-3">Veja quem já carimbou o passaporte</p>
 
-            <!-- Lista: Modo Resenha -->
-            <div>
-                <h6 class="fw-bold text-secondary border-bottom border-secondary border-opacity-25 pb-2 mb-3 text-uppercase" style="font-size: 0.85rem; letter-spacing: 1px;">
-                    <i class="fa-solid fa-face-laugh-squint text-secondary me-1"></i> Modo Resenha (Grátis)
-                </h6>
-                <ul class="list-group list-group-flush gap-1">
-                    {% for jogador in jogadores_resenha %}
-                        <li class="list-group-item bg-light border-0 rounded-3 py-2 px-3 text-muted fw-bold d-flex align-items-center">
-                            <i class="fa-solid fa-user-pen text-secondary me-2"></i> {{ jogador.first_name|default:jogador.username }}
-                        </li>
-                    {% empty %}
-                        <li class="list-group-item text-muted small bg-transparent px-2 border-0 fst-italic">
-                            Ninguém na resenha ainda.
-                        </li>
-                    {% endfor %}
-                </ul>
+            <h6 class="fw-bold text-success border-bottom pb-2 mb-2 text-uppercase small"><i class="fa-solid fa-trophy text-warning me-1"></i> Valendo prêmio (R$ 10)</h6>
+            <div class="d-flex flex-wrap gap-1 mb-3">
+                {% for j in jogadores_pago %}<span class="badge rounded-pill text-bg-success">{{ j.first_name|default:j.username }}</span>{% empty %}<small class="text-muted fst-italic">Nenhum apostador oficial ainda.</small>{% endfor %}
             </div>
+            {% if jogadores_rodada %}
+            <h6 class="fw-bold text-primary border-bottom pb-2 mb-2 text-uppercase small"><i class="fa-solid fa-layer-group me-1"></i> Bolão da Rodada</h6>
+            <div class="d-flex flex-wrap gap-1 mb-3">{% for j in jogadores_rodada %}<span class="badge rounded-pill text-bg-primary">{{ j.first_name|default:j.username }}</span>{% endfor %}</div>
+            {% endif %}
+            <h6 class="fw-bold text-secondary border-bottom pb-2 mb-2 text-uppercase small"><i class="fa-solid fa-face-laugh-squint me-1"></i> Modo resenha (grátis)</h6>
+            <div class="d-flex flex-wrap gap-1">
+                {% for j in jogadores_resenha %}<span class="badge rounded-pill text-bg-secondary">{{ j.first_name|default:j.username }}</span>{% empty %}<small class="text-muted fst-italic">Ninguém na resenha ainda.</small>{% endfor %}
+            </div>
+            <a class="btn btn-success rounded-pill fw-bold mt-4" target="_blank" rel="noopener"
+               href="https://wa.me/?text={{ 'Bora palpitar na Cartolândia! Já cravei os meus, falta você: '|urlencode }}{{ request.build_absolute_uri|urlencode }}"><i class="fa-brands fa-whatsapp"></i> Chamar a galera</a>
         </div>
     </div>
 </div>
 
-<!-- Script para ocultar/mostrar jogos encerrados -->
+<form id="csrfRapido">{% csrf_token %}</form>
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const toggle = document.getElementById('toggleEncerrados');
-        const jogosEncerrados = document.querySelectorAll('.jogo-encerrado');
+(function () {
+    // ---------- filtros ----------
+    const cards = [...document.querySelectorAll('.jogo-card')];
+    const botoes = [...document.querySelectorAll('#filtros button')];
+    function contar() {
+        botoes.forEach(b => {
+            const f = b.dataset.f;
+            b.querySelector('.n').textContent = f === 'todos' ? cards.length : cards.filter(c => c.dataset.estado === f).length;
+        });
+    }
+    function aplicar(f) {
+        cards.forEach(c => { c.style.display = (f === 'todos' || c.dataset.estado === f) ? '' : 'none'; });
+        botoes.forEach(b => b.classList.toggle('ativo', b.dataset.f === f));
+        try { localStorage.setItem('arenaFiltro', f); } catch (e) {}
+    }
+    botoes.forEach(b => b.addEventListener('click', () => aplicar(b.dataset.f)));
+    contar();
+    let inicial = 'todos';
+    try { inicial = localStorage.getItem('arenaFiltro') || 'todos'; } catch (e) {}
+    if (!botoes.some(b => b.dataset.f === inicial && b.querySelector('.n').textContent !== '0')) inicial = 'todos';
+    aplicar(inicial);
 
-        // Verifica se o usuário já tinha marcado para ocultar antes (salvo no navegador localmente)
-        const hideEncerrados = localStorage.getItem('ocultarJogosEncerrados') === 'true';
-        
-        // Aplica o estado inicial da interface e da renderização
-        if (hideEncerrados) {
-            toggle.checked = true;
-            jogosEncerrados.forEach(el => el.style.display = 'none');
-        }
+    // ---------- contagem regressiva ----------
+    function fmt(ms) {
+        const s = Math.max(0, Math.floor(ms / 1000)), d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600), m = Math.floor(s % 3600 / 60), seg = s % 60;
+        if (d) return d + 'd ' + h + 'h';
+        if (h) return h + 'h ' + String(m).padStart(2, '0') + 'm';
+        return String(m).padStart(2, '0') + ':' + String(seg).padStart(2, '0');
+    }
+    function tique() {
+        document.querySelectorAll('.cd').forEach(el => {
+            const falta = new Date(el.dataset.fecha).getTime() - Date.now();
+            if (falta <= 0) { el.closest('.chip').className = 'chip verm'; el.closest('.chip').textContent = 'Fechado'; return; }
+            el.textContent = fmt(falta);
+        });
+    }
+    tique(); setInterval(tique, 1000);
 
-        // Fica ouvindo as mudanças no switch para alternar entre as visões
-        toggle.addEventListener('change', function() {
-            if (this.checked) {
-                // Ocultar da tela
-                jogosEncerrados.forEach(el => {
-                    el.style.opacity = '0';
-                    setTimeout(() => el.style.display = 'none', 200);
-                });
-                localStorage.setItem('ocultarJogosEncerrados', 'true');
-            } else {
-                // Mostrar na tela
-                jogosEncerrados.forEach(el => {
-                    el.style.display = '';
-                    setTimeout(() => el.style.opacity = '1', 50);
-                }); 
-                localStorage.setItem('ocultarJogosEncerrados', 'false');
-            }
+    // ---------- stepper + palpite rápido ----------
+    const csrf = () => document.querySelector('#csrfRapido [name=csrfmiddlewaretoken]').value;
+    document.querySelectorAll('.form-rapido').forEach(form => {
+        form.querySelectorAll('.grupo').forEach(g => {
+            const input = g.querySelector('input');
+            g.querySelectorAll('button.mm').forEach(b => b.addEventListener('click', () => {
+                input.value = Math.min(20, Math.max(0, (parseInt(input.value, 10) || 0) + parseInt(b.dataset.d, 10)));
+                form.querySelector('.btn-cravar').classList.remove('salvo');
+                form.querySelector('.rotulo').textContent = 'Cravar palpite';
+            }));
+            input.addEventListener('input', () => { input.value = input.value.replace(/\D/g, '').slice(0, 2); });
+            input.addEventListener('focus', () => input.select());
+        });
+        form.addEventListener('submit', async e => {
+            e.preventDefault();
+            const botao = form.querySelector('.btn-cravar'), msg = form.querySelector('.msg-rapido');
+            botao.disabled = true;
+            try {
+                const dados = new FormData(form);
+                const r = await fetch(form.dataset.url, {method: 'POST', headers: {'X-CSRFToken': csrf()}, body: dados});
+                const j = await r.json();
+                if (j.ok) {
+                    botao.classList.add('salvo'); form.querySelector('.rotulo').textContent = 'Palpite salvo ✔';
+                    msg.textContent = j.mensagem;
+                    const rect = botao.getBoundingClientRect(); confete(rect.left + rect.width / 2, rect.top);
+                } else { msg.textContent = j.erro || 'Não foi possível salvar.'; msg.className = msg.className.replace('text-success', '') + ' text-danger'; }
+            } catch (err) { msg.textContent = 'Sem conexão. Tente de novo.'; }
+            finally { botao.disabled = false; }
         });
     });
+
+    // ---------- confete ----------
+    const canvas = document.getElementById('confete'), ctx = canvas.getContext('2d');
+    function confete(x, y) {
+        canvas.width = innerWidth; canvas.height = innerHeight;
+        const cores = ['#fde047', '#22c55e', '#38bdf8', '#f43f5e', '#fff', '#a78bfa'];
+        const p = Array.from({length: 70}, () => ({x, y, vx: (Math.random() - .5) * 11, vy: -Math.random() * 11 - 3, g: .35, s: 4 + Math.random() * 5, c: cores[Math.floor(Math.random() * cores.length)], r: Math.random() * 6, vr: (Math.random() - .5) * .4, t: 0}));
+        (function quadro() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            let vivo = false;
+            p.forEach(o => { o.t++; o.vy += o.g; o.x += o.vx; o.y += o.vy; o.r += o.vr; if (o.y < canvas.height + 20 && o.t < 110) { vivo = true; ctx.save(); ctx.translate(o.x, o.y); ctx.rotate(o.r); ctx.fillStyle = o.c; ctx.globalAlpha = Math.max(0, 1 - o.t / 110); ctx.fillRect(-o.s / 2, -o.s / 2, o.s, o.s * .6); ctx.restore(); } });
+            if (vivo) requestAnimationFrame(quadro); else ctx.clearRect(0, 0, canvas.width, canvas.height);
+        })();
+    }
+    // cravadas ainda não comemoradas: confete uma única vez por jogo
+    document.querySelectorAll('[data-confete]').forEach(el => {
+        const chave = 'confete-' + el.dataset.confete;
+        let visto = false; try { visto = localStorage.getItem(chave); } catch (e) {}
+        if (!visto) { const r = el.getBoundingClientRect(); setTimeout(() => confete(r.left + r.width / 2, r.top + r.height / 2), 400); try { localStorage.setItem(chave, '1'); } catch (e) {} }
+    });
+})();
 </script>
 {% endblock %}

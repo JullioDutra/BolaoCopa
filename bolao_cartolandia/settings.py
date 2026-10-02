@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     'modocarreira', # <-- ADICIONADO O NOVO APP AQUI!
     'melhores',     # Bet dos Melhores do Ano (Cartola Coins)
     'futebol',      # Dados de futebol, pesquisa e comparativo de times
+    'avisos',       # Notificações push + caixa de entrada + WhatsApp
 ]
 
 MIDDLEWARE = [
@@ -232,6 +233,14 @@ FOOTBALL_DATA_TOKEN = os.environ.get('FOOTBALL_DATA_TOKEN')
 # Outras fontes de dados de futebol (todas opcionais; sem chave a fonte simplesmente é ignorada)
 APIFOOTBALL_KEY = os.environ.get('APIFOOTBALL_KEY')       # api-sports.io (grátis: 100 req/dia)
 THESPORTSDB_KEY = os.environ.get('THESPORTSDB_KEY')       # vazio = chave pública de testes
+
+# Notificações push (gere com: python manage.py gerar_vapid). Sem as chaves, só a caixa de entrada do site funciona.
+VAPID_PUBLIC_KEY = os.environ.get('VAPID_PUBLIC_KEY')
+VAPID_PRIVATE_KEY = os.environ.get('VAPID_PRIVATE_KEY')
+VAPID_EMAIL = os.environ.get('VAPID_EMAIL', 'mailto:contato@cartolandia.app')
+
+# Link de convite do grupo do WhatsApp (aparece no dashboard e na central de avisos)
+WHATSAPP_GRUPO_URL = os.environ.get('WHATSAPP_GRUPO_URL', '')
 
 # Token secreto do endpoint /palpites/api/sincronizar/<token>/ (para cron externo).
 # Sem a variável definida o endpoint fica desligado.

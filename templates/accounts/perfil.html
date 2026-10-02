@@ -38,9 +38,25 @@
     <div class="col-6 col-md-3"><div class="mini-stat"><div class="n">{{ acertos }}/{{ total_palpites }}</div><small>Palpites certos</small></div></div>
 </div>
 
+<div class="card card-clean p-3 mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-2"><h5 class="mb-0"><i class="fa-solid fa-medal text-warning"></i> Conquistas</h5>
+        <small class="text-muted">cada uma rende 🪙 25</small></div>
+    <div class="row g-2">
+        {% for c in conquistas %}
+        <div class="col-6 col-md-4 col-lg-3">
+            <div class="d-flex gap-2 align-items-center p-2 rounded-3 h-100" style="background:{% if c.ganha %}#fffbeb{% else %}#f3f4f6{% endif %};{% if not c.ganha %}opacity:.6;{% endif %}" title="{{ c.descricao }}">
+                <span class="d-inline-flex align-items-center justify-content-center rounded-circle flex-none" style="width:38px;height:38px;flex:none;background:{% if c.ganha %}{{ c.cor }}{% else %}#9ca3af{% endif %};color:#fff;"><i class="fa-solid {% if c.ganha %}{{ c.icone }}{% else %}fa-lock{% endif %}"></i></span>
+                <div style="line-height:1.15;"><div class="fw-bold small">{{ c.nome }}</div><div class="text-muted" style="font-size:.68rem;">{{ c.descricao }}</div></div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
 <ul class="nav nav-pills mb-3 gap-2" role="tablist">
     <li class="nav-item"><a class="nav-link {% if aba == 'dados' %}active{% endif %} fw-bold rounded-pill" href="?aba=dados"><i class="fa-solid fa-id-card me-1"></i> Meus dados</a></li>
     <li class="nav-item"><a class="nav-link {% if aba == 'seguranca' %}active{% endif %} fw-bold rounded-pill" href="?aba=seguranca"><i class="fa-solid fa-shield-halved me-1"></i> Segurança</a></li>
+    <li class="nav-item"><a class="nav-link fw-bold rounded-pill" href="{% url 'avisos:central' %}"><i class="fa-solid fa-bell me-1"></i> Notificações</a></li>
 </ul>
 
 {% if aba == 'dados' %}

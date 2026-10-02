@@ -14,7 +14,7 @@ def tema_e_coins(request):
     Se as tabelas novas ainda não foram migradas (deploy sem `migrate`), o site
     continua no ar com o tema padrão em vez de quebrar todas as páginas.
     """
-    padrao = {'tema': tema_padrao(), 'coins_saldo': None, 'perfil': None}
+    padrao = {'tema': tema_padrao(), 'coins_saldo': None, 'perfil': None, 'avisos_nao_lidos': 0}
     user = getattr(request, 'user', None)
     if user is None or not user.is_authenticated:
         return padrao
@@ -22,6 +22,8 @@ def tema_e_coins(request):
     try:
         perfil = PerfilUsuario.objects.select_related('time_coracao').filter(usuario=user).first()
         saldo = CarteiraCoins.objects.filter(usuario=user).values_list('saldo', flat=True).first()
+        from avisos.models import Notificacao
+        nao_lidos = Notificacao.objects.filter(usuario=user, lida=False).count()
     except DatabaseError:
         padrao['coins_saldo'] = CarteiraCoins.SALDO_INICIAL
         return padrao
@@ -34,4 +36,4 @@ def tema_e_coins(request):
     if saldo is None:
         saldo = CarteiraCoins.SALDO_INICIAL  # a carteira é criada no primeiro uso real
 
-    return {'tema': tema, 'coins_saldo': saldo, 'perfil': perfil}
+    return {'tema': tema, 'coins_saldo': saldo, 'perfil': perfil, 'avisos_nao_lidos': nao_lidos}

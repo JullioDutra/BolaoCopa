@@ -1,172 +1,171 @@
 {% extends 'base.html' %}
-{% block title %}Registrar Palpite - Cartolândia{% endblock %}
+{% block title %}Palpite: {{ jogo.time_casa }} x {{ jogo.time_fora }} - Cartolândia{% endblock %}
 
 {% block content %}
 <style>
-    /* COMPORTAMENTO MOBILE (Padrão) */
-    .caixa-placar input {
-        font-size: 1.8rem !important; 
-        font-weight: 900 !important;  
-        height: 55px;
-        width: 50px !important; /* Mais fino no celular para caber perfeitamente */
-        text-align: center;
-        border: 2px solid #dee2e6;
-        border-radius: 12px;
-        color: var(--verde-escuro, #1a1a1a);
-        background-color: #f8f9fa;
-        box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
-        padding: 0;
-        transition: all 0.2s ease-in-out;
-    }
-    
-    .team-logo-palpite {
-        max-height: 45px; /* Escudo menor no celular */
-        object-fit: contain;
-    }
-
-    /* COMPORTAMENTO TABLET E DESKTOP */
-    @media (min-width: 576px) {
-        .caixa-placar input {
-            height: 70px;
-            width: 70px !important;
-            font-size: 2.5rem !important;
-            border-radius: 16px;
-        }
-        .team-logo-palpite {
-            max-height: 65px; /* Escudo volta ao tamanho normal */
-        }
-    }
-    
-    .caixa-placar input:focus {
-        border-color: #198754; 
-        background-color: #ffffff;
-        box-shadow: 0 0 0 4px rgba(25, 135, 84, 0.2);
-        outline: none;
-    }
-
-    /* Esconde setinhas nativas do tipo number */
-    .caixa-placar input[type=number]::-webkit-inner-spin-button, 
-    .caixa-placar input[type=number]::-webkit-outer-spin-button { 
-        -webkit-appearance: none; 
-        margin: 0; 
-    }
-    .caixa-placar input[type=number] {
-        -moz-appearance: textfield;
-    }
+    .duelo { color:#fff; border-radius: 22px; padding: 20px 14px 22px; position:relative; overflow:hidden; background: linear-gradient(100deg, {{ cor_casa }} 0 47%, #0f172a 49%, {{ cor_fora }} 51% 100%); box-shadow: 0 12px 30px rgba(0,0,0,.2); }
+    .duelo::after { content:""; position:absolute; inset:0; background: radial-gradient(circle at 50% -25%, rgba(255,255,255,.3), transparent 60%); pointer-events:none; }
+    .duelo > * { position:relative; z-index:1; }
+    .duelo .lado { text-align:center; }
+    .duelo .escudo { width: 78px; height: 78px; border-radius:50%; background:#fff; margin: 0 auto 8px; display:flex; align-items:center; justify-content:center; box-shadow: 0 6px 14px rgba(0,0,0,.35); overflow:hidden; }
+    .duelo .escudo img { max-width: 56px; max-height: 56px; object-fit: contain; }
+    .duelo .nome { font-family: var(--fonte-titulo); font-weight:800; font-size: 1.5rem; line-height:1; text-transform: uppercase; text-shadow: 0 2px 6px rgba(0,0,0,.5); }
+    .placar-input { display:flex; align-items:center; justify-content:center; gap:10px; }
+    .placar-input .col-p { display:flex; flex-direction:column; align-items:center; gap:6px; }
+    .placar-input input { width: 74px !important; height: 84px; text-align:center; font-family: var(--fonte-titulo); font-weight:800; font-size: 3.2rem !important; border: 3px solid rgba(255,255,255,.85); border-radius: 18px; background: rgba(255,255,255,.95); color: #0f172a; padding:0; box-shadow: 0 8px 20px rgba(0,0,0,.3); }
+    .placar-input input:focus { outline:none; box-shadow: 0 0 0 5px rgba(253,224,71,.65); }
+    .placar-input input[type=number]::-webkit-inner-spin-button, .placar-input input[type=number]::-webkit-outer-spin-button { -webkit-appearance:none; margin:0; }
+    .placar-input input[type=number] { -moz-appearance: textfield; }
+    .mm { width: 40px; height:40px; border-radius:50%; border:0; background: rgba(0,0,0,.4); color:#fff; font-weight:800; font-size:1.3rem; line-height:1; }
+    .mm:active { transform: scale(.9); }
+    .xx { font-family: var(--fonte-titulo); font-weight:800; font-size: 2.2rem; opacity:.8; }
+    .painel { background:#fff; border-radius: 18px; box-shadow: 0 4px 14px rgba(0,0,0,.06); }
+    .forma { display:inline-flex; gap:4px; }
+    .forma span { width:26px; height:26px; border-radius:7px; color:#fff; font-weight:800; font-size:.78rem; display:inline-flex; align-items:center; justify-content:center; }
+    .forma .V { background:#16a34a; } .forma .E { background:#9ca3af; } .forma .D { background:#dc2626; }
+    .barra-p { display:flex; height: 12px; border-radius: 50rem; overflow:hidden; background:#e5e7eb; }
+    .barra-p span:nth-child(1) { background: {{ cor_casa }}; } .barra-p span:nth-child(2) { background:#9ca3af; } .barra-p span:nth-child(3) { background: {{ cor_fora }}; }
+    #confete2 { position: fixed; inset:0; pointer-events:none; z-index:2000; }
 </style>
+<canvas id="confete2"></canvas>
 
-<div class="row justify-content-center align-items-center min-vh-75 mt-4 mb-5 px-2">
-    <div class="col-12 col-md-8 col-lg-7">
-        <div class="card card-clean p-3 p-sm-4 p-md-5 shadow-lg border-0 rounded-4 bg-white text-center">
-            
-            <!-- CABEÇALHO CONDICIONAL -->
+<div class="row justify-content-center mt-3 mb-5">
+    <div class="col-12 col-lg-8 col-xl-7">
+
+        <div class="text-center mb-3">
             {% if palpite_existente %}
-                <div class="mb-4">
-                    <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-2 border border-primary mb-3 shadow-sm">
-                        <i class="fa-solid fa-pen-to-square"></i> Editando Palpite
-                    </span>
-                    <p class="text-muted small mb-0">
-                        Você já palpitou: <strong class="text-dark fs-6">{{ palpite_existente.gols_casa }} x {{ palpite_existente.gols_fora }}</strong>
-                    </p>
-                    <p class="text-muted small mb-0">
-                        Modo <span class="fw-bold">{{ palpite_existente.modalidade|title }}</span>. Altere abaixo se desejar.
-                    </p>
-                </div>
+                <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-2 border border-primary"><i class="fa-solid fa-pen-to-square"></i> Editando · você palpitou {{ palpite_existente.gols_casa }} x {{ palpite_existente.gols_fora }} ({% if palpite_existente.modalidade == 'rodada' %}Bolão da Rodada{% else %}{{ palpite_existente.get_modalidade_display }}{% endif %})</span>
             {% else %}
-                <div class="mb-4">
-                    <h3 class="fw-bold mb-1" style="color: var(--verde-escuro);">
-                        <i class="fa-solid fa-futbol text-success"></i> Novo Palpite
-                    </h3>
-                    <p class="text-muted small">Qual será o placar desse jogão?</p>
-                </div>
+                <h2 class="mb-0" style="color: var(--verde-escuro);">Qual será o placar?</h2>
             {% endif %}
-            
-            <!-- DATA DO JOGO -->
-            <div class="mb-4">
-                <span class="badge bg-light text-secondary border rounded-pill px-3 py-2 shadow-sm">
-                    <i class="fa-regular fa-calendar-days text-success"></i> {{ jogo.data_hora|date:"d/m/Y às H:i" }}
-                </span>
-            </div>
-
-            <form method="POST">
-                {% csrf_token %}
-                
-                <!-- ÁREA DO PLACAR (FLEXBOX MILIMÉTRICO) -->
-                <div class="d-flex flex-row align-items-center justify-content-between mb-4 w-100">
-                    
-                    <!-- Time da Casa (Ocupa 30% da tela) -->
-                    <div class="d-flex flex-column align-items-center text-center" style="width: 30%;">
-                        {% if jogo.escudo_casa_src %}
-                            <img src="{{ jogo.escudo_casa_src }}" class="img-fluid mb-2 team-logo-palpite">
-                        {% else %}
-                            <div class="bg-light rounded-circle mb-2 d-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
-                                <i class="fa-solid fa-shield-halved text-muted fs-5"></i>
-                            </div>
-                        {% endif %}
-                        <h6 class="fw-bold text-truncate w-100 mb-0 px-1" style="font-size: 0.85rem;" title="{{ jogo.time_casa }}">{{ jogo.time_casa }}</h6>
-                    </div>
-                    
-                    <!-- Campos de Gols (Ocupa 40% da tela) -->
-                    <div class="d-flex flex-row justify-content-center align-items-center gap-1 gap-sm-3" style="width: 40%;">
-                        <div class="caixa-placar">
-                            {{ form.gols_casa }}
-                        </div>
-                        
-                        <span class="fw-bold text-muted fs-6 fs-sm-5 mx-1">X</span>
-                        
-                        <div class="caixa-placar">
-                            {{ form.gols_fora }}
-                        </div>
-                    </div>
-                    
-                    <!-- Time de Fora (Ocupa 30% da tela) -->
-                    <div class="d-flex flex-column align-items-center text-center" style="width: 30%;">
-                        {% if jogo.escudo_fora_src %}
-                            <img src="{{ jogo.escudo_fora_src }}" class="img-fluid mb-2 team-logo-palpite">
-                        {% else %}
-                            <div class="bg-light rounded-circle mb-2 d-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
-                                <i class="fa-solid fa-shield-halved text-muted fs-5"></i>
-                            </div>
-                        {% endif %}
-                        <h6 class="fw-bold text-truncate w-100 mb-0 px-1" style="font-size: 0.85rem;" title="{{ jogo.time_fora }}">{{ jogo.time_fora }}</h6>
-                    </div>
-                    
-                </div>
-
-                <!-- ERROS DO FORMULÁRIO -->
-                {% if form.errors %}
-                    <div class="alert alert-danger rounded-3 py-2 small shadow-sm text-start">
-                        <i class="fa-solid fa-triangle-exclamation"></i> Verifique os valores inseridos.
-                    </div>
-                {% endif %}
-
-                <!-- BOTÕES DE AÇÃO -->
-                <div class="d-grid gap-3 d-md-flex justify-content-md-center mt-4 pt-4 border-top">
-                    <button type="submit" name="tipo_aposta" value="resenha" class="btn btn-outline-secondary btn-lg rounded-pill shadow-sm fw-bold px-4">
-                        <i class="fa-regular fa-face-laugh-squint"></i>
-                        {% if palpite_existente %} Atualizar Resenha{% else %} Palpite Resenha (Grátis){% endif %}
-                    </button>
-                    
-                    {% if rodada_inscrito %}
-                    <button type="submit" name="tipo_aposta" value="rodada" class="btn btn-primary btn-lg rounded-pill shadow fw-bold px-4 text-uppercase" style="letter-spacing: 0.5px;">
-                        <i class="fa-solid fa-trophy text-warning"></i>
-                        {% if palpite_existente.modalidade == 'rodada' %} Atualizar no Bolão da Rodada{% else %} Valer no Bolão da Rodada{% endif %}
-                    </button>
-                    {% endif %}
-                    <button type="submit" name="tipo_aposta" value="pago" class="btn btn-success btn-lg rounded-pill shadow fw-bold px-4 text-uppercase" style="letter-spacing: 0.5px;">
-                        <i class="fa-solid fa-sack-dollar text-warning"></i>
-                        {% if palpite_existente %} Atualizar Cota{% else %} Valendo R$ 10,00{% endif %}
-                    </button>
-                </div>
-            </form>
-            
-            <div class="mt-4 pt-2">
-                <a href="{% url 'palpites:listar_jogos' %}" class="btn btn-link text-muted text-decoration-none fw-bold small">
-                    <i class="fa-solid fa-arrow-left me-1"></i> Voltar para a lista de jogos
-                </a>
-            </div>
-            
+            <div class="small text-muted mt-2"><i class="fa-regular fa-calendar"></i> {{ jogo.data_hora|date:"l, d/m 'às' H:i" }} · fecha em <b id="cdDetalhe" data-fecha="{{ jogo.fecha_em|date:'c' }}">--</b></div>
         </div>
+
+        <form method="POST" id="formPalpite">
+            {% csrf_token %}
+            <div class="duelo mb-3">
+                <div class="d-flex align-items-start justify-content-between gap-2">
+                    <div class="lado" style="flex:1;">
+                        <div class="escudo">{% if jogo.escudo_casa_src %}<img src="{{ jogo.escudo_casa_src }}" alt="">{% else %}<i class="fa-solid fa-shield-halved text-secondary fs-2"></i>{% endif %}</div>
+                        <div class="nome">{{ jogo.time_casa }}</div>
+                    </div>
+                    <div class="lado" style="flex:1;">
+                        <div class="escudo">{% if jogo.escudo_fora_src %}<img src="{{ jogo.escudo_fora_src }}" alt="">{% else %}<i class="fa-solid fa-shield-halved text-secondary fs-2"></i>{% endif %}</div>
+                        <div class="nome">{{ jogo.time_fora }}</div>
+                    </div>
+                </div>
+                <div class="placar-input mt-3">
+                    <div class="col-p"><button type="button" class="mm" data-alvo="id_gols_casa" data-d="1" aria-label="mais um gol">+</button>{{ form.gols_casa }}<button type="button" class="mm" data-alvo="id_gols_casa" data-d="-1" aria-label="menos um gol">−</button></div>
+                    <span class="xx">×</span>
+                    <div class="col-p"><button type="button" class="mm" data-alvo="id_gols_fora" data-d="1" aria-label="mais um gol">+</button>{{ form.gols_fora }}<button type="button" class="mm" data-alvo="id_gols_fora" data-d="-1" aria-label="menos um gol">−</button></div>
+                </div>
+            </div>
+
+            {% if form.errors %}<div class="alert alert-danger rounded-3 py-2 small"><i class="fa-solid fa-triangle-exclamation"></i> Verifique os valores inseridos.</div>{% endif %}
+
+            <div class="d-grid gap-2 mb-2">
+                <button type="submit" name="tipo_aposta" value="resenha" class="btn btn-outline-secondary btn-lg rounded-pill fw-bold">
+                    <i class="fa-solid fa-face-laugh-squint"></i> {% if palpite_existente %}Atualizar na Resenha{% else %}Palpite Resenha (grátis){% endif %}
+                </button>
+                {% if rodada_inscrito %}
+                <button type="submit" name="tipo_aposta" value="rodada" class="btn btn-primary btn-lg rounded-pill fw-bold text-uppercase">
+                    <i class="fa-solid fa-trophy text-warning"></i> {% if palpite_existente.modalidade == 'rodada' %}Atualizar no Bolão da Rodada{% else %}Valer no Bolão da Rodada{% endif %}
+                </button>
+                {% endif %}
+                <button type="submit" name="tipo_aposta" value="pago" class="btn btn-success btn-lg rounded-pill fw-bold text-uppercase">
+                    <i class="fa-solid fa-sack-dollar text-warning"></i> {% if palpite_existente %}Atualizar cota{% else %}Valendo R$ 10,00{% endif %}
+                </button>
+            </div>
+        </form>
+
+        {% if palpite_existente %}
+        <a class="btn btn-sm btn-outline-success rounded-pill fw-bold mb-3" target="_blank" rel="noopener"
+           href="https://wa.me/?text={{ 'Cravei '|urlencode }}{{ jogo.time_casa|urlencode }}%20{{ palpite_existente.gols_casa }}%20x%20{{ palpite_existente.gols_fora }}%20{{ jogo.time_fora|urlencode }}{{ '! E você, vai palpitar o quê? '|urlencode }}{{ request.build_absolute_uri|urlencode }}">
+            <i class="fa-brands fa-whatsapp"></i> Mostrar meu palpite pra galera</a>
+        {% endif %}
+
+        {% if galera %}
+        <div class="painel p-3 mb-3">
+            <b><i class="fa-solid fa-users"></i> A galera acha</b>
+            <div class="d-flex justify-content-between small fw-bold mt-2"><span>{{ galera.casa }}% {{ jogo.time_casa }}</span><span>{{ galera.empate }}% empate</span><span>{{ galera.fora }}% {{ jogo.time_fora }}</span></div>
+            <div class="barra-p mt-1"><span style="width:{{ galera.casa }}%"></span><span style="width:{{ galera.empate }}%"></span><span style="width:{{ galera.fora }}%"></span></div>
+        </div>
+        {% endif %}
+
+        <div class="painel p-3 mb-3" id="raioX">
+            <div class="d-flex justify-content-between align-items-center mb-2"><b><i class="fa-solid fa-chart-line text-success"></i> Raio‑X do jogo</b><small class="text-muted" id="rxFontes"></small></div>
+            <div id="rxCorpo" class="text-muted small"><i class="fa-solid fa-spinner fa-spin me-1"></i> Buscando forma, confronto direto e previsão…</div>
+        </div>
+
+        <div class="text-center"><a href="{% url 'palpites:listar_jogos' %}" class="btn btn-link text-muted text-decoration-none fw-bold small"><i class="fa-solid fa-arrow-left me-1"></i> Voltar para a lista de jogos</a></div>
     </div>
 </div>
+
+<script>
+(function () {
+    // ----- botões + / −
+    document.querySelectorAll('.mm').forEach(b => b.addEventListener('click', () => {
+        const el = document.getElementById(b.dataset.alvo);
+        el.value = Math.min(20, Math.max(0, (parseInt(el.value, 10) || 0) + parseInt(b.dataset.d, 10)));
+    }));
+    document.querySelectorAll('.placar-input input').forEach(i => i.addEventListener('focus', () => i.select()));
+
+    // ----- contagem regressiva
+    const cd = document.getElementById('cdDetalhe');
+    function tique() {
+        const s = Math.floor((new Date(cd.dataset.fecha).getTime() - Date.now()) / 1000);
+        if (s <= 0) { cd.textContent = 'fechado'; return; }
+        const d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600), m = Math.floor(s % 3600 / 60), seg = s % 60;
+        cd.textContent = d ? d + 'd ' + h + 'h' : (h ? h + 'h ' + String(m).padStart(2, '0') + 'm' : String(m).padStart(2, '0') + ':' + String(seg).padStart(2, '0'));
+    }
+    tique(); setInterval(tique, 1000);
+
+    // ----- Raio-X (carrega depois da página)
+    const corpo = document.getElementById('rxCorpo');
+    const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt !== undefined) e.textContent = txt; return e; };
+    function linhaForma(titulo, lista) {
+        const l = el('div', 'd-flex align-items-center justify-content-between py-2 border-top');
+        l.appendChild(el('span', 'fw-bold small', titulo));
+        const f = el('span', 'forma');
+        if (!lista.length) f.appendChild(el('span', 'text-muted small', 'sem dados'));
+        lista.forEach(j => { const s = el('span', j.resultado, j.resultado); s.title = j.casa + ' ' + j.placar + ' ' + j.fora; f.appendChild(s); });
+        l.appendChild(f); return l;
+    }
+    fetch("{% url 'futebol:api_raio_x' jogo.id %}").then(r => r.json()).then(d => {
+        corpo.textContent = ''; corpo.className = 'small';
+        if (d.previsao && d.previsao.casa !== null) {
+            const p = el('div', 'mb-2');
+            p.appendChild(el('div', 'fw-bold mb-1', 'Previsão (API‑Football)'));
+            const barra = el('div', 'barra-p');
+            [d.previsao.casa, d.previsao.empate, d.previsao.fora].forEach(v => { const s = el('span'); s.style.width = (v || 0) + '%'; barra.appendChild(s); });
+            p.appendChild(barra);
+            p.appendChild(el('div', 'd-flex justify-content-between fw-bold mt-1', ''));
+            const leg = p.lastChild;
+            leg.appendChild(el('span', '', d.previsao.casa + '% ' + d.casa)); leg.appendChild(el('span', '', d.previsao.empate + '% emp.')); leg.appendChild(el('span', '', d.previsao.fora + '% ' + d.fora));
+            if (d.previsao.conselho) p.appendChild(el('div', 'text-muted mt-1', '💡 ' + d.previsao.conselho));
+            corpo.appendChild(p);
+        }
+        if (d.tabela) {
+            const t = el('div', 'd-flex justify-content-between py-2 border-top');
+            t.appendChild(el('span', 'fw-bold', d.tabela.casa.posicao + 'º ' + d.casa + ' (' + d.tabela.casa.pontos + ' pts)'));
+            t.appendChild(el('span', 'fw-bold', d.tabela.fora.posicao + 'º ' + d.fora + ' (' + d.tabela.fora.pontos + ' pts)'));
+            corpo.appendChild(t);
+        }
+        corpo.appendChild(linhaForma(d.casa + ' — últimos jogos', d.forma_casa));
+        corpo.appendChild(linhaForma(d.fora + ' — últimos jogos', d.forma_fora));
+        if (d.h2h && d.h2h.length) {
+            const h = el('div', 'pt-2 border-top');
+            const r = d.resumo_h2h;
+            h.appendChild(el('div', 'fw-bold mb-1', 'Confronto direto' + (r ? ' — ' + r.casa + 'V ' + d.casa + ' · ' + r.empates + 'E · ' + r.fora + 'V ' + d.fora : '')));
+            d.h2h.slice(0, 5).forEach(j => h.appendChild(el('div', 'text-muted', j.data + ' — ' + j.casa + ' ' + j.placar + ' ' + j.fora)));
+            corpo.appendChild(h);
+        }
+        [['lesoes_casa', d.casa], ['lesoes_fora', d.fora]].forEach(([k, nome]) => {
+            if (d[k] && d[k].length) corpo.appendChild(el('div', 'pt-2 border-top text-danger', '🩹 Desfalques ' + nome + ': ' + d[k].map(x => x.jogador).join(', ')));
+        });
+        if (!corpo.children.length) corpo.appendChild(el('div', 'text-muted', 'Ainda sem dados desses times. Conforme os jogos forem finalizados, o Raio‑X vai ficando mais completo.'));
+        document.getElementById('rxFontes').textContent = 'fontes: ' + d.fontes.join(', ');
+    }).catch(() => { corpo.textContent = 'Raio‑X indisponível agora.'; });
+})();
+</script>
 {% endblock %}

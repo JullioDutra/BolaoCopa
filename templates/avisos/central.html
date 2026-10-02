@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% block title %}Avisos - Cartolândia{% endblock %}
+
+{% block content %}
+<style>
+    .aviso { display:flex; gap:12px; padding: 14px 16px; border-top: 1px solid #eef2ef; text-decoration:none; color:#111; }
+    .aviso:first-child { border-top:0; }
+    .aviso:hover { background:#f8faf9; color:#111; }
+    .aviso .ic { width:42px; height:42px; border-radius:12px; display:flex; align-items:center; justify-content:center; flex:none; color:#fff; font-size:1.1rem; }
+</style>
+<form id="csrfForm">{% csrf_token %}</form>
+
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <h3 class="mb-0"><i class="fa-solid fa-bell text-success"></i> Avisos</h3>
+    <div class="d-flex gap-2 flex-wrap">
+        {% if grupo_url %}<a href="{{ grupo_url }}" target="_blank" rel="noopener" class="btn btn-success rounded-pill fw-bold"><i class="fa-brands fa-whatsapp"></i> Grupo do WhatsApp</a>{% endif %}
+        <form method="post" action="{% url 'avisos:testar' %}">{% csrf_token %}<button class="btn btn-outline-secondary rounded-pill fw-bold"><i class="fa-solid fa-paper-plane"></i> Enviar teste</button></form>
+    </div>
+</div>
+
+<div class="card card-clean p-3 mb-4" id="cartaoPush">
+    <div class="d-flex align-items-center gap-3 flex-wrap">
+        <div class="fs-2"><i class="fa-solid fa-mobile-screen-button text-success"></i></div>
+        <div class="flex-grow-1">
+            <div class="fw-bold" id="pushTitulo">Notificações no celular</div>
+            <div class="small text-muted" id="pushTexto">Receba lembrete de palpite, resultado dos seus jogos e avisos da staff — mesmo com o app fechado.</div>
+        </div>
+        <button class="btn btn-success rounded-pill fw-bold px-4" id="btnPush" type="button">Ativar neste aparelho</button>
+    </div>
+    <div class="small text-muted mt-2 d-none" id="dicaIos"><i class="fa-brands fa-apple"></i> No iPhone: toque em <b>Compartilhar</b> → <b>Adicionar à Tela de Início</b>, abra o app por lá e ative aqui (exige iOS 16.4+).</div>
+</div>
+
+<div class="card card-clean overflow-hidden">
+    {% for a in avisos %}
+    <a class="aviso" href="{{ a.url }}">
+        <div class="ic" style="background: {% if a.tipo == 'resultado' %}#16a34a{% elif a.tipo == 'lembrete' %}#f59e0b{% elif a.tipo == 'staff' %}#dc2626{% elif a.tipo == 'rodada' %}#2563eb{% else %}#6b7280{% endif %};">
+            <i class="fa-solid {% if a.tipo == 'resultado' %}fa-futbol{% elif a.tipo == 'lembrete' %}fa-clock{% elif a.tipo == 'staff' %}fa-bullhorn{% elif a.tipo == 'rodada' %}fa-trophy{% else %}fa-bell{% endif %}"></i></div>
+        <div class="flex-grow-1"><div class="fw-bold">{{ a.titulo }}</div><div class="small text-muted">{{ a.texto }}</div></div>
+        <small class="text-muted text-nowrap">{{ a.criada_em|timesince }}</small>
+    </a>
+    {% empty %}
+    <div class="text-center text-muted py-5"><i class="fa-regular fa-bell-slash fs-1 mb-2"></i><div>Nenhum aviso por enquanto.</div></div>
+    {% endfor %}
+</div>
+
+<script>
+(function () {
+    const btn = document.getElementById('btnPush'), titulo = document.getElementById('pushTitulo'), texto = document.getElementById('pushTexto');
+    const csrf = () => document.querySelector('#csrfForm [name=csrfmiddlewaretoken]').value;
+    const ehIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    const instalado = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+    if (ehIos && !instalado) document.getElementById('dicaIos').classList.remove('d-none');
+
+    function b64ParaBytes(b64) {
+        const pad = '='.repeat((4 - b64.length % 4) % 4);
+        const raw = atob((b64 + pad).replace(/-/g, '+').replace(/_/g, '/'));
+        return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+    }
+    function estado(ativo, msg) {
+        titulo.textContent = ativo ? 'Notificações ativas neste aparelho ✅' : 'Notificações no celular';
+        if (msg) texto.textContent = msg;
+        btn.textContent = ativo ? 'Desativar' : 'Ativar neste aparelho';
+        btn.className = 'btn rounded-pill fw-bold px-4 ' + (ativo ? 'btn-outline-danger' : 'btn-success');
+        btn.dataset.ativo = ativo ? '1' : '';
+    }
+
+    async function registro() { return navigator.serviceWorker.ready; }
+
+    async function inicial() {
+        if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
+            btn.disabled = true; estado(false, ehIos && !instalado ? 'Instale o app na tela inicial para liberar as notificações.' : 'Este navegador não suporta notificações push.'); return;
+        }
+        const cfg = await (await fetch("{% url 'avisos:api_chave' %}")).json();
+        if (!cfg.ativo) { btn.disabled = true; estado(false, 'As notificações push ainda não foram configuradas no servidor (a staff precisa gerar as chaves VAPID). Os avisos continuam chegando aqui.'); return; }
+        const sub = await (await registro()).pushManager.getSubscription();
+        estado(!!sub);
+    }
+
+    btn.addEventListener('click', async () => {
+        btn.disabled = true;
+        try {
+            const reg = await registro();
+            if (btn.dataset.ativo) {
+                const sub = await reg.pushManager.getSubscription();
+                if (sub) {
+                    await fetch("{% url 'avisos:api_cancelar' %}", {method: 'POST', headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrf()}, body: JSON.stringify({endpoint: sub.endpoint})});
+                    await sub.unsubscribe();
+                }
+                estado(false, 'Notificações desligadas neste aparelho.');
+            } else {
+                const perm = await Notification.requestPermission();
+                if (perm !== 'granted') { estado(false, 'Permissão negada. Libere as notificações nas configurações do navegador e tente de novo.'); return; }
+                const cfg = await (await fetch("{% url 'avisos:api_chave' %}")).json();
+                const sub = (await reg.pushManager.getSubscription()) || await reg.pushManager.subscribe({userVisibleOnly: true, applicationServerKey: b64ParaBytes(cfg.chave)});
+                const r = await fetch("{% url 'avisos:api_inscrever' %}", {method: 'POST', headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrf()}, body: JSON.stringify(sub.toJSON())});
+                if (!r.ok) throw new Error('falha ao salvar');
+                estado(true, 'Pronto! Use "Enviar teste" para conferir.');
+            }
+        } catch (e) { estado(false, 'Não deu certo agora. Tente de novo em instantes.'); }
+        finally { btn.disabled = false; }
+    });
+    inicial().catch(() => {});
+})();
+</script>
+{% endblock %}

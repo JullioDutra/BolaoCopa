@@ -202,6 +202,9 @@
             <!-- Ícone de Carteira Rápida no Mobile (Fica à direita) -->
             {% if user.is_authenticated and user.carteira %}
                 <div class="d-lg-none d-flex gap-3 align-items-center">
+                    <a href="{% url 'avisos:central' %}" class="text-decoration-none text-white position-relative" title="Avisos">
+                        <i class="fa-solid fa-bell"></i>{% if avisos_nao_lidos %}<span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:.55rem;">{{ avisos_nao_lidos }}</span>{% endif %}
+                    </a>
                     <a href="{% url 'conta:extrato_coins' %}" class="text-decoration-none text-white fw-bold" title="Cartola Coins">
                         🪙<span class="small ms-1">{{ coins_saldo }}</span>
                     </a>
@@ -286,6 +289,12 @@
                     
                     <ul class="navbar-nav align-items-center gap-3">
                         <li class="nav-item">
+                            <a href="{% url 'avisos:central' %}" class="text-decoration-none text-white position-relative px-2" title="Avisos">
+                                <i class="fa-solid fa-bell fs-5"></i>
+                                {% if avisos_nao_lidos %}<span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:.6rem;">{{ avisos_nao_lidos }}</span>{% endif %}
+                            </a>
+                        </li>
+                        <li class="nav-item">
                             <a href="{% url 'conta:extrato_coins' %}" class="text-decoration-none wallet-chip coins-chip shadow-sm" title="Cartola Coins (moeda virtual)">
                                 🪙 {{ coins_saldo }}
                             </a>
@@ -316,6 +325,10 @@
                                         <i class="fa-solid fa-heart text-danger me-2"></i> Meu time do coração
                                     </a>
                                 </li>
+                                {% if user.is_staff %}
+                                <li><a class="dropdown-item fw-bold py-2" href="{% url 'avisos:staff' %}"><i class="fa-solid fa-bullhorn text-danger me-2"></i> Avisar a galera</a></li>
+                                <li><a class="dropdown-item fw-bold py-2" href="{% url 'conta:staff_links_senha' %}"><i class="fa-solid fa-link text-warning me-2"></i> Links de senha</a></li>
+                                {% endif %}
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
                                     <a class="dropdown-item text-danger fw-bold py-2" href="{% url 'logout' %}">
@@ -475,7 +488,7 @@
         // 1. Registra o Service Worker
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register("{% static 'sw.js' %}")
+                navigator.serviceWorker.register("{% url 'sw' %}", {scope: "/"})
                     .then(reg => console.log('Service Worker registrado com sucesso!'))
                     .catch(err => console.log('Erro ao registrar Service Worker:', err));
             });

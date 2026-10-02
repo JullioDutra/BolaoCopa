@@ -1,5 +1,6 @@
 from datetime import timedelta
 
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.db import DatabaseError
 from django.db.models import Q
@@ -19,6 +20,15 @@ from . import noticias
 def _time_do_usuario(usuario):
     perfil = PerfilUsuario.objects.select_related('time_coracao').filter(usuario=usuario).first()
     return perfil.time_coracao if perfil else None
+
+
+def _resenha_recente(limite=6):
+    try:
+        from avisos.atividade import icone
+        from avisos.models import Atividade
+        return [{'a': a, 'icone': icone(a.tipo)} for a in Atividade.objects.all()[:limite]]
+    except DatabaseError:
+        return []
 
 
 @acesso_liberado_required
@@ -58,6 +68,8 @@ def dashboard_view(request):
         'streak_atual': perfil.streak_dias if perfil else 0,
         'time_coracao': time,
         'jogo_do_time': jogo_do_time,
+        'whatsapp_grupo': getattr(settings, 'WHATSAPP_GRUPO_URL', ''),
+        'resenha': _resenha_recente(),
     }
     return render(request, 'core/dashboard.html', context)
 

@@ -172,7 +172,8 @@ class PerfilTests(TestCase):
         self.assertEqual(coins.saldo(self.u), 1000)
         for resp in ('zico', 'pele'):
             self.client.post(reverse('conta:perfil'), {'acao': 'pergunta', 'pergunta': 'craque', 'resposta': resp})
-        self.assertEqual(coins.saldo(self.u), 1050)
+        # +50 do perfil completo e +25 da conquista "Perfil VIP"
+        self.assertEqual(coins.saldo(self.u), 1000 + 50 + 25)
 
     def test_troca_de_senha_mantem_logado(self):
         r = self.client.post(reverse('conta:perfil'), {'acao': 'senha', 'old_password': 'antiga123',

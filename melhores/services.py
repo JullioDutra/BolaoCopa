@@ -64,9 +64,11 @@ def apostar(usuario, categoria_id, candidato_id, valor, odd_esperada=None):
     if odd_esperada is not None and odd < Decimal(str(odd_esperada)):
         # Levanta dentro do atomic: devolve/debita tudo de volta
         raise OddMudou(f"A odd de {candidato.nome} mudou de {odd_esperada} para {odd}. Confirme de novo.")
-    return Aposta.objects.create(
+    aposta = Aposta.objects.create(
         usuario=usuario, categoria=categoria, candidato=candidato, valor=valor, odd_travada=odd,
     )
+    _publicar_aposta(usuario, f"apostou 🪙 {valor} em {candidato.nome} ({categoria.nome}) @ {odd}")
+    return aposta
 
 
 @transaction.atomic
@@ -99,6 +101,7 @@ def liquidar(categoria_id, candidato_vencedor_id):
             aposta.retorno = aposta.retorno_potencial
             coins.creditar(aposta.usuario, aposta.retorno,
                            f"🏆 Aposta certa! {vencedor.nome} em {categoria.nome} (odd {aposta.odd_travada})")
+            _publicar_aposta(aposta.usuario, f"acertou {vencedor.nome} em {categoria.nome} e levou 🪙 {aposta.retorno}")
             pagos += 1
         else:
             aposta.status = 'perdida'
@@ -126,6 +129,14 @@ def anular(categoria_id):
     categoria.aberta = False
     categoria.save(update_fields=['aberta'])
     _resolver_selecoes_multipla(categoria, None)
+
+
+def _publicar_aposta(usuario, texto):
+    """ Feed + conquistas (só depois de a transação principal confirmar; falhas aqui nunca derrubam a aposta). """
+    from avisos import atividade, conquistas
+    from django.db import transaction as tx
+    tx.on_commit(lambda: (atividade.registrar(usuario, 'aposta', f"🎟️ {atividade.nome_publico(usuario)} {texto}", '/melhores/'),
+                          conquistas.checar(usuario)))
 
 
 def ranking(edicao):
@@ -211,6 +222,7 @@ def apostar_multipla(usuario, edicao_id, selecoes, valor):
     )
     for categoria, candidato, odd in linhas:
         MultiplaSelecao.objects.create(multipla=multipla, categoria=categoria, candidato=candidato, odd_travada=odd)
+    _publicar_aposta(usuario, f"montou uma múltipla de {len(linhas)} seleções @ {multipla.odd_total} (🪙 {valor})")
     return multipla
 
 
@@ -244,4 +256,5 @@ def _recalcular_multipla(multipla):
         multipla.status, multipla.odd_total = 'ganha', odd
         multipla.retorno = int(Decimal(multipla.valor) * odd)
         coins.creditar(multipla.usuario, multipla.retorno, f"🏆 Múltipla vencedora (odd {odd})")
+        _publicar_aposta(multipla.usuario, f"ACERTOU uma múltipla de {len(selecoes)} seleções e levou 🪙 {multipla.retorno}!")
     multipla.save(update_fields=['status', 'retorno', 'odd_total'])

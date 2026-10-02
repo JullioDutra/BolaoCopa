@@ -17,6 +17,13 @@ class ComparativoInvalido(Exception):
     """ Erro de regra com mensagem pronta para o usuário. """
 
 
+def _publicar(usuario, texto, comp_id):
+    from avisos import atividade, conquistas
+    from django.db import transaction as tx
+    tx.on_commit(lambda: (atividade.registrar(usuario, 'voto', f"🗳️ {atividade.nome_publico(usuario)} {texto}", f"/futebol/comparativo/{comp_id}/"),
+                          conquistas.checar(usuario)))
+
+
 def sugerir_titulares(time):
     """ Os 11 iniciais sugeridos (4-3-3): melhores por overall; sem overall, ordem do cadastro. """
     atletas = list(time.atletas.all())
@@ -57,6 +64,7 @@ def criar(criador, time_a, time_b, ids_a, ids_b, titulo='', encerra_em=None):
                 f"Com esses 22 não dá para montar um 4-3-3: faltam {minimo - pool[pos]} jogador(es) de {pos}.")
 
     comp = Comparativo.objects.create(criador=criador, time_a=time_a, time_b=time_b, titulo=titulo.strip()[:120], encerra_em=encerra_em)
+    _publicar(criador, f"abriu a votação do 11 ideal: {comp}", comp.pk)
     Escalacao.objects.bulk_create(
         [Escalacao(comparativo=comp, atleta=a, lado='A') for a in lado_a]
         + [Escalacao(comparativo=comp, atleta=a, lado='B') for a in lado_b])
@@ -88,6 +96,7 @@ def votar(usuario, comp, atleta_ids):
     Voto.objects.bulk_create([Voto(comparativo=comp, usuario=usuario, atleta_id=i) for i in ids])
     if primeira:
         coins.creditar(usuario, RECOMPENSA_VOTO, f"🗳️ Voto no 11 ideal: {comp}")
+        _publicar(usuario, f"votou no 11 ideal de {comp}", comp.pk)
     return primeira
 
 

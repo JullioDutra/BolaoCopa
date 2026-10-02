@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.urls import path, include
 from core.views import dashboard_view
+from avisos.views import sw_js
 from accounts import views as accounts_views
 from django.contrib.auth import views as auth_views
 from django.conf import settings
@@ -41,6 +42,8 @@ urlpatterns = [
     path('conta/', include('accounts.urls')),
     path('feed/', include('core.urls')),
     path('futebol/', include('futebol.urls')),
+    path('avisos/', include('avisos.urls')),
+    path('sw.js', sw_js, name='sw'),
 ]
 
 

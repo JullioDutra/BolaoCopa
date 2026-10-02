@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cartolandia-cache-v1';
+const CACHE_NAME = 'cartolandia-cache-v2';
 
 // Arquivos básicos que o app vai salvar no celular do usuário
 const urlsToCache = [
@@ -10,38 +10,55 @@ const urlsToCache = [
   '/carreira/dashboard/'
 ];
 
-// Instalação: Salva os arquivos no cache
+// Instalação: salva os arquivos no cache (falha de um arquivo não impede a instalação)
 self.addEventListener('install', event => {
+  self.skipWaiting();
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => {
-        console.log('Cache aberto com sucesso');
-        return cache.addAll(urlsToCache);
-      })
+    caches.open(CACHE_NAME).then(cache =>
+      Promise.all(urlsToCache.map(url => cache.add(url).catch(() => null)))
+    )
   );
 });
 
-// Ativação: Limpa caches antigos se você atualizar a versão (v2, v3...)
+// Ativação: limpa caches antigos e assume o controle das abas abertas
 self.addEventListener('activate', event => {
-  const cacheWhitelist = [CACHE_NAME];
   event.waitUntil(
-    caches.keys().then(cacheNames => {
-      return Promise.all(
-        cacheNames.map(cacheName => {
-          if (cacheWhitelist.indexOf(cacheName) === -1) {
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    })
+    caches.keys().then(nomes => Promise.all(
+      nomes.filter(n => n !== CACHE_NAME).map(n => caches.delete(n))
+    )).then(() => self.clients.claim())
   );
 });
 
-// Intercepta as requisições: Tenta pegar da rede, se falhar ou estiver offline, tenta pegar do cache
+// Rede primeiro; se estiver offline, tenta o cache
 self.addEventListener('fetch', event => {
-  event.respondWith(
-    fetch(event.request).catch(() => {
-      return caches.match(event.request);
+  if (event.request.method !== 'GET') return;
+  event.respondWith(fetch(event.request).catch(() => caches.match(event.request)));
+});
+
+// ---------- Notificações push ----------
+self.addEventListener('push', event => {
+  let dados = {};
+  try { dados = event.data ? event.data.json() : {}; } catch (e) { dados = { titulo: 'Cartolândia', texto: event.data ? event.data.text() : '' }; }
+  const titulo = dados.titulo || 'Cartolândia';
+  event.waitUntil(self.registration.showNotification(titulo, {
+    body: dados.texto || '',
+    icon: '/static/media/logo.png',
+    badge: '/static/media/logo.png',
+    tag: dados.tag || 'cartolandia',
+    renotify: true,
+    data: { url: dados.url || '/' },
+  }));
+});
+
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  const destino = (event.notification.data && event.notification.data.url) || '/';
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(janelas => {
+      for (const j of janelas) {
+        if ('focus' in j) { j.navigate(destino); return j.focus(); }
+      }
+      return self.clients.openWindow(destino);
     })
   );
 });

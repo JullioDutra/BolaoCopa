@@ -21,6 +21,7 @@
     .xx { font-family: var(--fonte-titulo); font-weight:800; font-size: 2.2rem; opacity:.8; }
     .painel { background:#fff; border-radius: 18px; box-shadow: 0 4px 14px rgba(0,0,0,.06); }
     .forma { display:inline-flex; gap:4px; }
+    .forma span.sem { width:auto; background:none; color:#9ca3af; font-weight:600; white-space:nowrap; }
     .forma span { width:26px; height:26px; border-radius:7px; color:#fff; font-weight:800; font-size:.78rem; display:inline-flex; align-items:center; justify-content:center; }
     .forma .V { background:#16a34a; } .forma .E { background:#9ca3af; } .forma .D { background:#dc2626; }
     .barra-p { display:flex; height: 12px; border-radius: 50rem; overflow:hidden; background:#e5e7eb; }
@@ -38,7 +39,7 @@
             {% else %}
                 <h2 class="mb-0" style="color: var(--verde-escuro);">Qual será o placar?</h2>
             {% endif %}
-            <div class="small text-muted mt-2"><i class="fa-regular fa-calendar"></i> {{ jogo.data_hora|date:"l, d/m 'às' H:i" }} · fecha em <b id="cdDetalhe" data-fecha="{{ jogo.fecha_em|date:'c' }}">--</b></div>
+            <div class="small text-muted mt-2"><i class="fa-solid fa-calendar"></i> {{ jogo.data_hora|date:"l, d/m \à\s H:i" }} · fecha em <b id="cdDetalhe" data-fecha="{{ jogo.fecha_em|date:'c' }}">--</b></div>
         </div>
 
         <form method="POST" id="formPalpite">
@@ -79,7 +80,7 @@
         </form>
 
         {% if palpite_existente %}
-        <a class="btn btn-sm btn-outline-success rounded-pill fw-bold mb-3" target="_blank" rel="noopener"
+        <a class="btn btn-sm btn-outline-whatsapp rounded-pill fw-bold mb-3" target="_blank" rel="noopener"
            href="https://wa.me/?text={{ 'Cravei '|urlencode }}{{ jogo.time_casa|urlencode }}%20{{ palpite_existente.gols_casa }}%20x%20{{ palpite_existente.gols_fora }}%20{{ jogo.time_fora|urlencode }}{{ '! E você, vai palpitar o quê? '|urlencode }}{{ request.build_absolute_uri|urlencode }}">
             <i class="fa-brands fa-whatsapp"></i> Mostrar meu palpite pra galera</a>
         {% endif %}
@@ -108,7 +109,7 @@
         const el = document.getElementById(b.dataset.alvo);
         el.value = Math.min(20, Math.max(0, (parseInt(el.value, 10) || 0) + parseInt(b.dataset.d, 10)));
     }));
-    document.querySelectorAll('.placar-input input').forEach(i => i.addEventListener('focus', () => i.select()));
+    document.querySelectorAll('.placar-input input').forEach(i => { if (i.value === '') i.value = '0'; i.addEventListener('focus', () => i.select()); });
 
     // ----- contagem regressiva
     const cd = document.getElementById('cdDetalhe');
@@ -127,7 +128,7 @@
         const l = el('div', 'd-flex align-items-center justify-content-between py-2 border-top');
         l.appendChild(el('span', 'fw-bold small', titulo));
         const f = el('span', 'forma');
-        if (!lista.length) f.appendChild(el('span', 'text-muted small', 'sem dados'));
+        if (!lista.length) f.appendChild(el('span', 'sem', 'sem dados'));
         lista.forEach(j => { const s = el('span', j.resultado, j.resultado); s.title = j.casa + ' ' + j.placar + ' ' + j.fora; f.appendChild(s); });
         l.appendChild(f); return l;
     }

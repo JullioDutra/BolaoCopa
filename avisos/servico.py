@@ -63,7 +63,7 @@ def notificar(usuario, titulo, texto='', url='/', tipo='geral', chave='', push=T
     try:
         with transaction.atomic():
             aviso = Notificacao.objects.create(usuario=usuario, titulo=titulo[:120], texto=texto[:300],
-                                               url=url or '/', tipo=tipo, chave=chave)
+                                               url=url or '/', tipo=tipo, chave=chave or None)
     except IntegrityError:
         return None
     if push:

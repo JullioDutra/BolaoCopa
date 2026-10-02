@@ -12,10 +12,10 @@
     <div class="d-flex gap-2 flex-wrap">
         <button class="btn btn-sm btn-outline-secondary fw-bold rounded-pill" onclick="navigator.clipboard.writeText(document.getElementById('linkGerado').value)"><i class="fa-solid fa-copy"></i> Copiar</button>
         {% if telefone %}
-        <a class="btn btn-sm btn-success fw-bold rounded-pill" target="_blank" rel="noopener"
+        <a class="btn btn-sm btn-whatsapp fw-bold rounded-pill" target="_blank" rel="noopener"
            href="https://wa.me/{{ telefone }}?text={{ link|urlencode }}"><i class="fa-brands fa-whatsapp"></i> Enviar no WhatsApp dele(a)</a>
         {% else %}
-        <a class="btn btn-sm btn-success fw-bold rounded-pill" target="_blank" rel="noopener"
+        <a class="btn btn-sm btn-whatsapp fw-bold rounded-pill" target="_blank" rel="noopener"
            href="https://wa.me/?text={{ link|urlencode }}"><i class="fa-brands fa-whatsapp"></i> Escolher contato no WhatsApp</a>
         {% endif %}
     </div>

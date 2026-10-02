@@ -320,13 +320,17 @@ def escalar_time_titular(clube):
     from modocarreira.models import Avatar, EscalacaoPosicao
     
     # 1. Pega todos os jogadores reais do clube aptos para jogar e ordena por OVR
-    jogadores_reais = list(Avatar.objects.filter(clube_atual=clube, lesionado_rodadas_restantes=0).order_by('-ovr_calculado'))
+    # (ovr_calculado é uma property, então a ordenação é feita em Python, não no banco)
+    jogadores_reais = sorted(
+        Avatar.objects.filter(clube_atual=clube, lesionado_rodadas_restantes=0),
+        key=lambda a: a.ovr_calculado, reverse=True,
+    )
     
-    # 2. Separa por setor baseado na sigla da posição escolhida
-    goleiros = [j for j in jogadores_reais if j.posicao_preferida == 'GOL']
-    defensores = [j for j in jogadores_reais if j.posicao_preferida in ['ZAG', 'LD', 'LE']]
-    meias = [j for j in jogadores_reais if j.posicao_preferida in ['VOL', 'MC', 'MEI']]
-    atacantes = [j for j in jogadores_reais if j.posicao_preferida in ['PE', 'PD', 'SA', 'CA']]
+    # 2. Separa por setor baseado na sigla da posição escolhida (siglas do model + antigas em português)
+    goleiros = [j for j in jogadores_reais if j.posicao_preferida in ['GK', 'GOL']]
+    defensores = [j for j in jogadores_reais if j.posicao_preferida in ['CB', 'LB', 'RB', 'ZAG', 'LD', 'LE']]
+    meias = [j for j in jogadores_reais if j.posicao_preferida in ['DM', 'CM', 'AM', 'VOL', 'MC', 'MEI']]
+    atacantes = [j for j in jogadores_reais if j.posicao_preferida in ['LW', 'RW', 'ST', 'PE', 'PD', 'SA', 'CA']]
 
     # Limpa a prancheta atual
     EscalacaoPosicao.objects.filter(clube=clube).delete()

@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load avisos_extras %}
 {% block title %}Avisos - Cartolândia{% endblock %}
 
 {% block content %}
@@ -13,7 +14,7 @@
 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
     <h3 class="mb-0"><i class="fa-solid fa-bell text-success"></i> Avisos</h3>
     <div class="d-flex gap-2 flex-wrap">
-        {% if grupo_url %}<a href="{{ grupo_url }}" target="_blank" rel="noopener" class="btn btn-success rounded-pill fw-bold"><i class="fa-brands fa-whatsapp"></i> Grupo do WhatsApp</a>{% endif %}
+        {% if grupo_url %}<a href="{{ grupo_url }}" target="_blank" rel="noopener" class="btn btn-whatsapp rounded-pill fw-bold"><i class="fa-brands fa-whatsapp"></i> Grupo do WhatsApp</a>{% endif %}
         <form method="post" action="{% url 'avisos:testar' %}">{% csrf_token %}<button class="btn btn-outline-secondary rounded-pill fw-bold"><i class="fa-solid fa-paper-plane"></i> Enviar teste</button></form>
     </div>
 </div>
@@ -33,13 +34,13 @@
 <div class="card card-clean overflow-hidden">
     {% for a in avisos %}
     <a class="aviso" href="{{ a.url }}">
-        <div class="ic" style="background: {% if a.tipo == 'resultado' %}#16a34a{% elif a.tipo == 'lembrete' %}#f59e0b{% elif a.tipo == 'staff' %}#dc2626{% elif a.tipo == 'rodada' %}#2563eb{% else %}#6b7280{% endif %};">
-            <i class="fa-solid {% if a.tipo == 'resultado' %}fa-futbol{% elif a.tipo == 'lembrete' %}fa-clock{% elif a.tipo == 'staff' %}fa-bullhorn{% elif a.tipo == 'rodada' %}fa-trophy{% else %}fa-bell{% endif %}"></i></div>
-        <div class="flex-grow-1"><div class="fw-bold">{{ a.titulo }}</div><div class="small text-muted">{{ a.texto }}</div></div>
+        <div class="ic" style="background: {% if a.tipo == 'resultado' %}#16a34a{% elif a.tipo == 'lembrete' %}#f59e0b{% elif a.tipo == 'staff' %}#dc2626{% elif a.tipo == 'rodada' %}#2563eb{% elif a.tipo == 'conquista' %}#7c3aed{% else %}#6b7280{% endif %};">
+            <i class="fa-solid {% if a.tipo == 'resultado' %}fa-futbol{% elif a.tipo == 'lembrete' %}fa-clock{% elif a.tipo == 'staff' %}fa-bullhorn{% elif a.tipo == 'rodada' %}fa-trophy{% elif a.tipo == 'conquista' %}fa-medal{% else %}fa-bell{% endif %}"></i></div>
+        <div class="flex-grow-1"><div class="fw-bold">{{ a.titulo|sem_emoji }}</div><div class="small text-muted">{{ a.texto }}</div></div>
         <small class="text-muted text-nowrap">{{ a.criada_em|timesince }}</small>
     </a>
     {% empty %}
-    <div class="text-center text-muted py-5"><i class="fa-regular fa-bell-slash fs-1 mb-2"></i><div>Nenhum aviso por enquanto.</div></div>
+    <div class="text-center text-muted py-5"><i class="fa-solid fa-bell-slash fs-1 mb-2"></i><div>Nenhum aviso por enquanto.</div></div>
     {% endfor %}
 </div>
 

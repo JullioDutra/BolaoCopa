@@ -23,7 +23,7 @@
             <textarea class="form-control mb-2" id="resumo" rows="9" readonly>{{ resumo }}</textarea>
             <div class="d-flex gap-2 flex-wrap">
                 <button class="btn btn-outline-secondary rounded-pill fw-bold" onclick="navigator.clipboard.writeText(document.getElementById('resumo').value)"><i class="fa-solid fa-copy"></i> Copiar</button>
-                <a class="btn btn-success rounded-pill fw-bold" href="{{ link_resumo }}" target="_blank" rel="noopener"><i class="fa-brands fa-whatsapp"></i> Mandar no WhatsApp</a>
+                <a class="btn btn-whatsapp rounded-pill fw-bold" href="{{ link_resumo }}" target="_blank" rel="noopener"><i class="fa-brands fa-whatsapp"></i> Mandar no WhatsApp</a>
             </div>
         </div>
     </div>
@@ -34,7 +34,7 @@
 <div class="card card-clean p-3 mb-3">
     <div class="d-flex justify-content-between"><b>{{ p.jogo.time_casa }} x {{ p.jogo.time_fora }}</b><small class="text-muted">{{ p.jogo.data_hora|date:"d/m H:i" }} · {{ p.total }} pendente{{ p.total|pluralize }}</small></div>
     <div class="d-flex flex-wrap gap-2 mt-2">
-        {% for c in p.cobrar %}<a class="btn btn-sm btn-outline-success rounded-pill" href="{{ c.link }}" target="_blank" rel="noopener"><i class="fa-brands fa-whatsapp"></i> {{ c.usuario.first_name|default:c.usuario.username }}</a>
+        {% for c in p.cobrar %}<a class="btn btn-sm btn-outline-whatsapp rounded-pill" href="{{ c.link }}" target="_blank" rel="noopener"><i class="fa-brands fa-whatsapp"></i> {{ c.usuario.first_name|default:c.usuario.username }}</a>
         {% empty %}<small class="text-muted">Ninguém com WhatsApp cadastrado nessa lista.</small>{% endfor %}
     </div>
 </div>

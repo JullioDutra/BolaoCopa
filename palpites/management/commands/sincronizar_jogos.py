@@ -23,17 +23,22 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('--competicao', default=api_futebol.COMPETICAO_PADRAO)
         parser.add_argument('--rodada', type=int, default=None)
+        parser.add_argument('--rodadas', type=int, default=1,
+                            help="Quantas rodadas puxar a partir da atual/--rodada (ex.: 2 = atual e próxima).")
         parser.add_argument('--sem-finalizar', action='store_true',
                             help="Atualiza jogos mas não marca como finalizados (não paga prêmios).")
 
     def handle(self, *args, **opts):
+        total = {'total': 0, 'criados': 0, 'atualizados': 0, 'finalizados': 0}
         try:
-            resumo = sincronizar(
-                competicao=opts['competicao'], rodada=opts['rodada'], finalizar=not opts['sem_finalizar'],
-            )
+            inicio = opts['rodada'] or api_futebol.rodada_atual(opts['competicao'])
+            for rodada in range(inicio, inicio + max(opts['rodadas'], 1)) if inicio else [None]:
+                resumo = sincronizar(competicao=opts['competicao'], rodada=rodada, finalizar=not opts['sem_finalizar'])
+                for chave in total:
+                    total[chave] += resumo[chave]
         except api_futebol.ApiIndisponivel as erro:
             raise CommandError(str(erro))
         self.stdout.write(self.style.SUCCESS(
-            f"{resumo['total']} partidas: {resumo['criados']} novas, "
-            f"{resumo['atualizados']} atualizadas, {resumo['finalizados']} finalizadas agora."
+            f"{total['total']} partidas: {total['criados']} novas, "
+            f"{total['atualizados']} atualizadas, {total['finalizados']} finalizadas agora."
         ))

@@ -23,15 +23,15 @@ class Notificacao(models.Model):
     texto = models.CharField(max_length=300, blank=True)
     url = models.CharField(max_length=300, default='/')
     tipo = models.CharField(max_length=20, default='geral')
-    chave = models.CharField(max_length=80, blank=True, help_text="Identificador único por usuário (ex.: lembrete:123)")
+    chave = models.CharField(max_length=80, null=True, blank=True,
+                             help_text="Identificador único por usuário (ex.: lembrete:123). Vazio = sem controle de repetição.")
     lida = models.BooleanField(default=False)
     criada_em = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ['-criada_em', '-id']
-        constraints = [
-            models.UniqueConstraint(fields=['usuario', 'chave'], condition=~models.Q(chave=''), name='aviso_unico_por_chave'),
-        ]
+        # NULL conta como distinto em qualquer banco (SQLite/MySQL/Postgres), então só avisos COM chave são deduplicados
+        unique_together = [('usuario', 'chave')]
 
     def __str__(self):
         return f"{self.usuario.username}: {self.titulo}"

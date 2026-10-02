@@ -14,6 +14,14 @@
     {% if not times %}<div class="text-center small mt-3 opacity-75">Ainda não há times com elenco no banco. A staff precisa rodar <code>importar_futebol</code>.</div>{% endif %}
 </div>
 
+{% if not comparacao %}
+<div class="fb-card p-5 text-center text-muted">
+    <i class="fa-solid fa-scale-balanced fs-1 mb-3" style="color: var(--verde-campo);"></i>
+    <h5 class="text-dark">Escolha dois times para comparar</h5>
+    <p class="mb-0">Veja elenco, overall médio, forma recente e confronto direto lado a lado — e abra uma votação para a galera eleger o 11 ideal.</p>
+</div>
+{% endif %}
+
 {% if comparacao %}
 <div class="fb-card p-3 p-md-4 mb-4">
     <div class="row text-center align-items-center mb-3">

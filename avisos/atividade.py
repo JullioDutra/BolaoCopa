@@ -1,5 +1,6 @@
 """Registro do feed "Resenha ao vivo". Nunca pode quebrar o fluxo principal."""
 import logging
+import re
 
 from .models import Atividade
 
@@ -12,7 +13,9 @@ def nome_publico(usuario):
 
 def registrar(usuario, tipo, texto, url=''):
     try:
-        return Atividade.objects.create(usuario=usuario, tipo=tipo, texto=texto[:200], url=url)
+        # o ícone do feed já identifica o tipo: remove emoji/símbolos do começo do texto
+        limpo = re.sub(r'^[^\w¡¿"“]+', '', texto).strip() or texto
+        return Atividade.objects.create(usuario=usuario, tipo=tipo, texto=limpo[:200], url=url)
     except Exception as erro:             # feed é "bônus": falha aqui não derruba palpite/aposta
         logger.warning("Não foi possível registrar atividade: %s", erro)
         return None

@@ -145,26 +145,23 @@
         </div>
     </div>
 
-    <!-- Card: Super Trunfo (EM MANUTENÇÃO) -->
+    <!-- Card: Super Trunfo -->
     <div class="col-12 col-md-6 col-lg-4">
-        <div class="card card-clean h-100 text-center p-4 shadow-sm border-0 border-top border-4 border-secondary rounded-4 position-relative" style="background: linear-gradient(145deg, #f8f9fa, #e9ecef); opacity: 0.9;">
-            <!-- Badge de Manutenção -->
-            <span class="badge bg-secondary position-absolute top-0 end-0 m-3 shadow-sm rounded-pill">
-                <i class="fa-solid fa-screwdriver-wrench"></i> Em Manutenção
-            </span>
-
+        <div class="card card-action card-clean h-100 text-center p-4 shadow-sm border-0 border-top border-4 border-dark rounded-4">
             <div class="mb-3 mt-2">
-                <i class="fa-solid fa-bolt text-secondary" style="font-size: 3.5rem; opacity: 0.3;"></i>
+                <div class="bg-dark bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                    <i class="fa-solid fa-bolt text-dark" style="font-size: 2.5rem;"></i>
+                </div>
             </div>
-            <h4 class="fw-bold text-muted">Super Trunfo</h4>
-            <p class="text-muted small mb-4">
-                Batalha de atributos! Receba sua carta, escolha o melhor status e vença seu adversário.
-            </p>
-            
+            <h4 class="fw-bold">Super Trunfo</h4>
+            <p class="text-muted small mb-4">Batalha de atributos! Receba sua carta, escolha o melhor status e vença seu adversário.</p>
             <div class="mt-auto pt-2">
-                <button type="button" class="btn btn-secondary w-100 fw-bold shadow-sm rounded-pill" disabled>
-                    <i class="fa-solid fa-lock"></i> Aguarde...
-                </button>
+                <form method="POST" action="{% url 'duelos:criar_trunfo' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-dark btn-lg w-100 fw-bold shadow-sm rounded-pill fs-6 text-uppercase letter-spacing-1">
+                        <i class="fa-solid fa-plus-circle"></i> Criar Mesa
+                    </button>
+                </form>
             </div>
         </div>
     </div>

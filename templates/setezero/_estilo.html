@@ -126,3 +126,36 @@
 .sz-numeros { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin:12px 0; text-align:center; }
 .sz-numeros div { background:rgba(255,255,255,.08); border-radius:12px; padding:8px 2px; } .sz-numeros b { display:block; font-family:var(--fonte-titulo); font-size:1.6rem; line-height:1; } .sz-numeros small { font-size:.6rem; opacity:.7; text-transform:uppercase; font-family:var(--fonte-mono); }
 </style>
+<style>
+/* Busca pelo Mundial: noite de Liga dos Campeões */
+.sz-mundo { background: radial-gradient(ellipse at 50% -20%, #1e3a8a 0%, #0a1230 55%, #04081a 100%) !important; }
+.sz-mundo-hero { position:relative; overflow:hidden; border-radius:24px; color:#fff; text-align:center; padding:34px 18px 28px; margin:18px 0 26px;
+  background: radial-gradient(ellipse at 50% 0%, #1d4ed8 0%, #0a1230 60%, #030616 100%); box-shadow:0 18px 44px rgba(3,6,22,.5); border:1px solid rgba(250,204,21,.35); }
+.sz-mundo-hero::before { content:""; position:absolute; inset:0; opacity:.55; pointer-events:none;
+  background-image: radial-gradient(2px 2px at 12% 22%, #fff, transparent), radial-gradient(1.5px 1.5px at 28% 70%, #fff, transparent), radial-gradient(2px 2px at 47% 18%, #fde68a, transparent),
+  radial-gradient(1.5px 1.5px at 63% 62%, #fff, transparent), radial-gradient(2px 2px at 78% 28%, #fff, transparent), radial-gradient(1.5px 1.5px at 90% 75%, #fde68a, transparent),
+  radial-gradient(1.5px 1.5px at 35% 40%, #fff, transparent), radial-gradient(2px 2px at 8% 80%, #fff, transparent); animation: szTwinkle 3.5s ease-in-out infinite alternate; }
+@keyframes szTwinkle { from { opacity:.25; } to { opacity:.7; } }
+.sz-mundo-hero > * { position:relative; z-index:1; }
+.sz-mundo-hero .estrela { font-size:3rem; color:#facc15; filter:drop-shadow(0 0 14px rgba(250,204,21,.7)); }
+.sz-mundo-hero h1 { font-family:var(--fonte-titulo); text-transform:uppercase; letter-spacing:4px; font-size:clamp(2rem,6vw,3.6rem); line-height:1; margin:6px 0; background:linear-gradient(180deg,#fff,#facc15); -webkit-background-clip:text; background-clip:text; color:transparent; }
+.sz-mundo-hero p { opacity:.85; max-width:620px; margin:6px auto 0; }
+.sz-mundo-hero .vs { display:inline-flex; align-items:center; gap:14px; font-family:var(--fonte-titulo); font-size:1.5rem; letter-spacing:2px; margin-top:12px; }
+.sz-btn-ouro { display:inline-flex; align-items:center; justify-content:center; gap:10px; border:0; border-radius:14px; padding:13px 30px; font-family:var(--fonte-titulo); font-size:1.3rem; letter-spacing:2px; text-transform:uppercase; color:#1a1200; background:linear-gradient(180deg,#fde68a,#f59e0b); box-shadow:0 8px 24px rgba(245,158,11,.45); text-decoration:none; }
+.sz-btn-ouro:hover { filter:brightness(1.06); color:#1a1200; }
+.sz-hino { position:fixed; right:14px; bottom:14px; z-index:50; border:0; border-radius:999px; padding:8px 14px; background:#0a1230; color:#facc15; font-family:var(--fonte-mono); font-size:.78rem; box-shadow:0 6px 18px rgba(0,0,0,.4); border:1px solid rgba(250,204,21,.5); }
+.sz-hino.on { background:#facc15; color:#0a1230; }
+.sz-splash { position:fixed; inset:0; z-index:2000; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; color:#fff; padding:24px;
+  background: radial-gradient(ellipse at 50% 30%, #1e3a8a 0%, #070d28 60%, #02040f 100%); transition:opacity .9s ease; }
+.sz-splash.sai { opacity:0; pointer-events:none; }
+.sz-splash .bola { font-size:4.5rem; animation:szFlutua 2.4s ease-in-out infinite; filter:drop-shadow(0 0 20px rgba(250,204,21,.6)); }
+@keyframes szFlutua { 50% { transform:translateY(-12px) rotate(8deg); } }
+.sz-splash h1 { font-family:var(--fonte-titulo); text-transform:uppercase; letter-spacing:5px; font-size:clamp(2.2rem,8vw,4.4rem); margin:10px 0 4px; background:linear-gradient(180deg,#fff,#facc15); -webkit-background-clip:text; background-clip:text; color:transparent; }
+.sz-adv { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:8px; }
+.sz-adv div { border-radius:12px; padding:9px 10px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); color:#fff; border-left:5px solid var(--c,#facc15); }
+.sz-adv b { display:block; font-family:var(--fonte-titulo); font-size:1.05rem; text-transform:uppercase; line-height:1.1; } .sz-adv small { font-family:var(--fonte-mono); font-size:.65rem; opacity:.75; }
+.sz-grupo { background:#0a1230; color:#e2e8f0; border-radius:18px; padding:12px; border:1px solid rgba(250,204,21,.3); }
+.sz-grupo .sz-tab td, .sz-grupo .sz-tab th { border-color:rgba(255,255,255,.08); color:#e2e8f0; } .sz-grupo .sz-tab tr.eu { background:rgba(250,204,21,.16); } .sz-grupo .sz-tab tr.top td:first-child { border-left-color:#facc15; }
+.sz-cartao.mundial { background:linear-gradient(170deg,#030616,#0a1230 55%,#13235b); border:1px solid rgba(250,204,21,.5); }
+.sz-cartao.mundial .marca { color:#facc15; }
+</style>

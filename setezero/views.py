@@ -177,12 +177,15 @@ def _visao_draft(d):
 
 
 @acesso_liberado_required
-def draft_novo(request):
+def draft_novo(request, torneio='brasil'):
     if request.method == 'POST':
-        d = copa.criar_draft(request.user, request.POST.get('formacao', '4-3-3'), request.POST.get('mentalidade', 'equilibrado'))
+        d = copa.criar_draft(request.user, request.POST.get('formacao', '4-3-3'), request.POST.get('mentalidade', 'equilibrado'), torneio=torneio)
         return redirect('setezero:draft', pk=d.pk)
-    return render(request, 'setezero/draft_novo.html', {
-        'formacoes': list(dados.FORMACOES), 'mentalidades': engine.MENTALIDADES, 'total_times': len(dados.TIMES), 'fases': copa.FASES})
+    mundial = torneio == 'mundial'
+    return render(request, 'setezero/draft_mundial_novo.html' if mundial else 'setezero/draft_novo.html', {
+        'formacoes': list(dados.FORMACOES), 'mentalidades': engine.MENTALIDADES, 'total_times': len(dados.TIMES),
+        'fases': copa.fases_de(type('D', (), {'torneio': torneio})()), 'torneio': torneio, 'cfg': copa.TORNEIOS[torneio],
+        'adversarios': [_card(t) for t in dados.mundo()] if mundial else []})
 
 
 @acesso_liberado_required
@@ -192,17 +195,22 @@ def draft(request, pk):
         return redirect('setezero:retrospecto', codigo=d.codigo)
     if d.status == 'copa':
         return render(request, 'setezero/copa.html', _contexto_copa(d))
-    return render(request, 'setezero/draft.html', {'d': d, 'visao': _visao_draft(d), 'fases': copa.FASES, 'banco_total': copa.BANCO})
+    return render(request, 'setezero/draft.html', {'d': d, 'visao': _visao_draft(d), 'cfg': copa.TORNEIOS[d.torneio], 'banco_total': copa.BANCO})
 
 
 def _contexto_copa(d):
     fases = []
-    for i, nome in enumerate(copa.FASES):
+    for i, nome in enumerate(copa.fases_de(d)):
         feito = d.campanha[i] if i < len(d.campanha) else None
         rival = dados.obter(d.estado['rivais'][i])
         fases.append({'nome': nome, 'feito': feito, 'atual': i == d.fase, 'rival': {**rival, 'escudo': escudo_url(rival['clube']) or ''}})
     meu = copa.time_do_draft(d)
-    return {'d': d, 'fases': fases, 'meu': meu, 'titulares': d.estado['slots'], 'banco': d.estado['banco']}
+    grupo = copa.classificacao_grupo(d) if d.torneio == 'mundial' else []
+    for l in grupo:
+        l['escudo'] = '' if l['eu'] else escudo_url(dados.obter(l['chave'])['clube']) or ''
+        l['cor'] = meu['cor'] if l['eu'] else dados.obter(l['chave'])['cor']
+    return {'d': d, 'fases': fases, 'meu': meu, 'titulares': d.estado['slots'], 'banco': d.estado['banco'],
+            'cfg': copa.TORNEIOS[d.torneio], 'grupo': grupo, 'em_grupo': copa.grupo_ativo(d)}
 
 
 def _json(request):
@@ -254,7 +262,7 @@ def retrospecto(request, codigo):
     r = copa.retrospecto(d)
     url = request.build_absolute_uri()
     t = r['titulo']
-    texto = (f"🏆 {t['manchete'].title()} no 7 a 0 da Cartolândia! {r['vitorias']}V {r['derrotas']}D, "
+    texto = (f"🏆 {t['manchete'].title()} na {r['cfg']['nome']} do 7 a 0 da Cartolândia! {r['vitorias']}V {r['derrotas']}D, "
              f"{r['gols_pro']} gols marcados. Duvido você fazer melhor 👉 {url}")
     r.update(url=url, texto_whats=texto, meu=request.user.is_authenticated and d.usuario_id == request.user.id)
     return render(request, 'setezero/retrospecto.html', r)

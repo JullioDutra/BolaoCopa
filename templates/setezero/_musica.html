@@ -1,0 +1,89 @@
+{% load static %}
+<script>
+/* Hino da Busca pelo Mundial.
+   Se existir static/audio/hino-mundial.mp3 (arquivo seu), ele toca; senão, um hino sintetizado na hora
+   (fanfarra em ré maior inspirada em "Zadok the Priest", de Handel — domínio público). */
+window.Hino = (function () {
+  const ARQUIVO = "{% static 'audio/hino-mundial.mp3' %}";
+  let ctx = null, master = null, audio = null, ativo = false, timers = [];
+  const prefer = () => { try { return localStorage.getItem('sz-hino') !== 'off'; } catch (e) { return true; } };
+  const salvar = (v) => { try { localStorage.setItem('sz-hino', v ? 'on' : 'off'); } catch (e) {} };
+  const hz = (m) => 440 * Math.pow(2, (m - 69) / 12);        // número MIDI -> Hz
+
+  function voz(t, midi, dur, tipo, vol, corte) {
+    const o = ctx.createOscillator(), g = ctx.createGain(), f = ctx.createBiquadFilter();
+    o.type = tipo; o.frequency.value = hz(midi);
+    f.type = 'lowpass'; f.frequency.value = corte; f.Q.value = 0.7;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + Math.min(0.25, dur * 0.4));
+    g.gain.setValueAtTime(vol, t + dur * 0.7);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(f); f.connect(g); g.connect(master);
+    o.start(t); o.stop(t + dur + 0.05);
+  }
+  function acorde(t, notas, dur, vol, corte) {
+    notas.forEach((n, i) => { voz(t, n, dur, 'sawtooth', vol / notas.length * 1.6, corte); voz(t, n - 12, dur, 'triangle', vol / notas.length, corte * 0.6); });
+  }
+  function timpano(t, vol) {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = 'sine'; o.frequency.setValueAtTime(110, t); o.frequency.exponentialRampToValueAtTime(48, t + 0.35);
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.7);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t + 0.8);
+  }
+  function sintetizar() {
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
+    master = ctx.createGain(); master.gain.value = 0.0001;
+    const comp = ctx.createDynamicsCompressor(); master.connect(comp); comp.connect(ctx.destination);
+    const t0 = ctx.currentTime + 0.1, beat = 0.62;
+    master.gain.exponentialRampToValueAtTime(0.9, t0 + 6);
+    // 1) cordas: arpejos ascendentes em ré maior (D, D/F#, G, A), crescendo
+    const arp = [[50, 57, 62, 66, 69, 74], [50, 57, 62, 66, 69, 74], [47, 54, 59, 62, 66, 71], [48, 55, 60, 64, 67, 72],
+                 [45, 52, 57, 61, 64, 69], [45, 52, 57, 61, 64, 69]];
+    let t = t0;
+    arp.forEach((notas, c) => {
+      notas.forEach((n, i) => voz(t + i * beat * 0.25, n + 12, beat * 1.4, 'sawtooth', 0.05 + c * 0.012, 1400 + c * 350));
+      voz(t, notas[0] - 12, beat * 4, 'triangle', 0.10 + c * 0.02, 500);
+      t += beat * 2;
+    });
+    // 2) o "tutti": acordes de metais + tímpanos
+    const T = t;
+    timpano(T - beat, 0.7); timpano(T - beat * 0.5, 0.8);
+    acorde(T, [62, 66, 69, 74], beat * 2, 0.55, 3200); timpano(T, 1);
+    acorde(T + beat * 2, [62, 67, 71, 74], beat * 2, 0.55, 3200); timpano(T + beat * 2, 0.9);
+    acorde(T + beat * 4, [61, 64, 69, 73], beat * 2, 0.6, 3400); timpano(T + beat * 4, 0.9);
+    acorde(T + beat * 6, [62, 66, 69, 74], beat * 2.5, 0.65, 3600); timpano(T + beat * 6, 1);
+    // tema triunfal (melodia nos metais)
+    const tema = [[74, 1], [74, 1], [78, 1], [81, 2], [79, 1], [78, 1], [76, 1], [74, 2], [76, 1], [78, 1], [79, 1], [81, 1], [83, 2], [86, 4]];
+    let tm = T + beat * 8;
+    tema.forEach(([n, d]) => { voz(tm, n, beat * d * 0.95, 'sawtooth', 0.22, 3000); voz(tm, n - 12, beat * d * 0.95, 'square', 0.06, 1800); tm += beat * d; });
+    // 3) final: acorde longo e rufar de tímpanos
+    acorde(tm, [50, 62, 66, 69, 74, 78], beat * 6, 0.9, 4000);
+    for (let k = 0; k < 12; k++) timpano(tm + k * beat * 0.25, 0.35 + k * 0.05);
+    timpano(tm + beat * 3, 1);
+    master.gain.setValueAtTime(0.9, tm + beat * 5); master.gain.exponentialRampToValueAtTime(0.0001, tm + beat * 7.5);
+    timers.push(setTimeout(() => parar(false), (tm + beat * 8 - ctx.currentTime) * 1000));
+  }
+  function tocar() {
+    if (ativo) return; ativo = true; atualizar();
+    const a = new Audio(ARQUIVO); audio = a; a.volume = 0.85;
+    let caiu = false;
+    const fallback = () => { if (caiu) return; caiu = true; audio = null; try { sintetizar(); } catch (e) { ativo = false; atualizar(); } };
+    a.addEventListener('error', fallback);
+    a.addEventListener('ended', () => parar(false));
+    a.play().catch(fallback);
+  }
+  function parar(manual) {
+    ativo = false; atualizar();
+    if (audio) { audio.pause(); audio = null; }
+    if (ctx) { try { master.gain.cancelScheduledValues(0); master.gain.setValueAtTime(0.0001, ctx.currentTime); ctx.close(); } catch (e) {} ctx = null; }
+    timers.forEach(clearTimeout); timers = [];
+  }
+  function atualizar() { document.querySelectorAll('.js-hino').forEach(b => { b.innerHTML = ativo ? '<i class="fa-solid fa-volume-high"></i> Hino' : '<i class="fa-solid fa-volume-xmark"></i> Hino'; b.classList.toggle('on', ativo); }); }
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('.js-hino'); if (!b) return;
+    if (ativo) { salvar(false); parar(true); } else { salvar(true); tocar(); }
+  });
+  document.addEventListener('DOMContentLoaded', atualizar);
+  return {tocar, parar, preferido: prefer};
+})();
+</script>

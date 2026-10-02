@@ -21,7 +21,7 @@
     {% endfor %}
     {% for dr in drafts %}
     <a class="ar-card text-decoration-none" style="--cor:#7c2d12" href="{% url 'setezero:draft' dr.pk %}"><span class="ar-tag">Draft Copa</span>
-        <h3>{% if dr.status == 'montando' %}Montando o time{% else %}Fase {{ dr.fase|add:1 }}/7{% endif %}</h3><p>Seu draft da Copa do Brasil está em andamento.</p><span class="ar-btn">Continuar</span></a>
+        <h3>{% if dr.status == 'montando' %}Montando o time{% else %}Fase {{ dr.fase|add:1 }}/7{% endif %}</h3><p>Seu draft ({% if dr.torneio == 'mundial' %}Busca pelo Mundial{% else %}Copa do Brasil{% endif %}) está em andamento.</p><span class="ar-btn">Continuar</span></a>
     {% endfor %}
     {% for t in temporadas %}
     <a class="ar-card text-decoration-none" style="--cor:#a16207" href="{% url 'setezero:temporada' t.pk %}"><span class="ar-tag">Campeonato</span>
@@ -31,6 +31,11 @@
 {% endif %}
 
 <h2 class="ar-secao"><i class="fa-solid fa-dice"></i> Escolha o modo</h2>
+<a class="d-block text-decoration-none mb-3" href="{% url 'setezero:mundial_novo' %}">
+  <div class="sz-mundo-hero" style="margin:0;padding:22px 18px"><div class="estrela" style="font-size:2rem">★</div>
+    <h1 style="font-size:clamp(1.6rem,5vw,2.6rem)">Busca pelo Mundial</h1>
+    <p class="mb-2">O modo mais difícil: Brasil vs. o resto do mundo. Barcelona 2012, Milan 1989, Real Madrid 2002… fase de grupos e mata-mata.</p>
+    <span class="sz-btn-ouro"><i class="fa-solid fa-earth-americas"></i> Encarar a Europa</span></div></a>
 <div class="ar-grid mb-4">
     <a class="ar-card text-decoration-none" style="--cor:#9a3412" href="{% url 'setezero:draft_novo' %}"><span class="ar-tag">NOVO · 7 JOGOS</span>
         <div class="ar-ico"><i class="fa-solid fa-dice"></i></div><h3>Draft Copa do Brasil</h3>
@@ -50,7 +55,7 @@
 <h2 class="ar-secao"><i class="fa-solid fa-share-nodes"></i> Meus retrospectos</h2>
 <div class="ar-tabela mb-4">
     {% for c in copas %}<a class="ar-linha text-decoration-none" style="grid-template-columns:36px 1fr auto" href="{% url 'setezero:retrospecto' c.codigo %}"><span class="pos">{% if c.status == 'campeao' %}🏆{% else %}⚽{% endif %}</span>
-        <span><span class="nome">{{ c.get_status_display }}{% if c.invicto %} · invicto{% endif %}</span><span class="d-block sub">{{ c.finalizado_em|date:"d/m/Y" }} · {{ c.formacao }}</span></span><span class="sub">{% if c.premio %}+{{ c.premio }} coins{% endif %}</span></a>{% endfor %}
+        <span><span class="nome">{% if c.torneio == 'mundial' %}Mundial · {% endif %}{{ c.get_status_display }}{% if c.invicto %} · invicto{% endif %}</span><span class="d-block sub">{{ c.finalizado_em|date:"d/m/Y" }} · {{ c.formacao }}</span></span><span class="sub">{% if c.premio %}+{{ c.premio }} coins{% endif %}</span></a>{% endfor %}
 </div>
 {% endif %}
 

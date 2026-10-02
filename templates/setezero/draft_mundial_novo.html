@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% block title %}Busca pelo Mundial - 7 a 0{% endblock %}
+{% block content %}
+{% include 'setezero/_estilo.html' %}
+{% include 'setezero/_musica.html' %}
+
+<div class="sz-splash" id="splash">
+  <div class="bola">⚽</div>
+  <div class="small" style="letter-spacing:6px;opacity:.7;font-family:var(--fonte-mono)">NOITE DE GALA</div>
+  <h1>Busca pelo Mundial</h1>
+  <p class="mb-4" style="max-width:520px;opacity:.85">Brasil contra o resto do mundo. Os maiores esquadrões da história da Europa estão te esperando.</p>
+  <button class="sz-btn-ouro" id="bEntrar"><i class="fa-solid fa-star"></i> Entrar em campo</button>
+  <div class="small mt-3" style="opacity:.55">🔊 Com som</div>
+</div>
+
+<section class="sz-mundo-hero">
+  <div class="estrela">★</div>
+  <h1>Busca pelo Mundial</h1>
+  <p>O modo mais difícil do 7 a 0. Monte o XI com lendas do Brasil e tente conquistar o mundo: <b>fase de grupos</b> e depois <b>oitavas, quartas, semifinal e final</b> contra os melhores times da Europa de todos os tempos.</p>
+  <div class="vs"><span>🇧🇷 Brasil</span><span style="color:#facc15">VS</span><span>Resto do Mundo 🌍</span></div>
+  <div class="ar-chips justify-content-center">
+    <a class="ar-chip text-decoration-none text-white" href="{% url 'setezero:hub' %}"><i class="fa-solid fa-arrow-left"></i> Voltar</a>
+    <span class="ar-chip"><i class="fa-solid fa-skull"></i> Dificuldade: lendária</span>
+    <span class="ar-chip"><i class="fa-solid fa-coins"></i> Título: +{{ cfg.campeao }} coins</span>
+  </div>
+</section>
+
+<div class="row g-3 mb-4">
+  <div class="col-lg-6"><div class="sz-grupo h-100">
+    <h5 class="fw-bold" style="color:#facc15">Como funciona</h5>
+    <ol class="mb-0 small" style="line-height:1.85">
+      <li>🎲 <b>Rola o dado</b> e monte o time com craques de times históricos do <b>Brasil</b> (11 titulares + 5 reservas, 3 re-sorteios).</li>
+      <li>🌍 <b>Sorteio dos grupos</b>: você cai com 3 gigantes do mundo, um de cada pote.</li>
+      <li>⚽ <b>Fase de grupos</b>: 3 jogos. Os <b>2 primeiros</b> avançam (vitória 3 pts, empate 1).</li>
+      <li>🏆 <b>Mata-mata</b>: oitavas, quartas, semi e final. Perdeu, está fora. Empate vai para os pênaltis.</li>
+      <li>🧠 Tática ao vivo e banco de reservas em todo jogo. <b>Aqui nada vem de graça.</b></li>
+      <li>📲 No fim, o <b>retrospecto</b> do mundial para mostrar no grupo.</li>
+    </ol></div></div>
+  <div class="col-lg-6"><form method="post" class="sz-grupo h-100">{% csrf_token %}
+    <div class="small fw-bold mb-1" style="color:#facc15">FORMAÇÃO</div>
+    {% for f in formacoes %}<label class="sz-opt me-1 mb-1"><input type="radio" name="formacao" value="{{ f }}" {% if f == '4-3-3' %}checked{% endif %}><span>{{ f }}</span></label>{% endfor %}
+    <div class="small fw-bold mb-1 mt-2" style="color:#facc15">ESTILO DE JOGO</div>
+    {% for k, m in mentalidades.items %}<label class="sz-opt me-1 mb-1"><input type="radio" name="mentalidade" value="{{ k }}" {% if k == 'equilibrado' %}checked{% endif %}><span>{{ m.nome }}</span></label>{% endfor %}
+    <div class="small mt-3 mb-3" style="opacity:.75">A formação define as vagas do draft. O estilo você muda durante os jogos.</div>
+    <button class="sz-btn-ouro w-100"><i class="fa-solid fa-dice"></i> Rolar o primeiro dado</button>
+  </form></div>
+</div>
+
+<h2 class="ar-secao" style="color:#0a1230"><i class="fa-solid fa-earth-europe"></i> Os {{ adversarios|length }} gigantes do mundo</h2>
+<div class="sz-adv mb-5" style="background:#0a1230;padding:12px;border-radius:18px">
+  {% for t in adversarios %}<div style="--c:{{ t.cor }}"><b>{{ t.clube }} {{ t.ano }}</b><small>{{ t.apelido }} · OVR {{ t.overall }}</small></div>{% endfor %}
+</div>
+
+<button class="sz-hino js-hino" type="button"><i class="fa-solid fa-volume-xmark"></i> Hino</button>
+<script>
+document.getElementById('bEntrar').onclick = () => {
+  try { localStorage.setItem('sz-hino', 'on'); } catch (e) {}
+  Hino.tocar();
+  const s = document.getElementById('splash'); s.classList.add('sai'); setTimeout(() => s.remove(), 1000);
+};
+</script>
+{% endblock %}

@@ -70,7 +70,8 @@ def criar_partida_draft(draft):
     cfg_u = {'time': time['chave'], 'time_obj': time, 'formacao': draft.formacao, 'mentalidade': draft.mentalidade,
              'estilo': 'posse', 'titulares': xi}
     cfg_r = {'time': rival_chave, 'mentalidade': 'equilibrado', 'estilo': random.Random(seed).choice(list(engine.ESTILOS))}
-    estado = engine.novo_estado(cfg_u, cfg_r, seed, usuario_lado='casa', mata_mata=True)
+    mata_mata = not copa.grupo_ativo(draft)
+    estado = engine.novo_estado(cfg_u, cfg_r, seed, usuario_lado='casa', mata_mata=mata_mata)
     return Partida7a0.objects.create(usuario=draft.usuario, modo='copa', draft=draft, fase=draft.fase, lado_usuario='casa',
                                      time_usuario=time['chave'], time_rival=rival_chave, estado=estado)
 
@@ -313,9 +314,10 @@ def ranking():
             goleadas.append(p)
     goleadas.sort(key=lambda p: (-p.saldo, -p.gols_usuario))
     campeoes = (User.objects.annotate(
-        copas=Count('drafts_7a0', filter=Q(drafts_7a0__status='campeao'), distinct=True),
+        copas=Count('drafts_7a0', filter=Q(drafts_7a0__status='campeao', drafts_7a0__torneio='brasil'), distinct=True),
+        mundiais=Count('drafts_7a0', filter=Q(drafts_7a0__status='campeao', drafts_7a0__torneio='mundial'), distinct=True),
         invictos=Count('drafts_7a0', filter=Q(drafts_7a0__invicto=True), distinct=True),
-    ).filter(copas__gt=0).order_by('-invictos', '-copas', 'first_name')[:10])
+    ).filter(Q(copas__gt=0) | Q(mundiais__gt=0)).order_by('-mundiais', '-invictos', '-copas', 'first_name')[:10])
     return {'craques': craques, 'goleadas': goleadas[:10], 'campeoes': campeoes}
 
 

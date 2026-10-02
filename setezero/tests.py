@@ -388,3 +388,150 @@ class CalibragemCopaTests(TestCase):
             d.refresh_from_db()
             titulos += d.status == 'campeao'
         self.assertLess(titulos, N)   # não pode ser passeio
+
+
+def _jogar_ate_acabar(d):
+    from . import copa
+    for _ in range(8):
+        d.refresh_from_db()
+        if d.status != 'copa':
+            break
+        p = copa.partida_da_fase(d)
+        while p.status != 'fim':
+            servico.avancar(p, 'fim')
+            p.refresh_from_db()
+    d.refresh_from_db()
+    return d
+
+
+class MundialTests(TestCase):
+    def setUp(self):
+        self.u = User.objects.create_user('tec', password='x', first_name='Tec')
+        self.client.force_login(self.u)
+
+    def test_times_do_mundo_sao_mais_fortes_e_completos(self):
+        import statistics
+        self.assertGreaterEqual(len(dados.MUNDO), 20)
+        for t in dados.MUNDO.values():
+            self.assertGreaterEqual(len(t['elenco']), 14, t['nome'])
+            for f in dados.FORMACOES:
+                self.assertEqual(len({j['nome'] for j in dados.escalar(t, f)}), 11, (t['nome'], f))
+        self.assertGreater(statistics.mean(t['overall'] for t in dados.MUNDO.values()),
+                           statistics.mean(t['overall'] for t in dados.TIMES.values()) + 3)
+        self.assertFalse(set(dados.MUNDO) & set(dados.TIMES))   # o draft sorteia só times brasileiros
+
+    def test_sorteio_de_grupo_e_chaveamento(self):
+        from . import copa
+        d = copa.criar_draft(self.u, torneio='mundial')
+        _draftar_sozinho(d)
+        d.refresh_from_db()
+        copa.iniciar_copa(d)
+        d.refresh_from_db()
+        riv = d.estado['rivais']
+        self.assertEqual(len(riv), 7)
+        self.assertEqual(len(set(riv)), 7)
+        self.assertTrue(all(r in dados.MUNDO for r in riv))
+        g = d.estado['grupo']
+        self.assertEqual(len(g['times']), 4)
+        self.assertEqual(len(g['rodadas']), 3)
+        self.assertEqual({tuple(sorted(j)) for r in g['rodadas'] for j in r}.__len__(), 6)   # todos contra todos
+        ovr = {k: dados.obter(k)['overall'] for k in riv[3:]}
+        self.assertEqual(list(ovr.values()), sorted(ovr.values()))   # mata-mata do mais fraco ao mais forte
+
+    def test_fluxo_completo_mundial(self):
+        from . import copa
+        for _ in range(4):
+            d = copa.criar_draft(self.u, torneio='mundial')
+            _draftar_sozinho(d)
+            d.refresh_from_db()
+            copa.iniciar_copa(d)
+            p = copa.partida_da_fase(d)
+            self.assertFalse(p.estado['mata_mata'])          # grupo: empate é empate
+            d = _jogar_ate_acabar(d)
+            self.assertIn(d.status, ('campeao', 'eliminado'))
+            grupo = [c for c in d.campanha if c['fase'] < 3]
+            self.assertEqual(len(grupo), 3)                  # sempre joga os 3 jogos de grupo
+            tab = d.estado['grupo']['tabela']
+            self.assertTrue(all(t['pj'] == 3 for t in tab.values()))
+            self.assertEqual(sum(t['gp'] for t in tab.values()), sum(t['gc'] for t in tab.values()))
+            if d.estado['grupo_pos'] > 2:
+                self.assertEqual(d.status, 'eliminado')
+                self.assertEqual(len(d.campanha), 3)
+                self.assertEqual(copa.titulo(d)['curto'], 'Eliminado na fase de grupos')
+            else:
+                self.assertGreater(len(d.campanha), 3)
+                ko = d.campanha[3:]
+                self.assertTrue(all(c['resultado'] == 'V' for c in ko[:-1]))   # mata-mata: derrota encerra
+            self.assertEqual(self.client.get(reverse('setezero:retrospecto', args=[d.codigo])).status_code, 200)
+
+    def test_classificacao_regras(self):
+        from . import copa
+        d = copa.criar_draft(self.u, torneio='mundial')
+        _draftar_sozinho(d)
+        d.refresh_from_db()
+        copa.iniciar_copa(d)
+        d.refresh_from_db()
+        u = f'draft-{d.pk}'
+        a, b, c = d.estado['rivais'][:3]
+        t = d.estado['grupo']['tabela']
+        copa._registrar_jogo(t, u, a, 2, 0)
+        copa._registrar_jogo(t, b, c, 1, 1)
+        l = copa.classificacao_grupo(d)
+        self.assertEqual(l[0]['chave'], u)
+        self.assertEqual((l[0]['pts'], l[0]['sg']), (3, 2))
+        self.assertEqual(l[-1]['chave'], a)
+
+    def test_premio_e_titulos_do_mundial(self):
+        from . import copa
+        d = copa.criar_draft(self.u, torneio='mundial')
+        d.status = 'campeao'
+        d.campanha = [{'fase': i, 'nome_fase': copa.FASES_MUNDIAL[i], 'rival': 'bar-2012', 'rival_nome': 'Barcelona 2012', 'gols_pro': 2,
+                       'gols_contra': 1, 'penaltis': '', 'resultado': 'V', 'partida': 0} for i in range(7)]
+        saldo = coins.saldo(self.u)
+        copa._fechar(d)
+        d.save()
+        self.assertTrue(d.invicto)
+        self.assertGreaterEqual(coins.saldo(self.u), saldo + copa.TORNEIOS['mundial']['campeao'] + copa.TORNEIOS['mundial']['invicto'])
+        self.assertIn('MUNDO', copa.titulo(d)['manchete'])
+        from avisos.models import Conquista
+        self.assertTrue(Conquista.objects.filter(usuario=self.u, slug='campeao_mundo').exists())
+
+    def test_paginas_do_mundial(self):
+        from . import copa
+        r = self.client.get(reverse('setezero:mundial_novo'))
+        self.assertContains(r, 'Busca pelo Mundial')
+        self.assertContains(r, 'Barcelona 2012')
+        self.assertContains(r, 'hino-mundial')
+        r = self.client.post(reverse('setezero:mundial_novo'), {'formacao': '4-3-3', 'mentalidade': 'equilibrado'})
+        d = copa.DraftCopa7a0.objects.get()
+        self.assertEqual(d.torneio, 'mundial')
+        self.assertContains(self.client.get(reverse('setezero:draft', args=[d.pk])), 'Busca pelo Mundial')
+        _draftar_sozinho(d)
+        d.refresh_from_db()
+        copa.iniciar_copa(d)
+        r = self.client.get(reverse('setezero:draft', args=[d.pk]))
+        self.assertContains(r, 'Seu grupo')
+        self.assertEqual(self.client.get(reverse('setezero:hub')).status_code, 200)
+        self.assertEqual(self.client.get(reverse('setezero:ranking')).status_code, 200)
+
+
+class DificuldadeMundialTests(TestCase):
+    def test_o_mundial_e_bem_mais_dificil_que_a_copa_do_brasil(self):
+        from . import copa
+        u = User.objects.create_user('bot', password='x')
+
+        def taxa(torneio, n=8):
+            vit = fase_media = 0
+            for _ in range(n):
+                d = copa.criar_draft(u, torneio=torneio)
+                _draftar_sozinho(d)
+                d.refresh_from_db()
+                copa.iniciar_copa(d)
+                d = _jogar_ate_acabar(d)
+                vit += d.status == 'campeao'
+                fase_media += len(d.campanha)
+            return vit / n, fase_media / n
+        titulo_br, fases_br = taxa('brasil')
+        titulo_mu, fases_mu = taxa('mundial')
+        self.assertLess(fases_mu, fases_br + 0.01)   # chega menos longe no mundial
+        self.assertLessEqual(titulo_mu, titulo_br)

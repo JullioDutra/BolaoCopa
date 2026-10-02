@@ -1,13 +1,35 @@
 {% extends 'base.html' %}
-{% block title %}Copa do Brasil - 7 a 0{% endblock %}
+{% block title %}{{ cfg.nome }} - 7 a 0{% endblock %}
 {% block content %}
 {% include 'setezero/_estilo.html' %}
+{% if d.torneio == 'mundial' %}{% include 'setezero/_musica.html' %}
+<section class="sz-mundo-hero">
+    <div class="estrela">★</div>
+    <h1>Busca pelo Mundial</h1>
+    <p>{% if em_grupo %}Fase de grupos: os 2 primeiros avançam.{% else %}Mata-mata: perdeu, está fora. Empate vai para os pênaltis.{% endif %}</p>
+    <div class="ar-chips justify-content-center"><a class="ar-chip text-decoration-none text-white" href="{% url 'setezero:hub' %}"><i class="fa-solid fa-arrow-left"></i> 7 a 0</a>
+        <span class="ar-chip">{{ d.formacao }}</span><span class="ar-chip">ATQ {{ meu.forca.atq }} · MEI {{ meu.forca.cri }} · DEF {{ meu.forca.def }} · GOL {{ meu.forca.gol }}</span></div>
+</section>
+{% else %}
 <section class="ar-hero sz-hero">
     <h1><span class="sete">7 a 0</span> · Copa do Brasil</h1>
     <p>Mata-mata: perdeu, está fora. Empate no tempo normal vai para os pênaltis.</p>
     <div class="ar-chips"><a class="ar-chip text-decoration-none text-white" href="{% url 'setezero:hub' %}"><i class="fa-solid fa-arrow-left"></i> 7 a 0</a>
         <span class="ar-chip">{{ d.formacao }}</span><span class="ar-chip">OVR {{ meu.forca.atq }}/{{ meu.forca.cri }}/{{ meu.forca.def }}/{{ meu.forca.gol }}</span></div>
 </section>
+{% endif %}
+
+{% if grupo %}
+<div class="sz-grupo mb-4">
+  <div class="fw-bold mb-2" style="color:#facc15;font-family:var(--fonte-titulo);letter-spacing:2px;text-transform:uppercase">Seu grupo</div>
+  <table class="sz-tab"><thead><tr><th>#</th><th style="text-align:left">Time</th><th>PJ</th><th>V</th><th>E</th><th>D</th><th>SG</th><th>PTS</th></tr></thead><tbody>
+  {% for l in grupo %}<tr class="{% if l.eu %}eu{% endif %} {% if l.pos <= 2 %}top{% endif %}"><td>{{ l.pos }}</td>
+    <td class="t"><span class="d-inline-flex align-items-center gap-2">{% if l.escudo %}<img src="{{ l.escudo }}" style="width:22px;height:22px;object-fit:contain" alt="">{% else %}<span style="width:14px;height:14px;border-radius:50%;background:{{ l.cor }};display:inline-block"></span>{% endif %}{{ l.nome }}</span></td>
+    <td>{{ l.pj }}</td><td>{{ l.v }}</td><td>{{ l.e }}</td><td>{{ l.d }}</td><td>{{ l.sg }}</td><td><b>{{ l.pts }}</b></td></tr>{% endfor %}
+  </tbody></table>
+  <div class="small mt-2" style="opacity:.7">Os 2 primeiros avançam para as oitavas de final.</div>
+</div>
+{% endif %}
 
 <div class="sz-fases mb-4">
 {% for f in fases %}
@@ -15,6 +37,7 @@
     <div class="f">{{ f.nome }}</div>
     {% if f.feito %}<div class="res">{{ f.feito.gols_pro }}x{{ f.feito.gols_contra }}</div><div>{{ f.feito.rival_nome }}</div>{% if f.feito.penaltis %}<div class="text-warning small">pên. {{ f.feito.penaltis }}</div>{% endif %}
     {% elif f.atual %}<div class="res">⚔️</div><div class="fw-bold">{{ f.rival.nome }}</div><small class="text-muted">OVR {{ f.rival.overall }}</small>
+    {% elif d.torneio == 'mundial' and forloop.counter0 < 3 %}<div class="res">⚽</div><div>{{ f.rival.nome }}</div><small class="text-muted">grupo</small>
     {% else %}<div class="res">?</div><small class="text-muted">a definir</small>{% endif %}
   </div>
 {% endfor %}
@@ -38,4 +61,31 @@
     <div class="d-flex flex-wrap gap-1">{% for j in banco %}<span class="fb-pill" style="background:#f4f4f5">{{ j.pos }} {{ j.nome }} · {{ j.nota }}</span>{% endfor %}</div>
   </div></div>
 </div>
+{% if d.torneio == 'mundial' %}<button class="sz-hino js-hino" type="button"><i class="fa-solid fa-volume-xmark"></i> Hino</button>
+{% if d.fase == 0 and d.campanha|length == 0 %}
+<div class="sz-splash" id="sorteio">
+  <div class="small" style="letter-spacing:6px;opacity:.7;font-family:var(--fonte-mono)">SORTEIO DOS GRUPOS</div>
+  <h1>Seu grupo</h1>
+  <div class="sz-adv mb-4" style="max-width:640px;width:100%;grid-template-columns:repeat(2,1fr)">
+    <div style="--c:{{ meu.cor }};border-left-width:5px"><b>{{ meu.nome }}</b><small>Brasil · você</small></div>
+    {% for f in fases|slice:":3" %}<div class="revela" style="--c:{{ f.rival.cor }};opacity:0;transform:translateY(14px);transition:all .7s ease"><b>{{ f.rival.nome }}</b><small>{{ f.rival.apelido }} · OVR {{ f.rival.overall }}</small></div>{% endfor %}
+  </div>
+  <button class="sz-btn-ouro" id="bRevelar"><i class="fa-solid fa-earth-europe"></i> Revelar os adversários</button>
+  <button class="btn btn-link text-white-50 mt-2 d-none" id="bSeguir">Ir para o grupo →</button>
+</div>
+<script>
+(function () {
+  const chave = 'sz-sorteio-{{ d.pk }}';
+  const so = document.getElementById('sorteio');
+  try { if (sessionStorage.getItem(chave)) { so.remove(); return; } } catch (e) {}
+  document.getElementById('bRevelar').onclick = function () {
+    this.classList.add('d-none'); Hino.tocar(); try { localStorage.setItem('sz-hino', 'on'); } catch (e) {}
+    document.querySelectorAll('.revela').forEach((el, i) => setTimeout(() => { el.style.opacity = 1; el.style.transform = 'none'; }, 900 + i * 1400));
+    setTimeout(() => document.getElementById('bSeguir').classList.remove('d-none'), 900 + 3 * 1400);
+  };
+  document.getElementById('bSeguir').onclick = () => { try { sessionStorage.setItem(chave, '1'); } catch (e) {} so.classList.add('sai'); setTimeout(() => so.remove(), 900); };
+})();
+</script>
+{% endif %}
+{% endif %}
 {% endblock %}

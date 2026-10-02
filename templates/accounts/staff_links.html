@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block title %}Links de senha - Staff{% endblock %}
+
+{% block content %}
+<h3 class="fw-bold mb-1" style="color: var(--verde-escuro);"><i class="fa-solid fa-link"></i> Links de redefinição de senha</h3>
+<p class="text-muted">Escolha o participante, gere o link e envie pelo WhatsApp. O link vale por 3 dias e só funciona uma vez.</p>
+
+{% if link %}
+<div class="card card-clean border-0 shadow-sm p-3 mb-4" style="border-left: 6px solid var(--verde-campo) !important;">
+    <div class="fw-bold mb-2">Link para {{ alvo.first_name|default:alvo.username }}</div>
+    <input class="form-control mb-2" id="linkGerado" value="{{ link }}" readonly onclick="this.select()">
+    <div class="d-flex gap-2 flex-wrap">
+        <button class="btn btn-sm btn-outline-secondary fw-bold rounded-pill" onclick="navigator.clipboard.writeText(document.getElementById('linkGerado').value)"><i class="fa-solid fa-copy"></i> Copiar</button>
+        {% if telefone %}
+        <a class="btn btn-sm btn-whatsapp fw-bold rounded-pill" target="_blank" rel="noopener"
+           href="https://wa.me/{{ telefone }}?text={{ link|urlencode }}"><i class="fa-brands fa-whatsapp"></i> Enviar no WhatsApp dele(a)</a>
+        {% else %}
+        <a class="btn btn-sm btn-whatsapp fw-bold rounded-pill" target="_blank" rel="noopener"
+           href="https://wa.me/?text={{ link|urlencode }}"><i class="fa-brands fa-whatsapp"></i> Escolher contato no WhatsApp</a>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<form class="d-flex gap-2 mb-3" method="get">
+    <input class="form-control" name="q" value="{{ busca }}" placeholder="Buscar por nome ou e-mail">
+    <button class="btn btn-success fw-bold"><i class="fa-solid fa-magnifying-glass"></i></button>
+</form>
+
+<div class="card card-clean">
+    <ul class="list-group list-group-flush">
+        {% for u in usuarios %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            <div><div class="fw-bold">{{ u.first_name|default:u.username }}</div><small class="text-muted">{{ u.email|default:u.username }}</small></div>
+            <form method="post">{% csrf_token %}<input type="hidden" name="usuario" value="{{ u.pk }}">
+                <button class="btn btn-sm btn-outline-success fw-bold rounded-pill"><i class="fa-solid fa-link"></i> Gerar link</button></form>
+        </li>
+        {% empty %}<li class="list-group-item text-muted text-center py-4">Ninguém encontrado.</li>{% endfor %}
+    </ul>
+</div>
+{% endblock %}

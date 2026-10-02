@@ -30,6 +30,11 @@
     <!-- Nome que fica embaixo do ícone no iPhone -->
     <meta name="apple-mobile-web-app-title" content="Cartolândia">
 
+    <!-- Fontes do site: 3 famílias só (títulos esportivos, texto e placares/números) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+
     <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     
@@ -43,13 +48,44 @@
             --verde-claro: #2e7d32;
             --dourado: #cfb53b;
             --fundo-app: #f4f7f6;
+
+            /* Tipografia padrão do site */
+            --fonte-titulo: 'Barlow Condensed', 'Arial Narrow', sans-serif;
+            --fonte-texto: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            --fonte-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
         }
         
         body {
             background-color: var(--fundo-app);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            overflow-x: clip;   /* faixas decorativas rotacionadas não criam barra de rolagem horizontal */
+            font-family: var(--fonte-texto);
             -webkit-font-smoothing: antialiased;
         }
+
+        /* Títulos esportivos (condensados): escala maior porque a fonte é mais estreita */
+        h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6, .navbar-brand, .display-1, .display-2, .display-3, .display-4, .display-5, .display-6 {
+            font-family: var(--fonte-titulo);
+            font-weight: 700;
+            letter-spacing: 0.2px;
+        }
+        h1, .h1 { font-size: calc(1.7rem + 1.2vw); }
+        h2, .h2 { font-size: calc(1.5rem + 0.9vw); }
+        h3, .h3 { font-size: calc(1.35rem + 0.6vw); }
+        h4, .h4 { font-size: calc(1.2rem + 0.3vw); }
+        h5, .h5 { font-size: 1.35rem; }
+        h6, .h6 { font-size: 1.1rem; }
+        @media (min-width: 1200px) {
+            h1, .h1 { font-size: 2.9rem; } h2, .h2 { font-size: 2.4rem; } h3, .h3 { font-size: 2rem; } h4, .h4 { font-size: 1.6rem; }
+        }
+        .btn, input, select, textarea, option, optgroup, button { font-family: inherit; }
+        code, kbd, pre, samp, .scoreboard-font, .fonte-mono { font-family: var(--fonte-mono); }
+        .scoreboard-font { text-shadow: none; }
+
+        /* WhatsApp sempre verde, independente do tema do time */
+        .btn-whatsapp { background:#25d366; border-color:#25d366; color:#fff; }
+        .btn-whatsapp:hover, .btn-whatsapp:focus { background:#1ebe5a; border-color:#1ebe5a; color:#fff; }
+        .btn-outline-whatsapp { color:#128c4a; border:1px solid #25d366; background:transparent; }
+        .btn-outline-whatsapp:hover { background:#25d366; color:#fff; }
 
         /* Botões Globais */
         .btn-principal {
@@ -80,8 +116,19 @@
             white-space: nowrap;
             font-size: 0.9rem;
         }
-        @media (min-width: 992px) {
-            .navbar-custom .navbar-nav .nav-link { padding-left: 0.45rem; padding-right: 0.45rem; }
+        @media (min-width: 1200px) {
+            .navbar-custom .navbar-nav .nav-link { padding-left: 0.4rem; padding-right: 0.4rem; font-size: 0.86rem; }
+            .navbar-custom .navbar-nav .nav-link i { margin-right: 0.2rem !important; }
+            .navbar-custom .navbar-brand { font-size: 1.25rem !important; }
+            .navbar-custom .navbar-brand span { display: none; }
+            .navbar-custom .wallet-chip { padding: 0.3rem 0.7rem; }
+        }
+        @media (min-width: 1200px) and (max-width: 1279px) {
+            .navbar-custom .wallet-chip:not(.coins-chip) { display: none; }   /* o saldo em R$ continua no painel inicial */
+        }
+        @media (min-width: 1500px) {
+            .navbar-custom .navbar-brand span { display: inline; }
+            .navbar-custom .navbar-nav .nav-link { font-size: 0.9rem; padding-left: 0.5rem; padding-right: 0.5rem; }
         }
         .nav-link {
             font-weight: 600;
@@ -157,7 +204,7 @@
     <!-- ========================================== -->
     <!-- NAVBAR TOP (DESKTOP & MOBILE HEADER)       -->
     <!-- ========================================== -->
-    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom sticky-top">
+    <nav class="navbar navbar-expand-xl navbar-dark navbar-custom sticky-top">
         <div class="container-fluid px-lg-4">
             
             <!-- Botão Menu Mobile (Hamburguer) -->
@@ -166,13 +213,16 @@
             </button>
 
             <!-- Logo Real Renderizada -->
-            <a class="navbar-brand fw-bold fs-4 mx-auto mx-lg-0 tracking-wider d-flex align-items-center" href="{% url 'dashboard' %}">
-                <img src="{% static 'media/logo.png' %}" alt="Logo" width="32" height="32" class="me-2 object-fit-contain"> Cartolândia
+            <a class="navbar-brand fw-bold fs-4 mx-auto mx-xl-0 tracking-wider d-flex align-items-center" href="{% url 'dashboard' %}">
+                <img src="{% static 'media/logo.png' %}" alt="Logo" width="32" height="32" class="me-2 object-fit-contain"><span>Cartolândia</span>
             </a>
 
             <!-- Ícone de Carteira Rápida no Mobile (Fica à direita) -->
             {% if user.is_authenticated and user.carteira %}
-                <div class="d-lg-none d-flex gap-3 align-items-center">
+                <div class="d-xl-none d-flex gap-3 align-items-center">
+                    <a href="{% url 'avisos:central' %}" class="text-decoration-none text-white position-relative" title="Avisos">
+                        <i class="fa-solid fa-bell"></i>{% if avisos_nao_lidos %}<span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:.55rem;">{{ avisos_nao_lidos }}</span>{% endif %}
+                    </a>
                     <a href="{% url 'conta:extrato_coins' %}" class="text-decoration-none text-white fw-bold" title="Cartola Coins">
                         🪙<span class="small ms-1">{{ coins_saldo }}</span>
                     </a>
@@ -182,7 +232,7 @@
                     </a>
                 </div>
             {% elif not user.is_authenticated %}
-                <div class="d-lg-none">
+                <div class="d-xl-none">
                     <a href="{% url 'login' %}" class="text-white"><i class="fa-solid fa-right-to-bracket fs-4"></i></a>
                 </div>
             {% endif %}
@@ -190,7 +240,7 @@
             <!-- Menu Desktop -->
             <div class="collapse navbar-collapse" id="navbarNavDesktop">
                 {% if user.is_authenticated %}
-                    <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-4 gap-1">
+                    <ul class="navbar-nav me-auto mb-2 mb-xl-0 ms-xl-3 gap-1">
                         <li class="nav-item">
                             <a class="nav-link text-white" href="{% url 'dashboard' %}"><i class="fa-solid fa-house opacity-75 me-1"></i> Início</a>
                         </li>
@@ -220,7 +270,7 @@
                         </li>
 
                         <li class="nav-item">
-                            <a class="nav-link text-white" href="{% url 'palpites:listar_jogos' %}"><i class="fa-regular fa-futbol opacity-75 me-1"></i> Bolão</a>
+                            <a class="nav-link text-white" href="{% url 'palpites:listar_jogos' %}"><i class="fa-solid fa-futbol opacity-75 me-1"></i> Bolão</a>
                         </li>
                         
                         <!-- ADICIONADO: Palpites de Temporada (Longo Prazo) -->
@@ -230,6 +280,9 @@
                         
                         <li class="nav-item">
                             <a class="nav-link text-white" href="{% url 'duelos:listar_desafios' %}"><i class="fa-solid fa-khanda opacity-75 me-1"></i> Arena X1</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="{% url 'futebol:hub' %}"><i class="fa-solid fa-earth-americas opacity-75 me-1"></i> Futebol</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link text-white" href="{% url 'palpites:ranking_geral' %}"><i class="fa-solid fa-ranking-star opacity-75 me-1"></i> Geral</a>
@@ -254,6 +307,12 @@
                     
                     <ul class="navbar-nav align-items-center gap-3">
                         <li class="nav-item">
+                            <a href="{% url 'avisos:central' %}" class="text-decoration-none text-white position-relative px-2" title="Avisos">
+                                <i class="fa-solid fa-bell fs-5"></i>
+                                {% if avisos_nao_lidos %}<span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:.6rem;">{{ avisos_nao_lidos }}</span>{% endif %}
+                            </a>
+                        </li>
+                        <li class="nav-item">
                             <a href="{% url 'conta:extrato_coins' %}" class="text-decoration-none wallet-chip coins-chip shadow-sm" title="Cartola Coins (moeda virtual)">
                                 🪙 {{ coins_saldo }}
                             </a>
@@ -275,10 +334,19 @@
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3 mt-2">
                                 <li>
+                                    <a class="dropdown-item fw-bold py-2" href="{% url 'conta:perfil' %}">
+                                        <i class="fa-solid fa-user-gear text-success me-2"></i> Meu perfil
+                                    </a>
+                                </li>
+                                <li>
                                     <a class="dropdown-item fw-bold py-2" href="{% url 'conta:escolher_time' %}">
                                         <i class="fa-solid fa-heart text-danger me-2"></i> Meu time do coração
                                     </a>
                                 </li>
+                                {% if user.is_staff %}
+                                <li><a class="dropdown-item fw-bold py-2" href="{% url 'avisos:staff' %}"><i class="fa-solid fa-bullhorn text-danger me-2"></i> Avisar a galera</a></li>
+                                <li><a class="dropdown-item fw-bold py-2" href="{% url 'conta:staff_links_senha' %}"><i class="fa-solid fa-link text-warning me-2"></i> Links de senha</a></li>
+                                {% endif %}
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
                                     <a class="dropdown-item text-danger fw-bold py-2" href="{% url 'logout' %}">
@@ -305,7 +373,7 @@
     <!-- MENU MOBILE (OFFCANVAS)                    -->
     <!-- ========================================== -->
     {% if user.is_authenticated %}
-    <div class="offcanvas offcanvas-start offcanvas-custom d-lg-none shadow-lg" tabindex="-1" id="mobileMenu" aria-labelledby="mobileMenuLabel">
+    <div class="offcanvas offcanvas-start offcanvas-custom d-xl-none shadow-lg" tabindex="-1" id="mobileMenu" aria-labelledby="mobileMenuLabel">
         <div class="offcanvas-header border-bottom border-light border-opacity-10 py-4">
             <div class="d-flex align-items-center gap-3">
                 <div class="bg-white bg-opacity-10 rounded-circle d-flex justify-content-center align-items-center" style="width: 50px; height: 50px;">
@@ -317,8 +385,11 @@
                         <i class="fa-solid fa-wallet"></i> Saldo: R$ {{ user.carteira.saldo|default:"0,00" }}
                     </a>
                     <br>
-                    <a href="{% url 'conta:escolher_time' %}" class="text-decoration-none text-white-50 small fw-bold">
-                        <i class="fa-solid fa-heart text-danger"></i> Meu time do coração
+                    <a href="{% url 'conta:perfil' %}" class="text-decoration-none text-white-50 small fw-bold">
+                        <i class="fa-solid fa-user-gear"></i> Meu perfil
+                    </a>
+                    <a href="{% url 'conta:escolher_time' %}" class="text-decoration-none text-white-50 small fw-bold ms-2">
+                        <i class="fa-solid fa-heart text-danger"></i> Meu time
                     </a>
                 </div>
             </div>
@@ -345,7 +416,7 @@
                     Competições
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{% url 'palpites:listar_jogos' %}"><i class="fa-regular fa-futbol fa-fw opacity-75 me-2"></i> Bolão de Jogos</a>
+                    <a class="nav-link" href="{% url 'palpites:listar_jogos' %}"><i class="fa-solid fa-futbol fa-fw opacity-75 me-2"></i> Bolão de Jogos</a>
                 </li>
                 <!-- ADICIONADO: Palpites de Temporada Mobile -->
                 <li class="nav-item">
@@ -353,6 +424,9 @@
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="{% url 'duelos:listar_desafios' %}"><i class="fa-solid fa-khanda fa-fw opacity-75 me-2"></i> Arena do X1</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'futebol:hub' %}"><i class="fa-solid fa-earth-americas fa-fw opacity-75 me-2"></i> Central do Futebol</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="{% url 'palpites:ranking_geral' %}"><i class="fa-solid fa-ranking-star fa-fw opacity-75 me-2"></i> Classificação Geral</a>
@@ -432,7 +506,7 @@
         // 1. Registra o Service Worker
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register("{% static 'sw.js' %}")
+                navigator.serviceWorker.register("{% url 'sw' %}", {scope: "/"})
                     .then(reg => console.log('Service Worker registrado com sucesso!'))
                     .catch(err => console.log('Erro ao registrar Service Worker:', err));
             });

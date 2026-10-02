@@ -100,6 +100,15 @@ def tema_para_clube(clube):
     return _montar(chave, clube.nome, cor, '#f5f5f5', 'Torcedor', f'Vamo, {clube.nome}!')
 
 
+def cor_por_nome(nome, clubes_hex=None, padrao='#374151'):
+    """ Cor escura (boa para texto branco) de um time pelo nome; usa a tabela de temas e, depois, o Admin. """
+    chave = normalizar(nome)
+    base = _TEMAS[chave][0] if chave in _TEMAS else (clubes_hex or {}).get(chave, padrao)
+    if not re.fullmatch(r'#[0-9a-fA-F]{6}', base or ''):
+        base = padrao
+    return _montar(chave, nome, base, '#fff', '', '')['base']
+
+
 def tema_padrao():
     t = TEMA_PADRAO
     return _montar(t['chave'], t['nome'], t['base'], t['acento'], t['apelido'], t['grito'], ativo=False)

@@ -22,13 +22,13 @@
                            value="{{ request.scheme }}://{{ request.get_host }}{% url 'minijogo:aceitar_convite' partida.id %}" readonly>
                     
                     <button class="btn btn-success fw-bold" onclick="copiarLink()">
-                        <i class="fa-regular fa-copy"></i> Copiar
+                        <i class="fa-solid fa-copy"></i> Copiar
                     </button>
                 </div>
             </div>
 
             <a href="https://api.whatsapp.com/send?text=Te desafiei para um X1 de Pênaltis na Cartolândia! Entra aí: {{ request.scheme }}://{{ request.get_host }}{% url 'minijogo:aceitar_convite' partida.id %}" 
-                target="_blank" class="btn btn-outline-success w-100 fw-bold rounded-pill mb-3">
+                target="_blank" class="btn btn-outline-whatsapp w-100 fw-bold rounded-pill mb-3">
                 <i class="fa-brands fa-whatsapp"></i> Desafiar no WhatsApp
             </a>
 

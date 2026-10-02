@@ -2,12 +2,9 @@
 {% load static %}
 
 {% block content %}
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Orbitron:wght@500;700&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
-
 <div class="painel-ranking">
   <a href="{% url 'minijogo:jogo_estatisticas' %}" class="btn-voltar">← Voltar ao jogo</a>
-  <h2 class="titulo-ranking">🏆 CLASSIFICAÇÃO GERAL</h2>
+  <h2 class="titulo-ranking"><i class="fa-solid fa-trophy"></i> CLASSIFICAÇÃO GERAL</h2>
 
   {% if lider %}
     <div class="lider-card">
@@ -88,7 +85,7 @@
   .btn-voltar:hover { text-decoration: underline; color: var(--amarelo-canarinho); }
 
   .titulo-ranking {
-    font-family: 'Anton', sans-serif;
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 800;
     text-align: center;
     color: var(--amarelo-canarinho);
     font-size: 1.9rem;
@@ -116,13 +113,13 @@
   }
 
   .lider-nome {
-    font-family: 'Anton', sans-serif;
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 800;
     font-size: 1.6rem;
     margin-top: 0.15rem;
   }
 
   .lider-pontos {
-    font-family: 'Orbitron', monospace;
+    font-family: 'JetBrains Mono', monospace;
     font-size: 1.1rem;
     margin-top: 0.15rem;
   }
@@ -149,7 +146,7 @@
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   }
 
-  .pontos-td { font-family: 'Orbitron', monospace; font-weight: 700; }
+  .pontos-td { font-family: 'JetBrains Mono', monospace; font-weight: 700; }
 
   .linha-ouro { background: rgba(255, 214, 10, 0.12); }
   .linha-prata { background: rgba(192, 192, 192, 0.12); }

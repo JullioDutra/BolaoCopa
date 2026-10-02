@@ -5,9 +5,6 @@
 
 {% block content %}
 <!-- Preconnect antes de carregar as fontes: reduz o tempo de handshake DNS/TLS -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800;900&family=JetBrains+Mono:wght@700;800&display=swap" rel="stylesheet">
 <!-- html2canvas NÃO é carregado aqui: só entra sob demanda quando o usuário clica em "Compartilhar" (ver script no fim) -->
 
 <style>
@@ -27,7 +24,7 @@
     }
 
     body {
-        font-family: 'Poppins', sans-serif;
+        font-family: 'Inter', sans-serif;
         background-color: #f3f4f6;
     }
 
@@ -328,7 +325,7 @@
                 <div class="podium-role">Rei dos Palpites</div>
                 <div class="podium-name">Lucas Rafael</div>
                 <div class="podium-tag" style="border-color: rgba(255,255,255,0.2); color: #cbd5e1;">
-                    <i class="fa-regular fa-futbol" aria-hidden="true"></i> Campeão do Bolão
+                    <i class="fa-solid fa-futbol" aria-hidden="true"></i> Campeão do Bolão
                 </div>
                 <div class="podium-tag" style="border-color: rgba(255,255,255,0.1); color: var(--texto-secundario);">
                     <i class="fa-solid fa-star text-warning" aria-hidden="true"></i> 455 Pontos

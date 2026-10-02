@@ -51,7 +51,7 @@
                         {% endfor %}
                         
                         <div class="text-end mb-4">
-                            <a href="{% url 'password_reset' %}" class="text-decoration-none text-success small fw-bold">
+                            <a href="{% url 'conta:recuperar' %}" class="text-decoration-none text-success small fw-bold">
                                 <i class="fa-solid fa-unlock-keyhole"></i> Esqueceu a senha?
                             </a>
                         </div>
@@ -97,6 +97,9 @@
                                     {% elif 'senha' in field.name or 'password' in field.name %}
                                         <span class="input-group-text bg-light border-end-0 text-success"><i class="fa-solid fa-shield-halved"></i></span>
                                         <input type="password" name="{{ field.html_name }}" class="form-control border-start-0 bg-light" placeholder="Crie uma senha forte" required>
+                                    {% elif field.name == 'whatsapp' %}
+                                        <span class="input-group-text bg-light border-end-0 text-success"><i class="fa-brands fa-whatsapp"></i></span>
+                                        <input type="tel" name="{{ field.html_name }}" class="form-control border-start-0 bg-light" placeholder="WhatsApp (opcional) — ajuda a recuperar a senha" value="{{ field.value|default_if_none:'' }}">
                                     {% else %}
                                         <span class="input-group-text bg-light border-end-0 text-success"><i class="fa-solid fa-pen"></i></span>
                                         <input type="text" name="{{ field.html_name }}" class="form-control border-start-0 bg-light" placeholder="{{ field.label }}" required>

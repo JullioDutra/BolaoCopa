@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block title %}{{ atleta.nome }} - Futebol{% endblock %}
+{% block content %}
+{% include 'futebol/_estilo.html' %}
+<div class="fb-hero mb-4" style="background: linear-gradient(135deg, {% if atleta.time %}{{ atleta.time.cor_hex }}{% else %}#1b5e20{% endif %}, #111);">
+    <div class="d-flex align-items-center gap-3 flex-wrap">
+        <div class="jog"><div class="foto" style="width:96px;height:96px;font-size:2.4rem;">{% if atleta.foto_src %}<img src="{{ atleta.foto_src }}" alt="{{ atleta.nome }}">{% else %}{{ atleta.numero|default:atleta.nome|slice:":1" }}{% endif %}</div></div>
+        <div class="flex-grow-1"><h1 class="mb-0">{{ atleta.nome }}</h1>
+            <div class="opacity-75">{{ atleta.get_posicao_display }}{% if atleta.detalhe %} · {{ atleta.detalhe }}{% endif %}</div>
+            {% if atleta.time %}<a class="text-white fw-bold" href="{% url 'futebol:time' atleta.time.id %}">{{ atleta.time.nome }}</a>{% endif %}</div>
+        {% if atleta.overall %}<div class="text-center"><div style="font-family:var(--fonte-titulo);font-size:3.4rem;font-weight:800;line-height:1;">{{ atleta.overall }}</div><small class="opacity-75">OVERALL</small></div>{% endif %}
+    </div>
+</div>
+<div class="row g-2 mb-4">
+    {% if atleta.numero %}<div class="col-6 col-md-3"><div class="fb-card p-3 text-center"><small class="text-muted fw-bold">CAMISA</small><div class="fs-3 fw-bold" style="font-family:var(--fonte-titulo)">{{ atleta.numero }}</div></div></div>{% endif %}
+    {% if atleta.idade %}<div class="col-6 col-md-3"><div class="fb-card p-3 text-center"><small class="text-muted fw-bold">IDADE</small><div class="fs-3 fw-bold" style="font-family:var(--fonte-titulo)">{{ atleta.idade }}</div></div></div>{% endif %}
+    {% if atleta.nacionalidade %}<div class="col-6 col-md-3"><div class="fb-card p-3 text-center"><small class="text-muted fw-bold">NACIONALIDADE</small><div class="fs-5 fw-bold">{{ atleta.nacionalidade }}</div></div></div>{% endif %}
+    {% if atleta.valor_mercado %}<div class="col-6 col-md-3"><div class="fb-card p-3 text-center"><small class="text-muted fw-bold">VALOR (€)</small><div class="fs-5 fw-bold">{{ atleta.valor_mercado|floatformat:"0g" }}</div></div></div>{% endif %}
+</div>
+{% if colegas %}<h6 class="text-muted text-uppercase small">Mesma posição no {{ atleta.time.nome }}</h6><div class="d-flex flex-wrap gap-2">{% for c in colegas %}<a class="fb-pill text-decoration-none" href="{% url 'futebol:jogador' c.id %}">{{ c.nome }}</a>{% endfor %}</div>{% endif %}
+{% endblock %}

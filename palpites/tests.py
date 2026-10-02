@@ -72,7 +72,9 @@ class SincronizacaoTests(TestCase):
         self.assertEqual(resumo['finalizados'], 1)
         palpite = Palpite.objects.get()
         self.assertEqual(palpite.pontuacao_obtida, 15)
-        self.assertEqual(coins.saldo(usuario), 1000 + 50)
+        # +50 pelo placar exato (uma única vez) e +25 x2 pelas conquistas "Estreante" e "Cravador"
+        self.assertEqual(coins.saldo(usuario), 1000 + 50 + 25 + 25)
+        self.assertEqual(usuario.carteira_coins.movimentos.filter(valor=50).count(), 1)
 
     def test_placar_ao_vivo_nao_finaliza(self):
         parcial = partida_api(1, status='IN_PLAY', placar=(1, 0))
@@ -199,7 +201,7 @@ class BolaoDaRodadaTests(TestCase):
 
     def test_telas_renderizam(self):
         self.client.force_login(self.ana)
-        self.assertContains(self.client.get(reverse('palpites:listar_jogos')), 'Bolão da Rodada')
+        self.assertContains(self.client.get(reverse('palpites:listar_jogos')), 'Uma entrada, a rodada inteira')
         self.assertEqual(self.client.get(reverse('palpites:ranking_rodada', args=[self.rodada.id])).status_code, 200)
         self.assertEqual(self.client.get(reverse('palpites:fazer_palpite', args=[self.j1.id])).status_code, 200)
 
@@ -221,3 +223,75 @@ class EndpointCronTests(TestCase):
     @override_settings(SYNC_SECRET_TOKEN='segredo-de-teste', FOOTBALL_DATA_TOKEN=None)
     def test_api_fora_do_ar_responde_503(self):
         self.assertEqual(self.client.get('/palpites/api/sincronizar/segredo-de-teste/').status_code, 503)
+
+
+
+class ArenaTests(TestCase):
+    def setUp(self):
+        self.u = criar_usuario('ana')
+        self.client.force_login(self.u)
+        futuro = timezone.now() + timedelta(days=2)
+        self.jogo = Jogo.objects.create(time_casa='Flamengo', time_fora='Palmeiras', data_hora=futuro)
+
+    def test_palpite_rapido_cria_atualiza_e_mantem_modalidade_paga(self):
+        url = reverse('palpites:palpite_rapido', args=[self.jogo.id])
+        r = self.client.post(url, {'gols_casa': 2, 'gols_fora': 1})
+        self.assertEqual((r.status_code, r.json()['novo']), (200, True))
+        p = Palpite.objects.get()
+        self.assertEqual((p.gols_casa, p.gols_fora, p.modalidade), (2, 1, 'resenha'))
+        p.modalidade = 'pago'
+        p.save()
+        r = self.client.post(url, {'gols_casa': 3, 'gols_fora': 3})
+        self.assertFalse(r.json()['novo'])
+        p.refresh_from_db()
+        self.assertEqual((p.gols_casa, p.modalidade), (3, 'pago'))
+
+    def test_palpite_rapido_valida_placar_e_prazo(self):
+        url = reverse('palpites:palpite_rapido', args=[self.jogo.id])
+        for dados in ({'gols_casa': 'x', 'gols_fora': 1}, {'gols_casa': 21, 'gols_fora': 1}, {'gols_casa': -1, 'gols_fora': 0}, {}):
+            self.assertEqual(self.client.post(url, dados).status_code, 400)
+        self.jogo.data_hora = timezone.now() + timedelta(minutes=30)
+        self.jogo.save()
+        self.assertEqual(self.client.post(url, {'gols_casa': 1, 'gols_fora': 0}).status_code, 400)
+        self.assertFalse(Palpite.objects.exists())
+        self.assertEqual(self.client.get(url).status_code, 405)
+
+    def test_arena_mostra_estados_progresso_e_galera_so_depois_de_palpitar(self):
+        outro = criar_usuario('bia')
+        Palpite.objects.create(usuario=outro, jogo=self.jogo, gols_casa=1, gols_fora=0)
+        r = self.client.get(reverse('palpites:listar_jogos'))
+        self.assertContains(r, '0 de 1 jogos abertos palpitados')
+        self.assertNotContains(r, 'palpite da galera')                      # não revela a tendência antes de palpitar
+        self.client.post(reverse('palpites:palpite_rapido', args=[self.jogo.id]), {'gols_casa': 2, 'gols_fora': 0})
+        r = self.client.get(reverse('palpites:listar_jogos'))
+        self.assertContains(r, '1 de 1 jogos abertos palpitados')
+        self.assertContains(r, '2 palpites da galera')
+
+    def test_arena_resultado_cravou_acertou_errou(self):
+        passado = timezone.now() - timedelta(days=1)
+        for gc, gf, esperado in ((2, 0, 'Cravou'), (1, 0, 'Acertou o vencedor'), (0, 2, 'Dessa vez')):
+            j = Jogo.objects.create(time_casa='A%s' % gc, time_fora='B', data_hora=passado)
+            Palpite.objects.create(usuario=self.u, jogo=j, gols_casa=gc, gols_fora=gf)
+            j.gols_casa_real, j.gols_fora_real, j.finalizado = 2, 0, True
+            j.save()
+        r = self.client.get(reverse('palpites:listar_jogos'))
+        for texto in ('Cravou', 'Acertou o vencedor', 'Dessa vez'):
+            self.assertContains(r, texto)
+
+    def test_tela_de_palpite_traz_raio_x_e_zap(self):
+        Palpite.objects.create(usuario=self.u, jogo=self.jogo, gols_casa=1, gols_fora=1)
+        r = self.client.get(reverse('palpites:fazer_palpite', args=[self.jogo.id]))
+        self.assertContains(r, 'Raio')
+        self.assertContains(r, 'wa.me')
+        self.assertContains(r, reverse('futebol:api_raio_x', args=[self.jogo.id]))
+
+    def test_cravada_gera_feed_conquista_e_aviso(self):
+        from avisos.models import Atividade, Conquista
+        passado = timezone.now() - timedelta(days=1)
+        j = Jogo.objects.create(time_casa='A', time_fora='B', data_hora=passado)
+        Palpite.objects.create(usuario=self.u, jogo=j, gols_casa=2, gols_fora=0)
+        j.gols_casa_real, j.gols_fora_real, j.finalizado = 2, 0, True
+        j.save()
+        self.assertTrue(Atividade.objects.filter(tipo='cravada').exists())
+        slugs = set(Conquista.objects.filter(usuario=self.u).values_list('slug', flat=True))
+        self.assertTrue({'estreante', 'cravador'} <= slugs)

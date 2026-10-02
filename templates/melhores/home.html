@@ -59,22 +59,41 @@
                     <span><span class="badge-n" id="cupomN">0</span> Cupom de apostas</span>
                     <span id="cupomResumo" class="small">🪙 0</span>
                 </div>
+                <div class="cupom-modos">
+                    <button type="button" class="modo ativo" data-modo="simples">Simples</button>
+                    <button type="button" class="modo" data-modo="multipla">Múltipla</button>
+                </div>
                 <form method="post" action="{% url 'melhores:apostar_cupom' %}" id="formCupom">
                     {% csrf_token %}
+                    <input type="hidden" name="modo" id="campoModo" value="simples">
                     <div class="cupom-corpo">
                         <div id="cupomItens"><div class="cupom-vazio">Toque em uma odd para adicionar ao cupom.</div></div>
                         <div id="cupomHidden"></div>
                     </div>
                     <div class="cupom-rodape">
+                        <div id="blocoMultipla" class="d-none mb-2">
+                            <div class="d-flex justify-content-between small mb-1"><span>Odd total</span><b id="oddTotal" style="color:var(--b-amar)">1.00</b></div>
+                            <div class="small mb-1" style="color:var(--b-mudo)">Uma só aposta: todas as seleções precisam acertar. Teto de odd {{ mult_teto|unlocalize }}.</div>
+                            <input type="number" min="{{ aposta_minima }}" id="valorMultipla" class="form-control form-control-sm" style="background:#1d1d1d;border-color:#444;color:#fff;font-weight:700;" value="100" placeholder="🪙 valor da múltipla">
+                        </div>
                         <div class="d-flex justify-content-between small mb-1"><span>Total apostado</span><b id="cupomTotal">🪙 0</b></div>
                         <div class="d-flex justify-content-between small mb-2"><span>Retorno possível</span><b id="cupomRetorno" style="color:var(--b-amar)">🪙 0</b></div>
                         <div id="cupomErro" class="small text-danger mb-2"></div>
                         <button class="btn-apostar" id="btnApostar" disabled>Fazer aposta</button>
                     </div>
                 </form>
-                {% if abertas %}
+                {% if abertas or multiplas_abertas %}
                 <div class="cupom-corpo abertas" style="border-top:1px solid #444;">
                     <h6>Suas apostas abertas</h6>
+                    {% for m in multiplas_abertas %}
+                    <div class="aberta-item" style="flex-direction:column;align-items:stretch;">
+                        <div><b>Múltipla ×{{ m.selecoes.all|length }}</b> <span style="color:var(--b-amar)">@{{ m.odd_total|unlocalize }}</span>
+                            <span style="color:var(--b-mudo)"> · 🪙 {{ m.valor }} → {{ m.retorno_potencial }}</span></div>
+                        {% for sl in m.selecoes.all %}
+                        <div style="color:var(--b-mudo);font-size:.72rem;">• {{ sl.candidato.nome }} <span style="color:var(--b-amar)">@{{ sl.odd_travada|unlocalize }}</span> — {{ sl.categoria.nome }}</div>
+                        {% endfor %}
+                    </div>
+                    {% endfor %}
                     {% for a in abertas %}
                     <div class="aberta-item">
                         <div><b>{{ a.candidato.nome }}</b> <span style="color:var(--b-amar)">@{{ a.odd_travada|unlocalize }}</span><br>
@@ -97,73 +116,90 @@
 (function () {
     const SALDO = {{ saldo }};
     const MIN = {{ aposta_minima }};
-    const cupom = {};  // categoriaId -> {cat, cand, nome, catnome, odd, valor}
+    const MULT_MIN = {{ mult_min }}, MULT_MAX = {{ mult_max }}, TETO = {{ mult_teto|unlocalize }};
+    const cupom = {};      // categoriaId -> {cat, cand, nome, catnome, odd, valor}
+    let modo = 'simples';
 
     const $ = (s, r) => (r || document).querySelector(s);
     const itensEl = $('#cupomItens'), hiddenEl = $('#cupomHidden');
+    const valorMult = $('#valorMultipla');
 
-    function botoes(cat, cand) {
-        return document.querySelectorAll('.sel-opcao[data-cat="' + cat + '"]' + (cand ? '[data-cand="' + cand + '"]' : ''));
+    function oddTotal(lista) {
+        const p = lista.reduce((t, s) => t * s.odd, 1);
+        return Math.min(p, TETO);
+    }
+
+    function mensagemErro(lista, total) {
+        if (modo === 'multipla') {
+            if (lista.length < MULT_MIN) return 'Escolha pelo menos ' + MULT_MIN + ' seleções para a múltipla.';
+            if (lista.length > MULT_MAX) return 'No máximo ' + MULT_MAX + ' seleções.';
+        } else if (lista.some(s => (parseInt(s.valor, 10) || 0) < MIN)) return 'Aposta mínima: ' + MIN + ' por seleção.';
+        if (modo === 'multipla' && (parseInt(valorMult.value, 10) || 0) < MIN) return 'Aposta mínima: ' + MIN + '.';
+        if (total > SALDO) return 'Saldo insuficiente: você tem 🪙 ' + SALDO + '.';
+        return '';
+    }
+
+    function totais() {
+        const lista = Object.values(cupom);
+        let total, retorno;
+        if (modo === 'multipla') {
+            total = parseInt(valorMult.value, 10) || 0;
+            const odd = oddTotal(lista);
+            retorno = lista.length >= MULT_MIN ? Math.floor(total * odd) : 0;
+            $('#oddTotal').textContent = (lista.length ? odd : 1).toFixed(2);
+        } else {
+            total = lista.reduce((t, s) => t + (parseInt(s.valor, 10) || 0), 0);
+            retorno = lista.reduce((t, s) => t + Math.floor((parseInt(s.valor, 10) || 0) * s.odd), 0);
+        }
+        const erro = lista.length ? mensagemErro(lista, total) : '';
+        $('#cupomN').textContent = lista.length;
+        $('#cupomResumo').textContent = '🪙 ' + total;
+        $('#cupomTotal').textContent = '🪙 ' + total;
+        $('#cupomRetorno').textContent = '🪙 ' + retorno;
+        $('#cupomErro').textContent = erro;
+        $('#btnApostar').disabled = !lista.length || !!erro;
+        $('#btnApostar').textContent = modo === 'multipla' ? 'Fazer múltipla' : 'Fazer aposta';
+        // campos enviados ao servidor
+        hiddenEl.textContent = '';
+        $('#campoModo').value = modo;
+        lista.forEach(s => {
+            const h = document.createElement('input'); h.type = 'hidden'; h.name = 'sel';
+            h.value = modo === 'multipla' ? [s.cat, s.cand, s.odd.toFixed(2)].join(':')
+                                           : [s.cat, s.cand, parseInt(s.valor, 10) || 0, s.odd.toFixed(2)].join(':');
+            hiddenEl.appendChild(h);
+        });
+        if (modo === 'multipla') {
+            const h = document.createElement('input'); h.type = 'hidden'; h.name = 'valor'; h.value = total; hiddenEl.appendChild(h);
+        }
     }
 
     function renderizar() {
         const lista = Object.values(cupom);
         itensEl.textContent = '';
-        hiddenEl.textContent = '';
-        let total = 0, retorno = 0, erro = '';
-
         if (!lista.length) {
             const v = document.createElement('div'); v.className = 'cupom-vazio';
             v.textContent = 'Toque em uma odd para adicionar ao cupom.'; itensEl.appendChild(v);
         }
         lista.forEach(s => {
-            const valor = parseInt(s.valor, 10) || 0;
-            total += valor; retorno += Math.floor(valor * s.odd);
-            if (valor < MIN) erro = 'Aposta mínima: ' + MIN + ' por seleção.';
-
             const el = document.createElement('div'); el.className = 'item-cupom';
             const rem = document.createElement('button'); rem.type = 'button'; rem.className = 'rem'; rem.textContent = '✕';
             rem.addEventListener('click', () => { delete cupom[s.cat]; atualizarMarcas(); renderizar(); });
             const odd = document.createElement('span'); odd.className = 'sel-odd'; odd.textContent = s.odd.toFixed(2);
             const nome = document.createElement('div'); nome.className = 'sel-nome'; nome.textContent = s.nome;
             const mkt = document.createElement('div'); mkt.className = 'mkt'; mkt.textContent = s.catnome;
-            const linha = document.createElement('div'); linha.className = 'd-flex align-items-center justify-content-between mt-2';
-            const input = document.createElement('input'); input.type = 'number'; input.min = MIN; input.value = s.valor; input.placeholder = '🪙';
-            const ret = document.createElement('span'); ret.className = 'ret';
-            const pintaRet = () => { ret.innerHTML = 'Retorno <b>🪙 ' + Math.floor((parseInt(s.valor, 10) || 0) * s.odd) + '</b>'; };
-            pintaRet();
-            input.addEventListener('input', () => { s.valor = input.value; recalcular(); pintaRet(); });
-            linha.appendChild(input); linha.appendChild(ret);
-            el.appendChild(rem); el.appendChild(odd); el.appendChild(nome); el.appendChild(mkt); el.appendChild(linha);
+            el.appendChild(rem); el.appendChild(odd); el.appendChild(nome); el.appendChild(mkt);
+            if (modo === 'simples') {
+                const linha = document.createElement('div'); linha.className = 'd-flex align-items-center justify-content-between mt-2';
+                const input = document.createElement('input'); input.type = 'number'; input.min = MIN; input.value = s.valor; input.placeholder = '🪙';
+                const ret = document.createElement('span'); ret.className = 'ret';
+                const pintaRet = () => { ret.innerHTML = 'Retorno <b>🪙 ' + Math.floor((parseInt(s.valor, 10) || 0) * s.odd) + '</b>'; };
+                pintaRet();
+                input.addEventListener('input', () => { s.valor = input.value; totais(); pintaRet(); });
+                linha.appendChild(input); linha.appendChild(ret); el.appendChild(linha);
+            }
             itensEl.appendChild(el);
-
-            const h = document.createElement('input'); h.type = 'hidden'; h.name = 'sel';
-            h.value = [s.cat, s.cand, valor, s.odd.toFixed(2)].join(':'); hiddenEl.appendChild(h);
         });
-        if (total > SALDO) erro = 'Saldo insuficiente: você tem 🪙 ' + SALDO + '.';
-        totais(lista.length, total, retorno, erro);
-    }
-
-    function totais(n, total, retorno, erro) {
-        $('#cupomN').textContent = n;
-        $('#cupomResumo').textContent = '🪙 ' + total;
-        $('#cupomTotal').textContent = '🪙 ' + total;
-        $('#cupomRetorno').textContent = '🪙 ' + retorno;
-        $('#cupomErro').textContent = erro;
-        $('#btnApostar').disabled = !n || !!erro;
-    }
-
-    function recalcular() {   // atualiza só os totais (não recria os inputs, para não perder o foco)
-        const lista = Object.values(cupom);
-        let total = 0, retorno = 0, erro = '';
-        lista.forEach((s, i) => {
-            const valor = parseInt(s.valor, 10) || 0;
-            total += valor; retorno += Math.floor(valor * s.odd);
-            if (valor < MIN) erro = 'Aposta mínima: ' + MIN + ' por seleção.';
-            const h = hiddenEl.children[i]; if (h) h.value = [s.cat, s.cand, valor, s.odd.toFixed(2)].join(':');
-        });
-        if (total > SALDO) erro = 'Saldo insuficiente: você tem 🪙 ' + SALDO + '.';
-        totais(lista.length, total, retorno, erro);
+        totais();
     }
 
     function atualizarMarcas() {
@@ -173,6 +209,15 @@
         });
     }
 
+    function trocarModo(novo) {
+        modo = novo;
+        document.querySelectorAll('.cupom-modos .modo').forEach(b => b.classList.toggle('ativo', b.dataset.modo === novo));
+        $('#blocoMultipla').classList.toggle('d-none', novo !== 'multipla');
+        renderizar();
+    }
+    document.querySelectorAll('.cupom-modos .modo').forEach(b => b.addEventListener('click', () => trocarModo(b.dataset.modo)));
+    valorMult.addEventListener('input', totais);
+
     document.querySelectorAll('.sel-opcao').forEach(b => b.addEventListener('click', () => {
         const cat = b.dataset.cat, cand = b.dataset.cand;
         if (cupom[cat] && cupom[cat].cand === cand) { delete cupom[cat]; }
@@ -181,6 +226,7 @@
                           odd: parseFloat(b.dataset.odd), valor: (cupom[cat] ? cupom[cat].valor : 100)};
         }
         atualizarMarcas(); renderizar();
+        if (window.matchMedia('(max-width: 991.98px)').matches) $('#cupom').classList.add('tem-itens');
     }));
 
     document.querySelectorAll('.ver-mais').forEach(btn => btn.addEventListener('click', () => {
@@ -214,6 +260,7 @@
         } catch (e) { /* sem rede: tenta no próximo ciclo */ }
     }
     setInterval(atualizarOdds, 20000);
+    renderizar();
 })();
 </script>
 {% endblock %}

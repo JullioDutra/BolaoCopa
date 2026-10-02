@@ -46,6 +46,10 @@ def registrar_acesso(usuario, hoje=None):
 
     bonus = bonus_do_dia(perfil.streak_dias)
     coins.creditar(usuario, bonus, f"🔥 Bônus diário (sequência de {perfil.streak_dias} dia(s))")
+    from avisos import atividade, conquistas
+    if perfil.streak_dias in (7, 14, 30, 60, 100):
+        atividade.registrar(usuario, 'streak', f"🔥 {atividade.nome_publico(usuario)} chegou a {perfil.streak_dias} dias seguidos no app!")
+    conquistas.checar(usuario)
     return {
         'streak': perfil.streak_dias,
         'bonus': bonus,

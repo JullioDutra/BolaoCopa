@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Aposta, Candidato, Categoria, Edicao
+from .models import Aposta, Candidato, Categoria, Edicao, Multipla, MultiplaSelecao
 
 
 class CandidatoInline(admin.TabularInline):
@@ -33,3 +33,17 @@ class ApostaAdmin(admin.ModelAdmin):
     list_display = ('usuario', 'categoria', 'candidato', 'valor', 'odd_travada', 'status', 'retorno')
     list_filter = ('status', 'categoria__edicao', 'categoria')
     readonly_fields = ('criada_em', 'atualizada_em')
+
+
+class MultiplaSelecaoInline(admin.TabularInline):
+    model = MultiplaSelecao
+    extra = 0
+    readonly_fields = ('categoria', 'candidato', 'odd_travada', 'status')
+    can_delete = False
+
+
+@admin.register(Multipla)
+class MultiplaAdmin(admin.ModelAdmin):
+    list_display = ('usuario', 'valor', 'odd_total', 'status', 'retorno', 'criada_em')
+    list_filter = ('status', 'edicao')
+    inlines = [MultiplaSelecaoInline]

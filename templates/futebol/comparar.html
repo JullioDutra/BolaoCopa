@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% block title %}Comparar times - Futebol{% endblock %}
+{% block content %}
+{% include 'futebol/_estilo.html' %}
+<div class="fb-hero mb-4">
+    <h1 class="text-center">Comparar times</h1>
+    <form method="get" class="row g-2 justify-content-center mt-2" id="formComparar">
+        <div class="col-12 col-md-4"><select name="a" class="form-select form-select-lg" onchange="this.form.submit()"><option value="">Time A…</option>
+            {% for t in times %}<option value="{{ t.id }}" {% if a and a.id == t.id %}selected{% endif %}>{{ t.nome }}</option>{% endfor %}</select></div>
+        <div class="col-auto d-none d-md-flex align-items-center fw-bold fs-2" style="font-family:var(--fonte-titulo)">VS</div>
+        <div class="col-12 col-md-4"><select name="b" class="form-select form-select-lg" onchange="this.form.submit()"><option value="">Time B…</option>
+            {% for t in times %}<option value="{{ t.id }}" {% if b and b.id == t.id %}selected{% endif %}>{{ t.nome }}</option>{% endfor %}</select></div>
+    </form>
+    {% if not times %}<div class="text-center small mt-3 opacity-75">Ainda não há times com elenco no banco. A staff precisa rodar <code>importar_futebol</code>.</div>{% endif %}
+</div>
+
+{% if not comparacao %}
+<div class="fb-card p-5 text-center text-muted">
+    <i class="fa-solid fa-scale-balanced fs-1 mb-3" style="color: var(--verde-campo);"></i>
+    <h5 class="text-dark">Escolha dois times para comparar</h5>
+    <p class="mb-0">Veja elenco, overall médio, forma recente e confronto direto lado a lado — e abra uma votação para a galera eleger o 11 ideal.</p>
+</div>
+{% endif %}
+
+{% if comparacao %}
+<div class="fb-card p-3 p-md-4 mb-4">
+    <div class="row text-center align-items-center mb-3">
+        <div class="col-5">{% include 'futebol/_escudo.html' with time=a tam=72 %}<h4 class="mt-2 mb-0">{{ a.nome_exibicao }}</h4></div>
+        <div class="col-2 fs-2 fw-bold" style="font-family:var(--fonte-titulo)">×</div>
+        <div class="col-5">{% include 'futebol/_escudo.html' with time=b tam=72 %}<h4 class="mt-2 mb-0">{{ b.nome_exibicao }}</h4></div>
+    </div>
+    {% for l in comparacao.linhas %}
+    <div class="row text-center py-2 border-top align-items-center">
+        <div class="col-4 fs-4 fw-bold {% if l.vencedor == 'A' %}text-success{% endif %}" style="font-family:var(--fonte-titulo)">{% if l.a is not None %}{{ l.a|floatformat:"-1g" }}{% else %}–{% endif %}{% if l.vencedor == 'A' %} <i class="fa-solid fa-crown fs-6"></i>{% endif %}</div>
+        <div class="col-4 small text-muted fw-bold text-uppercase">{{ l.rotulo }}</div>
+        <div class="col-4 fs-4 fw-bold {% if l.vencedor == 'B' %}text-success{% endif %}" style="font-family:var(--fonte-titulo)">{% if l.b is not None %}{{ l.b|floatformat:"-1g" }}{% else %}–{% endif %}{% if l.vencedor == 'B' %} <i class="fa-solid fa-crown fs-6"></i>{% endif %}</div>
+    </div>{% endfor %}
+    <div class="row text-center py-2 border-top align-items-center">
+        <div class="col-4">{{ comparacao.a.por_pos.GOL }} GOL · {{ comparacao.a.por_pos.DEF }} DEF · {{ comparacao.a.por_pos.MEI }} MEI · {{ comparacao.a.por_pos.ATA }} ATA</div>
+        <div class="col-4 small text-muted fw-bold text-uppercase">Posições</div>
+        <div class="col-4">{{ comparacao.b.por_pos.GOL }} GOL · {{ comparacao.b.por_pos.DEF }} DEF · {{ comparacao.b.por_pos.MEI }} MEI · {{ comparacao.b.por_pos.ATA }} ATA</div>
+    </div>
+    {% if forma_a or forma_b %}<div class="row text-center py-2 border-top align-items-center">
+        <div class="col-4"><div class="forma">{% for f in forma_a %}<span class="{{ f.resultado }}">{{ f.resultado }}</span>{% endfor %}</div></div>
+        <div class="col-4 small text-muted fw-bold text-uppercase">Forma recente</div>
+        <div class="col-4"><div class="forma">{% for f in forma_b %}<span class="{{ f.resultado }}">{{ f.resultado }}</span>{% endfor %}</div></div></div>{% endif %}
+    <div class="row text-center py-2 border-top">
+        <div class="col-4 small">{% for d in comparacao.a.destaques %}<div>{{ d.nome }} <b>{{ d.overall }}</b></div>{% endfor %}</div>
+        <div class="col-4 small text-muted fw-bold text-uppercase">Destaques</div>
+        <div class="col-4 small">{% for d in comparacao.b.destaques %}<div>{{ d.nome }} <b>{{ d.overall }}</b></div>{% endfor %}</div></div>
+</div>
+
+{% if h2h %}<div class="fb-card p-3 mb-4"><b>Confronto direto no Bolão</b>{% for j in h2h %}<div class="d-flex justify-content-between border-top pt-2 mt-2"><span>{{ j.casa }} <b>{{ j.placar }}</b> {{ j.fora }}</span><small class="text-muted">{{ j.data }}</small></div>{% endfor %}</div>{% endif %}
+
+<div class="text-center mb-5">
+    <a href="{% url 'futebol:comparativo_novo' %}?a={{ a.id }}&b={{ b.id }}" class="btn btn-warning btn-lg rounded-pill fw-bold px-5 shadow">
+        <i class="fa-solid fa-square-poll-vertical"></i> Escolher os 11 iniciais e abrir votação
+    </a>
+    <div class="small text-muted mt-2">A galera vota e elege o 11 ideal entre os dois times (cada voto rende 🪙 10).</div>
+</div>
+{% endif %}
+{% endblock %}

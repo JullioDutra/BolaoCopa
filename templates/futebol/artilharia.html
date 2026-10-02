@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block title %}Artilharia - Futebol{% endblock %}
+{% block content %}
+{% include 'futebol/_estilo.html' %}
+<h2 class="mb-3"><i class="fa-solid fa-bullseye text-danger"></i> Artilharia do Brasileirão</h2>
+{% if artilheiros %}
+<div class="fb-card overflow-hidden">{% for a in artilheiros %}
+    <div class="d-flex align-items-center gap-3 px-3 py-3 {% if not forloop.first %}border-top{% endif %}">
+        <div style="width:34px;font-family:var(--fonte-titulo);font-size:1.5rem;font-weight:700;" class="{% if forloop.counter <= 3 %}text-warning{% else %}text-muted{% endif %}">{{ forloop.counter }}</div>
+        {% if a.escudo %}<img src="{{ a.escudo }}" width="30" height="30" style="object-fit:contain" loading="lazy">{% endif %}
+        <div class="flex-grow-1"><div class="fw-bold">{{ a.jogador }}</div><small class="text-muted">{{ a.time }} · {{ a.jogos }} jogos{% if a.assistencias %} · {{ a.assistencias }} assist.{% endif %}</small></div>
+        <div class="text-end"><div style="font-family:var(--fonte-titulo);font-size:2rem;font-weight:800;line-height:1;">{{ a.gols }}</div><small class="text-muted">gols</small></div>
+    </div>{% endfor %}</div>
+{% else %}<div class="fb-card p-5 text-center text-muted"><i class="fa-solid fa-plug-circle-xmark fs-1 mb-2"></i><div>Artilharia indisponível agora.</div><small>Configure <code>FOOTBALL_DATA_TOKEN</code> ou <code>APIFOOTBALL_KEY</code>.</small></div>{% endif %}
+{% endblock %}

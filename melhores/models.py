@@ -134,3 +134,48 @@ class Aposta(models.Model):
     @property
     def retorno_potencial(self):
         return int(Decimal(self.valor) * self.odd_travada)
+
+
+class Multipla(models.Model):
+    """
+    Aposta múltipla (acumulada): várias seleções de categorias DIFERENTES num único bilhete.
+    A odd total é o produto das odds travadas (limitada a ODD_TOTAL_MAX); só paga se TODAS acertarem.
+    Seleção anulada (categoria cancelada) conta como odd 1,00.
+    """
+    STATUS = Aposta.STATUS
+    ODD_TOTAL_MAX = Decimal('100.00')
+    MIN_SELECOES = 2
+    MAX_SELECOES = 8
+    MAX_ABERTAS = 10
+
+    usuario = models.ForeignKey(User, on_delete=models.CASCADE, related_name='multiplas_melhores')
+    edicao = models.ForeignKey(Edicao, on_delete=models.CASCADE, related_name='multiplas')
+    valor = models.PositiveIntegerField()
+    odd_total = models.DecimalField(max_digits=8, decimal_places=2)
+    status = models.CharField(max_length=10, choices=STATUS, default='aberta')
+    retorno = models.PositiveIntegerField(default=0)
+    criada_em = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-criada_em']
+
+    def __str__(self):
+        return f"Múltipla de {self.usuario.username}: {self.valor} @ {self.odd_total}"
+
+    @property
+    def retorno_potencial(self):
+        return int(Decimal(self.valor) * self.odd_total)
+
+
+class MultiplaSelecao(models.Model):
+    multipla = models.ForeignKey(Multipla, on_delete=models.CASCADE, related_name='selecoes')
+    categoria = models.ForeignKey(Categoria, on_delete=models.CASCADE, related_name='selecoes_multipla')
+    candidato = models.ForeignKey(Candidato, on_delete=models.CASCADE, related_name='selecoes_multipla')
+    odd_travada = models.DecimalField(max_digits=6, decimal_places=2)
+    status = models.CharField(max_length=10, choices=Aposta.STATUS, default='aberta')
+
+    class Meta:
+        unique_together = [('multipla', 'categoria')]
+
+    def __str__(self):
+        return f"{self.candidato.nome} @ {self.odd_travada}"

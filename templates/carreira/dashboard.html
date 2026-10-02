@@ -4,10 +4,6 @@
 {% block title %}Hub de Carreira - Cartolândia{% endblock %}
 
 {% block content %}
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
 <style>
     :root {
         /* ---- Paleta: "Trófeu sob luz de estádio" ---- */
@@ -31,7 +27,7 @@
         --live: #ff5252;
         --info: #33c3f0;
 
-        --font-display: 'Oswald', 'Arial Narrow', sans-serif;
+        --font-display: 'Barlow Condensed', 'Arial Narrow', sans-serif;
         --font-body: 'Inter', -apple-system, sans-serif;
     }
 
@@ -513,7 +509,7 @@
 
         <div class="col-lg-7">
 
-            <h6 class="training-panel-title mb-3"><i class="fa-regular fa-calendar-check me-2"></i> Próximo Compromisso</h6>
+            <h6 class="training-panel-title mb-3"><i class="fa-solid fa-calendar-check me-2"></i> Próximo Compromisso</h6>
 
             {% if proxima_partida %}
             <div class="match-card p-4 mb-4 position-relative">
@@ -522,7 +518,7 @@
                     {% if proxima_partida.status == 'andamento' %}
                         <span class="live-badge">Ao Vivo &bull; {{ proxima_partida.minuto_atual }}'</span>
                     {% else %}
-                        <span class="waiting-badge"><i class="fa-regular fa-clock me-1"></i> Aguardando Apito Inicial</span>
+                        <span class="waiting-badge"><i class="fa-solid fa-clock me-1"></i> Aguardando Apito Inicial</span>
                     {% endif %}
                 </div>
 

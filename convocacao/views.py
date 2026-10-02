@@ -107,4 +107,4 @@ def ranking_brasileirao(request):
 
     ranking.sort(key=lambda x: x['pontos'], reverse=True)
 
-    return render(request, 'convocacao/ranking_brasileirao.html', {'ranking': ranking})
+    return render(request, 'convocacao/convocacao_ranking_brasileirao.html', {'ranking': ranking})

@@ -73,9 +73,10 @@ class DashboardTests(TestCase):
     def test_escolher_time_da_bonus_unico_e_aplica_tema(self):
         r = self.client.post(reverse('conta:escolher_time'), {'clube': self.fla.id, 'usar_tema_do_time': 'on'})
         self.assertEqual(r.status_code, 302)
-        self.assertEqual(coins.saldo(self.user), 1100)
+        # +100 do bônus e +25 da conquista "Torcedor de Carteirinha"
+        self.assertEqual(coins.saldo(self.user), 1000 + 100 + 25)
         self.client.post(reverse('conta:escolher_time'), {'clube': self.fla.id, 'usar_tema_do_time': 'on'})
-        self.assertEqual(coins.saldo(self.user), 1100)  # bônus só na primeira escolha
+        self.assertEqual(coins.saldo(self.user), 1125)  # bônus só na primeira escolha
 
         r = self.client.get(reverse('dashboard'))
         self.assertContains(r, 'Nação Rubro-Negra')

@@ -47,6 +47,11 @@ class Jogo(models.Model):
         return self.status_externo in ('IN_PLAY', 'PAUSED') and not self.finalizado
 
     @property
+    def fecha_em(self):
+        """ Momento em que os palpites fecham (1h antes do jogo). """
+        return self.data_hora - timedelta(hours=1)
+
+    @property
     def aceita_palpite(self):
         """ Retorna True se faltar MAIS de 1 hora para o jogo começar """
         limite_para_apostar = self.data_hora - timedelta(hours=1)
@@ -87,6 +92,12 @@ class Jogo(models.Model):
                 )
                 palpite.coins_creditados = True
                 palpite.save(update_fields=['coins_creditados'])
+                from avisos import atividade, conquistas
+                if pontos == 15:
+                    atividade.registrar(palpite.usuario, 'cravada',
+                                        f"🎯 {atividade.nome_publico(palpite.usuario)} cravou {self.time_casa} {self.gols_casa_real} x {self.gols_fora_real} {self.time_fora}!",
+                                        '/palpites/jogos/')
+                conquistas.checar(palpite.usuario)
 
     def save(self, *args, **kwargs):
         # 1. Primeiro, salva as alterações do jogo no banco de dados
@@ -390,6 +401,9 @@ class RodadaBolao(models.Model):
                         carteira=carteira, tipo='premio', valor=premio_individual,
                         descricao=f"🏆 Bolão da Rodada: {rodada.nome} ({lider} pts, rateio entre {len(ganhadores)})",
                     )
+                    from avisos import atividade
+                    atividade.registrar(usuario, 'rodada', f"🏆 {atividade.nome_publico(usuario)} levou o pote do {rodada.nome} com {lider} pts!",
+                                        f"/palpites/rodada/{rodada.id}/")
             rodada.premio_distribuido = True
             rodada.save(update_fields=['premio_distribuido'])
         self.premio_distribuido = True

@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block title %}Buscar "{{ q }}" - Futebol{% endblock %}
+{% block content %}
+{% include 'futebol/_estilo.html' %}
+<form class="mb-4" method="get"><div class="input-group input-group-lg">
+    <input class="form-control" name="q" value="{{ q }}" placeholder="Time ou jogador" autofocus>
+    <button class="btn btn-success fw-bold"><i class="fa-solid fa-magnifying-glass"></i></button></div></form>
+
+{% if q and not times and not jogadores %}
+    <div class="fb-card p-5 text-center text-muted"><i class="fa-solid fa-face-frown fs-1 mb-2"></i><div>Nada encontrado para “{{ q }}”.</div>
+        <small>O banco é alimentado pela staff com <code>importar_futebol</code>.</small></div>
+{% endif %}
+
+{% if times %}<h5 class="mb-2">Times</h5>
+<div class="row g-2 mb-4">{% for t in times %}
+    <div class="col-md-6"><a href="{% url 'futebol:time' t.id %}" class="fb-card p-3 d-flex align-items-center gap-3 text-decoration-none text-dark">
+        {% include 'futebol/_escudo.html' with time=t tam=44 %}<div><div class="fw-bold">{{ t.nome }}</div><small class="text-muted">{{ t.liga|default:t.pais }}</small></div></a></div>
+{% endfor %}</div>{% endif %}
+
+{% if jogadores %}<h5 class="mb-2">Jogadores</h5>
+<div class="row g-2">{% for a in jogadores %}
+    <div class="col-md-6"><a href="{% url 'futebol:jogador' a.id %}" class="fb-card p-3 d-flex align-items-center gap-3 text-decoration-none text-dark">
+        <span class="fb-escudo-fallback" style="width:44px;height:44px;background:#374151;font-size:1.2rem;">{{ a.numero|default:"•" }}</span>
+        <div><div class="fw-bold">{{ a.nome }}</div><small class="text-muted">{{ a.get_posicao_display }}{% if a.time %} · {{ a.time.nome }}{% endif %}</small></div></a></div>
+{% endfor %}</div>{% endif %}
+{% endblock %}

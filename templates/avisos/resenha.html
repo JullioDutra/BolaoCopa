@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+{% block title %}Resenha ao vivo - Cartolândia{% endblock %}
+{% block content %}
+<h3 class="mb-1"><i class="fa-solid fa-tower-broadcast text-danger"></i> Resenha ao vivo</h3>
+<p class="text-muted">Tudo que está rolando no app: cravadas, apostas, conquistas e votações.</p>
+<div class="card card-clean overflow-hidden">
+    {% include 'avisos/_feed_itens.html' %}
+</div>
+{% endblock %}

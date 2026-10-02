@@ -96,8 +96,8 @@
                     
                     <!-- Time da Casa (Ocupa 30% da tela) -->
                     <div class="d-flex flex-column align-items-center text-center" style="width: 30%;">
-                        {% if jogo.escudo_casa %}
-                            <img src="{{ jogo.escudo_casa.url }}" class="img-fluid mb-2 team-logo-palpite">
+                        {% if jogo.escudo_casa_src %}
+                            <img src="{{ jogo.escudo_casa_src }}" class="img-fluid mb-2 team-logo-palpite">
                         {% else %}
                             <div class="bg-light rounded-circle mb-2 d-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
                                 <i class="fa-solid fa-shield-halved text-muted fs-5"></i>
@@ -121,8 +121,8 @@
                     
                     <!-- Time de Fora (Ocupa 30% da tela) -->
                     <div class="d-flex flex-column align-items-center text-center" style="width: 30%;">
-                        {% if jogo.escudo_fora %}
-                            <img src="{{ jogo.escudo_fora.url }}" class="img-fluid mb-2 team-logo-palpite">
+                        {% if jogo.escudo_fora_src %}
+                            <img src="{{ jogo.escudo_fora_src }}" class="img-fluid mb-2 team-logo-palpite">
                         {% else %}
                             <div class="bg-light rounded-circle mb-2 d-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
                                 <i class="fa-solid fa-shield-halved text-muted fs-5"></i>
@@ -147,6 +147,12 @@
                         {% if palpite_existente %} Atualizar Resenha{% else %} Palpite Resenha (Grátis){% endif %}
                     </button>
                     
+                    {% if rodada_inscrito %}
+                    <button type="submit" name="tipo_aposta" value="rodada" class="btn btn-primary btn-lg rounded-pill shadow fw-bold px-4 text-uppercase" style="letter-spacing: 0.5px;">
+                        <i class="fa-solid fa-trophy text-warning"></i>
+                        {% if palpite_existente.modalidade == 'rodada' %} Atualizar no Bolão da Rodada{% else %} Valer no Bolão da Rodada{% endif %}
+                    </button>
+                    {% endif %}
                     <button type="submit" name="tipo_aposta" value="pago" class="btn btn-success btn-lg rounded-pill shadow fw-bold px-4 text-uppercase" style="letter-spacing: 0.5px;">
                         <i class="fa-solid fa-sack-dollar text-warning"></i>
                         {% if palpite_existente %} Atualizar Cota{% else %} Valendo R$ 10,00{% endif %}

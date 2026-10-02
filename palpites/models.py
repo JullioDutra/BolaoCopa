@@ -7,6 +7,11 @@ from django.db.models import Max
 from decimal import Decimal
 #from accounts.models import Transacao
 
+# Cartola Coins ganhos por palpite certo
+COINS_PLACAR_EXATO = 50
+COINS_VENCEDOR = 10
+
+
 class Jogo(models.Model):
     time_casa = models.CharField(max_length=100)    
     escudo_casa = models.ImageField(upload_to='escudos/', blank=True, null=True)
@@ -17,6 +22,29 @@ class Jogo(models.Model):
     gols_fora_real = models.IntegerField(null=True, blank=True)
     finalizado = models.BooleanField(default=False)
     premio_distribuido = models.BooleanField(default=False)
+
+    # --- Integração com API de resultados (football-data.org) ---
+    campeonato = models.CharField(max_length=80, blank=True, help_text="Ex.: Brasileirão Série A")
+    external_id = models.IntegerField(null=True, blank=True, unique=True, help_text="ID da partida na API (preenchido pelo sincronizador)")
+    status_externo = models.CharField(max_length=20, blank=True, help_text="Status vindo da API: TIMED, IN_PLAY, FINISHED...")
+    escudo_casa_url = models.URLField(max_length=300, blank=True)
+    escudo_fora_url = models.URLField(max_length=300, blank=True)
+
+    # --- Formato "Bolão da Rodada" ---
+    rodada = models.ForeignKey('RodadaBolao', null=True, blank=True, on_delete=models.SET_NULL, related_name='jogos')
+
+    @property
+    def escudo_casa_src(self):
+        """ URL do escudo: imagem enviada no Admin tem prioridade sobre a da API. """
+        return self.escudo_casa.url if self.escudo_casa else (self.escudo_casa_url or None)
+
+    @property
+    def escudo_fora_src(self):
+        return self.escudo_fora.url if self.escudo_fora else (self.escudo_fora_url or None)
+
+    @property
+    def ao_vivo(self):
+        return self.status_externo in ('IN_PLAY', 'PAUSED') and not self.finalizado
 
     @property
     def aceita_palpite(self):
@@ -49,6 +77,17 @@ class Jogo(models.Model):
             palpite.pontuacao_obtida = pontos
             palpite.save()
 
+            # Cartola Coins por acerto (vale para todas as modalidades, creditado uma única vez)
+            if pontos and not palpite.coins_creditados:
+                from accounts import coins
+                bonus = COINS_PLACAR_EXATO if pontos == 15 else COINS_VENCEDOR
+                coins.creditar(
+                    palpite.usuario, bonus,
+                    f"⚽ {'Cravou' if pontos == 15 else 'Acertou o vencedor de'} {self.time_casa} x {self.time_fora}",
+                )
+                palpite.coins_creditados = True
+                palpite.save(update_fields=['coins_creditados'])
+
     def save(self, *args, **kwargs):
         # 1. Primeiro, salva as alterações do jogo no banco de dados
         super().save(*args, **kwargs)
@@ -56,6 +95,10 @@ class Jogo(models.Model):
         # 2. Se o jogo ACABOU, roda a regra dos pontos para todo mundo!
         if self.finalizado:
             self.calcular_pontuacao_palpites()
+
+            # 2.1 Se o jogo faz parte de um Bolão da Rodada, vê se a rodada acabou
+            if self.rodada_id:
+                self.rodada.encerrar_se_possivel()
 
             # 3. Verifica se o prêmio AINDA NÃO FOI PAGO
             if not self.premio_distribuido:
@@ -122,8 +165,13 @@ class Palpite(models.Model):
     jogo = models.ForeignKey(Jogo, on_delete=models.CASCADE, related_name='palpites')
     gols_casa = models.IntegerField()
     gols_fora = models.IntegerField()
-    modalidade = models.CharField(max_length=10, choices=[('resenha', 'Resenha'), ('pago', 'Pago')], default='resenha')
+    modalidade = models.CharField(
+        max_length=10,
+        choices=[('resenha', 'Resenha'), ('pago', 'Pago'), ('rodada', 'Bolão da Rodada')],
+        default='resenha',
+    )
     pontuacao_obtida = models.IntegerField(default=0)
+    coins_creditados = models.BooleanField(default=False, help_text="Já recebeu os Cartola Coins pelo acerto?")
     is_maior_pontuador = models.BooleanField(default=False, verbose_name="Maior pontuador da rodada?")
 
     class Meta:
@@ -248,3 +296,114 @@ class PalpiteTorneioExtra(models.Model):
 
     class Meta:
         unique_together = ('usuario', 'torneio')
+
+
+# ==========================================
+# FORMATO "BOLÃO DA RODADA"
+# ==========================================
+
+class RodadaBolao(models.Model):
+    """
+    Bolão que vale uma rodada inteira: o jogador paga UMA entrada e seus palpites
+    em todos os jogos da rodada somam pontos. Quem fizer mais pontos leva o pote
+    (empate divide). Convive com o formato clássico "por jogo" (R$ 10 por partida).
+    """
+    nome = models.CharField(max_length=120)
+    campeonato = models.CharField(max_length=80, blank=True)
+    numero = models.PositiveIntegerField(null=True, blank=True)
+    valor_entrada = models.DecimalField(max_digits=8, decimal_places=2, default=Decimal('10.00'))
+    taxa_casa = models.DecimalField(max_digits=3, decimal_places=2, default=Decimal('0.05'), help_text="0.05 = 5% do pote")
+    premio_distribuido = models.BooleanField(default=False)
+    criada_em = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Bolão da Rodada"
+        verbose_name_plural = "Bolões da Rodada"
+        ordering = ['-criada_em']
+
+    def __str__(self):
+        return self.nome
+
+    @property
+    def primeiro_jogo(self):
+        return self.jogos.order_by('data_hora').first()
+
+    @property
+    def inscricoes_abertas(self):
+        """ Dá para entrar até 1h antes do primeiro jogo da rodada. """
+        primeiro = self.primeiro_jogo
+        return bool(primeiro and primeiro.aceita_palpite and not self.premio_distribuido)
+
+    @property
+    def encerrada(self):
+        jogos = self.jogos.all()
+        return jogos.exists() and not jogos.filter(finalizado=False).exists()
+
+    @property
+    def pote(self):
+        return self.valor_entrada * self.inscricoes.count()
+
+    @property
+    def premio_liquido(self):
+        return (self.pote * (Decimal('1') - self.taxa_casa)).quantize(Decimal('0.01'))
+
+    def ranking(self):
+        """ [{'usuario', 'pontos', 'exatos', 'acertos'}] ordenado, só de quem está inscrito. """
+        linhas = []
+        for insc in self.inscricoes.select_related('usuario'):
+            palpites = Palpite.objects.filter(
+                usuario=insc.usuario, jogo__rodada=self, modalidade='rodada',
+            )
+            pontos = sum(p.pontuacao_obtida for p in palpites)
+            linhas.append({
+                'usuario': insc.usuario,
+                'pontos': pontos,
+                'exatos': sum(1 for p in palpites if p.pontuacao_obtida == 15),
+                'acertos': sum(1 for p in palpites if p.pontuacao_obtida > 0),
+                'palpites': palpites.count(),
+            })
+        linhas.sort(key=lambda l: (l['pontos'], l['exatos']), reverse=True)
+        return linhas
+
+    def encerrar_se_possivel(self):
+        """ Quando o último jogo termina, paga o pote ao(s) líder(es). Idempotente. """
+        if self.premio_distribuido or not self.encerrada:
+            return False
+
+        with transaction.atomic():
+            rodada = RodadaBolao.objects.select_for_update().get(pk=self.pk)
+            if rodada.premio_distribuido:
+                return False
+
+            ranking = rodada.ranking()
+            if ranking and ranking[0]['pontos'] > 0:
+                lider = ranking[0]['pontos']
+                ganhadores = [l['usuario'] for l in ranking if l['pontos'] == lider]
+                premio_individual = (rodada.premio_liquido / len(ganhadores)).quantize(Decimal('0.01'))
+
+                from accounts.models import Transacao
+                for usuario in ganhadores:
+                    carteira = usuario.carteira
+                    carteira.saldo += premio_individual
+                    carteira.save()
+                    Transacao.objects.create(
+                        carteira=carteira, tipo='premio', valor=premio_individual,
+                        descricao=f"🏆 Bolão da Rodada: {rodada.nome} ({lider} pts, rateio entre {len(ganhadores)})",
+                    )
+            rodada.premio_distribuido = True
+            rodada.save(update_fields=['premio_distribuido'])
+        self.premio_distribuido = True
+        return True
+
+
+class InscricaoRodada(models.Model):
+    usuario = models.ForeignKey(User, on_delete=models.CASCADE, related_name='inscricoes_rodada')
+    rodada = models.ForeignKey(RodadaBolao, on_delete=models.CASCADE, related_name='inscricoes')
+    valor_pago = models.DecimalField(max_digits=8, decimal_places=2)
+    criada_em = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = [('usuario', 'rodada')]
+
+    def __str__(self):
+        return f"{self.usuario.username} em {self.rodada.nome}"

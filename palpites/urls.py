@@ -10,4 +10,7 @@ urlpatterns = [
     path('admin-resultados/', views.inserir_resultados_finais, name='inserir_resultados_finais'),
     path('longo-prazo/', views.meus_palpites_longo_prazo, name='meus_palpites_longo_prazo'),
     path('admin-painel/', views.painel_controle_admin, name='painel_controle_admin'),
+    path('rodada/<int:rodada_id>/entrar/', views.entrar_rodada, name='entrar_rodada'),
+    path('rodada/<int:rodada_id>/', views.ranking_rodada, name='ranking_rodada'),
+    path('api/sincronizar/<str:token>/', views.api_sincronizar, name='api_sincronizar'),
 ]

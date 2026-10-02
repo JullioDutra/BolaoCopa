@@ -72,10 +72,73 @@
 <!-- Saudação do Manager -->
 <div class="row mb-3 mt-2 px-2">
     <div class="col-12">
-        <h3 class="fw-bold mb-1" style="color: var(--verde-escuro);">Fala, Craque {{ user.first_name|default:user.username }}! <i class="fa-regular fa-hand-peace text-warning"></i></h3>
-        <p class="text-muted">Administre seu elenco, faça seus palpites e mostre quem manda na temporada.</p>
+        <h3 class="fw-bold mb-1" style="color: var(--verde-escuro);">Fala, {% if time_coracao %}{{ tema.apelido }}{% else %}Craque{% endif %} {{ user.first_name|default:user.username }}! <i class="fa-regular fa-hand-peace text-warning"></i></h3>
+        <p class="text-muted">{% if time_coracao %}{{ tema.grito }} {% endif %}Administre seu elenco, faça seus palpites e mostre quem manda na temporada.</p>
     </div>
 </div>
+
+<!-- Bônus diário / sequência -->
+{% if streak_resultado %}
+<div class="alert border-0 shadow-sm rounded-4 d-flex align-items-center gap-3 mb-3" style="background: linear-gradient(135deg,#fff8e1,#ffe082);">
+    <div class="fs-1">🔥</div>
+    <div class="flex-grow-1">
+        <div class="fw-bold">{% if streak_resultado.semana_perfeita %}SEMANA PERFEITA! {% endif %}Sequência de {{ streak_resultado.streak }} dia{{ streak_resultado.streak|pluralize }} — +{{ streak_resultado.bonus }} 🪙 Cartola Coins coletados!</div>
+        <small class="text-muted">Volte amanhã para ganhar {{ streak_resultado.proximo_bonus }} 🪙. Faltou um dia? A sequência zera.</small>
+    </div>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+</div>
+{% elif streak_atual %}
+<div class="small text-muted mb-3 px-2">🔥 Sequência atual: <strong>{{ streak_atual }} dia{{ streak_atual|pluralize }}</strong> — bônus de hoje já coletado.</div>
+{% endif %}
+
+<!-- Feed do time do coração -->
+{% if time_coracao %}
+<div class="row g-3 mb-4">
+    <div class="col-12">
+        <div class="card border-0 rounded-4 shadow-sm text-white p-3 p-md-4" style="background: linear-gradient(135deg, {{ tema.escura }}, {{ tema.base }});">
+            <div class="d-flex align-items-center gap-3">
+                {% if time_coracao.escudo %}<img src="{{ time_coracao.escudo.url }}" alt="{{ time_coracao.nome }}" style="height:64px; width:64px; object-fit:contain;" class="bg-white bg-opacity-10 rounded-circle p-2">{% else %}<div class="fs-1">❤️</div>{% endif %}
+                <div class="flex-grow-1">
+                    <div class="small text-uppercase opacity-75 fw-bold" style="letter-spacing:1px;">Seu time do coração</div>
+                    <h4 class="fw-bold mb-0">{{ time_coracao.nome }}</h4>
+                    {% if jogo_do_time %}
+                        <div class="small mt-1">⚽ Próximo jogo: <strong>{{ jogo_do_time.time_casa }} x {{ jogo_do_time.time_fora }}</strong> · {{ jogo_do_time.data_hora|date:"D, d/m \à\s H:i" }}
+                            {% if jogo_do_time.ao_vivo %}<span class="badge text-bg-danger ms-1">AO VIVO</span>{% endif %}
+                            · <a href="{% url 'palpites:fazer_palpite' jogo_do_time.id %}" class="text-white fw-bold">Palpitar</a></div>
+                    {% endif %}
+                </div>
+                <a href="{% url 'conta:escolher_time' %}" class="btn btn-sm btn-outline-light rounded-pill d-none d-md-inline-block">Trocar</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12" id="col-noticias">
+        <div class="card card-clean h-100 p-3">
+            <h6 class="fw-bold mb-3"><i class="fa-regular fa-newspaper me-1"></i> Notícias do {{ time_coracao.nome }} <small class="text-muted fw-normal">· via ge</small></h6>
+            <div id="feed-noticias" class="list-group list-group-flush">
+                <div class="text-muted small py-3"><i class="fa-solid fa-spinner fa-spin me-1"></i> Buscando as últimas...</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-lg-5" id="card-tabela" style="display:none;">
+        <div class="card card-clean h-100 p-3">
+            <h6 class="fw-bold mb-3"><i class="fa-solid fa-table-list me-1"></i> Brasileirão</h6>
+            <div id="feed-tabela"></div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="card border-0 rounded-4 shadow-sm p-3 p-md-4 mb-4" style="background: linear-gradient(135deg,#fff,#f1f8e9); border-left: 6px solid var(--verde-campo) !important;">
+    <div class="d-flex flex-column flex-md-row align-items-md-center gap-3">
+        <div class="fs-1">❤️</div>
+        <div class="flex-grow-1">
+            <h5 class="fw-bold mb-1">Qual é o seu time?</h5>
+            <p class="text-muted mb-0">Escolha seu clube: o site veste as cores dele, o feed mostra as notícias e você ganha <strong>🪙 100 Cartola Coins</strong>.</p>
+        </div>
+        <a href="{% url 'conta:escolher_time' %}" class="btn btn-success fw-bold rounded-pill px-4">Escolher meu time</a>
+    </div>
+</div>
+{% endif %}
 
 <!-- Mural dos Campeões (resumo) -->
 {% if ultimo_campeao %}
@@ -227,6 +290,21 @@
         </div>
     </div>
 
+    <!-- Melhores do Ano (Bet) -->
+    <div class="col-12 col-md-6 col-lg-3">
+        <div class="card card-action h-100 text-center shadow border-0 rounded-4 position-relative overflow-hidden" style="background: radial-gradient(circle at 20% 0%, #3b2a08, #120d02 70%); border: 2px solid #cfb53b !important;">
+            <div class="ribbon-teaser text-uppercase">ODDS</div>
+            <div class="card-body p-4 d-flex flex-column">
+                <div class="mb-3 mt-2"><span style="font-size:3rem;">🏆</span></div>
+                <h5 class="fw-bold text-uppercase text-white mb-2" style="letter-spacing: 1px;">Melhores do Ano</h5>
+                <p class="text-white-50 small mb-4">Aposte seus 🪙 Cartola Coins em quem leva cada prêmio. Odds ao vivo!</p>
+                <div class="mt-auto">
+                    <a href="{% url 'melhores:home' %}" class="btn fw-bold text-uppercase w-100 py-2 shadow-sm" style="background-color: #cfb53b; color: #000; letter-spacing: 0.5px; border: none;">Fazer minhas apostas</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Modo Carreira (ATIVO) -->
     <div class="col-12 col-md-6 col-lg-3">
         <div class="card card-action h-100 text-center shadow border-0 rounded-4 position-relative overflow-hidden" style="background: linear-gradient(135deg, #050505, #1a1a1a); border: 2px solid #cfb53b !important;">
@@ -250,6 +328,60 @@
 </div>
 
 <script>
+    // ----- Feed do time: notícias e tabela carregam depois da página (não travam a abertura)
+    (function () {
+        const boxNoticias = document.getElementById('feed-noticias');
+        if (!boxNoticias) return;
+
+        function tempoRelativo(iso) {
+            if (!iso) return '';
+            const min = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
+            if (isNaN(min)) return '';
+            if (min < 60) return 'há ' + Math.max(min, 1) + ' min';
+            if (min < 1440) return 'há ' + Math.round(min / 60) + ' h';
+            return 'há ' + Math.round(min / 1440) + ' d';
+        }
+
+        fetch("{% url 'core:feed_noticias' %}").then(r => r.json()).then(dados => {
+            boxNoticias.textContent = '';
+            if (!dados.noticias.length) {
+                const p = document.createElement('div');
+                p.className = 'text-muted small py-3';
+                p.textContent = 'Sem notícias no momento. Volte daqui a pouco!';
+                boxNoticias.appendChild(p);
+                return;
+            }
+            dados.noticias.forEach(n => {
+                const a = document.createElement('a');
+                a.href = n.link; a.target = '_blank'; a.rel = 'noopener noreferrer';
+                a.className = 'list-group-item list-group-item-action px-0';
+                const t = document.createElement('div'); t.className = 'fw-bold small'; t.textContent = n.titulo;
+                const m = document.createElement('small'); m.className = 'text-muted';
+                m.textContent = n.fonte + (n.publicado_em ? ' · ' + tempoRelativo(n.publicado_em) : '');
+                a.appendChild(t); a.appendChild(m); boxNoticias.appendChild(a);
+            });
+        }).catch(() => { boxNoticias.textContent = 'Não foi possível carregar as notícias agora.'; });
+
+        fetch("{% url 'core:feed_tabela' %}").then(r => r.json()).then(dados => {
+            if (!dados.tabela.length) return;  // sem API configurada: o card continua escondido
+            const tabela = document.createElement('table');
+            tabela.className = 'table table-sm align-middle mb-0';
+            dados.tabela.forEach(l => {
+                const tr = document.createElement('tr');
+                if (l.time === dados.meu_time) tr.className = 'table-warning fw-bold';
+                [l.posicao + 'º', l.time, l.pontos + ' pts', l.jogos + ' J'].forEach((txt, i) => {
+                    const td = document.createElement('td'); td.textContent = txt;
+                    if (i >= 2) td.className = 'text-end text-muted small';
+                    tr.appendChild(td);
+                });
+                tabela.appendChild(tr);
+            });
+            document.getElementById('feed-tabela').appendChild(tabela);
+            document.getElementById('card-tabela').style.display = '';
+            document.getElementById('col-noticias').classList.add('col-lg-7');
+        }).catch(() => {});
+    })();
+
     function updateTimers() {
         const now = new Date().getTime();
 

@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     'draft',
     'minijogo',
     'modocarreira', # <-- ADICIONADO O NOVO APP AQUI!
+    'melhores',     # Bet dos Melhores do Ano (Cartola Coins)
 ]
 
 MIDDLEWARE = [
@@ -81,6 +82,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'accounts.context_processors.tema_e_coins',
             ],
         },
     },
@@ -221,5 +223,29 @@ GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
 
 # Chave secreta para o Cronjob externo bater no servidor
 CRON_SECRET_TOKEN = os.environ.get('CRON_SECRET_TOKEN', '3yrktOdann3sqSCRUoVqzCnBZER3zMo5AHHOLi')
+
+# Token da API football-data.org (jogos/resultados/tabela automáticos). Grátis em
+# https://www.football-data.org/client/register — coloque no .env como FOOTBALL_DATA_TOKEN.
+FOOTBALL_DATA_TOKEN = os.environ.get('FOOTBALL_DATA_TOKEN')
+
+# Token secreto do endpoint /palpites/api/sincronizar/<token>/ (para cron externo).
+# Sem a variável definida o endpoint fica desligado.
+SYNC_SECRET_TOKEN = os.environ.get('SYNC_SECRET_TOKEN')
+
+# Notícias do feed: modelo de URL de RSS com {q} (busca). Padrão = Google News filtrando o ge.globo.com.
+NOTICIAS_RSS_URL = os.environ.get(
+    'NOTICIAS_RSS_URL',
+    'https://news.google.com/rss/search?q={q}&hl=pt-BR&gl=BR&ceid=BR:pt-419',
+)
+
+# Cache em arquivo: compartilhado entre os processos do servidor (o cache em memória
+# padrão do Django é isolado por processo e perderia a economia de chamadas à API).
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+        'LOCATION': os.path.join(BASE_DIR, 'cache_django'),
+        'TIMEOUT': 1800,
+    }
+}
 
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 2500

@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block title %}Draft Copa do Brasil - 7 a 0{% endblock %}
+{% block content %}
+{% include 'setezero/_estilo.html' %}
+<section class="ar-hero sz-hero">
+    <h1><span class="sete">7 a 0</span> · Draft Copa do Brasil</h1>
+    <p>Role o dado, receba um time histórico, escolha um craque dele. Repita até montar o seu XI dos sonhos — e dispute 7 jogos de mata-mata contra os maiores esquadrões.</p>
+    <div class="ar-chips"><a class="ar-chip text-decoration-none text-white" href="{% url 'setezero:hub' %}"><i class="fa-solid fa-arrow-left"></i> Voltar</a>
+        <span class="ar-chip"><i class="fa-solid fa-dice"></i> {{ total_times }} times no sorteio</span></div>
+</section>
+<div class="row g-3 mb-4">
+  <div class="col-md-6"><div class="sz-painel h-100"><h5 class="fw-bold">Como funciona</h5>
+    <ol class="mb-0 small" style="line-height:1.8">
+      <li>🎲 <b>Rola o dado</b>: sai um time + época (ex.: Flamengo 1981).</li>
+      <li>👤 <b>Escolhe 1 jogador</b> daquele elenco e põe numa posição.</li>
+      <li>🔁 Repete até ter <b>11 titulares + 5 reservas</b> (você tem 3 re-sorteios).</li>
+      <li>🧠 Durante os jogos você <b>muda a tática e usa o banco</b>.</li>
+      <li>🏆 Disputa a Copa: {% for f in fases %}{{ f }}{% if not forloop.last %} → {% endif %}{% endfor %}.</li>
+      <li>📲 No fim, recebe o <b>retrospecto</b> para compartilhar no grupo.</li>
+    </ol></div></div>
+  <div class="col-md-6"><form method="post" class="sz-painel h-100">{% csrf_token %}
+    <div class="small fw-bold text-muted mb-1">MODO</div>
+    <label class="sz-opt me-1 mb-2"><input type="radio" name="modo" value="mata" checked><span>Mata-mata (perdeu, caiu)</span></label>
+    <label class="sz-opt mb-2"><input type="radio" name="modo" value="campanha"><span>Campanha (joga os 7 jogos)</span></label>
+    <div class="small fw-bold text-muted mb-1 mt-2">FORMAÇÃO</div>
+    {% for f in formacoes %}<label class="sz-opt me-1 mb-1"><input type="radio" name="formacao" value="{{ f }}" {% if f == '4-3-3' %}checked{% endif %}><span>{{ f }}</span></label>{% endfor %}
+    <div class="small fw-bold text-muted mb-1 mt-2">ESTILO DE JOGO</div>
+    {% for k, m in mentalidades.items %}<label class="sz-opt me-1 mb-1"><input type="radio" name="mentalidade" value="{{ k }}" {% if k == 'equilibrado' %}checked{% endif %}><span>{{ m.nome }}</span></label>{% endfor %}
+    <div class="small text-muted mt-2 mb-3">Formação e estilo podem ser mudados durante os jogos (o estilo). A formação define as vagas do draft.</div>
+    <button class="ar-btn" style="background:#16a34a;color:#fff"><i class="fa-solid fa-dice"></i> Rolar o primeiro dado</button>
+  </form></div>
+</div>
+{% endblock %}

@@ -12,12 +12,16 @@
     </div>
 </section>
 
-{% if abertas or temporadas %}
+{% if abertas or temporadas or drafts %}
 <h2 class="ar-secao"><i class="fa-solid fa-play"></i> Continuar</h2>
 <div class="ar-grid mb-4">
     {% for p in abertas %}
     <a class="ar-card text-decoration-none" style="--cor:#0f766e" href="{% url 'setezero:partida' p.pk %}"><span class="ar-tag">{{ p.get_modo_display }}</span>
         <h3>{{ p.gols_usuario }} x {{ p.gols_rival }}</h3><p>{{ p.time_usuario }} · jogo em andamento</p><span class="ar-btn">Voltar ao jogo</span></a>
+    {% endfor %}
+    {% for dr in drafts %}
+    <a class="ar-card text-decoration-none" style="--cor:#7c2d12" href="{% url 'setezero:draft' dr.pk %}"><span class="ar-tag">Draft Copa</span>
+        <h3>{% if dr.status == 'montando' %}Montando o time{% else %}Fase {{ dr.fase|add:1 }}/7{% endif %}</h3><p>Seu draft da Copa do Brasil está em andamento.</p><span class="ar-btn">Continuar</span></a>
     {% endfor %}
     {% for t in temporadas %}
     <a class="ar-card text-decoration-none" style="--cor:#a16207" href="{% url 'setezero:temporada' t.pk %}"><span class="ar-tag">Campeonato</span>
@@ -28,6 +32,9 @@
 
 <h2 class="ar-secao"><i class="fa-solid fa-dice"></i> Escolha o modo</h2>
 <div class="ar-grid mb-4">
+    <a class="ar-card text-decoration-none" style="--cor:#9a3412" href="{% url 'setezero:draft_novo' %}"><span class="ar-tag">NOVO · 7 JOGOS</span>
+        <div class="ar-ico"><i class="fa-solid fa-dice"></i></div><h3>Draft Copa do Brasil</h3>
+        <p>Role o dado, monte o XI com craques de {{ total_times }} times históricos e vá até o título. O 7 a 0 de verdade: 7 vitórias.</p><span class="ar-btn">Montar meu time</span></a>
     <a class="ar-card text-decoration-none" style="--cor:#15803d" href="{% url 'setezero:novo' 'amistoso' %}"><span class="ar-tag">1 JOGO</span>
         <div class="ar-ico"><i class="fa-solid fa-handshake"></i></div><h3>Amistoso Histórico</h3>
         <p>Escolha dois esquadrões de épocas diferentes e veja quem leva a resenha.</p><span class="ar-btn">Jogar</span></a>
@@ -38,6 +45,14 @@
         <div class="ar-ico"><i class="fa-solid fa-trophy"></i></div><h3>Campeonato</h3>
         <p>Pontos corridos, ida e volta, contra 7 gigantes. Título paga 400 coins.</p><span class="ar-btn">Começar</span></a>
 </div>
+
+{% if copas %}
+<h2 class="ar-secao"><i class="fa-solid fa-share-nodes"></i> Meus retrospectos</h2>
+<div class="ar-tabela mb-4">
+    {% for c in copas %}<a class="ar-linha text-decoration-none" style="grid-template-columns:36px 1fr auto" href="{% url 'setezero:retrospecto' c.codigo %}"><span class="pos">{% if c.status == 'campeao' %}🏆{% else %}⚽{% endif %}</span>
+        <span><span class="nome">{{ c.get_status_display }}{% if c.invicto %} · invicto{% endif %}</span><span class="d-block sub">{{ c.finalizado_em|date:"d/m/Y" }} · {{ c.formacao }}</span></span><span class="sub">{% if c.premio %}+{{ c.premio }} coins{% endif %}</span></a>{% endfor %}
+</div>
+{% endif %}
 
 {% if recentes %}
 <h2 class="ar-secao"><i class="fa-solid fa-clock-rotate-left"></i> Últimos jogos</h2>

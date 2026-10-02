@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+{% block title %}Draft - 7 a 0{% endblock %}
+{% block content %}
+{% include 'setezero/_estilo.html' %}
+<section class="ar-hero sz-hero" style="padding:18px 20px">
+    <h1><span class="sete">7 a 0</span> · Monte seu time</h1>
+    <div class="ar-chips"><span class="ar-chip"><i class="fa-solid fa-users"></i> <span id="cont">0</span>/16 escolhidos</span>
+        <span class="ar-chip"><i class="fa-solid fa-rotate"></i> <span id="skips">3</span> re-sorteios</span>
+        <span class="ar-chip">{{ d.formacao }} · {{ d.eliminatorio|yesno:"Mata-mata,Campanha" }}</span></div>
+</section>
+<div class="row g-3 mb-5">
+  <div class="col-lg-6">
+    <div class="sz-sorteio" id="sorteio">
+      <div class="text-center" id="semSorteio"><div class="sz-dado" id="dado">🎲</div>
+        <button class="ar-btn" style="max-width:260px;margin:0 auto" id="bRolar"><i class="fa-solid fa-dice"></i> Rolar o dado</button></div>
+      <div id="comSorteio" hidden>
+        <div class="cab" id="cabTime"></div>
+        <div class="small mb-2 opacity-75">Escolha <b>1 jogador</b> deste time e depois toque na vaga onde ele vai jogar.</div>
+        <div class="sz-roster" id="roster"></div>
+        <div class="d-flex gap-2 mt-3 flex-wrap"><button class="ar-btn sec" style="width:auto;margin:0" id="bPular"><i class="fa-solid fa-rotate"></i> Re-sortear (<span id="skips2">3</span>)</button>
+          <span class="small align-self-center" id="dica"></span></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="sz-campo" id="campo"></div>
+    <div class="small fw-bold mt-3 mb-1">BANCO DE RESERVAS</div>
+    <div class="sz-bancos" id="bancos"></div>
+    <div id="iniciar" class="mt-3" hidden><button class="ar-btn" style="background:#16a34a;color:#fff" id="bIniciar"><i class="fa-solid fa-trophy"></i> Começar a Copa do Brasil</button></div>
+  </div>
+</div>
+
+{{ visao|json_script:"vdata" }}
+<script>
+(function () {
+  const BASE = "{% url 'setezero:api_draft' d.pk 'x' %}".replace(/x\/$/, '');
+  const CSRF = "{{ csrf_token }}";
+  let V = JSON.parse(document.getElementById('vdata').textContent);
+  let sel = null;
+  const el = (i) => document.getElementById(i);
+  const CUSTO = {'ATA-PON':3,'PON-ATA':3,'MEI-VOL':5,'VOL-MEI':5,'MEI-PON':4,'PON-MEI':4,'LAT-ZAG':7,'ZAG-LAT':7,'LAT-VOL':6,'VOL-LAT':6,'VOL-ZAG':8,'ZAG-VOL':8,'LAT-PON':8,'PON-LAT':8,'MEI-ATA':8,'ATA-MEI':8};
+  const custo = (a, b) => a === b ? 0 : (a === 'GOL' || b === 'GOL') ? 60 : (CUSTO[a + '-' + b] ?? 20);
+  const NOMEPOS = {GOL:'Goleiro', ZAG:'Zagueiro', LAT:'Lateral', VOL:'Volante', MEI:'Meia', PON:'Ponta', ATA:'Atacante'};
+
+  function api(acao, corpo) {
+    return fetch(BASE + acao + '/', {method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken':CSRF}, body: JSON.stringify(corpo || {})})
+      .then(r => r.json().then(j => { if (j.visao) V = j.visao; if (!r.ok) { desenhar(); throw new Error(j.erro || 'Erro'); } return j; }));
+  }
+  function slotHtml(j, pos, alvo) {
+    if (j) return `<div class="bola">${j.nome.charAt(0)}</div><div class="n">${j.nome}</div><div class="o">${j.nota} · ${j.origem}${j.adaptado ? ' ↻' : ''}</div>`;
+    return `<div class="bola">${pos}</div><div class="n">vazio</div>`;
+  }
+  function desenhar() {
+    el('cont').textContent = V.escolhidos; el('skips').textContent = V.skips; el('skips2').textContent = V.skips;
+    // campo (linhas por grupo)
+    const grupos = [['ATA','PON'],['MEI','VOL'],['ZAG','LAT'],['GOL']];
+    const campo = el('campo'); campo.innerHTML = '';
+    for (const g of grupos) {
+      const linha = document.createElement('div'); linha.className = 'sz-linha';
+      V.posicoes.forEach((pos, i) => {
+        if (!g.includes(pos)) return;
+        const j = V.slots[i];
+        const compat = sel && !j && custo(sel.pos, pos) <= 8;
+        const d = document.createElement('div');
+        d.className = 'sz-slot' + (j ? ' cheio' : '') + (compat ? ' alvo' : '');
+        d.innerHTML = slotHtml(j, pos) + (compat && custo(sel.pos, pos) ? `<div class="o">−${custo(sel.pos, pos)} adaptado</div>` : '');
+        if (compat) d.onclick = () => colocar(i);
+        linha.appendChild(d);
+      });
+      campo.appendChild(linha);
+    }
+    const bancos = el('bancos'); bancos.innerHTML = '';
+    V.banco.forEach((j, i) => {
+      const d = document.createElement('div');
+      const alvo = sel && !j;
+      d.className = 'sz-slot' + (j ? ' cheio' : '') + (alvo ? ' alvo' : '');
+      d.innerHTML = slotHtml(j, 'BAN');
+      if (alvo) d.onclick = () => colocar('banco');
+      bancos.appendChild(d);
+    });
+    // sorteio
+    const p = V.pendente;
+    el('semSorteio').hidden = !!p || V.completo; el('comSorteio').hidden = !p;
+    el('bPular').disabled = V.skips <= 0;
+    el('iniciar').hidden = !V.completo;
+    if (V.completo) { el('sorteio').hidden = true; }
+    if (p) {
+      el('cabTime').innerHTML = `${p.escudo ? `<img class="sz-escudo" src="${p.escudo}" alt="">` : `<span class="sz-escudo-fb" style="background:${p.cor}">${p.clube.charAt(0)}</span>`}<div><h3>${p.clube} ${p.ano || ''}</h3><small class="opacity-75">${p.apelido} · OVR ${p.overall}</small></div>`;
+      const ro = el('roster'); ro.innerHTML = '';
+      p.elenco.forEach(j => {
+        const b = document.createElement('button'); b.type = 'button';
+        b.className = 'sz-pl' + (sel && sel.nome === j.nome ? ' sel' : '');
+        b.innerHTML = `<span class="nota">${j.nota}</span><div class="n">${j.nome}</div><div class="p">${NOMEPOS[j.pos]}</div>`;
+        b.onclick = () => { sel = (sel && sel.nome === j.nome) ? null : j; desenhar(); dica(); };
+        ro.appendChild(b);
+      });
+    }
+    dica();
+  }
+  function dica() {
+    const d = el('dica');
+    if (!sel) { d.textContent = ''; return; }
+    const livres = V.posicoes.filter((pos, i) => !V.slots[i] && custo(sel.pos, pos) <= 8).length;
+    d.textContent = livres ? `Toque numa vaga brilhando (ou no banco) para colocar ${sel.nome}.` : `${sel.nome} só cabe no banco — não há vaga compatível.`;
+  }
+  function colocar(destino) {
+    const nome = sel.nome; sel = null;
+    api('escolher', {nome: nome, destino: destino}).then(desenhar).catch(e => alert(e.message));
+  }
+  el('bRolar').onclick = () => {
+    const d = el('dado'); d.classList.add('rolando'); d.textContent = '🎲';
+    setTimeout(() => api('sortear').then(() => { d.classList.remove('rolando'); sel = null; desenhar(); }).catch(e => { d.classList.remove('rolando'); alert(e.message); }), 750);
+  };
+  el('bPular').onclick = () => api('pular').then(() => { sel = null; desenhar(); }).catch(e => alert(e.message));
+  el('bIniciar').onclick = () => api('iniciar').then(() => location.reload()).catch(e => alert(e.message));
+  desenhar();
+})();
+</script>
+{% endblock %}

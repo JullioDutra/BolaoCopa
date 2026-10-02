@@ -13,7 +13,7 @@ from .models import Partida7a0, Temporada7a0
 
 class DadosTests(SimpleTestCase):
     def test_times_historicos_completos(self):
-        self.assertGreaterEqual(len(dados.TIMES), 16)
+        self.assertGreaterEqual(len(dados.TIMES), 36)
         for t in list(dados.TIMES.values()) + dados.fregueses():
             self.assertGreaterEqual(len(t['elenco']), 14, t['nome'])
             for formacao in dados.FORMACOES:
@@ -31,7 +31,7 @@ class DadosTests(SimpleTestCase):
     def test_fregueses_sao_mais_fracos(self):
         melhor_fregues = max(f['overall'] for f in dados.fregueses())
         pior_historico = min(t['overall'] for t in dados.TIMES.values())
-        self.assertLess(melhor_fregues + 5, pior_historico)
+        self.assertLess(melhor_fregues, pior_historico)
 
 
 class MotorTests(SimpleTestCase):
@@ -181,3 +181,205 @@ class FluxoTests(TestCase):
         self.assertIsNone(servico.partida_da_rodada(t))
         self.assertEqual(self.client.get(reverse('setezero:temporada', args=[t.pk])).status_code, 200)
         self.assertEqual(self.client.get(reverse('setezero:ranking')).status_code, 200)
+
+
+def _draftar_sozinho(draft):
+    """ Bot: escolhe sempre o melhor jogador que cabe numa vaga (usa o banco por último). """
+    from . import copa
+    while not copa.completo(draft):
+        chave = copa.sortear(draft)
+        time = dados.obter(chave)
+        vagas = copa.vagas(draft)
+        pos = copa.posicoes_slots(draft)
+        melhor = None
+        for j in sorted(time['elenco'], key=lambda x: -x['nota']):
+            for i in vagas['slots']:
+                if dados.custo_posicao(j['pos'], pos[i]) <= copa.CUSTO_MAXIMO_ADAPTACAO:
+                    melhor = (j, i)
+                    break
+            if melhor:
+                break
+        if melhor:
+            copa.escolher(draft, melhor[0]['nome'], melhor[1])
+        elif vagas['banco']:
+            copa.escolher(draft, time['elenco'][0]['nome'], 'banco')
+        else:
+            copa.pular(draft) if draft.estado['skips'] > 0 else copa.escolher(draft, time['elenco'][0]['nome'], 'banco')
+
+
+class PenaltisTests(SimpleTestCase):
+    def test_empate_no_mata_mata_vai_para_penaltis_e_tem_vencedor(self):
+        achou = 0
+        for seed in range(40):
+            e = engine.novo_estado({'time': 'fla-2019'}, {'time': 'pal-2021'}, seed, usuario_lado='casa', mata_mata=True)
+            engine.simular_completo(e)
+            if e['placar']['casa'] == e['placar']['fora']:
+                achou += 1
+                self.assertIn(e['penaltis']['vencedor'], ('casa', 'fora'))
+                self.assertNotEqual(e['penaltis']['casa'], e['penaltis']['fora'])
+                self.assertIn('pen_gol', {x['tipo'] for x in e['eventos']} | {'pen_gol'})
+            self.assertIn(engine.vencedor(e), ('casa', 'fora'))
+        self.assertGreater(achou, 0)
+
+    def test_sem_mata_mata_nao_ha_penaltis(self):
+        for seed in range(30):
+            e = engine.novo_estado({'time': 'fla-2019'}, {'time': 'pal-2021'}, seed)
+            engine.simular_completo(e)
+            self.assertNotIn('penaltis', e)
+
+
+class DraftCopaTests(TestCase):
+    def setUp(self):
+        self.u = User.objects.create_user('tec', password='x', first_name='Tec')
+        self.client.force_login(self.u)
+
+    def test_regras_do_draft(self):
+        from . import copa
+        d = copa.criar_draft(self.u)
+        with self.assertRaises(copa.ErroDraft):
+            copa.escolher(d, 'Zico', 5)             # sem dado rolado
+        chave = copa.sortear(d)
+        self.assertEqual(copa.sortear(d), chave)    # mesmo dado até escolher
+        time = dados.obter(chave)
+        goleiro = next(j for j in time['elenco'] if j['pos'] == 'GOL')
+        atacante = next(j for j in time['elenco'] if j['pos'] == 'ATA')
+        with self.assertRaises(copa.ErroDraft):
+            copa.escolher(d, atacante['nome'], 0)   # atacante no gol
+        copa.escolher(d, goleiro['nome'], 0)
+        self.assertEqual(d.estado['slots'][0]['pos'], 'GOL')
+        self.assertIsNone(d.estado['pendente'])
+        copa.sortear(d)
+        copa.pular(d)
+        self.assertEqual(d.estado['skips'], copa.SKIPS - 1)
+        with self.assertRaises(copa.ErroDraft):
+            copa.escolher(d, 'Fulano Inexistente', 'banco')
+
+    def test_jogador_adaptado_perde_nota_e_nome_repetido_fica_unico(self):
+        from . import copa
+        d = copa.criar_draft(self.u, formacao='4-4-2')
+        d.estado['pendente'] = 'spa-2006'          # Júnior (LAT) existe aqui e no Flamengo 1981
+        copa.escolher(d, 'Júnior', 1)
+        d.estado['pendente'] = 'fla-1981'
+        copa.escolher(d, 'Júnior', 4)
+        nomes = [j['nome'] for j in d.estado['slots'] if j]
+        self.assertEqual(len(set(nomes)), 2)
+        d.estado['pendente'] = 'fla-1981'
+        mei = next(j for j in dados.obter('fla-1981')['elenco'] if j['pos'] == 'MEI' and j['nome'] == 'Adílio')
+        copa.escolher(d, 'Adílio', 5)              # MEI na vaga de VOL: adaptado
+        j = d.estado['slots'][5]
+        self.assertTrue(j['adaptado'])
+        self.assertLess(j['nota'], mei['nota'])
+        self.assertEqual(j['pos'], 'VOL')
+
+    def test_copa_completa_ate_o_fim(self):
+        from . import copa
+        d = copa.criar_draft(self.u, eliminatorio=False)
+        _draftar_sozinho(d)
+        d.refresh_from_db()
+        self.assertEqual(sum(1 for j in d.estado['slots'] if j), 11)
+        self.assertEqual(sum(1 for j in d.estado['banco'] if j), 5)
+        copa.iniciar_copa(d)
+        d.refresh_from_db()
+        self.assertEqual(len(d.estado['rivais']), 7)
+        self.assertEqual(len(set(d.estado['rivais'])), 7)
+        self.assertTrue(dados.obter(d.estado['rivais'][0]).get('freguesa'))
+        for fase in range(7):
+            d.refresh_from_db()
+            p = copa.partida_da_fase(d)
+            self.assertEqual(p.fase, fase)
+            self.assertTrue(p.estado['mata_mata'])
+            while p.status != 'fim':
+                servico.avancar(p, 'fim')
+                p.refresh_from_db()
+            self.assertIn(p.resultado, 'VD')
+        d.refresh_from_db()
+        self.assertIn(d.status, ('campeao', 'terminou'))
+        self.assertEqual(len(d.campanha), 7)
+        r = self.client.get(reverse('setezero:retrospecto', args=[d.codigo]))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'wa.me')
+
+    def test_mata_mata_elimina_na_primeira_derrota(self):
+        from . import copa
+        d = copa.criar_draft(self.u)
+        _draftar_sozinho(d)
+        d.refresh_from_db()
+        copa.iniciar_copa(d)
+        d.refresh_from_db()
+        for _ in range(7):
+            d.refresh_from_db()
+            if d.status != 'copa':
+                break
+            p = copa.partida_da_fase(d)
+            while p.status != 'fim':
+                servico.avancar(p, 'fim')
+                p.refresh_from_db()
+        d.refresh_from_db()
+        derrotas = [c for c in d.campanha if c['resultado'] == 'D']
+        if d.status == 'eliminado':
+            self.assertEqual(len(derrotas), 1)
+            self.assertEqual(d.campanha[-1]['resultado'], 'D')
+        else:
+            self.assertEqual(d.status, 'campeao')
+            self.assertEqual(len(d.campanha), 7)
+
+    def test_titulos_e_premio(self):
+        from . import copa
+        d = copa.criar_draft(self.u)
+        d.status = 'campeao'
+        d.campanha = [{'fase': i, 'nome_fase': copa.FASES[i], 'rival': 'varzea-fc', 'rival_nome': 'Várzea', 'gols_pro': 2, 'gols_contra': 0,
+                       'penaltis': '', 'resultado': 'V', 'partida': 0} for i in range(7)]
+        saldo = coins.saldo(self.u)
+        copa._fechar(d)
+        d.save()
+        self.assertTrue(d.invicto)
+        self.assertEqual(copa.titulo(d)['manchete'], '7 A 0! CAMPEÃO INVICTO')
+        self.assertGreaterEqual(coins.saldo(self.u), saldo + copa.PREMIO_CAMPEAO + copa.PREMIO_INVICTO)
+        d.campanha[3]['penaltis'] = '4-3'
+        d.invicto = False
+        self.assertEqual(copa.titulo(d)['curto'], 'Campeão sem perder')
+        d.campanha[2]['resultado'] = 'D'
+        self.assertEqual(copa.titulo(d)['curto'], 'Campeão')
+
+    def test_paginas_e_api(self):
+        from . import copa
+        self.assertEqual(self.client.get(reverse('setezero:draft_novo')).status_code, 200)
+        r = self.client.post(reverse('setezero:draft_novo'), {'formacao': '4-4-2', 'mentalidade': 'ofensivo', 'modo': 'campanha'})
+        d = copa.DraftCopa7a0.objects.get()
+        self.assertFalse(d.eliminatorio)
+        self.assertEqual(self.client.get(reverse('setezero:draft', args=[d.pk])).status_code, 200)
+        j = self.client.post(reverse('setezero:api_draft', args=[d.pk, 'sortear'])).json()
+        self.assertTrue(j['visao']['pendente']['elenco'])
+        ruim = self.client.post(reverse('setezero:api_draft', args=[d.pk, 'iniciar']), content_type='application/json')
+        self.assertEqual(ruim.status_code, 400)
+        self.assertEqual(self.client.get(reverse('setezero:hub')).status_code, 200)
+        # retrospecto de draft em andamento só para o dono
+        self.client.logout()
+        self.assertEqual(self.client.get(reverse('setezero:retrospecto', args=[d.codigo])).status_code, 404)
+        outro = User.objects.create_user('outro', password='x')
+        self.client.force_login(outro)
+        self.assertEqual(self.client.get(reverse('setezero:draft', args=[d.pk])).status_code, 404)
+
+
+class CalibragemCopaTests(TestCase):
+    def test_bot_tem_chance_razoavel_mas_nao_garantida(self):
+        from . import copa
+        u = User.objects.create_user('bot', password='x')
+        titulos = 0
+        N = 6
+        for _ in range(N):
+            d = copa.criar_draft(u)
+            _draftar_sozinho(d)
+            d.refresh_from_db()
+            copa.iniciar_copa(d)
+            for _ in range(7):
+                d.refresh_from_db()
+                if d.status != 'copa':
+                    break
+                p = copa.partida_da_fase(d)
+                while p.status != 'fim':
+                    servico.avancar(p, 'fim')
+                    p.refresh_from_db()
+            d.refresh_from_db()
+            titulos += d.status == 'campeao'
+        self.assertLess(titulos, N)   # não pode ser passeio

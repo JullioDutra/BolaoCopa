@@ -65,3 +65,7 @@ python manage.py importar_estatisticas --api-football --temporada 2023 --time Fl
 python manage.py collectstatic --noinput   # inclui static/media/logo.png
 ```
 Painel da staff: `/gestao/`. Jogo novo: `/setezero/`. O Super Trunfo completa o próprio baralho na 1ª mesa.
+
+## Draft Copa do Brasil (7 a 0)
+Nova tabela `DraftCopa7a0` e campos em `Partida7a0`: `python manage.py makemigrations setezero && python manage.py migrate`.
+Entrada: `/setezero/` → "Draft Copa do Brasil". O retrospecto fica em `/setezero/r/<código>/` (público por link secreto, para colar no grupo).

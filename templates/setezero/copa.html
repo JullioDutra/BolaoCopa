@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block title %}Copa do Brasil - 7 a 0{% endblock %}
+{% block content %}
+{% include 'setezero/_estilo.html' %}
+<section class="ar-hero sz-hero">
+    <h1><span class="sete">7 a 0</span> · Copa do Brasil</h1>
+    <p>{% if d.eliminatorio %}Mata-mata: perdeu, está fora.{% else %}Campanha: você joga os 7 jogos de qualquer jeito.{% endif %} Empate no tempo normal vai para os pênaltis.</p>
+    <div class="ar-chips"><a class="ar-chip text-decoration-none text-white" href="{% url 'setezero:hub' %}"><i class="fa-solid fa-arrow-left"></i> 7 a 0</a>
+        <span class="ar-chip">{{ d.formacao }}</span><span class="ar-chip">OVR {{ meu.forca.atq }}/{{ meu.forca.cri }}/{{ meu.forca.def }}/{{ meu.forca.gol }}</span></div>
+</section>
+
+<div class="sz-fases mb-4">
+{% for f in fases %}
+  <div class="sz-fase {% if f.feito %}{{ f.feito.resultado }}{% endif %} {% if f.atual %}atual{% endif %}">
+    <div class="f">{{ f.nome }}</div>
+    {% if f.feito %}<div class="res">{{ f.feito.gols_pro }}x{{ f.feito.gols_contra }}</div><div>{{ f.feito.rival_nome }}</div>{% if f.feito.penaltis %}<div class="text-warning small">pên. {{ f.feito.penaltis }}</div>{% endif %}
+    {% elif f.atual %}<div class="res">⚔️</div><div class="fw-bold">{{ f.rival.nome }}</div><small class="text-muted">OVR {{ f.rival.overall }}</small>
+    {% else %}<div class="res">?</div><small class="text-muted">a definir</small>{% endif %}
+  </div>
+{% endfor %}
+</div>
+
+<div class="row g-3 mb-5">
+  <div class="col-lg-5"><div class="sz-painel text-center">
+    {% for f in fases %}{% if f.atual %}
+      <div class="small fw-bold text-muted mb-2">PRÓXIMO JOGO · {{ f.nome|upper }}</div>
+      <div class="d-flex align-items-center justify-content-center gap-3 mb-3">
+        <div><span class="sz-escudo-fb" style="background:{{ meu.cor }}">S</span><div class="small fw-bold">{{ meu.nome }}</div></div>
+        <div style="font-family:var(--fonte-titulo);font-size:1.8rem">x</div>
+        <div>{% with t=f.rival %}{% include 'setezero/_escudo.html' %}{% endwith %}<div class="small fw-bold">{{ f.rival.nome }}</div></div>
+      </div>
+      <form method="post" action="{% url 'setezero:draft_jogar' d.pk %}">{% csrf_token %}<button class="ar-btn" style="background:#16a34a;color:#fff"><i class="fa-solid fa-play"></i> {% if f.nome == 'Final' %}Jogar a FINAL{% else %}Jogar{% endif %}</button></form>
+    {% endif %}{% endfor %}
+  </div></div>
+  <div class="col-lg-7"><div class="sz-painel"><div class="small fw-bold text-muted mb-2">SEU ELENCO</div>
+    <div class="d-flex flex-wrap gap-1">{% for j in titulares %}<span class="fb-pill" style="background:#eef2ef">{{ j.pos }} {{ j.nome }} · {{ j.nota }}</span>{% endfor %}</div>
+    <div class="small fw-bold text-muted mt-3 mb-1">BANCO</div>
+    <div class="d-flex flex-wrap gap-1">{% for j in banco %}<span class="fb-pill" style="background:#f4f4f5">{{ j.pos }} {{ j.nome }} · {{ j.nota }}</span>{% endfor %}</div>
+  </div></div>
+</div>
+{% endblock %}

@@ -10,7 +10,7 @@ from django.utils import timezone
 from accounts import coins
 
 from . import dados, engine
-from .models import Partida7a0, Temporada7a0
+from .models import DraftCopa7a0, Partida7a0, Temporada7a0
 
 PREMIO_VITORIA = 20
 PREMIO_EMPATE = 8
@@ -57,6 +57,22 @@ def criar_partida(usuario, modo, time_usuario, time_rival=None, formacao=None, m
     estado = engine.novo_estado(casa, fora, seed, usuario_lado=lado)
     return Partida7a0.objects.create(usuario=usuario, modo=modo, temporada=temporada, rodada=rodada, lado_usuario=lado,
                                      time_usuario=meu['chave'], time_rival=rival['chave'], estado=estado)
+
+
+def criar_partida_draft(draft):
+    """ Partida da fase atual do draft: seu time (custom) contra o rival sorteado para a fase. """
+    from . import copa
+    time = copa.time_do_draft(draft)
+    xi = [j['nome'] for j in draft.estado['slots']]
+    rival_chave = draft.estado['rivais'][draft.fase]
+    rival = dados.obter(rival_chave)
+    seed = secrets.randbelow(2 ** 31)
+    cfg_u = {'time': time['chave'], 'time_obj': time, 'formacao': draft.formacao, 'mentalidade': draft.mentalidade,
+             'estilo': 'posse', 'titulares': xi}
+    cfg_r = {'time': rival_chave, 'mentalidade': 'equilibrado', 'estilo': random.Random(seed).choice(list(engine.ESTILOS))}
+    estado = engine.novo_estado(cfg_u, cfg_r, seed, usuario_lado='casa', mata_mata=True)
+    return Partida7a0.objects.create(usuario=draft.usuario, modo='copa', draft=draft, fase=draft.fase, lado_usuario='casa',
+                                     time_usuario=time['chave'], time_rival=rival_chave, estado=estado)
 
 
 def _sync(partida):
@@ -112,7 +128,14 @@ def finalizar(partida):
         return partida
     saldo = partida.saldo
     partida.resultado = 'V' if saldo > 0 else 'E' if saldo == 0 else 'D'
+    if partida.estado.get('mata_mata') and saldo == 0:
+        partida.resultado = 'V' if engine.vencedor(partida.estado) == partida.lado_usuario else 'D'
     partida.finalizado_em = timezone.now()
+    if partida.modo == 'copa':
+        partida.save()
+        from . import copa
+        copa.registrar_resultado(partida.draft_id, partida)
+        return partida
     if partida.modo == 'desafio' and saldo < 7:
         premio = PREMIO_VITORIA if saldo > 0 else 0   # desafio só paga bem a goleada
         premio = premio + (PREMIO_GOLEADA if saldo >= 4 else 0)
@@ -278,7 +301,7 @@ def _fechar_temporada(temporada):
 def ranking():
     """ Quadro de honra do jogo. """
     from django.contrib.auth.models import User
-    base = Partida7a0.objects.filter(resultado__in=['V', 'E', 'D'])
+    base = Partida7a0.objects.filter(resultado__in=['V', 'E', 'D']).exclude(modo='copa')
     craques = (User.objects.annotate(
         jogos=Count('partidas_7a0', filter=Q(partidas_7a0__resultado__in=['V', 'E', 'D'])),
         vitorias=Count('partidas_7a0', filter=Q(partidas_7a0__resultado='V')),
@@ -289,7 +312,11 @@ def ranking():
         if p.saldo >= 3:
             goleadas.append(p)
     goleadas.sort(key=lambda p: (-p.saldo, -p.gols_usuario))
-    return {'craques': craques, 'goleadas': goleadas[:10]}
+    campeoes = (User.objects.annotate(
+        copas=Count('drafts_7a0', filter=Q(drafts_7a0__status='campeao'), distinct=True),
+        invictos=Count('drafts_7a0', filter=Q(drafts_7a0__invicto=True), distinct=True),
+    ).filter(copas__gt=0).order_by('-invictos', '-copas', 'first_name')[:10])
+    return {'craques': craques, 'goleadas': goleadas[:10], 'campeoes': campeoes}
 
 
 def visao(partida):
@@ -299,7 +326,9 @@ def visao(partida):
     lados = {}
     for lado in engine.LADOS:
         l = e['lados'][lado]
-        time = dados.obter(l['time'])
+        time = {'elenco': l.get('elenco') or dados.obter(l['time'])['elenco'], 'nome': l.get('nome_time') or dados.obter(l['time'])['nome'],
+                'ano': l.get('ano') or dados.obter(l['time'])['ano'], 'cor': l.get('cor') or dados.obter(l['time'])['cor'],
+                'clube': l.get('clube') or dados.obter(l['time'])['clube']}
         jog = []
         for n in l['titulares']:
             j = next(x for x in time['elenco'] if x['nome'] == n)
@@ -315,4 +344,5 @@ def visao(partida):
     return {'id': partida.pk, 'status': e['status'], 'minuto': engine.minuto_texto(e), 'periodo': e['periodo'], 't': e['minuto'],
             'placar': e['placar'], 'lado_usuario': partida.lado_usuario, 'lados': lados, 'stats': r['stats'],
             'craque': r['craque'], 'nota_craque': r['nota_craque'], 'modo': partida.modo,
+            'penaltis': e.get('penaltis'), 'mata_mata': e.get('mata_mata', False), 'vencedor': engine.vencedor(e),
             'resultado': partida.resultado, 'premio': partida.premio, 'total_eventos': len(e['eventos'])}

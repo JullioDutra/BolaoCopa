@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% block title %}Retrospecto - 7 a 0{% endblock %}
+{% block content %}
+{% include 'setezero/_estilo.html' %}
+<div class="mt-3"></div>
+<div class="sz-cartao {{ titulo.classe }}" id="cartao">
+  <div class="topo">
+    <div class="marca">CARTOLÂNDIA · 7 A 0 · COPA DO BRASIL</div>
+    <h1>{{ titulo.manchete }}</h1>
+    <div class="fw-semibold">{{ titulo.sub }}</div>
+    <div class="small mt-1" style="opacity:.85">Técnico: <b>{{ tecnico }}</b> · {{ draft.formacao }} · {{ draft.finalizado_em|date:"d/m/Y" }}</div>
+  </div>
+  <div class="corpo">
+    <div class="sz-numeros">
+      <div><b>{{ vitorias }}</b><small>Vitórias</small></div><div><b>{{ derrotas }}</b><small>Derrotas</small></div>
+      <div><b>{{ penaltis }}</b><small>Pênaltis</small></div><div><b>{{ gols_pro }}:{{ gols_contra }}</b><small>Gols</small></div>
+    </div>
+    <div class="sz-jornada">
+      {% for f in fases %}
+      {% if f.feito %}
+      <div class="sz-jogo {{ f.feito.resultado }}"><span class="tag">{{ f.feito.resultado }}</span>
+        <span><span class="fase">{{ f.nome }}</span><span class="d-block fw-semibold">{% if f.feito.escudo %}<img src="{{ f.feito.escudo }}" style="width:18px;height:18px;object-fit:contain;vertical-align:-3px" alt="" crossorigin="anonymous"> {% endif %}{{ f.feito.rival_nome }}</span></span>
+        <span class="placar">{{ f.feito.gols_pro }}–{{ f.feito.gols_contra }}{% if f.feito.penaltis %}<span class="pen">pên. {{ f.feito.penaltis }}</span>{% endif %}</span></div>
+      {% else %}
+      <div class="sz-jogo vazio"><span class="tag">–</span><span><span class="fase">{{ f.nome }}</span><span class="d-block">não disputada</span></span><span class="placar">–</span></div>
+      {% endif %}
+      {% endfor %}
+    </div>
+
+    <div class="sz-campo mt-3">
+      {% for linha in linhas %}<div class="sz-linha">{% for j in linha %}<div class="sz-slot cheio"><div class="bola">{{ j.nome|slice:":1" }}</div><div class="n">{{ j.nome }}</div><div class="o">{{ j.origem }}</div></div>{% endfor %}</div>{% endfor %}
+    </div>
+    {% if banco %}<div class="small mt-2" style="opacity:.8"><b>Banco:</b> {% for j in banco %}{{ j.nome }}{% if not forloop.last %}, {% endif %}{% endfor %}</div>{% endif %}
+    <div class="d-flex flex-wrap gap-3 mt-3 small">
+      {% if artilheiros %}<div><b>⚽ Artilheiros</b><br>{% for n, g in artilheiros %}{{ n }} ({{ g }}){% if not forloop.last %} · {% endif %}{% endfor %}</div>{% endif %}
+      {% if craque %}<div><b>⭐ Craque da Copa</b><br>{{ craque }}</div>{% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="d-flex flex-wrap justify-content-center gap-2 my-4" data-html2canvas-ignore>
+  <a class="btn btn-whatsapp fw-bold rounded-pill px-4" target="_blank" rel="noopener" href="https://wa.me/?text={{ texto_whats|urlencode }}"><i class="fa-brands fa-whatsapp"></i> Mandar no grupo</a>
+  <button class="btn btn-dark fw-bold rounded-pill px-4" id="bImagem"><i class="fa-solid fa-image"></i> Baixar imagem</button>
+  <button class="btn btn-outline-dark fw-bold rounded-pill px-4" id="bLink"><i class="fa-solid fa-link"></i> Copiar link</button>
+  <a class="btn btn-success fw-bold rounded-pill px-4" href="{% if meu %}{% url 'setezero:draft_novo' %}{% else %}{% url 'setezero:hub' %}{% endif %}"><i class="fa-solid fa-dice"></i> {% if meu %}Jogar de novo{% else %}Jogar também{% endif %}</a>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+document.getElementById('bLink').onclick = () => navigator.clipboard.writeText("{{ url }}").then(() => alert('Link copiado!'));
+document.getElementById('bImagem').onclick = async () => {
+  if (!window.html2canvas) { alert('Não foi possível carregar o gerador de imagem. Tire um print!'); return; }
+  const canvas = await html2canvas(document.getElementById('cartao'), {backgroundColor: null, scale: 2, useCORS: true});
+  canvas.toBlob(async (blob) => {
+    const arquivo = new File([blob], 'meu-7a0.png', {type: 'image/png'});
+    if (navigator.canShare && navigator.canShare({files: [arquivo]})) { try { await navigator.share({files: [arquivo], text: "{{ texto_whats|escapejs }}" }); return; } catch (e) {} }
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'meu-7a0.png'; a.click();
+  });
+};
+</script>
+{% endblock %}

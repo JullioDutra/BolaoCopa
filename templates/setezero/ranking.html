@@ -4,6 +4,11 @@
 {% include 'setezero/_estilo.html' %}
 <section class="ar-hero sz-hero"><h1><span class="sete">7 a 0</span> · Quadro de honra</h1><p>Os técnicos mais vitoriosos e as maiores goleadas da resenha.</p>
 <div class="ar-chips"><a class="ar-chip text-decoration-none text-white" href="{% url 'setezero:hub' %}"><i class="fa-solid fa-arrow-left"></i> 7 a 0</a></div></section>
+<h2 class="ar-secao"><i class="fa-solid fa-trophy"></i> Campeões da Copa do Brasil</h2>
+<div class="ar-tabela mb-4">
+{% for u in campeoes %}<div class="ar-linha {% if u.id == request.user.id %}eu{% endif %}"><span class="pos">{{ forloop.counter }}º</span>
+  <span><span class="nome">{{ u.first_name|default:u.username }}</span><span class="d-block sub">{{ u.invictos }} invicto{{ u.invictos|pluralize }}</span></span><span class="pts">{{ u.copas }} 🏆</span></div>
+{% empty %}<div class="ar-vazio">Ninguém foi campeão ainda.</div>{% endfor %}</div>
 <h2 class="ar-secao"><i class="fa-solid fa-user-tie"></i> Técnicos</h2>
 <div class="ar-tabela mb-4">
 {% for u in craques %}<div class="ar-linha {% if u.id == request.user.id %}eu{% endif %}"><span class="pos">{{ forloop.counter }}º</span>

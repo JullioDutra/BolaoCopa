@@ -27,14 +27,15 @@ class ErroDraft(Exception):
 
 # ------------------------------------------------------------------ montagem
 
-def criar_draft(usuario, formacao='4-3-3', mentalidade='equilibrado', eliminatorio=True):
+def criar_draft(usuario, formacao='4-3-3', mentalidade='equilibrado'):
+    """ Sempre mata-mata: perdeu uma fase, está eliminado. """
     if formacao not in dados.FORMACOES:
         formacao = '4-3-3'
     if mentalidade not in engine.MENTALIDADES:
         mentalidade = 'equilibrado'
     estado = {'slots': [None] * 11, 'banco': [None] * BANCO, 'sorteadas': [], 'pendente': None, 'skips': SKIPS, 'rivais': []}
     return DraftCopa7a0.objects.create(usuario=usuario, formacao=formacao, mentalidade=mentalidade,
-                                       eliminatorio=eliminatorio, estado=estado)
+                                       eliminatorio=True, estado=estado)
 
 
 def _escolhas(draft):
@@ -205,7 +206,7 @@ def registrar_resultado(draft_id, partida):
     }]
     draft.fase += 1
     ultima = draft.fase >= len(FASES)
-    if not venceu and draft.eliminatorio:
+    if not venceu:
         draft.status = 'eliminado'
     elif ultima:
         draft.status = 'campeao' if venceu else 'terminou'

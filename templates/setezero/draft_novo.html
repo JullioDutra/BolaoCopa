@@ -19,9 +19,7 @@
       <li>📲 No fim, recebe o <b>retrospecto</b> para compartilhar no grupo.</li>
     </ol></div></div>
   <div class="col-md-6"><form method="post" class="sz-painel h-100">{% csrf_token %}
-    <div class="small fw-bold text-muted mb-1">MODO</div>
-    <label class="sz-opt me-1 mb-2"><input type="radio" name="modo" value="mata" checked><span>Mata-mata (perdeu, caiu)</span></label>
-    <label class="sz-opt mb-2"><input type="radio" name="modo" value="campanha"><span>Campanha (joga os 7 jogos)</span></label>
+    <div class="alert alert-danger py-2 small"><b>Mata-mata:</b> perdeu uma fase, está eliminado.</div>
     <div class="small fw-bold text-muted mb-1 mt-2">FORMAÇÃO</div>
     {% for f in formacoes %}<label class="sz-opt me-1 mb-1"><input type="radio" name="formacao" value="{{ f }}" {% if f == '4-3-3' %}checked{% endif %}><span>{{ f }}</span></label>{% endfor %}
     <div class="small fw-bold text-muted mb-1 mt-2">ESTILO DE JOGO</div>

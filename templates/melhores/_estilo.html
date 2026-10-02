@@ -1,0 +1,83 @@
+{# Tema escuro "casa de apostas" compartilhado pelas telas da bet #}
+<style>
+    body { background: #1a1a1a !important; }
+    .b365 { --b-verde: #126e51; --b-verde-esc: #0c4a37; --b-verde-vivo: #027b5b; --b-amar: #ffdf1b; --b-bg: #232323; --b-card: #2d2d2d; --b-card2: #363636; --b-linha: #444; --b-txt: #e6e6e6; --b-mudo: #9a9a9a; color: var(--b-txt); }
+    .b365 a { color: var(--b-amar); text-decoration: none; }
+    .b365 .b-topo { background: linear-gradient(135deg, var(--b-verde), var(--b-verde-esc)); border-radius: 10px; padding: 14px 18px; display:flex; flex-wrap:wrap; gap:12px; align-items:center; justify-content:space-between; }
+    .b365 .b-topo h1 { font-size: 1.25rem; font-weight: 800; margin: 0; color:#fff; letter-spacing:.3px; }
+    .b365 .b-saldo { background: rgba(0,0,0,.28); border-radius: 8px; padding: 6px 12px; font-weight: 800; color: var(--b-amar); white-space: nowrap; }
+    .b365 .b-abas { display:flex; gap:6px; overflow-x:auto; padding: 10px 0 4px; scrollbar-width: none; }
+    .b365 .b-abas a { background: var(--b-card); color: var(--b-txt); padding: 7px 14px; border-radius: 20px; font-weight: 700; font-size: .85rem; white-space: nowrap; }
+    .b365 .b-abas a.ativa, .b365 .b-abas a:hover { background: var(--b-amar); color: #111; }
+    .b365 .b-aviso { color: var(--b-mudo); font-size: .75rem; }
+
+    .b365 .mercado { background: var(--b-card); border-radius: 8px; margin-bottom: 10px; overflow: hidden; scroll-margin-top: 80px; }
+    .b365 .mercado > summary { list-style: none; cursor: pointer; display:flex; align-items:center; gap:10px; padding: 12px 14px; background: var(--b-card2); font-weight: 800; color:#fff; }
+    .b365 .mercado > summary::-webkit-details-marker { display:none; }
+    .b365 .mercado > summary .seta { margin-left:auto; transition: transform .2s; color: var(--b-mudo); }
+    .b365 .mercado[open] > summary .seta { transform: rotate(180deg); }
+    .b365 .mercado .desc { font-size: .75rem; color: var(--b-mudo); font-weight: 400; display:block; }
+    .b365 .selo { font-size: .65rem; font-weight: 800; padding: 2px 7px; border-radius: 4px; text-transform: uppercase; }
+    .b365 .selo.aberta { background: var(--b-verde-vivo); color:#fff; }
+    .b365 .selo.fechada { background: #6c757d; color:#fff; }
+    .b365 .selo.fim { background: var(--b-amar); color:#111; }
+
+    .b365 .linha { display:flex; align-items:center; gap:10px; width:100%; background: transparent; border: 0; border-top: 1px solid var(--b-linha); color: var(--b-txt); padding: 9px 14px; text-align:left; }
+    .b365 .linha .nome { flex:1; font-weight: 600; }
+    .b365 .linha .nome small { display:block; color: var(--b-mudo); font-weight: 400; font-size: .7rem; }
+    .b365 .linha .odd-btn { min-width: 74px; text-align:center; background: #3e3e3e; color: var(--b-amar); font-weight: 800; font-size: 1rem; padding: 8px 10px; border-radius: 5px; border: 1px solid transparent; font-variant-numeric: tabular-nums; transition: background .12s; }
+    .b365 button.linha:hover:not(:disabled) .odd-btn { background: #4d4d4d; }
+    .b365 .linha.sel { background: rgba(2,123,91,.18); }
+    .b365 .linha.sel .odd-btn { background: var(--b-verde-vivo); color: #fff; border-color: #35c79d; }
+    .b365 .linha.minha .nome::after { content: "✓ sua aposta"; margin-left: 8px; font-size: .65rem; background: var(--b-amar); color:#111; padding: 1px 6px; border-radius: 3px; font-weight: 800; }
+    .b365 .linha.vencedor .nome::after { content: "🏆 vencedor"; margin-left: 8px; font-size: .7rem; color: var(--b-amar); }
+    .b365 .linha:disabled { opacity: .55; cursor: not-allowed; }
+    .b365 .odd-btn.sobe::before { content: "▲ "; color: #35c79d; font-size: .65rem; }
+    .b365 .odd-btn.desce::before { content: "▼ "; color: #ff6b6b; font-size: .65rem; }
+    .b365 .ver-mais { width:100%; background: var(--b-card2); border:0; color: var(--b-mudo); font-size: .8rem; font-weight: 700; padding: 8px; }
+    .b365 .ver-mais:hover { color: var(--b-amar); }
+
+    /* Cupom de apostas */
+    .b365 #cupom { background: var(--b-card); border-radius: 8px; overflow: hidden; }
+    .b365 .cupom-topo { background: var(--b-verde); color:#fff; font-weight: 800; padding: 11px 14px; display:flex; justify-content: space-between; align-items:center; cursor: pointer; }
+    .b365 .cupom-topo .badge-n { background: var(--b-amar); color:#111; border-radius: 50%; min-width: 22px; height: 22px; display:inline-flex; align-items:center; justify-content:center; font-size:.75rem; margin-right: 6px; }
+    .b365 .cupom-corpo { padding: 10px 12px; max-height: 60vh; overflow-y: auto; }
+    .b365 .cupom-vazio { color: var(--b-mudo); text-align:center; padding: 22px 8px; font-size: .85rem; }
+    .b365 .item-cupom { background: var(--b-card2); border-radius: 6px; padding: 9px 10px; margin-bottom: 8px; border-left: 4px solid var(--b-amar); }
+    .b365 .item-cupom .rem { background:none; border:0; color: var(--b-mudo); float:right; }
+    .b365 .item-cupom .sel-nome { font-weight: 800; }
+    .b365 .item-cupom .sel-odd { color: var(--b-amar); font-weight: 800; float: right; margin-right: 8px; }
+    .b365 .item-cupom .mkt { font-size: .72rem; color: var(--b-mudo); }
+    .b365 .item-cupom input { background: #1d1d1d; border: 1px solid var(--b-linha); color:#fff; border-radius: 4px; width: 100px; padding: 4px 8px; font-weight: 700; }
+    .b365 .item-cupom .ret { font-size: .75rem; color: var(--b-mudo); }
+    .b365 .item-cupom .ret b { color: #fff; }
+    .b365 .cupom-rodape { border-top: 1px solid var(--b-linha); padding: 10px 12px; }
+    .b365 .btn-apostar { width:100%; background: var(--b-verde-vivo); color:#fff; border:0; border-radius: 6px; padding: 12px; font-weight: 800; text-transform: uppercase; letter-spacing:.4px; }
+    .b365 .btn-apostar:hover:not(:disabled) { background: #049a73; }
+    .b365 .btn-apostar:disabled { background: #4a4a4a; color:#999; }
+    .b365 .abertas h6 { font-size:.75rem; text-transform: uppercase; color: var(--b-mudo); margin: 12px 0 6px; }
+    .b365 .aberta-item { background: var(--b-card2); border-radius: 6px; padding: 8px 10px; margin-bottom: 6px; font-size: .8rem; display:flex; justify-content: space-between; gap: 8px; align-items:center; }
+    .b365 .aberta-item .cancelar { background:none; border:1px solid #666; color:#ccc; border-radius: 4px; font-size:.7rem; padding: 2px 8px; }
+
+    .b365 .tabela { background: var(--b-card); border-radius: 8px; overflow: hidden; }
+    .b365 .tabela .row-t { display:flex; align-items:center; gap: 12px; padding: 11px 14px; border-top: 1px solid var(--b-linha); }
+    .b365 .tabela .row-t:first-child { border-top: 0; }
+    .b365 .tabela .row-t.eu { background: rgba(255,223,27,.09); }
+    .b365 .tag { font-size: .7rem; font-weight: 800; padding: 3px 8px; border-radius: 4px; }
+    .b365 .tag.ganha { background: var(--b-verde-vivo); color:#fff; }
+    .b365 .tag.perdida { background: #a33; color:#fff; }
+    .b365 .tag.aberta { background: var(--b-amar); color:#111; }
+    .b365 .tag.anulada { background: #6c757d; color:#fff; }
+    .b365 .stat { background: var(--b-card); border-radius: 8px; padding: 12px; text-align:center; }
+    .b365 .stat small { color: var(--b-mudo); font-weight: 700; text-transform: uppercase; font-size: .65rem; }
+    .b365 .stat div { font-size: 1.3rem; font-weight: 800; color: var(--b-amar); }
+
+    @media (max-width: 991.98px) {
+        .b365 { padding-bottom: 70px; }
+        .b365 #cupom { position: fixed; left: 0; right: 0; bottom: 0; z-index: 1035; border-radius: 12px 12px 0 0; box-shadow: 0 -6px 20px rgba(0,0,0,.5); }
+        .b365 #cupom .cupom-corpo, .b365 #cupom .cupom-rodape { display: none; }
+        .b365 #cupom.aberto .cupom-corpo, .b365 #cupom.aberto .cupom-rodape { display: block; }
+        .b365 #cupom.aberto .cupom-corpo { max-height: 50vh; }
+    }
+    @media (min-width: 992px) { .b365 .coluna-cupom { position: sticky; top: 76px; align-self: flex-start; } }
+</style>

@@ -24,7 +24,7 @@ def home(request):
         messages.info(request, "A votação dos Melhores do Ano ainda não abriu. Fique de olho!")
         return redirect('dashboard')
 
-    minhas = {a.categoria_id: a for a in Aposta.objects.filter(usuario=request.user, categoria__edicao=edicao)}
+    minhas = {a.categoria_id: a for a in Aposta.objects.filter(usuario=request.user, categoria__edicao=edicao).select_related('candidato', 'categoria__edicao')}
     categorias = []
     for categoria in edicao.categorias.prefetch_related('candidatos'):
         odds = calcular_odds(categoria)
@@ -53,6 +53,7 @@ def home(request):
         'saldo': coins.saldo(request.user),
         'aposta_minima': services.APOSTA_MINIMA,
         'tem_apostas': bool(minhas),
+        'abertas': [a for a in minhas.values() if a.status == 'aberta'],
     })
 
 
@@ -72,6 +73,32 @@ def apostar(request, categoria_id):
     except services.ApostaInvalida as erro:
         messages.error(request, str(erro))
     return redirect(f"{reverse('melhores:home')}#cat-{categoria.slug}")
+
+
+@acesso_liberado_required
+@require_POST
+def apostar_cupom(request):
+    """
+    Confirma o cupom: várias seleções de uma vez. Cada linha de `sel` é
+    "categoria:candidato:valor:odd". Cada aposta é independente (uma recusada não derruba as outras).
+    """
+    feitas, erros = [], []
+    for linha in request.POST.getlist('sel')[:40]:
+        partes = linha.split(':')
+        if len(partes) != 4:
+            continue
+        categoria_id, candidato_id, valor, odd = partes
+        try:
+            aposta = services.apostar(request.user, categoria_id, candidato_id, valor, odd_esperada=odd)
+            feitas.append(aposta)
+        except (services.ApostaInvalida, ValueError) as erro:
+            erros.append(str(erro) or "Aposta inválida.")
+    if feitas:
+        total = sum(a.valor for a in feitas)
+        messages.success(request, f"{len(feitas)} aposta(s) confirmada(s) — 🪙 {total} apostados. Boa sorte!")
+    for erro in erros:
+        messages.error(request, erro)
+    return redirect('melhores:home')
 
 
 @acesso_liberado_required

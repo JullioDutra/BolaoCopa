@@ -75,3 +75,11 @@ Novo campo `torneio` em `DraftCopa7a0`: `python manage.py makemigrations setezer
 Entrada: `/setezero/` → "Busca pelo Mundial". Hino: por padrão é sintetizado no navegador (fanfarra em ré maior inspirada em
 "Zadok the Priest", de Handel, domínio público). Se quiser outro áudio (que você tenha direito de usar), coloque em
 `static_files/audio/hino-mundial.mp3` e rode `collectstatic`: ele toca no lugar do sintetizado.
+
+## Lote 6 (Mundial bloqueado, perfis, NPCs)
+- **Busca pelo Mundial** agora só abre para quem foi campeão da Copa do Brasil (draft).
+- **Perfis públicos**: `/conta/jogador/<id>/` (avatar, frase, time, conquistas, títulos do 7 a 0). **Avatares** viraram ícones: os livres + um por conquista.
+  Os emojis antigos viram o ícone "Bola" automaticamente (sem migração).
+- **NPCs do modo carreira**: os "jogadores reais" criados como usuários agora ficam inativos e marcados `[NPC]`. Para ajustar os que já existem:
+  `python manage.py ajustar_npcs` (simula) e `python manage.py ajustar_npcs --aplicar` (ou o botão "Separar NPCs" em /gestao/sistema/).
+  Só mexe em quem nunca entrou no site, não é staff e não tem participação nem palpites. Os scripts `popular_reais*` já criam NPCs do jeito novo.

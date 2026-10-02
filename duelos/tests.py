@@ -83,3 +83,25 @@ class MiniFanaticosSemClubesTests(TestCase):
         r = self.client.get(reverse('duelos:tela_jogo_mini', args=[p.id]))
         self.assertIn(r.status_code, (302, 404))
         self.assertEqual(self.client.get(reverse('duelos:tela_jogo_mini', args=[9999])).status_code, 404)
+
+
+class ModalFimDeJogoTests(TestCase):
+    def _partida(self, tipo, **extra):
+        from duelos.models import CategoriaDesafio, PartidaDuelo
+        a = User.objects.filter(username='ana').first() or User.objects.create_user('ana', password='x', first_name='Ana')
+        b = User.objects.filter(username='beto').first() or User.objects.create_user('beto', password='x', first_name='Beto')
+        cat = CategoriaDesafio.objects.create(tipo=tipo, titulo='Flamengo 1981', resposta_oculta='Zico')
+        return a, PartidaDuelo.objects.create(categoria=cat, jogador_criador=a, jogador_convidado=b, status='andamento', turno_de=a, **extra)
+
+    def test_modal_padronizado_nos_dois_jogos(self):
+        for tipo, esperado in (('elenco', 'Flamengo 1981'), ('trajetoria', 'Zico')):
+            a, p = self._partida(tipo)
+            self.client.force_login(a)
+            r = self.client.get(reverse('duelos:tela_jogo', args=[p.id]))
+            self.assertEqual(r.status_code, 200)
+            self.assertContains(r, 'id="modalFimJogo"')
+            self.assertContains(r, 'fim-placar')                  # placar visível no modal
+            self.assertContains(r, 'window.abrirFimDeJogo(data)')
+            self.assertContains(r, esperado)
+            self.assertNotContains(r, 'fa-whistle')               # ícone inexistente no FontAwesome free
+            p.delete()

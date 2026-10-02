@@ -1,0 +1,41 @@
+{# Modal de fim de jogo padronizado (placar, vencedor, resposta e botão). Contexto: partida, rotulo_resposta, resposta, texto_botao, icone #}
+<div class="modal fade sz-modal" id="modalFimJogo" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="fimTitulo" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content text-center">
+            <div class="modal-body p-4 p-md-5">
+                <div class="fim-icone" id="fim-icone"><i class="fa-solid {{ icone|default:'fa-flag-checkered' }}"></i></div>
+                <h2 class="fim-titulo" id="fimTitulo">Fim de jogo!</h2>
+                <div class="fim-placar">
+                    <div class="lado"><div class="nome">{{ partida.jogador_criador.first_name|default:partida.jogador_criador.username }}</div><div class="pts" id="fim-pts-1">0</div></div>
+                    <div class="x">x</div>
+                    <div class="lado"><div class="nome">{{ partida.jogador_convidado.first_name|default:partida.jogador_convidado.username|default:"Rival" }}</div><div class="pts" id="fim-pts-2">0</div></div>
+                </div>
+                <h5 class="fim-vencedor" id="modal-vencedor">...</h5>
+                <div class="fim-resposta">
+                    <small>{{ rotulo_resposta }}</small>
+                    <b>{{ resposta }}</b>
+                </div>
+                <a href="{% url 'duelos:listar_desafios' %}" id="btn-proximo-round" class="btn fim-botao w-100"><i class="fa-solid fa-arrow-right-to-bracket"></i> {{ texto_botao|default:"Voltar para a Arena" }}</a>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+/* Preenche e abre o modal de fim de jogo. `data` vem da API de status (pontos_j1, pontos_j2, url_proximo_round). */
+window.abrirFimDeJogo = function (data) {
+    const eu = {{ request.user.pk }}, criador = {{ partida.jogador_criador_id }}, convidado = {{ partida.jogador_convidado_id|default:"null" }};
+    const p1 = data.pontos_j1, p2 = data.pontos_j2;
+    document.getElementById('fim-pts-1').textContent = p1;
+    document.getElementById('fim-pts-2').textContent = p2;
+    const meuLado = eu === criador ? 1 : eu === convidado ? 2 : 0;
+    const venceu = (meuLado === 1 && p1 > p2) || (meuLado === 2 && p2 > p1);
+    const perdeu = (meuLado === 1 && p1 < p2) || (meuLado === 2 && p2 < p1);
+    const modal = document.getElementById('modalFimJogo');
+    modal.classList.toggle('venceu', venceu); modal.classList.toggle('perdeu', perdeu);
+    document.getElementById('fimTitulo').textContent = p1 === p2 ? 'Empate!' : meuLado === 0 ? 'Fim de jogo!' : venceu ? 'Vitória!' : 'Derrota';
+    document.getElementById('modal-vencedor').textContent = p1 === p2 ? 'Tudo igual: ninguém levou essa.' : (p1 > p2 ? '🏆 Vitória de ' + document.querySelectorAll('#modalFimJogo .fim-placar .nome')[0].textContent : '🏆 Vitória de ' + document.querySelectorAll('#modalFimJogo .fim-placar .nome')[1].textContent);
+    const btn = document.getElementById('btn-proximo-round');
+    if (data.url_proximo_round) { btn.href = data.url_proximo_round; btn.innerHTML = 'Próximo round <i class="fa-solid fa-forward-step ms-2"></i>'; }
+    new bootstrap.Modal(modal).show();
+};
+</script>

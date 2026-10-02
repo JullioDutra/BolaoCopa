@@ -100,6 +100,14 @@
                         Você roubou todas as cartas, limpou o baralho e <strong>aniqulou</strong> o seu adversário!
                     </p>
                 </div>
+        {% elif not campeao %}
+            <div class="card lose-card p-4 p-md-5 rounded-4 text-white position-relative overflow-hidden">
+                <div class="position-relative" style="z-index: 1;">
+                    <i class="fa-solid fa-handshake skull-glow mb-4"></i>
+                    <h1 class="title-lose mb-2">Empate!</h1>
+                    <span class="badge bg-secondary text-white fs-6 rounded-pill mb-4 px-4 py-2 shadow-sm">{{ partida.pontos_criador }} x {{ partida.pontos_convidado }} cartas</span>
+                    <p class="fs-5 lh-sm text-white-50">Ninguém levou o baralho inteiro no limite de rodadas. Pede a revanche!</p>
+                </div>
         {% else %}
             <!-- CARTÃO DE DERROTA -->
             <div class="card lose-card p-4 p-md-5 rounded-4 text-white position-relative overflow-hidden">

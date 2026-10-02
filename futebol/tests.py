@@ -382,3 +382,121 @@ class ViewsFutebolTests(TestCase):
         with override_settings(FOOTBALL_DATA_TOKEN=None, APIFOOTBALL_KEY=None):
             d = self.client.get(reverse('futebol:api_raio_x', args=[jogo.id])).json()
         self.assertEqual(d['casa'], 'Flamengo')
+
+
+class EscudosGlobaisTests(TestCase):
+    def test_chave_ignora_ruido_e_acentos(self):
+        from futebol.escudos import chave_time
+        self.assertEqual(chave_time('C.R. Flamengo'), chave_time('Flamengo'))
+        self.assertEqual(chave_time('São Paulo FC'), 'sao paulo')
+        self.assertNotEqual(chave_time('Atlético-MG'), chave_time('Atlético-GO'))
+
+    def test_jogo_usa_escudo_global(self):
+        from datetime import timedelta
+        from django.utils import timezone
+        from futebol.escudos import registrar
+        from palpites.models import Jogo
+        registrar('Flamengo', url='https://x.test/fla.png')
+        j = Jogo.objects.create(time_casa='CR Flamengo', time_fora='Vasco', data_hora=timezone.now() + timedelta(days=1))
+        self.assertEqual(j.escudo_casa_src, 'https://x.test/fla.png')
+        self.assertIsNone(j.escudo_fora_src)
+
+    def test_comando_aplicar_registra_urls_de_jogos(self):
+        from datetime import timedelta
+        from django.core.management import call_command
+        from django.utils import timezone
+        from futebol.models import Escudo
+        from palpites.models import Jogo
+        Jogo.objects.create(time_casa='Santos', time_fora='Bahia', data_hora=timezone.now() + timedelta(days=1),
+                            escudo_casa_url='https://x.test/santos.png')
+        call_command('consolidar_escudos', '--aplicar', stdout=__import__('io').StringIO())
+        self.assertTrue(Escudo.objects.filter(chave='santos', url='https://x.test/santos.png').exists())
+
+
+class BancoUnicoJogadoresTests(TestCase):
+    def test_trunfo_e_selecao_apontam_para_o_mesmo_atleta(self):
+        import io
+        from django.core.management import call_command
+        from convocacao.models import Jogador
+        from duelos.models import ClubeFutebol, CartaTrunfo
+        from futebol.models import Atleta, FonteAtleta
+        Jogador.objects.create(nome='Gabigol', posicao='Atacante', clube_atual='Flamengo')
+        clube = ClubeFutebol.objects.create(nome='Flamengo')
+        CartaTrunfo.objects.create(nome='Gabigol', posicao='ATA', overall=84, clube=clube)
+        out = io.StringIO()
+        call_command('consolidar_jogadores', stdout=out)  # simulação
+        self.assertEqual(Atleta.objects.count(), 0)
+        call_command('consolidar_jogadores', '--aplicar', stdout=out)
+        self.assertEqual(Atleta.objects.filter(nome='Gabigol').count(), 1)
+        self.assertEqual(FonteAtleta.objects.count(), 2)
+        call_command('consolidar_jogadores', '--aplicar', stdout=out)
+        self.assertEqual(FonteAtleta.objects.count(), 2)
+
+
+class ScoutTests(TestCase):
+    def _est(self, nome='Craque', pos='ATA', time_nome='Flamengo', **kw):
+        from futebol.models import Atleta, EstatisticaAtleta, Time
+        time, _ = Time.objects.get_or_create(nome=time_nome, pais='Brasil')
+        atleta, _ = Atleta.objects.get_or_create(nome=nome, posicao=pos, time=time, defaults={'valor_mercado': kw.pop('valor_mercado', None)})
+        base = dict(atleta=atleta, time=time, temporada=2024, jogos=30, minutos=2400, gols=0, assistencias=0)
+        base.update(kw)
+        return EstatisticaAtleta.objects.create(**base)
+
+    def test_atacante_artilheiro_mitou_e_apagado_e_bagre(self):
+        from futebol import scout
+        mito = scout.avaliar(self._est('Mito', gols=25, assistencias=8))
+        bagre = scout.avaliar(self._est('Bagre', gols=1, assistencias=0, amarelos=9))
+        self.assertEqual(mito['classe'], 'mitou')
+        self.assertEqual(bagre['classe'], 'bagre')
+        self.assertGreater(mito['nota'], bagre['nota'])
+
+    def test_pouco_tempo_em_campo_nao_gera_veredito(self):
+        from futebol import scout
+        r = scout.avaliar(self._est('Reserva', minutos=100, gols=3))
+        self.assertIsNone(r['nota'])
+        self.assertEqual(r['veredito'], 'Sem amostra')
+
+    def test_bagre_caro_e_achado_barato(self):
+        from futebol import scout
+        caro = scout.avaliar(self._est('Caro', gols=3, assistencias=1, valor_contratacao=40_000_000, contratado=True))
+        barato = scout.avaliar(self._est('Barato', gols=20, assistencias=6, valor_contratacao=1_000_000))
+        self.assertIn('Bagre caro', caro['selo'])
+        self.assertIn('Achado', barato['selo'])
+
+    def test_goleiro_e_nota_media(self):
+        from decimal import Decimal
+        from futebol import scout
+        gol = scout.avaliar(self._est('Paredão', pos='GOL', jogos=30, jogos_sem_sofrer=12, nota_media=Decimal('7.40')))
+        self.assertIn(gol['classe'], ('mitou', 'boa'))
+
+    def test_ranking_balanco_e_views(self):
+        from futebol import scout
+        self._est('Mito', gols=25, assistencias=8, contratado=True)
+        self._est('Bagre', gols=1, time_nome='Vasco', contratado=True)
+        r = scout.ranking(2024)
+        self.assertEqual(r['mitaram'][0]['estatistica'].atleta.nome, 'Mito')
+        self.assertEqual(r['bagres'][0]['estatistica'].atleta.nome, 'Bagre')
+        from futebol.models import Time
+        b = scout.balanco_time(Time.objects.get(nome='Flamengo'), 2024)
+        self.assertTrue(b['so_contratacoes'])
+        u = User.objects.create_user('ana', password='x')
+        self.client.force_login(u)
+        self.assertEqual(self.client.get(reverse('futebol:scout')).status_code, 200)
+        self.assertContains(self.client.get(reverse('futebol:scout') + '?posicao=ATA&contratados=1'), 'Mito')
+        from futebol.models import Atleta
+        self.assertContains(self.client.get(reverse('futebol:jogador', args=[Atleta.objects.get(nome='Mito').pk])), 'MITOU')
+        self.assertEqual(self.client.get(reverse('futebol:time', args=[Time.objects.get(nome='Flamengo').pk])).status_code, 200)
+
+    def test_importar_csv(self):
+        import tempfile
+        from django.core.management import call_command
+        from futebol.models import EstatisticaAtleta
+        with tempfile.NamedTemporaryFile('w', suffix='.csv', delete=False, encoding='utf-8') as f:
+            f.write('nome,time,posicao,temporada,jogos,minutos,gols,assistencias,nota,contratado,valor\n'
+                    'Gabigol,Flamengo,Atacante,2024,30,2400,22,5,7.2,sim,15000000\n'
+                    'Sem Posicao,Flamengo,,2024,1,90,0,0,,,\n')
+        call_command('importar_estatisticas', '--csv', f.name, stdout=__import__('io').StringIO(), stderr=__import__('io').StringIO())
+        os.unlink(f.name)
+        e = EstatisticaAtleta.objects.get()
+        self.assertEqual((e.gols, e.contratado, e.valor_contratacao), (22, True, 15_000_000))
+        self.assertEqual(str(e.nota_media), '7.20')

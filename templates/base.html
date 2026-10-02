@@ -42,6 +42,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
+        /* Ícones de navegação padronizados: mesma caixa, mesmo peso, mesma cor do texto */
+        .nav-ico { display:inline-block; width:1.3em; text-align:center; margin-right:.4rem; font-size:.95em; color:inherit; opacity:.9; }
+        .offcanvas .nav-ico { width:1.6em; }
         :root {
             --verde-escuro: #0a3d10; /* Tom mais profundo e moderno */
             --verde-campo: #1b5e20;
@@ -175,6 +178,7 @@
         }
     </style>
 
+    {% include "partials/arena_css.html" %}
     {# Tema por time do coração: sobrescreve as variáveis de cor e os botões "success" #}
     {% if tema.ativo %}
     <style id="tema-time">
@@ -242,64 +246,64 @@
                 {% if user.is_authenticated %}
                     <ul class="navbar-nav me-auto mb-2 mb-xl-0 ms-xl-3 gap-1">
                         <li class="nav-item">
-                            <a class="nav-link text-white" href="{% url 'dashboard' %}"><i class="fa-solid fa-house opacity-75 me-1"></i> Início</a>
+                            <a class="nav-link text-white" href="{% url 'dashboard' %}"><i class="fa-solid fa-house nav-ico"></i> Início</a>
                         </li>
                         
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle text-white" href="#" id="convocacaoDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="fa-solid fa-clipboard-list opacity-75 me-1"></i> Convocação
+                                <i class="fa-solid fa-people-group nav-ico"></i> Convocação
                             </a>
                             <ul class="dropdown-menu shadow border-0 rounded-3 mt-2" aria-labelledby="convocacaoDropdown">
                                 <li>
                                     <a class="dropdown-item fw-bold py-2" href="{% url 'convocacao:montar_selecao' %}">
-                                        <i class="fa-solid fa-shirt text-success me-2"></i> Minha Seleção
+                                        <i class="fa-solid fa-shirt nav-ico"></i> Minha Seleção
                                     </a>
                                 </li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
                                     <a class="dropdown-item py-2" href="{% url 'convocacao:ranking_convocacao' %}">
-                                        <i class="fa-solid fa-medal text-warning me-2"></i> Ranking da Convocação
+                                        <i class="fa-solid fa-medal nav-ico"></i> Ranking da Convocação
                                     </a>
                                 </li>
                                 <li>
                                     <a class="dropdown-item py-2" href="{% url 'convocacao:mais_escalados' %}">
-                                        <i class="fa-solid fa-chart-line text-primary me-2"></i> Mais Escalados
+                                        <i class="fa-solid fa-chart-simple nav-ico"></i> Mais Escalados
                                     </a>
                                 </li>
                             </ul>
                         </li>
 
                         <li class="nav-item">
-                            <a class="nav-link text-white" href="{% url 'palpites:listar_jogos' %}"><i class="fa-solid fa-futbol opacity-75 me-1"></i> Bolão</a>
+                            <a class="nav-link text-white" href="{% url 'palpites:listar_jogos' %}"><i class="fa-solid fa-futbol nav-ico"></i> Bolão</a>
                         </li>
                         
                         <!-- ADICIONADO: Palpites de Temporada (Longo Prazo) -->
                         <li class="nav-item">
-                            <a class="nav-link text-white" href="{% url 'palpites:meus_palpites_longo_prazo' %}"><i class="fa-solid fa-crown opacity-75 me-1"></i> Temporada</a>
+                            <a class="nav-link text-white" href="{% url 'palpites:meus_palpites_longo_prazo' %}"><i class="fa-solid fa-trophy nav-ico"></i> Temporada</a>
                         </li>
                         
                         <li class="nav-item">
-                            <a class="nav-link text-white" href="{% url 'duelos:listar_desafios' %}"><i class="fa-solid fa-khanda opacity-75 me-1"></i> Arena X1</a>
+                            <a class="nav-link text-white" href="{% url 'duelos:listar_desafios' %}"><i class="fa-solid fa-gamepad nav-ico"></i> Arena X1</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-white" href="{% url 'futebol:hub' %}"><i class="fa-solid fa-earth-americas opacity-75 me-1"></i> Futebol</a>
+                            <a class="nav-link text-white" href="{% url 'futebol:hub' %}"><i class="fa-solid fa-magnifying-glass-chart nav-ico"></i> Futebol</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-white" href="{% url 'palpites:ranking_geral' %}"><i class="fa-solid fa-ranking-star opacity-75 me-1"></i> Geral</a>
+                            <a class="nav-link text-white" href="{% url 'palpites:ranking_geral' %}"><i class="fa-solid fa-ranking-star nav-ico"></i> Geral</a>
                         </li>
                         
                         <!-- Oscar / Melhores do Ano -->
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'melhores:home' %}" style="color: #ffeaa7;">
-                                <i class="fa-solid fa-award me-1"></i> Melhores<span class="d-none d-xxl-inline">&nbsp;do Ano</span>
+                                <i class="fa-solid fa-award nav-ico"></i> Melhores<span class="d-none d-xxl-inline">&nbsp;do Ano</span>
                             </a>
                         </li>
                         
                         <!-- ADICIONADO: Menu exclusivo para a STAFF -->
                         {% if user.is_staff %}
                         <li class="nav-item">
-                            <a class="nav-link text-warning fw-bold" href="{% url 'palpites:painel_controle_admin' %}" title="Staff">
-                                <i class="fa-solid fa-gears me-1"></i><span class="d-none d-xxl-inline"> Staff</span>
+                            <a class="nav-link text-warning fw-bold" href="{% url 'gestao:hub' %}" title="Staff">
+                                <i class="fa-solid fa-user-shield nav-ico"></i><span class="d-none d-xxl-inline"> Staff</span>
                             </a>
                         </li>
                         {% endif %}
@@ -344,6 +348,7 @@
                                     </a>
                                 </li>
                                 {% if user.is_staff %}
+                                <li><a class="dropdown-item fw-bold py-2" href="{% url 'gestao:hub' %}"><i class="fa-solid fa-user-shield nav-ico"></i> Painel da staff</a></li>
                                 <li><a class="dropdown-item fw-bold py-2" href="{% url 'avisos:staff' %}"><i class="fa-solid fa-bullhorn text-danger me-2"></i> Avisar a galera</a></li>
                                 <li><a class="dropdown-item fw-bold py-2" href="{% url 'conta:staff_links_senha' %}"><i class="fa-solid fa-link text-warning me-2"></i> Links de senha</a></li>
                                 {% endif %}
@@ -399,37 +404,37 @@
         <div class="offcanvas-body p-0 d-flex flex-column">
             <ul class="navbar-nav mb-auto">
                 <li class="nav-item">
-                    <a class="nav-link" href="{% url 'dashboard' %}"><i class="fa-solid fa-house fa-fw opacity-75 me-2"></i> Início</a>
+                    <a class="nav-link" href="{% url 'dashboard' %}"><i class="fa-solid fa-house nav-ico"></i> Início</a>
                 </li>
                 
                 <li class="nav-item px-3 py-2 text-uppercase small text-white-50 fw-bold tracking-wider mt-3">
                     Meu Time
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{% url 'convocacao:montar_selecao' %}"><i class="fa-solid fa-shirt fa-fw text-success opacity-75 me-2"></i> Escalar Seleção</a>
+                    <a class="nav-link" href="{% url 'convocacao:montar_selecao' %}"><i class="fa-solid fa-shirt nav-ico"></i> Escalar Seleção</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{% url 'convocacao:ranking_convocacao' %}"><i class="fa-solid fa-users fa-fw opacity-75 me-2"></i> Ranking Convocação</a>
+                    <a class="nav-link" href="{% url 'convocacao:ranking_convocacao' %}"><i class="fa-solid fa-ranking-star nav-ico"></i> Ranking Convocação</a>
                 </li>
 
                 <li class="nav-item px-3 py-2 text-uppercase small text-white-50 fw-bold tracking-wider mt-3">
                     Competições
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{% url 'palpites:listar_jogos' %}"><i class="fa-solid fa-futbol fa-fw opacity-75 me-2"></i> Bolão de Jogos</a>
+                    <a class="nav-link" href="{% url 'palpites:listar_jogos' %}"><i class="fa-solid fa-futbol nav-ico"></i> Bolão de Jogos</a>
                 </li>
                 <!-- ADICIONADO: Palpites de Temporada Mobile -->
                 <li class="nav-item">
-                    <a class="nav-link" href="{% url 'palpites:meus_palpites_longo_prazo' %}"><i class="fa-solid fa-crown fa-fw opacity-75 text-warning me-2"></i> Palpites da Temporada</a>
+                    <a class="nav-link" href="{% url 'palpites:meus_palpites_longo_prazo' %}"><i class="fa-solid fa-trophy nav-ico"></i> Palpites da Temporada</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{% url 'duelos:listar_desafios' %}"><i class="fa-solid fa-khanda fa-fw opacity-75 me-2"></i> Arena do X1</a>
+                    <a class="nav-link" href="{% url 'duelos:listar_desafios' %}"><i class="fa-solid fa-gamepad nav-ico"></i> Arena do X1</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{% url 'futebol:hub' %}"><i class="fa-solid fa-earth-americas fa-fw opacity-75 me-2"></i> Central do Futebol</a>
+                    <a class="nav-link" href="{% url 'futebol:hub' %}"><i class="fa-solid fa-magnifying-glass-chart nav-ico"></i> Central do Futebol</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{% url 'palpites:ranking_geral' %}"><i class="fa-solid fa-ranking-star fa-fw opacity-75 me-2"></i> Classificação Geral</a>
+                    <a class="nav-link" href="{% url 'palpites:ranking_geral' %}"><i class="fa-solid fa-ranking-star nav-ico"></i> Classificação Geral</a>
                 </li>
                 
                 <li class="nav-item px-3 py-2 text-uppercase small text-white-50 fw-bold tracking-wider mt-3">
@@ -437,7 +442,7 @@
                 </li>
                 <li class="nav-item">
                     <a class="nav-link text-warning" href="{% url 'melhores:home' %}">
-                        <i class="fa-solid fa-award fa-fw me-2"></i> Melhores do Ano
+                        <i class="fa-solid fa-award nav-ico"></i> Melhores do Ano
                     </a>
                 </li>
                 
@@ -447,8 +452,8 @@
                     Administração
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link text-warning fw-bold" href="{% url 'palpites:painel_controle_admin' %}">
-                        <i class="fa-solid fa-gears fa-fw me-2"></i> Painel da Staff
+                    <a class="nav-link text-warning fw-bold" href="{% url 'gestao:hub' %}">
+                        <i class="fa-solid fa-user-shield nav-ico"></i> Painel da Staff
                     </a>
                 </li>
                 {% endif %}

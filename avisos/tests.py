@@ -72,6 +72,24 @@ class NotificarTests(TestCase):
         self.assertFalse(PushSubscription.objects.exists())
 
 
+class ContatoVapidTests(TestCase):
+    def test_email_puro_ganha_mailto_e_formatos_validos_sao_mantidos(self):
+        casos = {'a@b.com': 'mailto:a@b.com', 'mailto:a@b.com': 'mailto:a@b.com',
+                 'https://site.com/contato': 'https://site.com/contato', '': 'mailto:contato@cartolandia.app'}
+        for entrada, esperado in casos.items():
+            with override_settings(VAPID_EMAIL=entrada):
+                self.assertEqual(servico.contato_vapid(), esperado)
+
+    def test_push_envia_sub_com_mailto(self):
+        publica, privada, p256dh, auth = chaves_de_teste()
+        u = User.objects.create_user('ana', password='x')
+        PushSubscription.objects.create(usuario=u, endpoint='https://push.example/abc', p256dh=p256dh, auth=auth)
+        with override_settings(VAPID_PUBLIC_KEY=publica, VAPID_PRIVATE_KEY=privada, VAPID_EMAIL='ana@b.com'), \
+                mock.patch('pywebpush.webpush') as webpush:
+            servico.notificar(u, 'Oi')
+        self.assertEqual(webpush.call_args.kwargs['vapid_claims'], {'sub': 'mailto:ana@b.com'})
+
+
 class ViewsAvisosTests(TestCase):
     def setUp(self):
         self.u = User.objects.create_user('ana', password='x', first_name='Ana')

@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block title %}7 a 0 - Cartolândia{% endblock %}
+{% block content %}
+{% include 'setezero/_estilo.html' %}
+<section class="ar-hero sz-hero">
+    <h1><span class="sete">7 a 0</span> · Brasileirão Histórico</h1>
+    <p>Comande {{ total_times }} esquadrões lendares em simulações minuto a minuto: escale, mude a tática no intervalo e tente a goleada impossível.</p>
+    <div class="ar-chips">
+        <span class="ar-chip"><i class="fa-solid fa-futbol"></i> {{ jogos }} jogo{{ jogos|pluralize }}</span>
+        <span class="ar-chip"><i class="fa-solid fa-explosion"></i> maior saldo: {{ melhor_saldo }}</span>
+        <a class="ar-chip text-decoration-none text-white" href="{% url 'setezero:ranking' %}"><i class="fa-solid fa-ranking-star"></i> Quadro de honra</a>
+    </div>
+</section>
+
+{% if abertas or temporadas %}
+<h2 class="ar-secao"><i class="fa-solid fa-play"></i> Continuar</h2>
+<div class="ar-grid mb-4">
+    {% for p in abertas %}
+    <a class="ar-card text-decoration-none" style="--cor:#0f766e" href="{% url 'setezero:partida' p.pk %}"><span class="ar-tag">{{ p.get_modo_display }}</span>
+        <h3>{{ p.gols_usuario }} x {{ p.gols_rival }}</h3><p>{{ p.time_usuario }} · jogo em andamento</p><span class="ar-btn">Voltar ao jogo</span></a>
+    {% endfor %}
+    {% for t in temporadas %}
+    <a class="ar-card text-decoration-none" style="--cor:#a16207" href="{% url 'setezero:temporada' t.pk %}"><span class="ar-tag">Campeonato</span>
+        <h3>Rodada {{ t.estado.rodada|add:1 }}/14</h3><p>Campeonato em andamento</p><span class="ar-btn">Abrir</span></a>
+    {% endfor %}
+</div>
+{% endif %}
+
+<h2 class="ar-secao"><i class="fa-solid fa-dice"></i> Escolha o modo</h2>
+<div class="ar-grid mb-4">
+    <a class="ar-card text-decoration-none" style="--cor:#15803d" href="{% url 'setezero:novo' 'amistoso' %}"><span class="ar-tag">1 JOGO</span>
+        <div class="ar-ico"><i class="fa-solid fa-handshake"></i></div><h3>Amistoso Histórico</h3>
+        <p>Escolha dois esquadrões de épocas diferentes e veja quem leva a resenha.</p><span class="ar-btn">Jogar</span></a>
+    <a class="ar-card text-decoration-none" style="--cor:#b91c1c" href="{% url 'setezero:novo' 'desafio' %}"><span class="ar-tag">+300 COINS</span>
+        <div class="ar-ico"><i class="fa-solid fa-explosion"></i></div><h3>Desafio 7 a 0</h3>
+        <p>Vença por 7 gols de diferença contra um freguês. Tática ousada e muita sorte.</p><span class="ar-btn">Aceitar</span></a>
+    <a class="ar-card text-decoration-none" style="--cor:#a16207" href="{% url 'setezero:novo' 'temporada' %}"><span class="ar-tag">14 RODADAS</span>
+        <div class="ar-ico"><i class="fa-solid fa-trophy"></i></div><h3>Campeonato</h3>
+        <p>Pontos corridos, ida e volta, contra 7 gigantes. Título paga 400 coins.</p><span class="ar-btn">Começar</span></a>
+</div>
+
+{% if recentes %}
+<h2 class="ar-secao"><i class="fa-solid fa-clock-rotate-left"></i> Últimos jogos</h2>
+<div class="ar-tabela mb-5">
+    {% for p in recentes %}
+    <div class="ar-linha" style="grid-template-columns:36px 1fr auto;"><span class="pos">{{ p.resultado }}</span>
+        <span><span class="nome">{{ p.gols_usuario }} x {{ p.gols_rival }}</span><span class="d-block sub">{{ p.get_modo_display }}</span></span>
+        <span class="sub">{% if p.premio %}+{{ p.premio }} coins{% endif %}</span></div>
+    {% endfor %}
+</div>
+{% endif %}
+<p class="text-center small text-muted mb-5">Elencos e notas são aproximações inspiradas na memória do torcedor — é resenha, não estatística oficial.</p>
+{% endblock %}

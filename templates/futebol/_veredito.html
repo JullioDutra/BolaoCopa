@@ -1,0 +1,10 @@
+{% load l10n %}
+<div class="fb-card p-3 mb-3 d-flex align-items-center gap-3">
+    <div class="text-center" style="min-width:64px;"><div style="font-family:var(--fonte-titulo);font-size:2.2rem;font-weight:800;line-height:1;">{{ a.nota|default:"–" }}</div><small class="text-muted">NOTA</small></div>
+    <div class="flex-grow-1">
+        <div class="d-flex flex-wrap align-items-center gap-2 mb-1"><span class="vd {{ a.classe }}">{{ a.emoji }} {{ a.veredito }}</span>{% if a.selo %}<span class="selo">{{ a.selo }}</span>{% endif %}
+            <small class="text-muted">{{ a.estatistica.temporada }} · {{ a.estatistica.competicao }}{% if a.estatistica.time %} · {{ a.estatistica.time.nome_exibicao }}{% endif %}</small></div>
+        {% if a.nota is not None %}<div class="nota-bar mb-1"><span style="width:{{ a.nota|unlocalize }}%"></span></div>{% endif %}
+        <small class="text-muted">{{ a.estatistica.jogos }} jogos · {{ a.estatistica.minutos }} min · {{ a.estatistica.gols }} gols · {{ a.estatistica.assistencias }} assist.{% if a.motivos %} — {{ a.motivos|join:"; " }}{% endif %}</small>
+    </div>
+</div>

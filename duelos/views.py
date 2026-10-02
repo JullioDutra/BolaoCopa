@@ -873,6 +873,10 @@ def tela_jogo_mini(request, partida_id):
     if meu_jogador.finalizou:
         return redirect('duelos:resultado_mini', partida_id=partida.id)
 
+    if not partida.clube_dupla_a_id or not partida.clube_dupla_b_id:
+        messages.info(request, 'A partida ainda não começou: as duplas precisam escolher os clubes.')
+        return redirect('duelos:lobby_mini', partida_id=partida.id)
+
     # TÁTICA AVANÇADA: Usa o ID da partida como 'semente' para o random.
     # Isso garante que o sorteio seja aleatório, mas idêntico para os 4 jogadores!
     rng = random.Random(partida.id)
@@ -1006,6 +1010,9 @@ def resultado_mini(request, partida_id):
 # ==========================================
 # VIEWS DO SUPER TRUNFO
 # ==========================================
+LIMITE_RODADAS_TRUNFO = 40
+
+
 @login_required
 def criar_trunfo(request):
     """Cria a mesa de Trunfo e define que o criador começa jogando."""
@@ -1029,6 +1036,8 @@ def entrar_trunfo(request, partida_id):
         partida.status = 'andamento'
         
         # O CARTEADOR: Pega todos os IDs de cartas disponíveis no banco
+        from .baralho import garantir_cartas
+        garantir_cartas(10)
         cartas_ids = list(CartaTrunfo.objects.values_list('id', flat=True))
         
         # Pega 10 cartas aleatórias e divide 5 para cada
@@ -1077,6 +1086,8 @@ def status_trunfo_api(request, partida_id):
     # Identifica quem está pedindo o status para mandar a carta certa
     minha_carta = partida.carta_criador if request.user == partida.criador else partida.carta_convidado
     carta_adv = partida.carta_convidado if request.user == partida.criador else partida.carta_criador
+    if partida.carta_criador_id:
+        partida.carta_criador.clube  # carrega o clube uma vez
 
     # Formata a carta para o JSON
     def formatar_carta(c):
@@ -1085,18 +1096,18 @@ def status_trunfo_api(request, partida_id):
         # =========================================================
         # BLINDAGEM ANTI-ERRO 500 (Trata cartas sem foto com segurança)
         # =========================================================
-        img_url = 'https://i.pravatar.cc/150'
+        img_url = ''
         if getattr(c, 'foto', None) and getattr(c.foto, 'name', None):
             try:
                 img_url = c.foto.url
             except Exception:
-                pass # Se der qualquer erro ao ler a imagem, usa a genérica e não derruba o jogo!
-
+                pass  # imagem ilegível não derruba o jogo: a carta mostra as iniciais
+        from futebol.escudos import escudo_url
         return {
             'nome': c.nome, 'pos': c.posicao, 'ovr': c.overall,
-            'img': img_url,
+            'img': img_url, 'clube': c.clube.nome, 'escudo': escudo_url(c.clube.nome) or '',
             'stats': {
-                'rit': c.ritmo, 'fin': c.finalizacao, 'pas': c.passe, 
+                'rit': c.ritmo, 'fin': c.finalizacao, 'pas': c.passe,
                 'dri': c.drible, 'def': c.defesa, 'fis': c.fisico
             }
         }
@@ -1126,95 +1137,86 @@ def status_trunfo_api(request, partida_id):
 
 @login_required
 def batalhar_trunfo_api(request, partida_id):
-    """Lógica real do Super Trunfo: Quem ganha leva a carta pro final do monte."""
-    if request.method == 'POST':
-        partida = get_object_or_404(PartidaTrunfo, id=partida_id)
-        
-        if partida.turno_de != request.user:
-            return JsonResponse({'erro': 'Não é a sua vez!'})
-            
-        data = json.loads(request.body)
-        atributo = data.get('atributo') 
-        
-        mapa_atributos = {
-            'rit': 'ritmo', 'fin': 'finalizacao', 'pas': 'passe',
-            'dri': 'drible', 'def': 'defesa', 'fis': 'fisico'
-        }
-        campo_real = mapa_atributos.get(atributo)
-        
-        valor_criador = getattr(partida.carta_criador, campo_real)
-        valor_convidado = getattr(partida.carta_convidado, campo_real)
-        
-        vencedor_rodada = None
-        
-        # Puxamos as listas de cartas que estão guardadas no banco
-        baralho_c = partida.baralho_criador
-        baralho_v = partida.baralho_convidado
-        
-        # Pega as cartas que estão atualmente na mesa
-        carta_c_id = partida.carta_criador.id
-        carta_v_id = partida.carta_convidado.id
-        
-        # LÓGICA DO ROUBA-MONTE
-        if valor_criador > valor_convidado:
-            # Criador venceu: Coloca a carta dele e a do adversário no FIM do seu monte
-            baralho_c.extend([carta_c_id, carta_v_id])
-            vencedor_rodada = partida.criador
-        elif valor_convidado > valor_criador:
-            # Convidado venceu: Faz a mesma coisa
-            baralho_v.extend([carta_v_id, carta_c_id])
-            vencedor_rodada = partida.convidado
-        else:
-            # Empate: Cada um pega a sua de volta pro fim da fila
-            baralho_c.append(carta_c_id)
-            baralho_v.append(carta_v_id)
-            
-        # Passa o turno para quem perdeu (ou mantém se empatou)
-        if vencedor_rodada and vencedor_rodada != partida.turno_de:
-            partida.turno_de = vencedor_rodada
-            
-        partida.rodada_atual += 1
-        
-        # VERIFICA SE O JOGO ACABOU (Alguém ficou sem monte para puxar a próxima)
-        if len(baralho_c) == 0 or len(baralho_v) == 0:
-            partida.status = 'finalizado'
-            partida.carta_criador = None
-            partida.carta_convidado = None
-            # Os pontos finais refletem o tamanho do monte + a carta da mesa
-            partida.pontos_criador = len(baralho_c) + (1 if len(baralho_c) > 0 else 0)
-            partida.pontos_convidado = len(baralho_v) + (1 if len(baralho_v) > 0 else 0)
-        else:
-            # O jogo continua! Puxamos a próxima carta do TOPO do monte (índice 0)
-            partida.carta_criador_id = baralho_c.pop(0)
-            partida.carta_convidado_id = baralho_v.pop(0)
-            
-            partida.pontos_criador = len(baralho_c) + 1  # Fila + a carta que tá na mesa
-            partida.pontos_convidado = len(baralho_v) + 1
-            
-        # Salva o novo estado da fila no banco
-        partida.baralho_criador = baralho_c
-        partida.baralho_convidado = baralho_v
-        partida.save()
-        
-        return JsonResponse({
-            'sucesso': True,
-            'vencedor_id': vencedor_rodada.id if vencedor_rodada else None,
-            'valor_j1': valor_criador,
-            'valor_j2': valor_convidado
-        })
+    """Lógica real do Super Trunfo: quem ganha leva a carta do rival pro final do monte."""
+    if request.method != 'POST':
+        return JsonResponse({'erro': 'Método inválido.'}, status=405)
+    partida = get_object_or_404(PartidaTrunfo, id=partida_id)
+
+    if partida.status != 'andamento' or not partida.carta_criador or not partida.carta_convidado:
+        return JsonResponse({'erro': 'A partida não está em andamento.'})
+    if partida.turno_de != request.user:
+        return JsonResponse({'erro': 'Não é a sua vez!'})
+
+    try:
+        atributo = json.loads(request.body or '{}').get('atributo')
+    except ValueError:
+        atributo = None
+    mapa_atributos = {'rit': 'ritmo', 'fin': 'finalizacao', 'pas': 'passe',
+                      'dri': 'drible', 'def': 'defesa', 'fis': 'fisico'}
+    campo_real = mapa_atributos.get(atributo)
+    if not campo_real:
+        return JsonResponse({'erro': 'Atributo inválido.'})
+
+    valor_criador = getattr(partida.carta_criador, campo_real)
+    valor_convidado = getattr(partida.carta_convidado, campo_real)
+    baralho_c, baralho_v = list(partida.baralho_criador), list(partida.baralho_convidado)
+    carta_c_id, carta_v_id = partida.carta_criador_id, partida.carta_convidado_id
+
+    vencedor_rodada = None
+    if valor_criador > valor_convidado:
+        baralho_c.extend([carta_c_id, carta_v_id])
+        vencedor_rodada = partida.criador
+    elif valor_convidado > valor_criador:
+        baralho_v.extend([carta_v_id, carta_c_id])
+        vencedor_rodada = partida.convidado
+    else:  # empate: cada um guarda a sua
+        baralho_c.append(carta_c_id)
+        baralho_v.append(carta_v_id)
+
+    # Quem ganhou joga a próxima; no empate, mantém o turno
+    if vencedor_rodada:
+        partida.turno_de = vencedor_rodada
+    partida.rodada_atual += 1
+
+    limite = partida.rodada_atual > LIMITE_RODADAS_TRUNFO
+    if not baralho_c or not baralho_v or limite:
+        partida.status = 'finalizado'
+        partida.carta_criador = None
+        partida.carta_convidado = None
+        partida.pontos_criador = len(baralho_c)
+        partida.pontos_convidado = len(baralho_v)
+    else:
+        partida.carta_criador_id = baralho_c.pop(0)
+        partida.carta_convidado_id = baralho_v.pop(0)
+        partida.pontos_criador = len(baralho_c) + 1
+        partida.pontos_convidado = len(baralho_v) + 1
+
+    partida.baralho_criador, partida.baralho_convidado = baralho_c, baralho_v
+    partida.save()
+
+    return JsonResponse({
+        'sucesso': True,
+        'vencedor_id': vencedor_rodada.id if vencedor_rodada else None,
+        'valor_j1': valor_criador,
+        'valor_j2': valor_convidado,
+        'finalizado': partida.status == 'finalizado',
+    })
+
 
 @login_required
 def resultado_trunfo(request, partida_id):
     """Vestiário final: Exibe quem ganhou o duelo."""
     partida = get_object_or_404(PartidaTrunfo, id=partida_id)
-    
-    # Descobre quem é o dono das 10 cartas
-    if partida.pontos_criador == 0:
-        campeao = partida.convidado
-    elif partida.pontos_convidado == 0:
+    if partida.status != 'finalizado':
+        return redirect('duelos:lobby_trunfo' if partida.status == 'aguardando' else 'duelos:tela_jogo_trunfo', partida_id=partida.id)
+
+    # Quem terminou com mais cartas vence (o limite de rodadas evita partidas infinitas)
+    if partida.pontos_criador > partida.pontos_convidado:
         campeao = partida.criador
+    elif partida.pontos_convidado > partida.pontos_criador:
+        campeao = partida.convidado
     else:
-        campeao = None # Caso de erro ou empate forçado
+        campeao = None  # empate
         
     eh_campeao = request.user == campeao
         

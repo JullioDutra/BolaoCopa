@@ -17,5 +17,10 @@
     {% if atleta.nacionalidade %}<div class="col-6 col-md-3"><div class="fb-card p-3 text-center"><small class="text-muted fw-bold">NACIONALIDADE</small><div class="fs-5 fw-bold">{{ atleta.nacionalidade }}</div></div></div>{% endif %}
     {% if atleta.valor_mercado %}<div class="col-6 col-md-3"><div class="fb-card p-3 text-center"><small class="text-muted fw-bold">VALOR (€)</small><div class="fs-5 fw-bold">{{ atleta.valor_mercado|floatformat:"0g" }}</div></div></div>{% endif %}
 </div>
+{% if avaliacoes %}
+{% include 'futebol/_veredito_css.html' %}
+<h5 class="mb-2">Mitou ou bagre?</h5>
+{% for a in avaliacoes %}{% include 'futebol/_veredito.html' %}{% endfor %}
+{% endif %}
 {% if colegas %}<h6 class="text-muted text-uppercase small">Mesma posição no {{ atleta.time.nome }}</h6><div class="d-flex flex-wrap gap-2">{% for c in colegas %}<a class="fb-pill text-decoration-none" href="{% url 'futebol:jogador' c.id %}">{{ c.nome }}</a>{% endfor %}</div>{% endif %}
 {% endblock %}

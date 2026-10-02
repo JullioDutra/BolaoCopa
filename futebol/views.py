@@ -12,6 +12,7 @@ from palpites import api_futebol
 from palpites.models import Jogo
 
 from . import comparativo as regras
+from . import scout as scouting
 from . import servico
 from .models import Atleta, Comparativo, Time
 from .posicoes import NOME_POSICAO, ORDEM_POSICAO
@@ -54,7 +55,9 @@ def time_detalhe(request, pk):
     atletas = sorted(time.atletas.all(), key=lambda a: (ORDEM_POSICAO.get(a.posicao, 9), a.numero or 99, a.nome))
     grupos = [{'posicao': p, 'nome': NOME_POSICAO[p], 'atletas': [a for a in atletas if a.posicao == p]}
               for p in ('GOL', 'DEF', 'MEI', 'ATA')]
+    temporadas = scouting.temporadas_disponiveis()
     return render(request, 'futebol/time.html', {
+        'balanco': scouting.balanco_time(time, temporadas[0]) if temporadas else None,
         'time': time, 'grupos': [g for g in grupos if g['atletas']], 'total': len(atletas),
         'forma': servico.forma_local(time.nome),
         'proximos': Jogo.objects.filter(finalizado=False, data_hora__gte=timezone.now())
@@ -66,7 +69,28 @@ def time_detalhe(request, pk):
 def jogador_detalhe(request, pk):
     atleta = get_object_or_404(Atleta.objects.select_related('time'), pk=pk)
     colegas = atleta.time.atletas.exclude(pk=atleta.pk).filter(posicao=atleta.posicao)[:6] if atleta.time else []
-    return render(request, 'futebol/jogador.html', {'atleta': atleta, 'colegas': colegas})
+    avaliacoes = [scouting.avaliar(e) for e in atleta.estatisticas.select_related('time')]
+    return render(request, 'futebol/jogador.html', {'atleta': atleta, 'colegas': colegas, 'avaliacoes': avaliacoes})
+
+
+@acesso_liberado_required
+def scout(request):
+    """ Mitou ou bagre? Rankings de rendimento por temporada, posição e contratações. """
+    temporadas = scouting.temporadas_disponiveis()
+    try:
+        temporada = int(request.GET.get('temporada') or (temporadas[0] if temporadas else 0)) or None
+    except ValueError:
+        temporada = None
+    posicao = request.GET.get('posicao') if request.GET.get('posicao') in NOME_POSICAO else ''
+    so_contratados = request.GET.get('contratados') == '1'
+    dados = scouting.ranking(temporada, posicao=posicao, contratados=so_contratados)
+    times = [t for t in Time.objects.filter(estatisticas__temporada=temporada).distinct()] if temporada else []
+    balancos = [(t, scouting.balanco_time(t, temporada)) for t in times]
+    balancos = sorted([b for b in balancos if b[1]], key=lambda b: -b[1]['media'])
+    return render(request, 'futebol/scout.html', {
+        'temporadas': temporadas, 'temporada': temporada, 'posicao': posicao, 'contratados': so_contratados,
+        'posicoes': NOME_POSICAO.items(), 'dados': dados, 'balancos': balancos,
+    })
 
 
 @acesso_liberado_required

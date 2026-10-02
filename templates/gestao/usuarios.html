@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block title %}Participantes - Staff{% endblock %}
+{% block content %}
+<section class="ar-hero">
+    <h1><i class="fa-solid fa-address-book"></i> Participantes</h1>
+    <p>{{ pagina.paginator.count }} resultado{{ pagina.paginator.count|pluralize }}.</p>
+    <div class="ar-chips"><a href="{% url 'gestao:hub' %}" class="ar-chip text-decoration-none text-white"><i class="fa-solid fa-arrow-left"></i> Painel</a></div>
+</section>
+<form class="d-flex gap-2 mb-2" method="get">
+    <input class="form-control" name="q" value="{{ busca }}" placeholder="Buscar por nome, usuário ou e-mail">
+    {% if filtro %}<input type="hidden" name="f" value="{{ filtro }}">{% endif %}
+    <button class="btn btn-success fw-bold"><i class="fa-solid fa-magnifying-glass"></i></button>
+</form>
+<div class="d-flex flex-wrap gap-2 mb-3">
+    <a class="btn btn-sm {% if not filtro %}btn-dark{% else %}btn-outline-dark{% endif %} rounded-pill" href="?q={{ busca }}">Todos</a>
+    {% for f in filtros %}<a class="btn btn-sm {% if filtro == f %}btn-dark{% else %}btn-outline-dark{% endif %} rounded-pill" href="?f={{ f }}&q={{ busca }}">{{ f }}</a>{% endfor %}
+</div>
+<div class="ar-tabela mb-3">
+    {% for u in pagina %}
+    <a class="ar-linha text-decoration-none" href="{% url 'gestao:usuario' u.pk %}">
+        <span class="pos">{{ u.perfil.avatar|default:"⚽" }}</span>
+        <span><span class="nome">{{ u.first_name|default:u.username }}</span>
+            <span class="d-block sub">{{ u.email|default:u.username }}{% if u.is_staff %} · STAFF{% endif %}{% if not u.is_active %} · INATIVO{% endif %}</span></span>
+        <span class="sub">{{ u.last_login|date:"d/m/y"|default:"nunca" }}</span>
+    </a>
+    {% empty %}<div class="ar-vazio">Ninguém encontrado.</div>{% endfor %}
+</div>
+{% if pagina.has_other_pages %}
+<div class="d-flex justify-content-center gap-2 mb-5">
+    {% if pagina.has_previous %}<a class="btn btn-outline-dark btn-sm" href="?p={{ pagina.previous_page_number }}&q={{ busca }}&f={{ filtro }}">‹ Anterior</a>{% endif %}
+    <span class="align-self-center small">{{ pagina.number }} / {{ pagina.paginator.num_pages }}</span>
+    {% if pagina.has_next %}<a class="btn btn-outline-dark btn-sm" href="?p={{ pagina.next_page_number }}&q={{ busca }}&f={{ filtro }}">Próxima ›</a>{% endif %}
+</div>
+{% endif %}
+{% endblock %}

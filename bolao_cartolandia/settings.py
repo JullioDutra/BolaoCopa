@@ -59,6 +59,8 @@ INSTALLED_APPS = [
     'melhores',     # Bet dos Melhores do Ano (Cartola Coins)
     'futebol',      # Dados de futebol, pesquisa e comparativo de times
     'avisos',       # Notificações push + caixa de entrada + WhatsApp
+    'gestao',       # Painel da staff (usuários, auditoria, sistema)
+    'setezero',     # Jogo "7 a 0": simulador do Brasileirão histórico
 ]
 
 MIDDLEWARE = [

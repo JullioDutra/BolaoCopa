@@ -5,15 +5,13 @@
 {% block content %}
 <div class="row mt-4 mb-5">
     <div class="col-12">
-        <!-- Cabeçalho -->
-        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-center mb-4 gap-3">
-            <h3 class="fw-bold mb-0" style="color: var(--verde-escuro);">
-                <i class="fa-solid fa-clock-rotate-left text-success"></i> Meus Duelos
-            </h3>
-            <a href="{% url 'duelos:listar_desafios' %}" class="btn btn-success fw-bold rounded-pill shadow-sm px-4">
-                <i class="fa-solid fa-crosshairs"></i> Buscar Adversário
-            </a>
-        </div>
+        <section class="ar-hero">
+            <h1><i class="fa-solid fa-book-open"></i> Minha Súmula</h1>
+            <p>Todos os seus duelos na Arena do X1.</p>
+            <div class="ar-chips">
+                <a href="{% url 'duelos:listar_desafios' %}" class="ar-chip text-decoration-none text-white"><i class="fa-solid fa-crosshairs"></i> Buscar adversário</a>
+            </div>
+        </section>
 
         {% if partidas %}
             <!-- VISÃO MOBILE (Cards) - Aparece apenas em telas pequenas -->

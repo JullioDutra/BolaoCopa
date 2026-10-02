@@ -20,6 +20,12 @@ def vapid_configurado():
     return bool(getattr(settings, 'VAPID_PUBLIC_KEY', None) and getattr(settings, 'VAPID_PRIVATE_KEY', None))
 
 
+def contato_vapid():
+    """ O `sub` do VAPID precisa ser "mailto:..." ou uma URL https; aceita o e-mail puro e completa. """
+    contato = (getattr(settings, 'VAPID_EMAIL', '') or '').strip() or 'contato@cartolandia.app'
+    return contato if contato.startswith(('mailto:', 'https://')) else f'mailto:{contato}'
+
+
 def _webpush():
     try:
         from pywebpush import WebPushException, webpush
@@ -38,7 +44,7 @@ def enviar_push(sub, payload):
             subscription_info={'endpoint': sub.endpoint, 'keys': {'p256dh': sub.p256dh, 'auth': sub.auth}},
             data=json.dumps(payload),
             vapid_private_key=settings.VAPID_PRIVATE_KEY,
-            vapid_claims={'sub': getattr(settings, 'VAPID_EMAIL', 'mailto:contato@cartolandia.app')},
+            vapid_claims={'sub': contato_vapid()},
             ttl=60 * 60 * 12,
         )
     except WebPushException as erro:

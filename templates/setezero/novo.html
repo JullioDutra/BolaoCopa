@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block title %}Novo jogo - 7 a 0{% endblock %}
+{% block content %}
+{% include 'setezero/_estilo.html' %}
+<section class="ar-hero sz-hero">
+    <h1><span class="sete">7 a 0</span> · {% if modo == 'amistoso' %}Amistoso Histórico{% elif modo == 'desafio' %}Desafio 7 a 0{% else %}Campeonato{% endif %}</h1>
+    <p>{% if modo == 'amistoso' %}Escolha o seu esquadrão. O adversário pode ser sorteado.{% elif modo == 'desafio' %}Escolha o seu esquadrão; o freguês é sorteado. Meta: 7 gols de saldo.{% else %}Escolha o time que vai disputar os 14 jogos. Os outros 7 são sorteados.{% endif %}</p>
+    <div class="ar-chips"><a class="ar-chip text-decoration-none text-white" href="{% url 'setezero:hub' %}"><i class="fa-solid fa-arrow-left"></i> Voltar</a></div>
+</section>
+{% if messages %}{% for m in messages %}<div class="alert alert-danger">{{ m }}</div>{% endfor %}{% endif %}
+
+<form method="post">{% csrf_token %}
+<h2 class="ar-secao">1. Seu esquadrão</h2>
+<div class="row g-3 mb-4">
+    {% for t in times %}
+    <div class="col-6 col-md-4 col-xl-3"><label class="sz-time" style="--cor-time:{{ t.cor }}"><input type="radio" name="time" value="{{ t.chave }}" {% if forloop.first %}required{% endif %}>
+        <div class="faixa"></div>
+        <div class="d-flex align-items-center gap-2 mb-1">{% include 'setezero/_escudo.html' %}<div><div class="nome">{{ t.clube }}</div><div class="ano">{{ t.ano }} · OVR {{ t.overall }}</div></div></div>
+        <div class="apelido">{{ t.apelido }}</div>
+        <div class="sz-barra">ATQ <i><b style="width:{{ t.forca.atq }}%"></b></i> {{ t.forca.atq }}</div>
+        <div class="sz-barra">MEI <i><b style="width:{{ t.forca.cri }}%"></b></i> {{ t.forca.cri }}</div>
+        <div class="sz-barra">DEF <i><b style="width:{{ t.forca.def }}%"></b></i> {{ t.forca.def }}</div>
+        <div class="sz-barra">GOL <i><b style="width:{{ t.forca.gol }}%"></b></i> {{ t.forca.gol }}</div>
+    </label></div>
+    {% endfor %}
+</div>
+
+{% if modo == 'amistoso' %}
+<h2 class="ar-secao">2. Adversário</h2>
+<select class="form-select mb-4" name="rival" style="max-width:420px"><option value="">🎲 Sortear</option>
+    {% for t in times %}<option value="{{ t.chave }}">{{ t.nome }}</option>{% endfor %}</select>
+{% elif modo == 'desafio' %}
+<h2 class="ar-secao">2. O freguês</h2>
+<div class="alert alert-warning">O adversário é sorteado entre: {% for f in fregueses %}<b>{{ f.nome }}</b>{% if not forloop.last %}, {% endif %}{% endfor %}.</div>
+{% endif %}
+
+{% if modo != 'temporada' %}
+<h2 class="ar-secao">{% if modo == 'amistoso' or modo == 'desafio' %}3{% endif %}. Tática inicial</h2>
+<div class="mb-3"><div class="small fw-bold text-muted mb-1">FORMAÇÃO</div>
+    {% for f in formacoes %}<label class="sz-opt me-1"><input type="radio" name="formacao" value="{{ f }}" {% if f == '4-3-3' %}checked{% endif %}><span>{{ f }}</span></label>{% endfor %}
+    <div class="small text-muted mt-1">Se o time não tem os jogadores da formação, a engine escala o melhor adaptado.</div></div>
+<div class="mb-3"><div class="small fw-bold text-muted mb-1">MENTALIDADE</div>
+    {% for k, m in mentalidades.items %}<label class="sz-opt me-1"><input type="radio" name="mentalidade" value="{{ k }}" {% if k == 'equilibrado' %}checked{% endif %}><span>{{ m.nome }}</span></label>{% endfor %}</div>
+<div class="mb-4"><div class="small fw-bold text-muted mb-1">ESTILO</div>
+    {% for k, e in estilos.items %}<label class="sz-opt me-1"><input type="radio" name="estilo" value="{{ k }}" {% if k == 'posse' %}checked{% endif %}><span>{{ e.nome }}</span></label>{% endfor %}
+    <div class="small text-muted mt-1">Dá para trocar tudo durante o jogo.</div></div>
+{% endif %}
+
+<button class="ar-btn" style="max-width:340px;background:#16a34a;color:#fff;" type="submit"><i class="fa-solid fa-play"></i> {% if modo == 'temporada' %}Começar campeonato{% else %}Rolar a bola{% endif %}</button>
+</form>
+<div class="mb-5"></div>
+{% endblock %}

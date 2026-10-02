@@ -45,7 +45,8 @@ class Time(models.Model):
         """ Escudo enviado no Admin (se houver) tem prioridade sobre o da API. """
         if self.clube_local_id and self.clube_local.escudo:
             return self.clube_local.escudo.url
-        return self.escudo_url or None
+        from .escudos import escudo_url
+        return escudo_url(self.nome) or self.escudo_url or None
 
     @property
     def cor_hex(self):
@@ -148,3 +149,79 @@ class Voto(models.Model):
 
     class Meta:
         unique_together = [('comparativo', 'usuario', 'atleta')]
+
+
+class Escudo(models.Model):
+    """
+    Catálogo GLOBAL de escudos: um registro por clube, reaproveitado por todos os jogos
+    (bolão, X1, draft, trunfo, carreira…). `chave` é o nome normalizado, então
+    "Flamengo", "CR Flamengo" e "FLAMENGO" apontam para o mesmo escudo.
+    """
+    chave = models.CharField(max_length=120, unique=True, editable=False)
+    nome = models.CharField(max_length=120)
+    apelidos = models.CharField(max_length=300, blank=True, help_text="Outros nomes separados por vírgula")
+    arquivo = models.ImageField(upload_to='escudos/global/', blank=True, null=True)
+    url = models.URLField(max_length=300, blank=True, help_text="Usado quando não há arquivo enviado")
+    atualizado_em = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['nome']
+
+    def __str__(self):
+        return self.nome
+
+    def save(self, *args, **kwargs):
+        from .escudos import chave_time, limpar_cache
+        self.chave = chave_time(self.nome)
+        super().save(*args, **kwargs)
+        limpar_cache()
+
+    @property
+    def src(self):
+        return self.arquivo.url if self.arquivo else (self.url or None)
+
+
+class FonteAtleta(models.Model):
+    """
+    Liga cada registro dos jogos antigos (Trunfo, Seleção, Draft…) ao atleta do banco único.
+    Os jogos continuam usando as suas próprias tabelas (nada quebra); o banco único é a fonte
+    de consulta para pesquisa, estatísticas e novos modos.
+    """
+    atleta = models.ForeignKey(Atleta, on_delete=models.CASCADE, related_name='fontes')
+    origem = models.CharField(max_length=40, help_text="Ex.: duelos.CartaTrunfo")
+    ref_id = models.PositiveIntegerField()
+
+    class Meta:
+        unique_together = [('origem', 'ref_id')]
+
+    def __str__(self):
+        return f"{self.origem}#{self.ref_id} -> {self.atleta}"
+
+
+class EstatisticaAtleta(models.Model):
+    """ Números de um jogador numa temporada/competição — base do veredito "mitou ou bagre". """
+    atleta = models.ForeignKey(Atleta, on_delete=models.CASCADE, related_name='estatisticas')
+    time = models.ForeignKey(Time, null=True, blank=True, on_delete=models.SET_NULL, related_name='estatisticas')
+    temporada = models.PositiveSmallIntegerField()
+    competicao = models.CharField(max_length=60, default='Brasileirão Série A')
+    jogos = models.PositiveSmallIntegerField(default=0)
+    minutos = models.PositiveIntegerField(default=0)
+    gols = models.PositiveSmallIntegerField(default=0)
+    assistencias = models.PositiveSmallIntegerField(default=0)
+    amarelos = models.PositiveSmallIntegerField(default=0)
+    vermelhos = models.PositiveSmallIntegerField(default=0)
+    nota_media = models.DecimalField(max_digits=4, decimal_places=2, null=True, blank=True, help_text="0 a 10 (opcional)")
+    gols_sofridos = models.PositiveSmallIntegerField(default=0, help_text="Só goleiros")
+    jogos_sem_sofrer = models.PositiveSmallIntegerField(default=0, help_text="Só goleiros/defensores")
+    defesas = models.PositiveSmallIntegerField(default=0)
+    contratado = models.BooleanField(default=False, help_text="Chegou ao time nesta temporada")
+    valor_contratacao = models.BigIntegerField(null=True, blank=True, help_text="Valor pago em euros (opcional)")
+    fonte = models.CharField(max_length=20, blank=True)
+    atualizado_em = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-temporada', 'atleta__nome']
+        unique_together = [('atleta', 'temporada', 'competicao', 'time')]
+
+    def __str__(self):
+        return f"{self.atleta.nome} {self.temporada}"

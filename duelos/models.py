@@ -279,6 +279,10 @@ class PartidaTrunfo(models.Model):
     carta_criador = models.ForeignKey(CartaTrunfo, related_name='+', null=True, blank=True, on_delete=models.SET_NULL)
     carta_convidado = models.ForeignKey(CartaTrunfo, related_name='+', null=True, blank=True, on_delete=models.SET_NULL)
 
+    # Montes de cartas (ids) de cada jogador, fora da mesa
+    baralho_criador = models.JSONField(default=list, blank=True)
+    baralho_convidado = models.JSONField(default=list, blank=True)
+
     def __str__(self):
         return f"Trunfo: {self.criador.username} x {self.convidado.username if self.convidado else 'Aguardando'}"
     

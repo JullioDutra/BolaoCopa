@@ -31,7 +31,23 @@ CATALOGO = OrderedDict([
     ('eleitor', ('Eleitor', 'Votou no 11 ideal', 'fa-check-to-slot', '#2563eb')),
     ('professor', ('Professor', 'Abriu uma votação de comparativo', 'fa-chalkboard-user', '#0d9488')),
     ('banqueiro', ('Banqueiro', 'Juntou 2000 Cartola Coins', 'fa-sack-dollar', '#65a30d')),
+    ('tecnico', ('Professor Pardal', 'Terminou uma partida do 7 a 0', 'fa-clipboard-user', '#0f766e')),
+    ('goleador_7a0', ('Goleada Histórica', 'Venceu o 7 a 0 por 4 ou mais gols', 'fa-explosion', '#c2410c')),
+    ('sete_a_zero', ('Sete a Zero!', 'Venceu um jogo por 7 gols de diferença', 'fa-7', '#b91c1c')),
+    ('campeao_7a0', ('Campeão dos Campeões', 'Ganhou um campeonato do 7 a 0', 'fa-trophy', '#a16207')),
 ])
+
+
+def _setezero(u):
+    """ Números do jogo 7 a 0 (tolerante a tabela ainda não migrada). """
+    try:
+        from setezero.models import Partida7a0, Temporada7a0
+        fim = Partida7a0.objects.filter(usuario=u, resultado__in=['V', 'E', 'D'])
+        saldos = [p.gols_usuario - p.gols_rival for p in fim]
+        return {'jogos': len(saldos), 'maior_saldo': max(saldos, default=0),
+                'titulos': Temporada7a0.objects.filter(usuario=u, posicao_final=1).count()}
+    except Exception:
+        return {'jogos': 0, 'maior_saldo': 0, 'titulos': 0}
 
 
 def _regras(u):
@@ -44,7 +60,12 @@ def _regras(u):
     exatos = palpites.filter(pontuacao_obtida=15).count()
     perfil = PerfilUsuario.objects.filter(usuario=u).first()
     saldo = coins.saldo(u)
+    sete = _setezero(u)
     return {
+        'tecnico': sete['jogos'] > 0,
+        'goleador_7a0': sete['maior_saldo'] >= 4,
+        'sete_a_zero': sete['maior_saldo'] >= 7,
+        'campeao_7a0': sete['titulos'] > 0,
         'estreante': palpites.exists(),
         'cravador': exatos >= 1,
         'mestre_placares': exatos >= 5,

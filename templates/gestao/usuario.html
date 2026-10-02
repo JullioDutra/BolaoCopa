@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% block title %}{{ alvo.first_name|default:alvo.username }} - Staff{% endblock %}
+{% block content %}
+<section class="ar-hero">
+    <h1>{{ perfil.avatar }} {{ alvo.first_name|default:alvo.username }}</h1>
+    <p>{{ alvo.email|default:alvo.username }}</p>
+    <div class="ar-chips">
+        <a href="{% url 'gestao:usuarios' %}" class="ar-chip text-decoration-none text-white"><i class="fa-solid fa-arrow-left"></i> Participantes</a>
+        <span class="ar-chip"><i class="fa-solid fa-coins"></i> {{ carteira.saldo }} coins</span>
+        <span class="ar-chip"><i class="fa-solid fa-fire"></i> sequência {{ perfil.streak_dias }} (máx {{ perfil.maior_streak }})</span>
+        {% if not alvo.is_active %}<span class="ar-chip"><i class="fa-solid fa-user-slash"></i> inativo</span>{% endif %}
+        {% if alvo.is_staff %}<span class="ar-chip"><i class="fa-solid fa-user-shield"></i> staff</span>{% endif %}
+    </div>
+</section>
+
+{% if link %}
+<div class="card card-clean border-0 shadow-sm p-3 mb-3" style="border-left:6px solid var(--verde-campo) !important;">
+    <div class="fw-bold mb-2">Link de redefinição (vale 3 dias, uso único)</div>
+    <input class="form-control mb-2" id="linkGerado" value="{{ link }}" readonly onclick="this.select()">
+    <div class="d-flex gap-2 flex-wrap">
+        <button class="btn btn-sm btn-outline-secondary fw-bold rounded-pill" onclick="navigator.clipboard.writeText(document.getElementById('linkGerado').value)"><i class="fa-solid fa-copy"></i> Copiar</button>
+        <a class="btn btn-sm btn-whatsapp fw-bold rounded-pill" target="_blank" rel="noopener" href="https://wa.me/{{ perfil.telefone }}?text={{ link|urlencode }}"><i class="fa-brands fa-whatsapp"></i> Enviar no WhatsApp</a>
+    </div>
+</div>
+{% endif %}
+{% if senha_temporaria %}
+<div class="alert alert-warning"><strong>Senha temporária:</strong> <code class="fs-5">{{ senha_temporaria }}</code><br><small>Aparece só agora. Peça para a pessoa trocá-la no perfil.</small></div>
+{% endif %}
+
+<div class="row g-3 mb-5">
+  <div class="col-lg-7">
+    <div class="card card-clean p-3 h-100">
+      <h5 class="fw-bold mb-3"><i class="fa-solid fa-pen"></i> Cadastro</h5>
+      <form method="post" class="row g-2">{% csrf_token %}<input type="hidden" name="acao" value="editar">
+        <div class="col-6"><label class="form-label small mb-0">Nome</label><input class="form-control" name="first_name" value="{{ alvo.first_name }}"></div>
+        <div class="col-6"><label class="form-label small mb-0">Sobrenome</label><input class="form-control" name="last_name" value="{{ alvo.last_name }}"></div>
+        <div class="col-12"><label class="form-label small mb-0">E-mail</label><input type="email" class="form-control" name="email" value="{{ alvo.email }}"></div>
+        <div class="col-6"><label class="form-label small mb-0">WhatsApp (com 55)</label><input class="form-control" name="telefone" value="{{ perfil.telefone }}" inputmode="numeric"></div>
+        <div class="col-6"><label class="form-label small mb-0">Time do coração</label>
+          <select class="form-select" name="time_coracao"><option value="">—</option>
+            {% for c in clubes %}<option value="{{ c.pk }}" {% if perfil.time_coracao_id == c.pk %}selected{% endif %}>{{ c.nome }}</option>{% endfor %}</select></div>
+        <div class="col-12"><label class="form-label small mb-0">Frase</label><input class="form-control" name="frase" maxlength="80" value="{{ perfil.frase }}"></div>
+        <div class="col-12"><button class="btn btn-success fw-bold rounded-pill px-4">Salvar</button></div>
+      </form>
+    </div>
+  </div>
+  <div class="col-lg-5 d-flex flex-column gap-3">
+    <div class="card card-clean p-3">
+      <h5 class="fw-bold mb-3"><i class="fa-solid fa-key"></i> Acesso</h5>
+      <form method="post" class="mb-2">{% csrf_token %}<input type="hidden" name="acao" value="link_senha"><button class="btn btn-outline-success fw-bold w-100"><i class="fa-solid fa-link"></i> Gerar link de nova senha</button></form>
+      {% if request.user.is_superuser %}
+      <form method="post" class="mb-2" onsubmit="return confirm('Definir uma senha temporária substitui a atual. Continuar?')">{% csrf_token %}<input type="hidden" name="acao" value="senha_temporaria"><button class="btn btn-outline-warning fw-bold w-100"><i class="fa-solid fa-lock"></i> Definir senha temporária</button></form>
+      {% endif %}
+      <form method="post" class="mb-2">{% csrf_token %}<input type="hidden" name="acao" value="limpar_pergunta"><button class="btn btn-outline-secondary fw-bold w-100"><i class="fa-solid fa-circle-question"></i> Limpar pergunta secreta</button></form>
+      {% if not eu %}
+      <form method="post" class="mb-2">{% csrf_token %}<input type="hidden" name="acao" value="{% if alvo.is_active %}desativar{% else %}ativar{% endif %}">
+        <button class="btn {% if alvo.is_active %}btn-outline-danger{% else %}btn-success{% endif %} fw-bold w-100">{% if alvo.is_active %}<i class="fa-solid fa-user-slash"></i> Desativar conta{% else %}<i class="fa-solid fa-user-check"></i> Reativar conta{% endif %}</button></form>
+      {% if request.user.is_superuser %}
+      <form method="post">{% csrf_token %}<input type="hidden" name="acao" value="alternar_staff"><button class="btn btn-outline-dark fw-bold w-100"><i class="fa-solid fa-user-shield"></i> {% if alvo.is_staff %}Remover da staff{% else %}Tornar staff{% endif %}</button></form>
+      {% endif %}{% endif %}
+    </div>
+    <div class="card card-clean p-3">
+      <h5 class="fw-bold mb-3"><i class="fa-solid fa-coins"></i> Cartola Coins</h5>
+      <form method="post" class="row g-2">{% csrf_token %}<input type="hidden" name="acao" value="coins">
+        <div class="col-4"><input type="number" class="form-control" name="valor" placeholder="± valor" required></div>
+        <div class="col-8"><input class="form-control" name="motivo" placeholder="Motivo (obrigatório)" required maxlength="150"></div>
+        <div class="col-12"><button class="btn btn-warning fw-bold w-100">Aplicar ajuste</button></div>
+      </form>
+      <ul class="list-unstyled small mt-3 mb-2">{% for m in movimentos %}<li class="d-flex justify-content-between border-bottom py-1"><span>{{ m.motivo }}</span><strong class="{% if m.valor < 0 %}text-danger{% else %}text-success{% endif %}">{{ m.valor|stringformat:"+d" }}</strong></li>{% endfor %}</ul>
+      <form method="post">{% csrf_token %}<input type="hidden" name="acao" value="resetar_streak"><button class="btn btn-sm btn-outline-secondary rounded-pill">Zerar sequência diária</button></form>
+    </div>
+  </div>
+</div>
+{% endblock %}

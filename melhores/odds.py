@@ -5,7 +5,8 @@ Motor de odds dos Melhores do Ano.
                     + coins apostados nele ÷ coins_por_voto (movimento da galera)
 
   probabilidade = peso ÷ soma dos pesos da categoria
-  odd           = (1 − margem) ÷ probabilidade, limitada entre ODD_MIN e ODD_MAX
+  odd bruta     = (1 − margem) ÷ probabilidade
+  odd           = 1 + (bruta − 1) × FATOR_COMPRESSAO, limitada entre ODD_MIN e ODD_MAX
 
 Resultado: quem foi muito votado no passado paga pouco, os azarões pagam muito,
 e quando a galera despeja coins em um nome a odd dele vai caindo ao vivo.
@@ -18,7 +19,9 @@ from django.db.models import Count, Sum
 from .models import Aposta
 
 ODD_MIN = Decimal('1.10')
-ODD_MAX = Decimal('40.00')
+ODD_MAX = Decimal('10.00')
+# Comprime a distância até 1,00: odd = 1 + (odd_bruta - 1) × fator. Deixa favoritos e azarões mais baixos.
+FATOR_COMPRESSAO = Decimal('0.60')
 CENTAVOS = Decimal('0.01')
 
 
@@ -46,7 +49,8 @@ def calcular_odds(categoria):
     odds = {}
     for c in candidatos:
         prob = pesos[c.id] / soma
-        odd = (Decimal(1) - edicao.margem_casa) / prob
+        bruta = (Decimal(1) - edicao.margem_casa) / prob
+        odd = Decimal(1) + (bruta - 1) * FATOR_COMPRESSAO
         odd = min(max(odd, ODD_MIN), ODD_MAX)
         odds[c.id] = odd.quantize(CENTAVOS, rounding=ROUND_HALF_UP)
     return odds

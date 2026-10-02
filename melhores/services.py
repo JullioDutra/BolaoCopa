@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.db import transaction
 from django.db.models import Sum
 
@@ -14,10 +16,17 @@ class ApostaInvalida(Exception):
     """ Erro de regra de negócio com mensagem pronta para mostrar ao usuário. """
 
 
+class OddMudou(ApostaInvalida):
+    """ A odd caiu entre a tela do usuário e a confirmação; ele precisa confirmar de novo. """
+
+
 @transaction.atomic
-def apostar(usuario, categoria_id, candidato_id, valor):
+def apostar(usuario, categoria_id, candidato_id, valor, odd_esperada=None):
     """
     Cria ou troca a aposta do usuário em uma categoria.
+
+    `odd_esperada` (opcional) é a odd que o usuário viu na tela: se a odd atual for
+    MENOR, a aposta é recusada (OddMudou) e nada é debitado; se for maior, vale a melhor.
 
     Se já havia uma aposta aberta, o valor antigo é devolvido antes de debitar o
     novo, e a odd é recalculada SEM o valor antigo (para não se auto-influenciar).
@@ -52,6 +61,9 @@ def apostar(usuario, categoria_id, candidato_id, valor):
         raise ApostaInvalida(str(erro))
 
     odd = calcular_odds(categoria)[candidato.id]
+    if odd_esperada is not None and odd < Decimal(str(odd_esperada)):
+        # Levanta dentro do atomic: devolve/debita tudo de volta
+        raise OddMudou(f"A odd de {candidato.nome} mudou de {odd_esperada} para {odd}. Confirme de novo.")
     return Aposta.objects.create(
         usuario=usuario, categoria=categoria, candidato=candidato, valor=valor, odd_travada=odd,
     )

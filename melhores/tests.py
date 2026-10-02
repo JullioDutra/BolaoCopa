@@ -50,7 +50,7 @@ class SeedEOddsTests(TestCase):
         adilson = cat.candidatos.get(nome='Adilson')
         filipe = cat.candidatos.get(nome='Filipe')
         self.assertLess(odds[adilson.id], Decimal('3'))
-        self.assertGreater(odds[filipe.id], odds[adilson.id] * 5)
+        self.assertGreater(odds[filipe.id], odds[adilson.id] * 3)
 
     def test_odds_respeitam_limites_e_margem(self):
         for cat in self.edicao.categorias.all():
@@ -194,3 +194,52 @@ class ViewsTests(TestCase):
     def test_anonimo_vai_para_login(self):
         self.client.logout()
         self.assertEqual(self.client.get(reverse('melhores:home')).status_code, 302)
+
+
+class CupomTests(TestCase):
+    def setUp(self):
+        call_command('seed_melhores', '--ano', '2026', verbosity=0)
+        self.user = User.objects.create_user('craque', password='x')
+        self.client.force_login(self.user)
+        self.cat1 = Categoria.objects.get(slug='vagabundo')
+        self.cat2 = Categoria.objects.get(slug='mais-chato')
+        self.c1 = self.cat1.candidatos.get(nome='Mark')
+        self.c2 = self.cat2.candidatos.get(nome='Mark')
+
+    def test_cupom_com_varias_selecoes(self):
+        o1 = calcular_odds(self.cat1)[self.c1.id]
+        o2 = calcular_odds(self.cat2)[self.c2.id]
+        self.client.post(reverse('melhores:apostar_cupom'), {'sel': [
+            f'{self.cat1.id}:{self.c1.id}:100:{o1}', f'{self.cat2.id}:{self.c2.id}:200:{o2}']})
+        self.assertEqual(coins.saldo(self.user), 700)
+        self.assertEqual(Aposta.objects.filter(usuario=self.user).count(), 2)
+
+    def test_odd_que_caiu_recusa_e_nao_debita(self):
+        atual = calcular_odds(self.cat1)[self.c1.id]
+        r = self.client.post(reverse('melhores:apostar_cupom'),
+                             {'sel': [f'{self.cat1.id}:{self.c1.id}:100:{atual + Decimal("1")}']}, follow=True)
+        self.assertEqual(coins.saldo(self.user), 1000)
+        self.assertFalse(Aposta.objects.exists())
+        self.assertContains(r, 'mudou')
+
+    def test_odd_que_subiu_aceita_a_melhor(self):
+        atual = calcular_odds(self.cat1)[self.c1.id]
+        self.client.post(reverse('melhores:apostar_cupom'),
+                         {'sel': [f'{self.cat1.id}:{self.c1.id}:100:{atual - Decimal("0.5")}']})
+        self.assertEqual(Aposta.objects.get().odd_travada, atual)
+
+    def test_uma_selecao_ruim_nao_derruba_as_outras(self):
+        o2 = calcular_odds(self.cat2)[self.c2.id]
+        self.client.post(reverse('melhores:apostar_cupom'), {'sel': [
+            f'{self.cat1.id}:{self.c1.id}:5:1.50', f'{self.cat2.id}:{self.c2.id}:100:{o2}', 'lixo']})
+        self.assertEqual(Aposta.objects.count(), 1)
+        self.assertEqual(coins.saldo(self.user), 900)
+
+    def test_troca_com_odd_recusada_preserva_aposta_antiga(self):
+        services.apostar(self.user, self.cat1.id, self.c1.id, 300)
+        outro = self.cat1.candidatos.get(nome='Paulo Victor')
+        atual = calcular_odds(self.cat1)[outro.id]
+        with self.assertRaises(services.OddMudou):
+            services.apostar(self.user, self.cat1.id, outro.id, 100, odd_esperada=atual + 1)
+        self.assertEqual(coins.saldo(self.user), 700)
+        self.assertEqual(Aposta.objects.get().candidato, self.c1)

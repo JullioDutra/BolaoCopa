@@ -5,8 +5,8 @@ from django.db import models
 from django.utils import timezone
 
 
-# Todo candidato começa com meio "voto" para nunca ter odd infinita.
-SUAVIZACAO = Decimal('0.5')
+# Todo candidato começa com um quarto de "voto" para nunca ter odd infinita.
+SUAVIZACAO = Decimal('0.25')
 
 
 class Edicao(models.Model):

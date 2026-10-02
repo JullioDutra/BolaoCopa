@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% block title %}Painel da Staff - Cartolândia{% endblock %}
+{% block content %}
+<section class="ar-hero">
+    <h1><i class="fa-solid fa-user-shield"></i> Painel da Staff</h1>
+    <p>Tudo o que a organização precisa num lugar só.</p>
+    <div class="ar-chips">
+        <span class="ar-chip"><i class="fa-solid fa-users"></i> {{ total_usuarios }} participantes</span>
+        {% if inativos %}<span class="ar-chip"><i class="fa-solid fa-user-slash"></i> {{ inativos }} inativo{{ inativos|pluralize }}</span>{% endif %}
+    </div>
+</section>
+
+<h2 class="ar-secao"><i class="fa-solid fa-users"></i> Pessoas</h2>
+<div class="ar-grid mb-4">
+    <a class="ar-card text-decoration-none" style="--cor:#15803d;" href="{% url 'gestao:usuarios' %}">
+        <div class="ar-ico"><i class="fa-solid fa-address-book"></i></div><h3>Participantes</h3>
+        <p>Editar cadastro, telefone, time, ativar/desativar, ajustar coins e zerar sequência.</p><span class="ar-btn">Abrir</span></a>
+    <a class="ar-card text-decoration-none" style="--cor:#b45309;" href="{% url 'conta:staff_links_senha' %}">
+        <div class="ar-ico"><i class="fa-solid fa-key"></i></div><h3>Links de senha</h3>
+        <p>Gere o link de redefinição e mande pelo WhatsApp da pessoa.</p><span class="ar-btn">Abrir</span></a>
+    <a class="ar-card text-decoration-none" style="--cor:#be123c;" href="{% url 'avisos:staff' %}">
+        <div class="ar-ico"><i class="fa-solid fa-bullhorn"></i></div><h3>Avisar a galera</h3>
+        <p>Notificação push + caixa de entrada e chamada no WhatsApp.</p><span class="ar-btn">Abrir</span></a>
+</div>
+
+<h2 class="ar-secao"><i class="fa-solid fa-futbol"></i> Jogos e bolões</h2>
+<div class="ar-grid mb-4">
+    <a class="ar-card text-decoration-none" style="--cor:#1d4ed8;" href="{% url 'palpites:painel_controle_admin' %}">
+        <div class="ar-ico"><i class="fa-solid fa-sliders"></i></div><h3>Controle do bolão</h3>
+        <p>Temporadas, prazos, jogos e ferramentas de manutenção.</p><span class="ar-btn">Abrir</span></a>
+    <a class="ar-card text-decoration-none" style="--cor:#0e7490;" href="{% url 'palpites:inserir_resultados_finais' %}">
+        <div class="ar-ico"><i class="fa-solid fa-flag-checkered"></i></div><h3>Resultados finais</h3>
+        <p>Fechar campeão, G4, Z4 e copas da temporada.</p><span class="ar-btn">Abrir</span></a>
+    <a class="ar-card text-decoration-none" style="--cor:#6d28d9;" href="{% url 'melhores:staff' %}">
+        <div class="ar-ico"><i class="fa-solid fa-award"></i></div><h3>Melhores do Ano</h3>
+        <p>Encerrar categorias, liquidar apostas e anular.</p><span class="ar-btn">Abrir</span></a>
+    <a class="ar-card text-decoration-none" style="--cor:#15803d;" href="{% url 'pagamentos:relatorio_gerencial' %}">
+        <div class="ar-ico"><i class="fa-solid fa-sack-dollar"></i></div><h3>Diretoria</h3>
+        <p>Relatório gerencial e caixa.</p><span class="ar-btn">Abrir</span></a>
+</div>
+
+<h2 class="ar-secao"><i class="fa-solid fa-gears"></i> Sistema</h2>
+<div class="ar-grid mb-4">
+    <a class="ar-card text-decoration-none" style="--cor:#334155;" href="{% url 'gestao:sistema' %}">
+        <div class="ar-ico"><i class="fa-solid fa-server"></i></div><h3>Sistema e dados</h3>
+        <p>Integrações, sincronizar jogos, consolidar escudos/jogadores e espaço usado.</p><span class="ar-btn">Abrir</span></a>
+    <a class="ar-card text-decoration-none" style="--cor:#475569;" href="{% url 'gestao:auditoria' %}">
+        <div class="ar-ico"><i class="fa-solid fa-clipboard-list"></i></div><h3>Auditoria</h3>
+        <p>Quem fez o quê no painel (ajuste de coins, senhas, contas).</p><span class="ar-btn">Abrir</span></a>
+    <a class="ar-card text-decoration-none" style="--cor:#0f172a;" href="{% url 'admin:index' %}">
+        <div class="ar-ico"><i class="fa-solid fa-database"></i></div><h3>Admin completo</h3>
+        <p>Django Admin: edição direta de qualquer tabela.</p><span class="ar-btn">Abrir</span></a>
+</div>
+
+{% if ultimas_acoes %}
+<h2 class="ar-secao"><i class="fa-solid fa-clock-rotate-left"></i> Últimas ações</h2>
+<div class="ar-tabela mb-5">
+    {% for a in ultimas_acoes %}
+    <div class="ar-linha" style="grid-template-columns:1fr auto;"><span>{{ a.user.first_name|default:a.user.username }} <span class="sub">{{ a.change_message|slice:"9:" }}</span></span><span class="sub">{{ a.action_time|date:"d/m H:i" }}</span></div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

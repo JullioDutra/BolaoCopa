@@ -43,6 +43,7 @@ urlpatterns = [
     path('feed/', include('core.urls')),
     path('futebol/', include('futebol.urls')),
     path('avisos/', include('avisos.urls')),
+    path('gestao/', include('gestao.urls')),
     path('sw.js', sw_js, name='sw'),
 ]
 

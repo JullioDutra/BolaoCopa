@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block title %}Sistema - Staff{% endblock %}
+{% block content %}
+<section class="ar-hero"><h1><i class="fa-solid fa-server"></i> Sistema e dados</h1><p>Integrações, tarefas de manutenção e espaço em disco.</p>
+<div class="ar-chips"><a href="{% url 'gestao:hub' %}" class="ar-chip text-decoration-none text-white"><i class="fa-solid fa-arrow-left"></i> Painel</a>
+<span class="ar-chip"><i class="fa-solid fa-hard-drive"></i> mídia: {{ media_mb }} MB</span></div></section>
+
+{% if saida %}<pre class="p-3 bg-dark text-light rounded-3 small" style="white-space:pre-wrap">{{ saida }}</pre>{% endif %}
+
+<div class="row g-3 mb-4">
+  <div class="col-md-6"><h2 class="ar-secao">Integrações</h2>
+    <div class="ar-tabela">{% for nome, ok in integracoes %}<div class="ar-linha" style="grid-template-columns:1fr auto;"><span>{{ nome }}</span>
+      <span class="{% if ok %}text-success{% else %}text-danger{% endif %}"><i class="fa-solid {% if ok %}fa-circle-check{% else %}fa-circle-xmark{% endif %}"></i> {% if ok %}ok{% else %}faltando{% endif %}</span></div>{% endfor %}</div></div>
+  <div class="col-md-6"><h2 class="ar-secao">Em números</h2>
+    <div class="ar-tabela">{% for nome, n in contagens %}<div class="ar-linha" style="grid-template-columns:1fr auto;"><span>{{ nome }}</span><span class="pts">{{ n }}</span></div>{% endfor %}</div></div>
+</div>
+
+<h2 class="ar-secao">Tarefas</h2>
+<div class="ar-grid mb-5">
+  <form method="post" class="ar-card" style="--cor:#1d4ed8;">{% csrf_token %}<input type="hidden" name="acao" value="sincronizar"><div class="ar-ico"><i class="fa-solid fa-rotate"></i></div><h3>Sincronizar jogos</h3><p>Busca a rodada atual na API e atualiza placares.</p><button class="ar-btn">Rodar</button></form>
+  <form method="post" class="ar-card" style="--cor:#15803d;">{% csrf_token %}<input type="hidden" name="acao" value="escudos"><div class="ar-ico"><i class="fa-solid fa-shield"></i></div><h3>Consolidar escudos</h3><p>Une todos os escudos no catálogo global e apaga arquivos duplicados.</p><button class="ar-btn">Rodar</button></form>
+  <form method="post" class="ar-card" style="--cor:#b45309;">{% csrf_token %}<input type="hidden" name="acao" value="jogadores"><div class="ar-ico"><i class="fa-solid fa-people-arrows"></i></div><h3>Consolidar jogadores</h3><p>Reúne jogadores dos jogos no banco único de atletas.</p><button class="ar-btn">Rodar</button></form>
+  <form method="post" class="ar-card" style="--cor:#6d28d9;">{% csrf_token %}<input type="hidden" name="acao" value="baralho"><div class="ar-ico"><i class="fa-solid fa-clone"></i></div><h3>Completar baralho</h3><p>Cria cartas do Super Trunfo até ter 40 no total.</p><button class="ar-btn">Rodar</button></form>
+</div>
+{% endblock %}

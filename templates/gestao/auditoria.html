@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block title %}Auditoria - Staff{% endblock %}
+{% block content %}
+<section class="ar-hero"><h1><i class="fa-solid fa-clipboard-list"></i> Auditoria</h1><p>Ações feitas pela staff no painel (as últimas 150).</p>
+<div class="ar-chips"><a href="{% url 'gestao:hub' %}" class="ar-chip text-decoration-none text-white"><i class="fa-solid fa-arrow-left"></i> Painel</a></div></section>
+<div class="ar-tabela mb-5">
+{% for a in acoes %}
+  <div class="ar-linha" style="grid-template-columns:1fr auto;"><span><strong>{{ a.user.first_name|default:a.user.username }}</strong> <span class="sub">{{ a.change_message|slice:"9:" }}</span></span><span class="sub">{{ a.action_time|date:"d/m/y H:i" }}</span></div>
+{% empty %}<div class="ar-vazio">Nenhuma ação registrada ainda.</div>{% endfor %}
+</div>
+{% endblock %}

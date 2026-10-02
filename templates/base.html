@@ -302,7 +302,7 @@
                         <!-- ADICIONADO: Menu exclusivo para a STAFF -->
                         {% if user.is_staff %}
                         <li class="nav-item">
-                            <a class="nav-link text-warning fw-bold" href="{% url 'palpites:painel_controle_admin' %}" title="Staff">
+                            <a class="nav-link text-warning fw-bold" href="{% url 'gestao:hub' %}" title="Staff">
                                 <i class="fa-solid fa-user-shield nav-ico"></i><span class="d-none d-xxl-inline"> Staff</span>
                             </a>
                         </li>
@@ -348,6 +348,7 @@
                                     </a>
                                 </li>
                                 {% if user.is_staff %}
+                                <li><a class="dropdown-item fw-bold py-2" href="{% url 'gestao:hub' %}"><i class="fa-solid fa-user-shield nav-ico"></i> Painel da staff</a></li>
                                 <li><a class="dropdown-item fw-bold py-2" href="{% url 'avisos:staff' %}"><i class="fa-solid fa-bullhorn text-danger me-2"></i> Avisar a galera</a></li>
                                 <li><a class="dropdown-item fw-bold py-2" href="{% url 'conta:staff_links_senha' %}"><i class="fa-solid fa-link text-warning me-2"></i> Links de senha</a></li>
                                 {% endif %}
@@ -451,7 +452,7 @@
                     Administração
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link text-warning fw-bold" href="{% url 'palpites:painel_controle_admin' %}">
+                    <a class="nav-link text-warning fw-bold" href="{% url 'gestao:hub' %}">
                         <i class="fa-solid fa-user-shield nav-ico"></i> Painel da Staff
                     </a>
                 </li>

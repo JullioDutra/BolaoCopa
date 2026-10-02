@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load avatares %}
 {% block title %}Ranking da Banca - Melhores do Ano{% endblock %}
 
 {% block content %}
@@ -16,8 +17,9 @@
         {% for l in linhas %}
         <div class="row-t {% if l.usuario == user %}eu{% endif %}">
             <div style="width:40px;font-size:1.2rem;font-weight:800;">{% if forloop.counter == 1 %}🥇{% elif forloop.counter == 2 %}🥈{% elif forloop.counter == 3 %}🥉{% else %}{{ forloop.counter }}º{% endif %}</div>
+            {% avatar l.usuario.perfil.avatar 36 %}
             <div class="flex-grow-1">
-                <div class="fw-bold">{{ l.usuario.first_name|default:l.usuario.username }}{% if l.usuario == user %} <small style="color:var(--b-mudo)">(você)</small>{% endif %}</div>
+                <div class="fw-bold"><a class="nome-jogador" href="{% url 'conta:perfil_publico' l.usuario.pk %}">{{ l.usuario.first_name|default:l.usuario.username }}</a>{% if l.usuario == user %} <small style="color:var(--b-mudo)">(você)</small>{% endif %}</div>
                 <div style="color:var(--b-mudo);font-size:.75rem;">Carteira {{ l.saldo }} · Em jogo {{ l.em_jogo }}</div>
             </div>
             <div style="color:var(--b-amar);font-weight:800;font-size:1.1rem;">🪙 {{ l.patrimonio }}</div>

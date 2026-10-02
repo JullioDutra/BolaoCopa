@@ -1,8 +1,9 @@
 {% extends 'base.html' %}
+{% load avatares %}
 {% block title %}{{ alvo.first_name|default:alvo.username }} - Staff{% endblock %}
 {% block content %}
 <section class="ar-hero">
-    <h1>{{ perfil.avatar }} {{ alvo.first_name|default:alvo.username }}</h1>
+    <h1>{% avatar perfil.avatar 46 %} {{ alvo.first_name|default:alvo.username }}</h1>
     <p>{{ alvo.email|default:alvo.username }}</p>
     <div class="ar-chips">
         <a href="{% url 'gestao:usuarios' %}" class="ar-chip text-decoration-none text-white"><i class="fa-solid fa-arrow-left"></i> Participantes</a>

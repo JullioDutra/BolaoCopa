@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load avatares %}
 {% block title %}Participantes - Staff{% endblock %}
 {% block content %}
 <section class="ar-hero">
@@ -18,7 +19,7 @@
 <div class="ar-tabela mb-3">
     {% for u in pagina %}
     <a class="ar-linha text-decoration-none" href="{% url 'gestao:usuario' u.pk %}">
-        <span class="pos">{{ u.perfil.avatar|default:"⚽" }}</span>
+        <span class="pos">{% avatar u.perfil.avatar 34 %}</span>
         <span><span class="nome">{{ u.first_name|default:u.username }}</span>
             <span class="d-block sub">{{ u.email|default:u.username }}{% if u.is_staff %} · STAFF{% endif %}{% if not u.is_active %} · INATIVO{% endif %}</span></span>
         <span class="sub">{{ u.last_login|date:"d/m/y"|default:"nunca" }}</span>

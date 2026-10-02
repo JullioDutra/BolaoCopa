@@ -111,28 +111,7 @@
     </div>
 </div>
 
-<div class="modal fade" id="modalFimJogo" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg rounded-4 text-center">
-            <div class="modal-body p-5">
-                <i class="fa-solid fa-medal text-warning mb-3" style="font-size: 4rem;"></i>
-                <h2 class="fw-bold text-dark mb-2">Fim de Jogo!</h2>
-                <p class="text-muted">O dono dessa trajetória era:</p>
-                
-                <div class="alert alert-primary fw-bold fs-3 mb-4 text-uppercase shadow-sm">
-                    {{ partida.categoria.resposta_oculta }}
-                </div>
-                
-                <h5 class="text-success fw-bold mb-4" id="modal-vencedor">...</h5>
-                
-                <a href="{% url 'duelos:listar_desafios' %}" class="btn btn-primary btn-lg w-100 fw-bold rounded-pill shadow-sm">
-                    <i class="fa-solid fa-arrow-right-to-bracket"></i> Voltar para a Arena
-                </a>
-            </div>
-        </div>
-    </div>
-</div>
-
+{% include 'partials/modal_fim.html' with rotulo_resposta='O dono dessa trajetória era' resposta=partida.categoria.resposta_oculta icone='fa-medal' %}
 <script>
     const partidaId = "{{ partida.id }}";
     const meuUsuarioId = parseInt("{{ request.user.id }}");
@@ -187,12 +166,7 @@
                     return;
                 }
                 
-                let vencedor = "O Jogo terminou empatado!";
-                if (data.pontos_j1 > data.pontos_j2) vencedor = "🏆 Vitória de {{ partida.jogador_criador.first_name|default:partida.jogador_criador.username|escapejs }}!";
-                if (data.pontos_j2 > data.pontos_j1) vencedor = "🏆 Vitória de {{ partida.jogador_convidado.first_name|default:partida.jogador_convidado.username|escapejs }}!";
-                
-                document.getElementById('modal-vencedor').innerText = vencedor;
-                new bootstrap.Modal(document.getElementById('modalFimJogo')).show();
+                window.abrirFimDeJogo(data);
                 return; 
             }
 

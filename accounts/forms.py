@@ -4,8 +4,7 @@ from django.contrib.auth.models import User
 from . import dados
 from .models import PerfilUsuario
 
-AVATARES = ['⚽', '🥅', '🧤', '👟', '🏆', '🥇', '🎩', '🦁', '🐍', '🦅', '🐓', '🐺', '🔥', '⚡', '💎', '👑',
-            '🐐', '🦈', '🐯', '🦊', '🐻', '🚀', '🎯', '🍀']
+from . import avatares as _avatares
 
 CLASSE = 'form-control form-control-lg'
 
@@ -65,12 +64,20 @@ class PerfilForm(forms.Form):
                                widget=forms.TextInput(attrs={'class': CLASSE, 'inputmode': 'tel', 'placeholder': '(21) 98888-7777'}))
     frase = forms.CharField(required=False, max_length=80, label='Sua frase de torcedor',
                             widget=forms.TextInput(attrs={'class': CLASSE, 'placeholder': 'Ex.: Mengão até morrer'}))
-    avatar = forms.ChoiceField(choices=[(a, a) for a in AVATARES], label='Avatar', widget=forms.RadioSelect)
+    avatar = forms.CharField(label='Avatar', required=False)
     avisos_whatsapp = forms.BooleanField(required=False, label='A staff pode me chamar no WhatsApp')
 
     def __init__(self, *args, usuario=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.usuario = usuario
+
+    def clean_avatar(self):
+        codigo = self.cleaned_data.get('avatar') or _avatares.PADRAO
+        if codigo not in _avatares.catalogo():
+            raise forms.ValidationError('Avatar inválido.')
+        if self.usuario is not None and codigo not in _avatares.liberados(self.usuario):
+            raise forms.ValidationError('Esse avatar ainda está bloqueado: desbloqueie a conquista correspondente.')
+        return codigo
 
     def clean_email(self):
         email = self.cleaned_data['email'].strip()

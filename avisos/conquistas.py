@@ -35,6 +35,7 @@ CATALOGO = OrderedDict([
     ('goleador_7a0', ('Goleada Histórica', 'Venceu o 7 a 0 por 4 ou mais gols', 'fa-explosion', '#c2410c')),
     ('sete_a_zero', ('Sete a Zero!', 'Venceu um jogo por 7 gols de diferença', 'fa-7', '#b91c1c')),
     ('rei_da_copa', ('Rei da Copa do Brasil', 'Foi campeão do draft do 7 a 0', 'fa-crown', '#b45309')),
+    ('campeao_mundo', ('Campeão do Mundo', 'Venceu a Busca pelo Mundial do 7 a 0', 'fa-earth-americas', '#1d4ed8')),
     ('sete_vitorias', ('7 a 0 de Verdade', 'Campeão do draft sem perder e sem pênaltis', 'fa-medal', '#be123c')),
     ('campeao_7a0', ('Campeão dos Campeões', 'Ganhou um campeonato do 7 a 0', 'fa-trophy', '#a16207')),
 ])
@@ -48,10 +49,11 @@ def _setezero(u):
         saldos = [p.gols_usuario - p.gols_rival for p in fim]
         return {'jogos': len(saldos), 'maior_saldo': max(saldos, default=0),
                 'titulos': Temporada7a0.objects.filter(usuario=u, posicao_final=1).count(),
-                'copas': DraftCopa7a0.objects.filter(usuario=u, status='campeao').count(),
+                'copas': DraftCopa7a0.objects.filter(usuario=u, status='campeao', torneio='brasil').count(),
+                'mundiais': DraftCopa7a0.objects.filter(usuario=u, status='campeao', torneio='mundial').count(),
                 'invictos': DraftCopa7a0.objects.filter(usuario=u, invicto=True).count()}
     except Exception:
-        return {'jogos': 0, 'maior_saldo': 0, 'titulos': 0, 'copas': 0, 'invictos': 0}
+        return {'jogos': 0, 'maior_saldo': 0, 'titulos': 0, 'copas': 0, 'mundiais': 0, 'invictos': 0}
 
 
 def _regras(u):
@@ -71,6 +73,7 @@ def _regras(u):
         'sete_a_zero': sete['maior_saldo'] >= 7,
         'campeao_7a0': sete['titulos'] > 0,
         'rei_da_copa': sete['copas'] > 0,
+        'campeao_mundo': sete['mundiais'] > 0,
         'sete_vitorias': sete['invictos'] > 0,
         'estreante': palpites.exists(),
         'cravador': exatos >= 1,

@@ -1,8 +1,11 @@
+from django.http import Http404
+from django.shortcuts import get_object_or_404
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib import messages
-from .forms import (AVATARES, PerfilForm, PerguntaSecretaForm, RecuperarSenhaForm, RegistroSimplesForm)
+from . import avatares
+from .forms import (PerfilForm, PerguntaSecretaForm, RecuperarSenhaForm, RegistroSimplesForm)
 
 # 1. IMPORTAMOS OS MODELS DE CARTEIRA E PARTICIPAÇÃO
 from accounts.models import Carteira
@@ -129,7 +132,7 @@ def perfil(request):
     form_dados = PerfilForm(initial={
         'nome': usuario.first_name, 'email': usuario.email or usuario.username,
         'telefone': dados.telefone_formatado(perfil.telefone), 'frase': perfil.frase,
-        'avatar': perfil.avatar if perfil.avatar in AVATARES else AVATARES[0],
+        'avatar': avatares.normalizar(perfil.avatar),
         'avisos_whatsapp': perfil.avisos_whatsapp,
     }, usuario=usuario)
     form_senha = PasswordChangeForm(usuario)
@@ -184,7 +187,7 @@ def perfil(request):
         'conquistas': conquistas.do_usuario(usuario),
         'perfil': perfil, 'aba': aba,
         'form_dados': form_dados, 'form_senha': form_senha, 'form_pergunta': form_pergunta,
-        'avatares': AVATARES,
+        'avatares': avatares.do_usuario(usuario),
         'bonus_perfil': BONUS_PERFIL_COMPLETO,
         'saldo_coins': coins.saldo(usuario),
         'total_palpites': palpites.count(),
@@ -264,4 +267,32 @@ def staff_links_senha(request):
         telefone = p.telefone if p else ''
     return render(request, 'accounts/staff_links.html', {
         'usuarios': usuarios[:40], 'link': link, 'alvo': alvo, 'busca': busca, 'telefone': telefone,
+    })
+
+
+
+@login_required
+def perfil_publico(request, pk):
+    """ Perfil que os outros participantes enxergam: avatar, frase, time, números e conquistas (sem dados de contato). """
+    from avisos import conquistas
+    from palpites.models import Palpite
+    from . import npc
+    alvo = get_object_or_404(User, pk=pk, is_active=True)
+    if npc.eh_npc(alvo):
+        raise Http404
+    perfil = coins.obter_perfil(alvo)
+    lista = conquistas.do_usuario(alvo)
+    palpites = Palpite.objects.filter(usuario=alvo)
+    try:
+        from setezero.models import DraftCopa7a0
+        drafts = DraftCopa7a0.objects.filter(usuario=alvo, status='campeao')
+        copas = {'brasil': drafts.filter(torneio='brasil').count(), 'mundial': drafts.filter(torneio='mundial').count(),
+                 'invictos': drafts.filter(invicto=True).count()}
+    except Exception:
+        copas = {'brasil': 0, 'mundial': 0, 'invictos': 0}
+    return render(request, 'accounts/perfil_publico.html', {
+        'alvo': alvo, 'perfil': perfil, 'nome': alvo.first_name or alvo.username.split('@')[0], 'conquistas': lista,
+        'ganhas': sum(1 for c in lista if c['ganha']), 'total_conquistas': len(lista), 'copas': copas,
+        'palpites': palpites.count(), 'cravadas': palpites.filter(pontuacao_obtida=15).count(),
+        'acertos': palpites.filter(pontuacao_obtida__gt=0).count(), 'eu': alvo.pk == request.user.pk,
     })

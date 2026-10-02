@@ -1,6 +1,8 @@
 from datetime import date, timedelta
 
+from django.utils import timezone
 from django.contrib.auth.models import User
+from django.urls import reverse
 from django.test import SimpleTestCase, TestCase
 
 from palpites.models import Clube
@@ -155,7 +157,7 @@ class PerfilTests(TestCase):
     def test_atualiza_dados_e_login_acompanha_o_email(self):
         r = self.client.post(reverse('conta:perfil'), {
             'acao': 'dados', 'nome': 'Aninha', 'email': 'nova@x.com', 'telefone': '(21) 98888-7777',
-            'frase': 'Bora!', 'avatar': '🦁', 'avisos_whatsapp': 'on'})
+            'frase': 'Bora!', 'avatar': 'bola', 'avisos_whatsapp': 'on'})
         self.assertEqual(r.status_code, 302)
         self.u.refresh_from_db()
         self.assertEqual((self.u.first_name, self.u.email, self.u.username), ('Aninha', 'nova@x.com', 'nova@x.com'))
@@ -163,12 +165,12 @@ class PerfilTests(TestCase):
 
     def test_email_de_outra_conta_e_recusado(self):
         User.objects.create_user('outro@x.com', email='outro@x.com', password='x')
-        r = self.client.post(reverse('conta:perfil'), {'acao': 'dados', 'nome': 'Ana', 'email': 'OUTRO@x.com', 'avatar': '⚽'})
+        r = self.client.post(reverse('conta:perfil'), {'acao': 'dados', 'nome': 'Ana', 'email': 'OUTRO@x.com', 'avatar': 'bola'})
         self.assertContains(r, 'já está em uso')
 
     def test_bonus_de_perfil_completo_uma_unica_vez(self):
         self.client.post(reverse('conta:perfil'), {'acao': 'dados', 'nome': 'Ana', 'email': 'ana@x.com',
-                                                   'telefone': '21988887777', 'avatar': '⚽'})
+                                                   'telefone': '21988887777', 'avatar': 'bola'})
         self.assertEqual(coins.saldo(self.u), 1000)
         for resp in ('zico', 'pele'):
             self.client.post(reverse('conta:perfil'), {'acao': 'pergunta', 'pergunta': 'craque', 'resposta': resp})
@@ -193,3 +195,105 @@ class PerfilTests(TestCase):
         self.assertContains(r, 'reset-senha/confirmar/')
         self.client.logout(); self.client.force_login(self.u)
         self.assertEqual(self.client.get(reverse('conta:staff_links_senha')).status_code, 302)
+
+
+class NpcTests(TestCase):
+    def test_usuario_npc_e_inativo_sem_senha_e_fora_das_listas(self):
+        from accounts import npc
+        u = npc.criar_usuario_npc('neymar_san', 'Neymar')
+        self.assertFalse(u.is_active)
+        self.assertFalse(u.has_usable_password())
+        self.assertTrue(npc.eh_npc(u))
+        self.assertEqual(npc.criar_usuario_npc('neymar_san').pk, u.pk)   # idempotente
+        pessoa = User.objects.create_user('ana@x.com', password='x')
+        self.assertIn(pessoa, npc.usuarios_reais())
+        self.assertNotIn(u, npc.usuarios_reais())
+
+    def test_comando_ajusta_so_quem_nunca_entrou_e_nao_tem_atividade(self):
+        import io
+        from django.core.management import call_command
+        from accounts import npc
+        from modocarreira.models import Avatar
+        antigo = User.objects.create_user('gabigol_fla')            # criado pelo script antigo
+        real = User.objects.create_user('joao@x.com', password='x')  # humano com avatar no carreira
+        for usuario in (antigo, real):
+            Avatar.objects.create(usuario=usuario, nome_camisa=usuario.username[:20], arquetipo='matador', posicao_preferida='ST',
+                                  temporada_nascimento=2026)
+        real.last_login = timezone.now()
+        real.save()
+        out = io.StringIO()
+        call_command('ajustar_npcs', stdout=out)
+        antigo.refresh_from_db()
+        self.assertTrue(antigo.is_active)                      # simulação não grava
+        call_command('ajustar_npcs', '--aplicar', stdout=out)
+        antigo.refresh_from_db(); real.refresh_from_db()
+        self.assertFalse(antigo.is_active)
+        self.assertTrue(npc.eh_npc(antigo))
+        self.assertTrue(real.is_active)                        # pessoa de verdade fica intacta
+        self.assertFalse(npc.eh_npc(real))
+
+    def test_painel_da_staff_esconde_npcs(self):
+        from accounts import npc
+        npc.criar_usuario_npc('vinijr_fla', 'Vini Jr')
+        staff = User.objects.create_user('chefe', password='x', is_staff=True, is_superuser=True, first_name='Chefe')
+        self.client.force_login(staff)
+        r = self.client.get(reverse('gestao:usuarios'))
+        self.assertNotContains(r, 'Vini Jr')
+        self.assertContains(self.client.get(reverse('gestao:usuarios') + '?f=npcs'), 'Vini Jr')
+        self.assertContains(self.client.get(reverse('gestao:hub')), 'NPCs do carreira')
+        self.assertEqual(self.client.get('/admin/auth/user/').status_code, 200)
+
+
+class AvataresEPerfilPublicoTests(TestCase):
+    def setUp(self):
+        self.u = User.objects.create_user('ana@x.com', password='x', first_name='Ana')
+        self.o = User.objects.create_user('beto@x.com', password='x', first_name='Beto')
+        self.client.force_login(self.u)
+
+    def test_catalogo_codigos_curtos_e_unicos(self):
+        from accounts import avatares
+        cat = avatares.catalogo()
+        self.assertTrue(all(len(c) <= 8 for c in cat), [c for c in cat if len(c) > 8])
+        self.assertEqual(len(cat), len(set(cat)))
+        from avisos.conquistas import CATALOGO
+        self.assertEqual(set(avatares.POR_CONQUISTA) - set(CATALOGO), set())    # nenhuma conquista inexistente
+        self.assertEqual(set(CATALOGO) - set(avatares.POR_CONQUISTA), set())    # toda conquista libera um avatar
+
+    def test_emoji_antigo_vira_avatar_padrao(self):
+        from accounts import avatares
+        self.assertEqual(avatares.normalizar('🦁'), avatares.PADRAO)
+        self.assertEqual(avatares.info('xxx')['codigo'], avatares.PADRAO)
+
+    def test_so_usa_avatar_desbloqueado(self):
+        from accounts import avatares
+        from avisos.models import Conquista
+        dados = {'acao': 'dados', 'nome': 'Ana', 'email': 'ana@x.com', 'avatar': 'mundo'}
+        r = self.client.post(reverse('conta:perfil'), dados)
+        self.assertContains(r, 'bloqueado')
+        self.u.perfil.refresh_from_db() if hasattr(self.u, 'perfil') else None
+        self.assertNotEqual(PerfilUsuario.objects.filter(usuario=self.u, avatar='mundo').count(), 1)
+        Conquista.objects.create(usuario=self.u, slug='campeao_mundo')
+        self.assertIn('mundo', avatares.liberados(self.u))
+        r = self.client.post(reverse('conta:perfil'), dados)
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(PerfilUsuario.objects.get(usuario=self.u).avatar, 'mundo')
+        self.assertContains(self.client.get(reverse('conta:perfil')), 'fa-earth-americas')
+
+    def test_perfil_publico(self):
+        from avisos.models import Conquista
+        Conquista.objects.create(usuario=self.o, slug='cravador')
+        r = self.client.get(reverse('conta:perfil_publico', args=[self.o.pk]))
+        self.assertContains(r, 'Beto')
+        self.assertContains(r, 'Cravador')
+        self.assertNotContains(r, 'beto@x.com')               # nada de e-mail/telefone
+        self.assertEqual(self.client.get(reverse('conta:perfil_publico', args=[self.u.pk])).status_code, 200)
+        self.client.logout()
+        self.assertEqual(self.client.get(reverse('conta:perfil_publico', args=[self.o.pk])).status_code, 302)
+
+    def test_perfil_publico_nao_mostra_npc_nem_inativo(self):
+        from accounts import npc
+        n = npc.criar_usuario_npc('neymar_san', 'Neymar')
+        self.assertEqual(self.client.get(reverse('conta:perfil_publico', args=[n.pk])).status_code, 404)
+        self.o.is_active = False
+        self.o.save()
+        self.assertEqual(self.client.get(reverse('conta:perfil_publico', args=[self.o.pk])).status_code, 404)

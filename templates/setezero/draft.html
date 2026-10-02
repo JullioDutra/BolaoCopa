@@ -2,8 +2,9 @@
 {% block title %}Draft - 7 a 0{% endblock %}
 {% block content %}
 {% include 'setezero/_estilo.html' %}
-<section class="ar-hero sz-hero" style="padding:18px 20px">
-    <h1><span class="sete">7 a 0</span> · Monte seu time</h1>
+{% if d.torneio == 'mundial' %}{% include 'setezero/_musica.html' %}{% endif %}
+<section class="ar-hero sz-hero{% if d.torneio == 'mundial' %} sz-mundo{% endif %}" style="padding:18px 20px">
+    <h1><span class="sete">{% if d.torneio == 'mundial' %}★{% else %}7 a 0{% endif %}</span> · Monte seu time{% if d.torneio == 'mundial' %} · Busca pelo Mundial{% endif %}</h1>
     <div class="ar-chips"><span class="ar-chip"><i class="fa-solid fa-users"></i> <span id="cont">0</span>/16 escolhidos</span>
         <span class="ar-chip"><i class="fa-solid fa-rotate"></i> <span id="skips">3</span> re-sorteios</span>
         <span class="ar-chip">{{ d.formacao }} · Mata-mata</span></div>
@@ -26,7 +27,7 @@
     <div class="sz-campo" id="campo"></div>
     <div class="small fw-bold mt-3 mb-1">BANCO DE RESERVAS</div>
     <div class="sz-bancos" id="bancos"></div>
-    <div id="iniciar" class="mt-3" hidden><button class="ar-btn" style="background:#16a34a;color:#fff" id="bIniciar"><i class="fa-solid fa-trophy"></i> Começar a Copa do Brasil</button></div>
+    <div id="iniciar" class="mt-3" hidden><button class="ar-btn" style="background:#16a34a;color:#fff" id="bIniciar"><i class="fa-solid fa-trophy"></i> {% if d.torneio == 'mundial' %}Ir para o sorteio dos grupos{% else %}Começar a Copa do Brasil{% endif %}</button></div>
   </div>
 </div>
 
@@ -116,4 +117,5 @@
   desenhar();
 })();
 </script>
+{% if d.torneio == 'mundial' %}<button class="sz-hino js-hino" type="button"><i class="fa-solid fa-volume-xmark"></i> Hino</button>{% endif %}
 {% endblock %}

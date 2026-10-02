@@ -28,6 +28,7 @@ class DraftCopa7a0(models.Model):
 
     usuario = models.ForeignKey(User, on_delete=models.CASCADE, related_name='drafts_7a0')
     codigo = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    torneio = models.CharField(max_length=10, default='brasil')   # brasil (Copa do Brasil) | mundial (Busca pelo Mundial)
     formacao = models.CharField(max_length=10, default='4-3-3')
     mentalidade = models.CharField(max_length=12, default='equilibrado')
     eliminatorio = models.BooleanField(default=True, help_text="Mata-mata: perdeu, está fora. Campanha: joga os 7 jogos de qualquer jeito.")

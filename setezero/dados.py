@@ -119,6 +119,39 @@ _TIMES = [
     ('bah-1988', 'Bahia', 1988, 'O Tricolor de Aço', '#0033a0', '4-4-2', 'Evaristo de Macedo',
      'Ronaldo,GOL,76;Paulo Rodrigues,LAT,72;Cláudio Mineiro,ZAG,74;Zé Carlos,ZAG,72;Tony,LAT,72;Zé Mário,VOL,74;Bobô,MEI,82;'
      'Charles,MEI,76;Sandro,PON,74;Marinho,ATA,76;Cipó,ATA,78;Paulo Rodrigues II,MEI,70;Bobô Jr,ATA,70;Gil,VOL,70;Jean,GOL,60'),
+    ('fla-2022', 'Flamengo', 2022, 'A Terceira Libertadores', '#c8102e', '4-2-3-1', 'Dorival Júnior',
+     'Santos,GOL,80;Rodinei,LAT,78;Léo Pereira,ZAG,80;David Luiz,ZAG,80;Filipe Luís,LAT,83;Thiago Maia,VOL,78;João Gomes,VOL,80;'
+     'Arrascaeta,MEI,87;Éverton Ribeiro,PON,82;Gabigol,ATA,88;Pedro,ATA,85;Bruno Henrique,PON,83;Gerson,MEI,84;Marinho,PON,80;Diego Alves,GOL,76'),
+    ('cor-2015', 'Corinthians', 2015, 'O Hepta de Tite', '#1a1a1a', '4-1-4-1', 'Tite',
+     'Cássio,GOL,85;Fágner,LAT,78;Gil,ZAG,80;Felipe,ZAG,78;Uendel,LAT,76;Ralf,VOL,82;Elias,MEI,80;Jádson,MEI,82;'
+     'Renato Augusto,MEI,85;Malcom,PON,76;Vagner Love,ATA,80;Rodriguinho,MEI,76;Lucca,ATA,72;Edílson,LAT,74;Walter,GOL,66'),
+    ('pal-2018', 'Palmeiras', 2018, 'O Time do Felipão', '#006437', '4-2-3-1', 'Luiz Felipe Scolari',
+     'Weverton,GOL,82;Mayke,LAT,78;Luan,ZAG,78;Antônio Carlos,ZAG,78;Victor Luis,LAT,74;Felipe Melo,VOL,82;Bruno Henrique,VOL,78;'
+     'Lucas Lima,MEI,80;Moisés,MEI,80;Dudu,PON,86;Willian,PON,80;Deyverson,ATA,76;Gustavo Scarpa,MEI,80;Borja,ATA,78;Jailson,GOL,70'),
+    ('spa-2008', 'São Paulo', 2008, 'O Tri Brasileiro do Muricy', '#e30613', '4-4-2', 'Muricy Ramalho',
+     'Rogério Ceni,GOL,90;Zé Luís,ZAG,76;Miranda,ZAG,80;Breno,ZAG,78;Jorge Wagner,LAT,76;Hernanes,MEI,86;Jean,VOL,78;'
+     'Joílson,VOL,78;Dagoberto,PON,82;Borges,ATA,84;Aloísio,ATA,78;Richarlyson,LAT,76;Hugo,LAT,76;André Dias,ZAG,76;Bosco,GOL,66'),
+    ('san-2010', 'Santos', 2010, 'Os Meninos da Copa do Brasil', '#1a1a1a', '4-3-3', 'Dorival Júnior',
+     'Felipe,GOL,78;Pará,LAT,76;Durval,ZAG,78;Edu Dracena,ZAG,78;Léo,LAT,76;Arouca,VOL,78;Wesley,VOL,80;'
+     'Paulo Henrique Ganso,MEI,88;Neymar,PON,90;André,ATA,82;Robinho,PON,88;Marquinhos,MEI,74;Alan Patrick,MEI,74;Rafael Moura,ATA,74;Rafael,GOL,64'),
+    ('col-2010', 'Internacional', 2010, 'A Bi da América', '#e5050f', '4-2-3-1', 'Celso Roth',
+     'Renan,GOL,80;Nei,LAT,76;Bolívar,ZAG,78;Índio,ZAG,78;Kléber,LAT,76;Guiñazú,VOL,80;Sandro,VOL,80;'
+     'D\'Alessandro,MEI,88;Giuliano,MEI,76;Taison,PON,80;Rafael Sóbis,ATA,82;Tinga,VOL,78;Alecsandro,ATA,80;Walter,ATA,76;Lauro,GOL,66'),
+    ('cam-1977', 'Atlético-MG', 1977, 'O Campeão Moral de Reinaldo', '#1a1a1a', '4-3-3', 'Barbatana',
+     'João Leite,GOL,86;Orlando,LAT,78;Luisinho,ZAG,84;Osmar,ZAG,78;Jorge Valença,LAT,76;Toninho Cerezo,VOL,90;Paulo Isidoro,MEI,84;'
+     'Chicão,MEI,78;Reinaldo,ATA,94;Éder Aleixo,PON,86;Ziza,ATA,80;Heleno,PON,76;Vanderlei,ZAG,74;Humberto,LAT,72;Raul,GOL,66'),
+    ('cru-1997', 'Cruzeiro', 1997, 'O Campeão da Libertadores 97', '#0033a0', '4-4-2', 'Paulo Autuori',
+     'Dida,GOL,86;Wilson Gottardo,ZAG,78;Gelson Baresi,ZAG,78;Cleisson,LAT,76;Vítor,LAT,74;Ricardinho,VOL,80;Nonato,VOL,76;'
+     'Elivélton,MEI,82;Palhinha,MEI,84;Fábio Júnior,ATA,86;Marcelo Ramos,ATA,80;Müller,PON,80;Donizete,ATA,76;Zinho,MEI,76;Paulo César,GOL,64'),
+    ('flu-2010', 'Fluminense', 2010, 'O Tricampeão do Conca', '#9f0e2f', '4-4-2', 'Muricy Ramalho',
+     'Fernando Henrique,GOL,78;Mariano,LAT,76;Gum,ZAG,78;Leandro Euzébio,ZAG,76;Júnior César,LAT,76;Diguinho,VOL,78;Marquinho,VOL,76;'
+     'Deco,MEI,82;Conca,MEI,90;Fred,ATA,86;Emerson,PON,80;Washington,ATA,80;Rafael Moura,ATA,74;Edinho,VOL,74;Ricardo Berna,GOL,64'),
+    ('cor-1990', 'Corinthians', 1990, 'O Time de Neto', '#1a1a1a', '4-4-2', 'Nelsinho Baptista',
+     'Ronaldo,GOL,80;Giba,LAT,74;Marcelo,ZAG,78;Guinei,ZAG,76;Jacenir,LAT,74;Márcio,VOL,76;Wilson Mano,VOL,74;'
+     'Neto,MEI,88;Fabinho,MEI,78;Tupãzinho,ATA,82;Mauro,ATA,76;Ezequiel,PON,72;Ney,MEI,72;Biro-Biro,MEI,74;Jairo,GOL,62'),
+    ('gre-2021', 'Grêmio', 2021, 'O Imortal do Jardel Paulista', '#0d80bf', '4-3-3', 'Renato Gaúcho',
+     'Vanderlei,GOL,76;Orejuela,LAT,74;Geromel,ZAG,82;Kannemann,ZAG,80;Diogo Barbosa,LAT,76;Villasanti,VOL,76;Lucas Silva,VOL,74;'
+     'Douglas Costa,PON,82;Diego Souza,ATA,80;Jean Pyerre,MEI,78;Ferreira,ATA,78;Alisson,PON,78;Maicon,MEI,78;Rafinha,LAT,76;Paulo Victor,GOL,70'),
 ]
 
 # Adversários fictícios do "Desafio 7 a 0" — fracos de propósito
@@ -196,6 +229,36 @@ _MUNDO = [
     ('nap-1987', 'Napoli', 1987, 'O Napoli de Maradona', '#12a0d7', '4-4-2', 'Ottavio Bianchi',
      'Garella,GOL,82;Ferrara,LAT,84;Ferrario,ZAG,82;Francini,LAT,82;Bruscolotti,ZAG,78;Bagni,VOL,84;De Napoli,VOL,84;'
      'Romano,MEI,84;Maradona,MEI,99;Giordano,ATA,88;Carnevale,ATA,86;Carannante,MEI,76;Renica,ZAG,82;Caffarelli,LAT,74;Di Fusco,GOL,66'),
+    ('bar-1992', 'Barcelona', 1992, 'O Dream Team de Cruyff', '#a50044', '3-4-3', 'Johan Cruyff',
+     'Zubizarreta,GOL,86;Ferrer,LAT,84;Koeman,ZAG,92;Nadal,ZAG,84;Serna,LAT,80;Guardiola,VOL,90;Eusébio,VOL,82;'
+     'Bakero,MEI,86;Laudrup,MEI,93;Stoichkov,ATA,94;Salinas,ATA,86;Amor,MEI,84;Begiristain,PON,86;Goikoetxea,ZAG,80;Busquets,GOL,70'),
+    ('bar-2015', 'Barcelona', 2015, 'O Tridente MSN', '#a50044', '4-3-3', 'Luis Enrique',
+     'Ter Stegen,GOL,88;Dani Alves,LAT,87;Piqué,ZAG,88;Mascherano,ZAG,86;Jordi Alba,LAT,88;Busquets,VOL,91;Rakitić,MEI,88;'
+     'Iniesta,MEI,92;Messi,PON,99;Suárez,ATA,94;Neymar,PON,93;Xavi,MEI,86;Mathieu,ZAG,80;Rafinha,MEI,80;Bravo,GOL,78'),
+    ('rma-2014', 'Real Madrid', 2014, 'A Décima', '#e5e5e5', '4-3-3', 'Carlo Ancelotti',
+     'Casillas,GOL,90;Carvajal,LAT,84;Sergio Ramos,ZAG,92;Varane,ZAG,86;Coentrão,LAT,84;Xabi Alonso,VOL,91;Modric,MEI,90;'
+     'Di María,MEI,91;Bale,PON,92;Benzema,ATA,92;Cristiano Ronaldo,ATA,98;Isco,MEI,86;Pepe,ZAG,86;Khedira,VOL,86;Diego López,GOL,76'),
+    ('int-1965', 'Inter de Milão', 1965, 'A Grande Inter', '#0033a0', '4-3-3', 'Helenio Herrera',
+     'Sarti,GOL,84;Burgnich,LAT,88;Facchetti,LAT,94;Guarneri,ZAG,86;Picchi,ZAG,88;Bedin,VOL,82;Corso,MEI,90;'
+     'Mazzola,MEI,92;Suárez,MEI,93;Jair,PON,90;Domenghini,PON,86;Peiró,ATA,86;Tagnin,VOL,78;Malatrasi,ZAG,76;Buffon,GOL,70'),
+    ('bay-1976', 'Bayern de Munique', 1976, 'O Tri de Beckenbauer', '#dc052d', '4-4-2', 'Dettmar Cramer',
+     'Maier,GOL,94;Hansen,LAT,84;Schwarzenbeck,ZAG,88;Beckenbauer,ZAG,98;Dürnberger,LAT,82;Roth,PON,88;Kapellmann,MEI,84;'
+     'Weiss,MEI,82;Müller,ATA,96;Hoeneß,ATA,88;Rummenigge,ATA,88;Torstensson,PON,80;Andersson,MEI,78;Wunder,MEI,76;Rautiainen,GOL,70'),
+    ('liv-1984', 'Liverpool', 1984, 'Os Reds da Era de Ouro', '#c8102e', '4-4-2', 'Joe Fagan',
+     'Grobbelaar,GOL,86;Neal,LAT,86;Lawrenson,ZAG,88;Hansen,ZAG,90;Kennedy,LAT,86;Souness,VOL,92;Whelan,MEI,84;'
+     'Lee,MEI,82;Dalglish,ATA,94;Rush,ATA,94;Johnston,PON,80;Nicol,MEI,82;Gillespie,ZAG,78;Robinson,ATA,76;Bolder,GOL,68'),
+    ('che-2012', 'Chelsea', 2012, 'O Campeão Improvável de Londres', '#034694', '4-2-3-1', 'Roberto Di Matteo',
+     'Cech,GOL,89;Ivanović,LAT,84;Cahill,ZAG,84;Terry,ZAG,88;Ashley Cole,LAT,88;Mikel,VOL,82;Lampard,MEI,90;'
+     'Ramires,MEI,84;Mata,MEI,90;Drogba,ATA,92;Torres,ATA,84;Bertrand,LAT,76;Malouda,PON,82;Meireles,MEI,82;Turnbull,GOL,66'),
+    ('ben-1962', 'Benfica', 1962, 'O Benfica de Eusébio', '#e50f1c', '4-2-4', 'Béla Guttmann',
+     'Costa Pereira,GOL,86;Mário João,LAT,80;Germano,ZAG,86;Cruz,LAT,80;Ângelo,ZAG,82;Cavém,PON,86;Coluna,MEI,92;'
+     'Águas,ATA,90;Eusébio,ATA,98;Simões,PON,88;Santana,ATA,82;Raul,GOL,66;José Augusto,PON,84;Mendes,MEI,76;Pedro,ZAG,70'),
+    ('mun-1968', 'Manchester United', 1968, 'Os Trinitários', '#da291c', '4-4-2', 'Matt Busby',
+     'Stepney,GOL,84;Brennan,LAT,80;Foulkes,ZAG,84;Stiles,VOL,86;Dunne,LAT,82;Crerand,MEI,86;Charlton,MEI,95;'
+     'Best,PON,98;Law,ATA,94;Kidd,ATA,84;Aston,PON,82;Sadler,ATA,80;Fitzpatrick,MEI,74;Burns,ZAG,74;Rimmer,GOL,66'),
+    ('por-2004', 'Porto', 2004, 'O Campeão de Mourinho', '#003893', '4-3-3', 'José Mourinho',
+     'Vítor Baía,GOL,86;Paulo Ferreira,LAT,84;Ricardo Carvalho,ZAG,90;Jorge Costa,ZAG,84;Nuno Valente,LAT,84;Costinha,VOL,84;Maniche,MEI,88;'
+     'Deco,MEI,92;Carlos Alberto,PON,84;Derlei,ATA,86;Pedro Mendes,MEI,82;McCarthy,ATA,80;Alenichev,MEI,80;Quaresma,PON,80;Nuno,GOL,66'),
 ]
 
 # Times pequenos (fictícios) das fases iniciais da Copa do Brasil: mais fortes que os "fregueses", bem abaixo dos históricos
@@ -228,6 +291,8 @@ FORMACOES = {
     '3-5-2': ['GOL', 'ZAG', 'ZAG', 'ZAG', 'LAT', 'VOL', 'VOL', 'MEI', 'LAT', 'ATA', 'ATA'],
     '4-2-3-1': ['GOL', 'LAT', 'ZAG', 'ZAG', 'LAT', 'VOL', 'VOL', 'PON', 'MEI', 'PON', 'ATA'],
     '4-3-1-2': ['GOL', 'LAT', 'ZAG', 'ZAG', 'LAT', 'VOL', 'MEI', 'MEI', 'MEI', 'ATA', 'ATA'],
+    '4-1-4-1': ['GOL', 'LAT', 'ZAG', 'ZAG', 'LAT', 'VOL', 'PON', 'MEI', 'MEI', 'PON', 'ATA'],
+    '3-4-3': ['GOL', 'ZAG', 'ZAG', 'ZAG', 'LAT', 'VOL', 'VOL', 'LAT', 'PON', 'ATA', 'PON'],
     '4-2-4': ['GOL', 'LAT', 'ZAG', 'ZAG', 'LAT', 'VOL', 'VOL', 'PON', 'ATA', 'ATA', 'PON'],
 }
 

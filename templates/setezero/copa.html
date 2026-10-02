@@ -4,7 +4,7 @@
 {% include 'setezero/_estilo.html' %}
 <section class="ar-hero sz-hero">
     <h1><span class="sete">7 a 0</span> · Copa do Brasil</h1>
-    <p>{% if d.eliminatorio %}Mata-mata: perdeu, está fora.{% else %}Campanha: você joga os 7 jogos de qualquer jeito.{% endif %} Empate no tempo normal vai para os pênaltis.</p>
+    <p>Mata-mata: perdeu, está fora. Empate no tempo normal vai para os pênaltis.</p>
     <div class="ar-chips"><a class="ar-chip text-decoration-none text-white" href="{% url 'setezero:hub' %}"><i class="fa-solid fa-arrow-left"></i> 7 a 0</a>
         <span class="ar-chip">{{ d.formacao }}</span><span class="ar-chip">OVR {{ meu.forca.atq }}/{{ meu.forca.cri }}/{{ meu.forca.def }}/{{ meu.forca.gol }}</span></div>
 </section>

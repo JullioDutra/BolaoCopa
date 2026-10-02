@@ -273,7 +273,7 @@ class DraftCopaTests(TestCase):
 
     def test_copa_completa_ate_o_fim(self):
         from . import copa
-        d = copa.criar_draft(self.u, eliminatorio=False)
+        d = copa.criar_draft(self.u)
         _draftar_sozinho(d)
         d.refresh_from_db()
         self.assertEqual(sum(1 for j in d.estado['slots'] if j), 11)
@@ -285,6 +285,8 @@ class DraftCopaTests(TestCase):
         self.assertTrue(all(r in dados.TIMES for r in d.estado['rivais']))  # só times históricos reais
         for fase in range(7):
             d.refresh_from_db()
+            if d.status != 'copa':
+                break
             p = copa.partida_da_fase(d)
             self.assertEqual(p.fase, fase)
             self.assertTrue(p.estado['mata_mata'])
@@ -293,8 +295,11 @@ class DraftCopaTests(TestCase):
                 p.refresh_from_db()
             self.assertIn(p.resultado, 'VD')
         d.refresh_from_db()
-        self.assertIn(d.status, ('campeao', 'terminou'))
-        self.assertEqual(len(d.campanha), 7)
+        self.assertIn(d.status, ('campeao', 'eliminado'))
+        if d.status == 'eliminado':
+            self.assertEqual(d.campanha[-1]['resultado'], 'D')
+            self.assertEqual([c['resultado'] for c in d.campanha[:-1]], ['V'] * (len(d.campanha) - 1))
+            self.assertIsNone(copa.partida_da_fase(d))   # não joga mais nenhuma fase
         r = self.client.get(reverse('setezero:retrospecto', args=[d.codigo]))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, 'wa.me')
@@ -346,7 +351,7 @@ class DraftCopaTests(TestCase):
         self.assertEqual(self.client.get(reverse('setezero:draft_novo')).status_code, 200)
         r = self.client.post(reverse('setezero:draft_novo'), {'formacao': '4-4-2', 'mentalidade': 'ofensivo', 'modo': 'campanha'})
         d = copa.DraftCopa7a0.objects.get()
-        self.assertFalse(d.eliminatorio)
+        self.assertTrue(d.eliminatorio)   # sempre mata-mata, mesmo se mandarem outro modo
         self.assertEqual(self.client.get(reverse('setezero:draft', args=[d.pk])).status_code, 200)
         j = self.client.post(reverse('setezero:api_draft', args=[d.pk, 'sortear'])).json()
         self.assertTrue(j['visao']['pendente']['elenco'])

@@ -179,8 +179,7 @@ def _visao_draft(d):
 @acesso_liberado_required
 def draft_novo(request):
     if request.method == 'POST':
-        d = copa.criar_draft(request.user, request.POST.get('formacao', '4-3-3'), request.POST.get('mentalidade', 'equilibrado'),
-                             eliminatorio=request.POST.get('modo', 'mata') == 'mata')
+        d = copa.criar_draft(request.user, request.POST.get('formacao', '4-3-3'), request.POST.get('mentalidade', 'equilibrado'))
         return redirect('setezero:draft', pk=d.pk)
     return render(request, 'setezero/draft_novo.html', {
         'formacoes': list(dados.FORMACOES), 'mentalidades': engine.MENTALIDADES, 'total_times': len(dados.TIMES), 'fases': copa.FASES})

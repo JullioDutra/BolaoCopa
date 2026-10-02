@@ -431,3 +431,72 @@ class BancoUnicoJogadoresTests(TestCase):
         self.assertEqual(FonteAtleta.objects.count(), 2)
         call_command('consolidar_jogadores', '--aplicar', stdout=out)
         self.assertEqual(FonteAtleta.objects.count(), 2)
+
+
+class ScoutTests(TestCase):
+    def _est(self, nome='Craque', pos='ATA', time_nome='Flamengo', **kw):
+        from futebol.models import Atleta, EstatisticaAtleta, Time
+        time, _ = Time.objects.get_or_create(nome=time_nome, pais='Brasil')
+        atleta, _ = Atleta.objects.get_or_create(nome=nome, posicao=pos, time=time, defaults={'valor_mercado': kw.pop('valor_mercado', None)})
+        base = dict(atleta=atleta, time=time, temporada=2024, jogos=30, minutos=2400, gols=0, assistencias=0)
+        base.update(kw)
+        return EstatisticaAtleta.objects.create(**base)
+
+    def test_atacante_artilheiro_mitou_e_apagado_e_bagre(self):
+        from futebol import scout
+        mito = scout.avaliar(self._est('Mito', gols=25, assistencias=8))
+        bagre = scout.avaliar(self._est('Bagre', gols=1, assistencias=0, amarelos=9))
+        self.assertEqual(mito['classe'], 'mitou')
+        self.assertEqual(bagre['classe'], 'bagre')
+        self.assertGreater(mito['nota'], bagre['nota'])
+
+    def test_pouco_tempo_em_campo_nao_gera_veredito(self):
+        from futebol import scout
+        r = scout.avaliar(self._est('Reserva', minutos=100, gols=3))
+        self.assertIsNone(r['nota'])
+        self.assertEqual(r['veredito'], 'Sem amostra')
+
+    def test_bagre_caro_e_achado_barato(self):
+        from futebol import scout
+        caro = scout.avaliar(self._est('Caro', gols=3, assistencias=1, valor_contratacao=40_000_000, contratado=True))
+        barato = scout.avaliar(self._est('Barato', gols=20, assistencias=6, valor_contratacao=1_000_000))
+        self.assertIn('Bagre caro', caro['selo'])
+        self.assertIn('Achado', barato['selo'])
+
+    def test_goleiro_e_nota_media(self):
+        from decimal import Decimal
+        from futebol import scout
+        gol = scout.avaliar(self._est('Paredão', pos='GOL', jogos=30, jogos_sem_sofrer=12, nota_media=Decimal('7.40')))
+        self.assertIn(gol['classe'], ('mitou', 'boa'))
+
+    def test_ranking_balanco_e_views(self):
+        from futebol import scout
+        self._est('Mito', gols=25, assistencias=8, contratado=True)
+        self._est('Bagre', gols=1, time_nome='Vasco', contratado=True)
+        r = scout.ranking(2024)
+        self.assertEqual(r['mitaram'][0]['estatistica'].atleta.nome, 'Mito')
+        self.assertEqual(r['bagres'][0]['estatistica'].atleta.nome, 'Bagre')
+        from futebol.models import Time
+        b = scout.balanco_time(Time.objects.get(nome='Flamengo'), 2024)
+        self.assertTrue(b['so_contratacoes'])
+        u = User.objects.create_user('ana', password='x')
+        self.client.force_login(u)
+        self.assertEqual(self.client.get(reverse('futebol:scout')).status_code, 200)
+        self.assertContains(self.client.get(reverse('futebol:scout') + '?posicao=ATA&contratados=1'), 'Mito')
+        from futebol.models import Atleta
+        self.assertContains(self.client.get(reverse('futebol:jogador', args=[Atleta.objects.get(nome='Mito').pk])), 'MITOU')
+        self.assertEqual(self.client.get(reverse('futebol:time', args=[Time.objects.get(nome='Flamengo').pk])).status_code, 200)
+
+    def test_importar_csv(self):
+        import tempfile
+        from django.core.management import call_command
+        from futebol.models import EstatisticaAtleta
+        with tempfile.NamedTemporaryFile('w', suffix='.csv', delete=False, encoding='utf-8') as f:
+            f.write('nome,time,posicao,temporada,jogos,minutos,gols,assistencias,nota,contratado,valor\n'
+                    'Gabigol,Flamengo,Atacante,2024,30,2400,22,5,7.2,sim,15000000\n'
+                    'Sem Posicao,Flamengo,,2024,1,90,0,0,,,\n')
+        call_command('importar_estatisticas', '--csv', f.name, stdout=__import__('io').StringIO(), stderr=__import__('io').StringIO())
+        os.unlink(f.name)
+        e = EstatisticaAtleta.objects.get()
+        self.assertEqual((e.gols, e.contratado, e.valor_contratacao), (22, True, 15_000_000))
+        self.assertEqual(str(e.nota_media), '7.20')

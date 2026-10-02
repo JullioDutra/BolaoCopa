@@ -13,6 +13,7 @@ urlpatterns = [
     path('api/raio-x/<int:jogo_id>/', views.api_raio_x, name='api_raio_x'),
     path('time/<int:pk>/', views.time_detalhe, name='time'),
     path('jogador/<int:pk>/', views.jogador_detalhe, name='jogador'),
+    path('scout/', views.scout, name='scout'),
     path('tabela/', views.tabela, name='tabela'),
     path('artilharia/', views.artilharia, name='artilharia'),
     path('comparar/', views.comparar, name='comparar'),

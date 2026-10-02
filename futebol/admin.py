@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Atleta, Comparativo, Escalacao, Escudo, Time, Voto
+from .models import Atleta, Comparativo, Escalacao, Escudo, EstatisticaAtleta, FonteAtleta, Time, Voto
 
 
 class AtletaInline(admin.TabularInline):
@@ -44,3 +44,14 @@ admin.site.register(Voto)
 class EscudoAdmin(admin.ModelAdmin):
     list_display = ('nome', 'chave', 'arquivo', 'url', 'atualizado_em')
     search_fields = ('nome', 'apelidos', 'chave')
+
+
+@admin.register(EstatisticaAtleta)
+class EstatisticaAtletaAdmin(admin.ModelAdmin):
+    list_display = ('atleta', 'time', 'temporada', 'competicao', 'jogos', 'minutos', 'gols', 'assistencias', 'nota_media', 'contratado')
+    list_filter = ('temporada', 'competicao', 'contratado')
+    search_fields = ('atleta__nome', 'time__nome')
+    autocomplete_fields = ('atleta', 'time')
+
+
+admin.site.register(FonteAtleta)

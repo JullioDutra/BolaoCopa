@@ -196,3 +196,32 @@ class FonteAtleta(models.Model):
 
     def __str__(self):
         return f"{self.origem}#{self.ref_id} -> {self.atleta}"
+
+
+class EstatisticaAtleta(models.Model):
+    """ Números de um jogador numa temporada/competição — base do veredito "mitou ou bagre". """
+    atleta = models.ForeignKey(Atleta, on_delete=models.CASCADE, related_name='estatisticas')
+    time = models.ForeignKey(Time, null=True, blank=True, on_delete=models.SET_NULL, related_name='estatisticas')
+    temporada = models.PositiveSmallIntegerField()
+    competicao = models.CharField(max_length=60, default='Brasileirão Série A')
+    jogos = models.PositiveSmallIntegerField(default=0)
+    minutos = models.PositiveIntegerField(default=0)
+    gols = models.PositiveSmallIntegerField(default=0)
+    assistencias = models.PositiveSmallIntegerField(default=0)
+    amarelos = models.PositiveSmallIntegerField(default=0)
+    vermelhos = models.PositiveSmallIntegerField(default=0)
+    nota_media = models.DecimalField(max_digits=4, decimal_places=2, null=True, blank=True, help_text="0 a 10 (opcional)")
+    gols_sofridos = models.PositiveSmallIntegerField(default=0, help_text="Só goleiros")
+    jogos_sem_sofrer = models.PositiveSmallIntegerField(default=0, help_text="Só goleiros/defensores")
+    defesas = models.PositiveSmallIntegerField(default=0)
+    contratado = models.BooleanField(default=False, help_text="Chegou ao time nesta temporada")
+    valor_contratacao = models.BigIntegerField(null=True, blank=True, help_text="Valor pago em euros (opcional)")
+    fonte = models.CharField(max_length=20, blank=True)
+    atualizado_em = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-temporada', 'atleta__nome']
+        unique_together = [('atleta', 'temporada', 'competicao', 'time')]
+
+    def __str__(self):
+        return f"{self.atleta.nome} {self.temporada}"

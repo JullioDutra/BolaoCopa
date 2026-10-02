@@ -14,6 +14,14 @@
     </div>
 </div>
 
+{% if balanco %}
+{% include 'futebol/_veredito_css.html' %}
+<div class="fb-card p-3 mb-4">
+    <div class="d-flex flex-wrap align-items-center gap-2 mb-2"><b>{% if balanco.so_contratacoes %}Contratações{% else %}Elenco{% endif %}:</b> <span class="vd {{ balanco.classe }}">{{ balanco.emoji }} {{ balanco.veredito }}</span><small class="text-muted">nota média {{ balanco.media }} · {{ balanco.total }} jogador{{ balanco.total|pluralize:",es" }}</small></div>
+    <small>🐐 Melhor: <a href="{% url 'futebol:jogador' balanco.melhor.estatistica.atleta_id %}">{{ balanco.melhor.estatistica.atleta.nome }}</a> ({{ balanco.melhor.nota }}) &nbsp; 🐟 Pior: <a href="{% url 'futebol:jogador' balanco.pior.estatistica.atleta_id %}">{{ balanco.pior.estatistica.atleta.nome }}</a> ({{ balanco.pior.nota }})</small>
+</div>
+{% endif %}
+
 {% if forma %}<div class="fb-card p-3 mb-4 d-flex align-items-center gap-3"><b>Forma recente</b><div class="forma">{% for f in forma %}<span class="{{ f.resultado }}" title="{{ f.casa }} {{ f.placar }} {{ f.fora }}">{{ f.resultado }}</span>{% endfor %}</div></div>{% endif %}
 
 {% if proximos %}<div class="fb-card p-3 mb-4"><b>Próximos jogos no Bolão</b>

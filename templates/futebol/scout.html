@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block title %}Mitou ou Bagre? - Futebol{% endblock %}
+{% block content %}
+{% include 'futebol/_estilo.html' %}
+{% include 'futebol/_veredito_css.html' %}
+<div class="fb-hero mb-4">
+    <h1><i class="fa-solid fa-user-secret"></i> Mitou ou Bagre?</h1>
+    <div class="opacity-75">O scout da resenha: rendimento por 90 minutos, nota, cartões e custo-benefício.</div>
+</div>
+
+<form class="d-flex flex-wrap gap-2 mb-3" method="get">
+    <select class="form-select w-auto" name="temporada" onchange="this.form.submit()">
+        {% for t in temporadas %}<option value="{{ t }}" {% if t == temporada %}selected{% endif %}>{{ t }}</option>{% empty %}<option>—</option>{% endfor %}
+    </select>
+    <select class="form-select w-auto" name="posicao" onchange="this.form.submit()">
+        <option value="">Todas as posições</option>
+        {% for cod, nome in posicoes %}<option value="{{ cod }}" {% if cod == posicao %}selected{% endif %}>{{ nome }}</option>{% endfor %}
+    </select>
+    <label class="form-check d-flex align-items-center gap-2 mb-0"><input type="checkbox" class="form-check-input" name="contratados" value="1" {% if contratados %}checked{% endif %} onchange="this.form.submit()"> Só contratações</label>
+</form>
+
+{% if not temporadas %}
+<div class="fb-card p-4 text-center text-muted"><i class="fa-solid fa-database fs-2 mb-2"></i><p class="mb-1">Ainda não há estatísticas importadas.</p>
+    <small>A staff pode rodar <code>importar_estatisticas --csv arquivo.csv</code> ou <code>--api-football</code> (veja o DEPLOY.md).</small></div>
+{% else %}
+<div class="row g-3 mb-4">
+    <div class="col-lg-6"><h5 class="mb-2">🐐 Mitaram <small class="text-muted">({{ dados.total }} avaliados)</small></h5>
+        {% for a in dados.mitaram %}<a class="text-decoration-none text-dark" href="{% url 'futebol:jogador' a.estatistica.atleta_id %}">{% include 'futebol/_veredito.html' %}</a>{% empty %}<div class="text-muted small">Sem jogadores com amostra suficiente.</div>{% endfor %}</div>
+    <div class="col-lg-6"><h5 class="mb-2">🐟 Bagres</h5>
+        {% for a in dados.bagres %}<a class="text-decoration-none text-dark" href="{% url 'futebol:jogador' a.estatistica.atleta_id %}">{% include 'futebol/_veredito.html' %}</a>{% empty %}<div class="text-muted small">Nenhum bagre à vista.</div>{% endfor %}</div>
+</div>
+
+{% if balancos %}
+<h5 class="mb-2">Quem mitou nas contratações?</h5>
+<div class="fb-card mb-5 overflow-hidden">
+    {% for time, b in balancos %}
+    <a href="{% url 'futebol:time' time.id %}" class="d-flex align-items-center gap-3 px-3 py-2 border-top text-decoration-none text-dark">
+        {% include 'futebol/_escudo.html' with time=time tam=34 %}
+        <span class="flex-grow-1 fw-semibold">{{ time.nome_exibicao }}<small class="text-muted d-block">{{ b.total }} jogador{{ b.total|pluralize:",es" }}{% if b.so_contratacoes %} contratado{{ b.total|pluralize }}{% endif %}</small></span>
+        <span class="vd {{ b.classe }}">{{ b.emoji }} {{ b.media }}</span></a>
+    {% endfor %}
+</div>
+{% endif %}
+{% endif %}
+{% endblock %}

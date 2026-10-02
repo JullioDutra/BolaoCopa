@@ -5,7 +5,7 @@ from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
 from django.conf import settings
-import google.generativeai as genai
+from . import gemini as genai_client
 
 # Importação dos modelos
 from .models import (
@@ -18,12 +18,9 @@ from .models import (
 # 1. CONFIGURAÇÃO E FUNÇÕES DA IA (GEMINI)
 # ==========================================
 
-genai.configure(api_key=settings.GEMINI_API_KEY)
-
 def obter_modelo_gemini(formato_json=False):
     """ Retorna a instância do Gemini otimizada (Força JSON se necessário) """
-    config = {"response_mime_type": "application/json"} if formato_json else None
-    return genai.GenerativeModel('gemini-2.5-flash', generation_config=config)
+    return genai_client.obter_modelo(formato_json)
 
 def gerar_dilema_ia(avatar):
     clube_nome = avatar.clube_atual.nome if avatar.clube_atual else "clube de várzea"
@@ -96,10 +93,6 @@ def gerar_laudo_medico_ia(nome_jogador):
     except Exception:
         return "Rotura muscular na coxa direita devido a fadiga extrema."
 
-# Configura a IA
-if hasattr(settings, 'GEMINI_API_KEY'):
-    genai.configure(api_key=settings.GEMINI_API_KEY)
-
 def gerar_noticia_jornal_ia(casa, gols_c, fora, gols_f):
     """ Cria a manchete criativa para a tela Social do Cartoleiro """
     padrao_fallback = {
@@ -108,7 +101,7 @@ def gerar_noticia_jornal_ia(casa, gols_c, fora, gols_f):
     }
     
     try:
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        model = genai_client.obter_modelo(modelo='gemini-2.5-flash')
         prompt = f"""
         Você é um jornalista esportivo polêmico. Escreva uma manchete criativa e um parágrafo curto de notícia sobre o jogo: {casa} {gols_c} x {gols_f} {fora}.
         Responda APENAS em um JSON estrito com as chaves "manchete" e "corpo".
@@ -125,7 +118,7 @@ def gerar_noticia_jornal_ia(casa, gols_c, fora, gols_f):
 def gerar_frases_narracao_ia(casa, fora):
     """ Retorna frases dinâmicas para a tela do Jogo Ao Vivo (Match Day) """
     try:
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        model = genai_client.obter_modelo(modelo='gemini-2.5-flash')
         prompt = f"""
         Escreva 3 frases de narração de futebol emocionantes para um jogo entre {casa} e {fora}.
         Não use números, apenas frases genéricas de lance perigoso, dividida forte e torcida cantando.

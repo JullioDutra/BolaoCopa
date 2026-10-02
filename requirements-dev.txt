@@ -1,0 +1,5 @@
+# Só para comandos de importação de imagens/dados (rodar localmente, NÃO no PythonAnywhere)
+-r requirements.txt
+requests
+beautifulsoup4
+duckduckgo-search

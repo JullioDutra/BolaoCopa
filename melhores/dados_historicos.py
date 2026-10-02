@@ -131,3 +131,23 @@ CATEGORIAS = [
 
 TOTAL_RESPOSTAS_2025 = 26
 TOTAL_RESPOSTAS_2021 = 30
+
+
+# ---------------------------------------------------------------------------
+# Participantes (quem respondeu os formulários), com o nome já padronizado.
+# Entram como candidatos em todas as categorias de pessoa/autor; quem nunca
+# foi votado ali fica com odd alta (azarão), pois só tem a "suavização" de peso.
+# ---------------------------------------------------------------------------
+PARTICIPANTES_2025 = [
+    'João Pires', 'Adilson', 'Diogo Henrique', 'Mark', 'Arthur Gabriel', 'Pedro', 'Yuri Martins',
+    'Paulo Victor', 'Gabriel', 'Fabio Junio', 'Elves Nunes', 'William Cardoso', 'Henrique',
+    'Marcos Vinicius', 'Geovani Marconi', 'Lucas Junior', 'Rony Cardoso', 'Rubyan', 'Andre Borghi',
+    'Matheus Santiago', 'Filipe', 'Anderson', 'Jullio', 'Marcos Fabio', 'Lucas Rafael',
+    'Arthur Rocha', 'Thiagos Enes',
+]
+
+# Responderam só o Troféu 2021 (não aparecem em 2025). Só entram com --incluir-2021.
+PARTICIPANTES_SO_2021 = [
+    'Maycon', 'Alexssandro', 'Lari', 'Pedrin', 'Luizzz', 'Lulu', 'Dantas', 'Heloísa', 'Heyder',
+    'João Beiramar', 'Tati', 'Fael Mitinho', 'Bruno',
+]

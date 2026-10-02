@@ -32,6 +32,18 @@ class SeedEOddsTests(TestCase):
             if tipo in ('pessoa', 'nome'):
                 self.assertEqual(sum(v25 for v25, _ in cands.values()), 26, slug)
 
+    def test_todos_os_participantes_viram_candidatos_sem_alterar_o_historico(self):
+        from .dados_historicos import PARTICIPANTES_2025
+        for slug in ('cartoleiro', 'vagabundo', 'perola'):
+            cat = Categoria.objects.get(edicao=self.edicao, slug=slug)
+            nomes = set(cat.candidatos.values_list('nome', flat=True))
+            self.assertTrue(set(PARTICIPANTES_2025) <= nomes, slug)
+        adilson = Candidato.objects.get(categoria__slug='cartoleiro', nome='Adilson')
+        self.assertEqual(adilson.votos_ano_anterior, 12)
+        self.assertFalse(Candidato.objects.filter(nome='Tati').exists())
+        call_command('seed_melhores', '--ano', '2026', '--incluir-2021', verbosity=0)
+        self.assertTrue(Candidato.objects.filter(categoria__slug='cartoleiro', nome='Tati').exists())
+
     def test_favorito_paga_menos_que_azarao(self):
         cat = Categoria.objects.get(edicao=self.edicao, slug='cartoleiro')
         odds = calcular_odds(cat)

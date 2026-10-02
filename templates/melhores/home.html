@@ -95,7 +95,7 @@
                     {% csrf_token %}
                     <div class="d-grid gap-2 mb-3">
                         {% for c in item.candidatos %}
-                        <div class="cand">
+                        <div class="cand{% if forloop.counter > 6 and item.minha.candidato_id != c.obj.id %} cand-extra d-none{% endif %}">
                             <input type="radio" name="candidato" id="c{{ c.obj.id }}" value="{{ c.obj.id }}"
                                    {% if item.minha.candidato_id == c.obj.id %}checked{% endif %}
                                    {% if not cat.aceita_apostas %}disabled{% endif %} required>
@@ -114,6 +114,12 @@
                         </div>
                         {% endfor %}
                     </div>
+
+                    {% if item.candidatos|length > 6 %}
+                    <button type="button" class="btn btn-sm btn-link text-decoration-none fw-bold mb-3 btn-ver-todos">
+                        <i class="fa-solid fa-chevron-down"></i> Ver todos os {{ item.candidatos|length }} candidatos (azarões pagam mais)
+                    </button>
+                    {% endif %}
 
                     {% if cat.aceita_apostas %}
                     <div class="d-flex flex-wrap gap-2 mb-2">
@@ -142,6 +148,15 @@
 <script>
 (function () {
     const saldo = {{ saldo }};
+
+    document.querySelectorAll('.btn-ver-todos').forEach(btn => btn.addEventListener('click', () => {
+        const form = btn.closest('form');
+        const extras = form.querySelectorAll('.cand-extra');
+        const abrir = extras[0] && extras[0].classList.contains('d-none');
+        extras.forEach(e => e.classList.toggle('d-none', !abrir));
+        btn.innerHTML = abrir ? '<i class="fa-solid fa-chevron-up"></i> Mostrar só os favoritos'
+                              : '<i class="fa-solid fa-chevron-down"></i> Ver todos os candidatos (azarões pagam mais)';
+    }));
 
     // ----- atalhos de valor + prévia do retorno
     document.querySelectorAll('.form-aposta').forEach(form => {

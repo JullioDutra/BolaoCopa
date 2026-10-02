@@ -282,7 +282,7 @@ class DraftCopaTests(TestCase):
         d.refresh_from_db()
         self.assertEqual(len(d.estado['rivais']), 7)
         self.assertEqual(len(set(d.estado['rivais'])), 7)
-        self.assertTrue(dados.obter(d.estado['rivais'][0]).get('freguesa'))
+        self.assertTrue(all(r in dados.TIMES for r in d.estado['rivais']))  # só times históricos reais
         for fase in range(7):
             d.refresh_from_db()
             p = copa.partida_da_fase(d)

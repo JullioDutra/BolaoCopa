@@ -151,14 +151,12 @@ def time_do_draft(draft):
 
 
 def _sortear_rivais():
-    """ Fases 1–3 contra times pequenos; depois os históricos, cada vez mais fortes. """
-    pequenos = [t['chave'] for t in sorted(dados.pequenos(), key=lambda t: t['overall'])]
+    """ Só times históricos "de verdade", dos mais fracos (1ª fase) aos mais fortes (final). """
     historicos = [t['chave'] for t in dados.todos()][::-1]   # do mais fraco ao mais forte
     n = len(historicos)
+    faixas = [(0, n // 5), (0, n // 4), (n // 8, n // 3), (n // 4, int(n * 0.5)),
+              (int(n * 0.4), int(n * 0.65)), (int(n * 0.6), int(n * 0.85)), (n - 6, n)]
     rivais = []
-    for faixa in (pequenos[:3], pequenos[2:5], pequenos[3:]):
-        rivais.append(secrets.choice([k for k in faixa if k not in rivais] or [k for k in pequenos if k not in rivais]))
-    faixas = [(0, n // 3), (n // 3, int(n * 0.7)), (int(n * 0.6), int(n * 0.9)), (n - 6, n)]
     for a, b in faixas:
         cand = [k for k in historicos[a:b] if k not in rivais] or [k for k in historicos if k not in rivais]
         rivais.append(secrets.choice(cand))

@@ -61,19 +61,22 @@
     .status-sub { font-size: 0.9rem; color: #ccc; margin: 0; font-weight: 500; }
 
     .stadium-bg { 
-        background: radial-gradient(circle at 50% 100%, var(--grama-clara), var(--grama-escura)); 
-        border-radius: 15px; position: relative; overflow: hidden; height: 42vh; min-height: 280px; max-height: 400px; 
+        background: #0b1220; 
+        border-radius: 15px; position: relative; overflow: hidden; height: 46vh; min-height: 300px; max-height: 440px; 
         box-shadow: inset 0 -40px 80px rgba(0,0,0,0.6), 0 10px 20px rgba(0,0,0,0.4); 
         display: flex; justify-content: center; border: 2px solid #222;
     }
     .enemy-gk-badge { position: absolute; top: 12px; background: rgba(0,0,0,0.85); color: white; padding: 6px 16px; border-radius: 25px; font-size: 0.85rem; font-weight: bold; border: 1px solid var(--ouro); z-index: 5; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
     
-    .goal-frame { position: absolute; bottom: 20px; width: 92%; height: 78%; border: 10px solid #f8f9fa; border-bottom: none; background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAOklEQVQYV2NkYGAwYkAD////Z4TRyMDFwEIGRhSVAfI1igKofZhUkGw0kgL0cQwlkqKASiIl40QBAAB8xQk/Wb04fAAAAABJRU5ErkJggg==') repeat; display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 6px; box-shadow: 0 20px 30px rgba(0,0,0,0.5); }
+    /* o gol é desenhado no canvas (campo 2D); a grade abaixo é só o alvo clicável, posicionada sobre ele */
+    #campo2d { position: absolute; inset: 0; z-index: 0; display: block; }
+    .goal-frame { position: absolute; top: 17%; left: 12%; width: 76%; height: 44%; z-index: 2; display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 4px; padding: 3px; }
     
-    .alvo-btn { background-color: rgba(255, 255, 255, 0.03); border: 2px dashed rgba(255,255,255,0.3); cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; font-weight: 800; color: transparent; border-radius: 8px; font-size: 0.9rem; text-transform: uppercase; }
-    .alvo-btn:hover { background-color: rgba(255, 215, 0, 0.5); border-color: var(--ouro); color: white; transform: scale(0.97); }
+    .alvo-btn { background-color: transparent; border: 2px dashed rgba(255,255,255,0.22); cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; font-weight: 800; color: transparent; border-radius: 8px; font-size: 0.9rem; text-transform: uppercase; }
+    .alvo-btn:hover { background-color: rgba(255, 215, 0, 0.35); border-color: var(--ouro); color: white; transform: scale(0.97); }
     .alvo-ativo { animation: pulse-alvo 2s infinite; }
-    .alvo-bloqueado { pointer-events: none; opacity: 0.3; }
+    .alvo-bloqueado { pointer-events: none; }
+    .alvo-bloqueado .alvo-btn { border-color: transparent; }
 
     /* EFEITOS CINEMÁTICOS */
     .shake-animation { animation: camera-shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
@@ -105,7 +108,7 @@
     .fab-wrapper.active .fab-main { transform: rotate(180deg); }
 
     /* TELA DE FEEDBACK VISUAL */
-    #feedback-overlay { position: absolute; inset: 0; background: radial-gradient(circle, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.95) 100%); z-index: 50; display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+    #feedback-overlay { position: absolute; inset: 0; background: radial-gradient(circle, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.75) 100%); z-index: 50; display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
     #feedback-text { font-size: clamp(3.5rem, 12vw, 6rem); font-weight: 900; text-transform: uppercase; margin: 0; font-style: italic; animation: pop-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
 </style>
 
@@ -231,6 +234,7 @@
                 <div class="alvo-btn" id="zona-mc" data-text="Meio Baixo" onclick="enviarAcao('mc')">Meio Baixo</div>
                 <div class="alvo-btn" id="zona-id" data-text="Dir. Baixo" onclick="enviarAcao('id')">Dir. Baixo</div>
             </div>
+            {% include 'minijogo/_campo2d.html' %}
         </div>
 
         <!-- DECK GRID (Mobile Friendly 3x2) -->
@@ -441,24 +445,12 @@
         
         document.getElementById('status-adversario').innerText = "Atenção máxima no estádio...";
 
-        document.querySelectorAll('.alvo-btn').forEach(btn => { 
-            btn.classList.remove('bola-aqui', 'gk-aqui', 'bola-e-gk', 'alvo-ativo'); 
-            btn.innerHTML = ''; 
-        });
+        document.querySelectorAll('.alvo-btn').forEach(btn => btn.classList.remove('alvo-ativo'));
 
-        let zChute = document.getElementById('zona-' + data.ultimo_chute_zona);
-        let zDefesa = document.getElementById('zona-' + data.ultima_defesa_zona);
-
-        setTimeout(() => {
-            if (data.ultimo_chute_zona === data.ultima_defesa_zona && zChute) {
-                zChute.classList.add('bola-e-gk');
-                zChute.innerHTML = '🧤⚽';
-            } else {
-                if(zChute) { zChute.classList.add('bola-aqui'); zChute.innerHTML = '⚽'; }
-                if(zDefesa) { zDefesa.classList.add('gk-aqui'); zDefesa.innerHTML = '🧤'; }
-            }
-
-            setTimeout(() => {
+        // quem bateu esta cobrança: eu (se meu papel era chutar) ou o adversário
+        const euBati = ultimoPapel === 'chutar';
+        Campo2D.papeis(euBati === souJ1 ? 'j1' : 'j2');
+        Campo2D.cobranca(data.ultimo_chute_zona, data.ultima_defesa_zona, data.ultimo_resultado, () => {
                 let texto = ""; let cor = "";
                 let foiGol = ['gol', 'frango'].includes(data.ultimo_resultado);
 
@@ -497,14 +489,11 @@
 
                 setTimeout(() => {
                     overlay.style.display = 'none';
-                    if(zChute) { zChute.classList.remove('bola-aqui', 'bola-e-gk'); zChute.innerHTML = zChute.dataset.text; }
-                    if(zDefesa) { zDefesa.classList.remove('gk-aqui', 'bola-e-gk'); zDefesa.innerHTML = zDefesa.dataset.text; }
+                    Campo2D.reset();
                     animandoCena = false;
                     callbackFim();
-                }, 2800); 
-
-            }, 1200); 
-        }, 800); 
+                }, 2200); 
+        });
     }
 
     function mostrarTelaFinal(data) {
@@ -547,6 +536,10 @@
         document.querySelectorAll('.alvo-btn').forEach(btn => btn.classList.remove('alvo-ativo'));
         document.getElementById('carta-ativa-nome').innerText = "Seleção Pendente";
         document.getElementById('carta-ativa-nome').className = "badge bg-secondary fw-bold";
+
+        if (papelAtual === 'chutar' || papelAtual === 'defender') {
+            Campo2D.papeis((papelAtual === 'chutar') === souJ1 ? 'j1' : 'j2');
+        }
 
         if (papelAtual === 'chutar') {
             acaoTravada = false;

@@ -1,0 +1,367 @@
+<canvas id="campo2d" aria-hidden="true"></canvas>
+<script>
+/*
+ * Campo 2D do X1 Pênaltis — desenhado em <canvas>, sem bibliotecas.
+ * O gol é desenhado exatamente sobre a grade de zonas (#trave-botoes), que continua
+ * sendo o alvo clicável. Campo2D.cobranca() anima o lance que o servidor já decidiu.
+ */
+window.Campo2D = (function () {
+    const cv = document.getElementById('campo2d');
+    const ctx = cv.getContext('2d');
+    if (!ctx.roundRect) {   // Safari < 16
+        ctx.roundRect = function (x, y, w, h, r) {
+            this.moveTo(x + r, y); this.arcTo(x + w, y, x + w, y + h, r); this.arcTo(x + w, y + h, x, y + h, r);
+            this.arcTo(x, y + h, x, y, r); this.arcTo(x, y, x + w, y, r); this.closePath();
+        };
+    }
+    const palco = cv.parentElement;
+    const grade = document.getElementById('trave-botoes');
+
+    const COR = {
+        j1: { linha: '#2563eb', goleiro: '#22d3ee', calcao: '#0f172a' },
+        j2: { linha: '#dc2626', goleiro: '#fb923c', calcao: '#111827' },
+    };
+    // zonas do servidor: s = alto (superior), i/m-baixo = baixo; e/m/d = esquerda/meio/direita (visão do batedor)
+    const ZONAS = { se: [0, 0], me: [1, 0], sd: [2, 0], ie: [0, 1], mc: [1, 1], id: [2, 1] };
+
+    let W = 0, H = 0, dpr = 1, G = null;
+    let papel = { batedor: 'j1', goleiro: 'j2' };
+    let lance = null;          // animação em curso
+    let rede = null;           // ondulação da rede {x, y, t0}
+    let t0 = performance.now();
+
+    // torcida fixa (semente determinística para não "piscar")
+    const torcida = [];
+    let s = 7;
+    const rnd = () => (s = (s * 9301 + 49297) % 233280) / 233280;
+    for (let i = 0; i < 260; i++) torcida.push([rnd(), rnd(), rnd()]);
+
+    function medir() {
+        const r = palco.getBoundingClientRect();
+        dpr = Math.min(window.devicePixelRatio || 1, 2);
+        W = r.width; H = r.height;
+        cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+        cv.style.width = W + 'px'; cv.style.height = H + 'px';
+        const g = grade.getBoundingClientRect();
+        G = { x: g.left - r.left, y: g.top - r.top, w: g.width, h: g.height };
+    }
+
+    const lerp = (a, b, p) => a + (b - a) * p;
+    const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+    const easeOut = p => 1 - Math.pow(1 - p, 3);
+    const easeIn = p => p * p;
+
+    function centroZona(z) {
+        const c = ZONAS[z];
+        if (!c) return null;
+        return { x: G.x + G.w * (c[0] * 2 + 1) / 6, y: G.y + G.h * (c[1] * 2 + 1) / 4 };
+    }
+    const chao = () => G.y + G.h;                       // linha do gol
+    const marca = () => ({ x: G.x + G.w / 2, y: lerp(chao(), H, 0.62) });  // marca do pênalti
+
+    /* ------------------------------------------------ cenário */
+    function cenario(t) {
+        // arquibancada
+        const ceu = ctx.createLinearGradient(0, 0, 0, chao());
+        ceu.addColorStop(0, '#05070c'); ceu.addColorStop(1, '#142033');
+        ctx.fillStyle = ceu; ctx.fillRect(0, 0, W, chao());
+        for (const [a, b, c] of torcida) {
+            const y = b * (G.y - 4);
+            if (y < 2) continue;
+            const pisca = 0.35 + 0.4 * (0.5 + 0.5 * Math.sin(t / 600 + c * 40));
+            ctx.fillStyle = c < 0.5 ? `rgba(37,99,235,${pisca})` : c < 0.8 ? `rgba(220,38,38,${pisca})` : `rgba(250,204,21,${pisca})`;
+            ctx.fillRect(a * W, y, 2, 2);
+        }
+        // placa de publicidade
+        ctx.fillStyle = '#1e293b'; ctx.fillRect(0, chao() - G.h * 0.16, W, G.h * 0.16);
+        ctx.fillStyle = 'rgba(250,204,21,.4)';
+        ctx.font = `800 ${Math.max(8, G.h * 0.085)}px "Barlow Condensed", sans-serif`;
+        ctx.textBaseline = 'middle';
+        const txt = 'CARTOLÂNDIA ★ X1 PÊNALTIS ★ ';
+        const tw = ctx.measureText(txt).width;
+        const off = -((t / 40) % tw);
+        for (let x = off; x < W; x += tw) ctx.fillText(txt, x, chao() - G.h * 0.08);
+        // gramado com faixas
+        const faixas = 7;
+        for (let i = 0; i < faixas; i++) {
+            const y0 = lerp(chao(), H, Math.pow(i / faixas, 1.3));
+            const y1 = lerp(chao(), H, Math.pow((i + 1) / faixas, 1.3));
+            ctx.fillStyle = i % 2 ? '#1f7a3a' : '#23873f';
+            ctx.fillRect(0, y0, W, y1 - y0 + 1);
+        }
+        const sombra = ctx.createLinearGradient(0, chao(), 0, H);
+        sombra.addColorStop(0, 'rgba(0,0,0,.35)'); sombra.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = sombra; ctx.fillRect(0, chao(), W, H - chao());
+        // linhas: linha do gol, pequena área e marca
+        ctx.strokeStyle = 'rgba(255,255,255,.75)'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(0, chao()); ctx.lineTo(W, chao()); ctx.stroke();
+        const pa = G.w * 0.18, profundidade = (H - chao()) * 0.3;
+        ctx.beginPath();
+        ctx.moveTo(G.x - pa, chao()); ctx.lineTo(G.x - pa * 1.35, chao() + profundidade);
+        ctx.lineTo(G.x + G.w + pa * 1.35, chao() + profundidade); ctx.lineTo(G.x + G.w + pa, chao());
+        ctx.stroke();
+        const m = marca();
+        ctx.fillStyle = 'rgba(255,255,255,.85)';
+        ctx.beginPath(); ctx.ellipse(m.x, m.y, 4, 2, 0, 0, Math.PI * 2); ctx.fill();
+    }
+
+    /* ------------------------------------------------ gol e rede */
+    function gol(t) {
+        const fundo = G.h * 0.16;   // profundidade da rede (fundo do gol mais alto/estreito)
+        ctx.fillStyle = 'rgba(255,255,255,.05)'; ctx.fillRect(G.x, G.y, G.w, G.h);
+        let bulge = null;
+        if (rede) {
+            const p = (t - rede.t0) / 900;
+            if (p < 1) bulge = { x: rede.x, y: rede.y, a: Math.sin(p * Math.PI * 3) * (1 - p) * G.h * 0.12 };
+            else rede = null;
+        }
+        const desloca = (x, y) => {
+            if (!bulge) return [x, y];
+            const d = Math.hypot(x - bulge.x, y - bulge.y), raio = G.w * 0.28;
+            if (d > raio) return [x, y];
+            const k = (1 - d / raio) * bulge.a;
+            return [x + (x - bulge.x) / (d || 1) * k * 0.3, y - k * 0.25];
+        };
+        ctx.strokeStyle = 'rgba(255,255,255,.28)'; ctx.lineWidth = 1;
+        const passo = Math.max(8, G.w / 26);
+        for (let x = G.x + passo; x < G.x + G.w; x += passo) {
+            ctx.beginPath();
+            for (let y = G.y + fundo * 0.3; y <= chao(); y += 4) { const [a, b] = desloca(x, y); y === G.y + fundo * 0.3 ? ctx.moveTo(a, b) : ctx.lineTo(a, b); }
+            ctx.stroke();
+        }
+        for (let y = G.y + passo; y < chao(); y += passo) {
+            ctx.beginPath();
+            for (let x = G.x; x <= G.x + G.w; x += 4) { const [a, b] = desloca(x, y); x === G.x ? ctx.moveTo(a, b) : ctx.lineTo(a, b); }
+            ctx.stroke();
+        }
+        // laterais da rede (perspectiva)
+        ctx.strokeStyle = 'rgba(255,255,255,.35)';
+        ctx.beginPath();
+        ctx.moveTo(G.x, G.y); ctx.lineTo(G.x + fundo * 0.6, G.y + fundo * 0.3); ctx.lineTo(G.x + fundo * 0.6, chao());
+        ctx.moveTo(G.x + G.w, G.y); ctx.lineTo(G.x + G.w - fundo * 0.6, G.y + fundo * 0.3); ctx.lineTo(G.x + G.w - fundo * 0.6, chao());
+        ctx.moveTo(G.x + fundo * 0.6, G.y + fundo * 0.3); ctx.lineTo(G.x + G.w - fundo * 0.6, G.y + fundo * 0.3);
+        ctx.stroke();
+    }
+    function traves() {
+        const e = Math.max(4, G.w * 0.018);
+        ctx.fillStyle = '#f8fafc'; ctx.shadowColor = 'rgba(0,0,0,.5)'; ctx.shadowBlur = 6;
+        ctx.fillRect(G.x - e, G.y - e, e, G.h + e);
+        ctx.fillRect(G.x + G.w, G.y - e, e, G.h + e);
+        ctx.fillRect(G.x - e, G.y - e, G.w + 2 * e, e);
+        ctx.shadowBlur = 0;
+    }
+
+    /* ------------------------------------------------ bonecos */
+    function goleiro(t, pose) {
+        const c = COR[papel.goleiro];
+        const esc = G.h / 120;                        // escala do boneco
+        const base = { x: G.x + G.w / 2, y: chao() - 2 };
+        const respira = Math.sin(t / 380) * 1.5 * esc;
+        const x = lerp(base.x, pose.x, pose.p), y = lerp(base.y, pose.y, pose.p);
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(pose.rot * pose.p);
+        ctx.scale(1, lerp(1, pose.agacha || 1, pose.p));
+        // sombra
+        ctx.fillStyle = 'rgba(0,0,0,.25)';
+        ctx.beginPath(); ctx.ellipse(0, 1, 16 * esc, 4 * esc, 0, 0, Math.PI * 2); ctx.fill();
+        // pernas
+        ctx.strokeStyle = c.goleiro; ctx.lineWidth = 7 * esc; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(-6 * esc, -30 * esc); ctx.lineTo(-11 * esc, -2 * esc);
+        ctx.moveTo(6 * esc, -30 * esc); ctx.lineTo(11 * esc, -2 * esc); ctx.stroke();
+        // calção
+        ctx.fillStyle = c.calcao; ctx.fillRect(-12 * esc, -40 * esc, 24 * esc, 12 * esc);
+        // tronco (camisa)
+        ctx.fillStyle = c.goleiro;
+        ctx.beginPath(); ctx.roundRect(-14 * esc, -72 * esc + respira, 28 * esc, 34 * esc, 6 * esc); ctx.fill();
+        ctx.fillStyle = 'rgba(0,0,0,.18)'; ctx.fillRect(-14 * esc, -58 * esc + respira, 28 * esc, 4 * esc);
+        // braços abertos (fecham para o alto no pulo)
+        const abre = lerp(0.9, 2.4, pose.p);
+        ctx.strokeStyle = c.goleiro; ctx.lineWidth = 6 * esc;
+        const mao = (lado) => [lado * (14 + 16 * Math.sin(abre)) * esc, (-66 - 18 * Math.cos(abre)) * esc + respira];
+        for (const lado of [-1, 1]) {
+            const [mx, my] = mao(lado);
+            ctx.beginPath(); ctx.moveTo(lado * 12 * esc, -66 * esc + respira); ctx.lineTo(mx, my); ctx.stroke();
+            ctx.fillStyle = '#facc15';
+            ctx.beginPath(); ctx.arc(mx, my, 5 * esc, 0, Math.PI * 2); ctx.fill();
+        }
+        // cabeça
+        ctx.fillStyle = '#c68642';
+        ctx.beginPath(); ctx.arc(0, -80 * esc + respira, 8 * esc, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#1f2937';
+        ctx.beginPath(); ctx.arc(0, -83 * esc + respira, 8 * esc, Math.PI, 0); ctx.fill();
+        ctx.restore();
+    }
+    function batedor(t, fase) {
+        // visto de costas, perto da câmera. fase: 0 = parado, 0..1 = corrida, >1 = chute/finalização
+        const c = COR[papel.batedor];
+        const m = marca();
+        const esc = (H - chao()) / 70;
+        const corrida = clamp(fase);
+        const x = lerp(m.x - 70 * esc, m.x - 12 * esc, easeIn(corrida));
+        const y = lerp(H + 8 * esc, m.y + 30 * esc, easeIn(corrida));
+        const passada = corrida < 1 ? Math.sin(corrida * Math.PI * 6) : 0;
+        const chute = clamp(fase - 1, 0, 0.4) / 0.4;
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.fillStyle = 'rgba(0,0,0,.3)';
+        ctx.beginPath(); ctx.ellipse(0, 2, 14 * esc, 4 * esc, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = '#1f2937'; ctx.lineWidth = 7 * esc; ctx.lineCap = 'round';
+        // perna de apoio e perna do chute
+        ctx.beginPath(); ctx.moveTo(-5 * esc, -26 * esc); ctx.lineTo(-7 * esc + passada * 4 * esc, 0); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(5 * esc, -26 * esc);
+        ctx.lineTo(lerp(7, 16, chute) * esc - passada * 4 * esc, lerp(0, -14, Math.sin(chute * Math.PI)) * esc); ctx.stroke();
+        ctx.fillStyle = '#111827'; ctx.fillRect(-11 * esc, -36 * esc, 22 * esc, 11 * esc);
+        ctx.fillStyle = c.linha;
+        ctx.beginPath(); ctx.roundRect(-13 * esc, -66 * esc, 26 * esc, 32 * esc, 6 * esc); ctx.fill();
+        ctx.fillStyle = '#fff'; ctx.font = `800 ${14 * esc}px "Barlow Condensed", sans-serif`; ctx.textAlign = 'center';
+        ctx.fillText('10', 0, -50 * esc);
+        ctx.textAlign = 'start';
+        ctx.strokeStyle = c.linha; ctx.lineWidth = 6 * esc;
+        ctx.beginPath(); ctx.moveTo(-12 * esc, -62 * esc); ctx.lineTo(-20 * esc, -44 * esc - passada * 4 * esc);
+        ctx.moveTo(12 * esc, -62 * esc); ctx.lineTo(20 * esc, -44 * esc + passada * 4 * esc); ctx.stroke();
+        ctx.fillStyle = '#1f2937';
+        ctx.beginPath(); ctx.arc(0, -74 * esc, 8 * esc, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+    }
+    function bola(x, y, r, giro) {
+        ctx.save(); ctx.translate(x, y); ctx.rotate(giro);
+        ctx.fillStyle = 'rgba(0,0,0,.25)';
+        ctx.beginPath(); ctx.ellipse(0, r * 0.95, r, r * 0.3, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = Math.max(0.6, r * 0.08); ctx.stroke();
+        ctx.fillStyle = '#111';
+        const pent = (cx, cy, rr) => { ctx.beginPath(); for (let k = 0; k < 5; k++) { const a = k / 5 * Math.PI * 2 - Math.PI / 2; ctx.lineTo(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr); } ctx.fill(); };
+        pent(0, 0, r * 0.38);
+        for (let k = 0; k < 5; k++) { const a = k / 5 * Math.PI * 2 - Math.PI / 2; pent(Math.cos(a) * r * 0.85, Math.sin(a) * r * 0.85, r * 0.2); }
+        ctx.restore();
+    }
+
+    /* ------------------------------------------------ lance */
+    const T_CORRIDA = 650, T_VOO = 520, T_POS = 900;
+
+    function planejar(chute, defesa, resultado) {
+        const m = marca();
+        const r0 = Math.max(5, (H - chao()) * 0.09);
+        let alvo = centroZona(chute);
+        if (!alvo) alvo = { x: G.x + G.w * 0.5, y: G.y - G.h * 0.3 };           // timeout: chuta pra fora
+        const zg = centroZona(defesa) || { x: G.x + G.w / 2, y: chao() - G.h * 0.35 };
+        // pose do goleiro: vai até a zona escolhida
+        const lado = Math.sign(zg.x - (G.x + G.w / 2));
+        const alto = zg.y < G.y + G.h / 2;
+        const pose = {
+            x: zg.x - lado * G.w * (alto ? 0.1 : 0.17),
+            y: alto ? zg.y + G.h * 0.62 : chao() - 2,
+            rot: lado * (alto ? 0.95 : 1.35),
+            agacha: lado === 0 && !alto ? 0.72 : 1,
+        };
+        if (lado === 0 && alto) pose.y = chao() - G.h * 0.22;   // pulo no meio, pro alto
+        const plano = { m, r0, alvo: { ...alvo }, fim: null, pose, resultado };
+        const dentro = { x: alvo.x, y: alvo.y };
+        if (resultado === 'gol' || resultado === 'frango') {
+            plano.fim = 'rede';
+        } else if (resultado === 'defendeu') {
+            plano.fim = 'rebote';
+            plano.rebote = { x: alvo.x + (alvo.x < G.x + G.w / 2 ? -1 : 1) * G.w * 0.45, y: chao() + (H - chao()) * 0.35 };
+        } else if (resultado === 'trave') {
+            const c = ZONAS[chute] || [1, 0];
+            if (c[0] === 1) { plano.alvo = { x: alvo.x + G.w * 0.1, y: G.y }; }
+            else plano.alvo = { x: c[0] === 0 ? G.x : G.x + G.w, y: alvo.y };
+            plano.fim = 'rebote';
+            plano.rebote = { x: lerp(plano.alvo.x, m.x, 0.4), y: chao() + (H - chao()) * 0.45 };
+        } else if (resultado === 'isolou') {
+            plano.alvo = { x: alvo.x + (alvo.x - (G.x + G.w / 2)) * 0.4, y: G.y - G.h * 0.22 };
+            plano.fim = 'fora';
+        } else if (resultado === 'recuou') {
+            plano.alvo = { x: lerp(m.x, alvo.x, 0.55), y: chao() + (H - chao()) * 0.12 };
+            plano.fim = 'fraco';
+        }
+        plano.dentro = dentro;
+        return plano;
+    }
+
+    function desenharLance(t) {
+        const L = lance, e = t - L.t0;
+        const pc = clamp(e / T_CORRIDA);
+        const pv = clamp((e - T_CORRIDA) / (L.plano.fim === 'fraco' ? T_VOO * 2.2 : T_VOO));
+        const pp = clamp((e - T_CORRIDA - T_VOO) / T_POS);
+        const P = L.plano;
+        // goleiro sai na hora do chute
+        const pg = easeOut(clamp((e - T_CORRIDA + 60) / 380));
+        const pose = { ...P.pose, p: pg };
+        // posição da bola
+        let bx, by, br, giro = e / 60;
+        if (e < T_CORRIDA) { bx = P.m.x; by = P.m.y; br = P.r0; giro = 0; }
+        else {
+            const q = easeOut(pv);
+            const ctrlY = Math.max(G.h * 0.05, Math.min(P.m.y, P.alvo.y) - G.h * (P.fim === 'fora' ? 0.05 : 0.3));
+            bx = lerp(P.m.x, P.alvo.x, q);
+            by = (1 - q) * (1 - q) * P.m.y + 2 * (1 - q) * q * ctrlY + q * q * P.alvo.y;
+            br = lerp(P.r0, P.r0 * 0.42, q);
+            if (pv >= 1) {
+                if (P.fim === 'rede') {
+                    if (!L.redeOk) { rede = { x: P.alvo.x, y: P.alvo.y, t0: t }; L.redeOk = true; }
+                    bx = P.alvo.x; by = lerp(P.alvo.y, chao() - br, easeIn(pp)); br = P.r0 * 0.4;
+                } else if (P.fim === 'rebote') {
+                    const q2 = easeOut(pp);
+                    bx = lerp(P.alvo.x, P.rebote.x, q2);
+                    by = lerp(P.alvo.y, P.rebote.y, q2) - Math.sin(q2 * Math.PI) * G.h * 0.25;
+                    br = lerp(P.r0 * 0.42, P.r0 * 0.8, q2);
+                } else if (P.fim === 'fora') {
+                    bx = P.alvo.x + (P.alvo.x - P.m.x) * pp * 0.3; by = P.alvo.y - pp * G.h; br = P.r0 * 0.4 * (1 - pp * 0.5);
+                } else if (P.fim === 'fraco') {
+                    bx = P.alvo.x; by = P.alvo.y; giro = 0;
+                }
+            }
+        }
+        // ordem: bola atrás do goleiro quando já passou da linha (gol/frango)
+        const atras = P.fim === 'rede' && pv > 0.85;
+        if (atras) bola(bx, by, br, giro);
+        goleiro(t, pose);
+        if (!atras) bola(bx, by, br, giro);
+        batedor(t, e / T_CORRIDA);
+        // flash no impacto
+        if (pv >= 1 && pp < 0.25 && P.fim !== 'fraco') {
+            ctx.fillStyle = `rgba(255,255,255,${0.35 * (1 - pp / 0.25)})`;
+            ctx.beginPath(); ctx.arc(P.alvo.x, P.alvo.y, G.h * 0.25, 0, Math.PI * 2); ctx.fill();
+        }
+        if (e > T_CORRIDA + (P.fim === 'fraco' ? T_VOO * 2.2 : T_VOO) + T_POS && !L.avisado) {
+            L.avisado = true;
+            const cb = L.fim; setTimeout(cb, 120);
+        }
+    }
+
+    function quadro(t) {
+        if (!G || G.w === 0) medir();
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, W, H);
+        cenario(t);
+        gol(t);
+        if (lance) {
+            desenharLance(t);
+        } else {
+            goleiro(t, { x: 0, y: 0, rot: 0, p: 0 });
+            const m = marca();
+            bola(m.x, m.y, Math.max(5, (H - chao()) * 0.09), 0);
+            batedor(t, 0);
+        }
+        traves();
+        requestAnimationFrame(quadro);
+    }
+
+    window.addEventListener('resize', medir);
+    medir();
+    requestAnimationFrame(quadro);
+
+    return {
+        // quem bate e quem defende nesta cobrança ('j1' ou 'j2')
+        papeis(batedorLado) { papel = { batedor: batedorLado, goleiro: batedorLado === 'j1' ? 'j2' : 'j1' }; },
+        cobranca(chute, defesa, resultado, aoTerminar) {
+            medir();
+            lance = { t0: performance.now(), plano: planejar(chute, defesa, resultado), fim: aoTerminar || (() => {}) };
+        },
+        reset() { lance = null; },
+        _medir: medir,
+    };
+})();
+</script>

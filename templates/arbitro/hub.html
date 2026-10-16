@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block title %}Apito Final - Cartolândia{% endblock %}
+{% block content %}
+{% include 'arbitro/_estilo.html' %}
+<section class="ar-hero ap-hero">
+    <h1><span class="apito">Apito Final</span> · Você é o árbitro</h1>
+    <p>Impedimento milimétrico, bola na linha, pênalti ou falta fora, cartão certo e os lances mais polêmicos das Copas. Chame o VAR se precisar, mas o apito é seu.</p>
+    <div class="ar-chips">
+        <span class="ar-chip"><i class="fa-solid fa-flag"></i> {{ numeros.partidas }} partida{{ numeros.partidas|pluralize }}</span>
+        <span class="ar-chip"><i class="fa-solid fa-star"></i> recorde: {{ numeros.recorde }} pts</span>
+        <span class="ar-chip"><i class="fa-solid fa-bullseye"></i> precisão: {{ numeros.precisao }}%</span>
+        {% if numeros.ouros %}<span class="ar-chip"><i class="fa-solid fa-crown"></i> {{ numeros.ouros }} apito{{ numeros.ouros|pluralize }} de ouro</span>{% endif %}
+        <a class="ar-chip text-decoration-none text-white" href="{% url 'arbitro:ranking' %}"><i class="fa-solid fa-ranking-star"></i> Quadro de honra</a>
+    </div>
+</section>
+
+<div class="ar-grid mb-4">
+    {% if aberta %}
+    <a class="ar-card text-decoration-none" style="--cor:#0f766e" href="{% url 'arbitro:partida' aberta.pk %}"><span class="ar-tag">EM ANDAMENTO</span>
+        <div class="ar-ico"><i class="fa-solid fa-play"></i></div>
+        <h3>Lance {{ aberta.indice|add:1 }}/{{ aberta.total }}</h3>
+        <p>{{ aberta.pontos }} pts até aqui. O jogo está esperando o seu apito.</p><span class="ar-btn">Voltar ao campo</span></a>
+    {% else %}
+    <div class="ar-card" style="--cor:#a16207"><span class="ar-tag">SOLO · {{ lances_por_partida }} LANCES</span>
+        <div class="ar-ico"><i class="fa-solid fa-flag"></i></div>
+        <h3>Apitar uma partida</h3>
+        <p>{{ lances_por_partida }} lances, entre situações geradas com a regra e {{ total_historicos }} lances reais de Copas. Até {{ premio_max }} coins por partida.</p>
+        <form method="post" action="{% url 'arbitro:nova' %}">{% csrf_token %}
+            <button type="submit" class="ar-btn"><i class="fa-solid fa-bullhorn"></i> Entrar em campo</button></form>
+    </div>
+    {% endif %}
+    <div class="ar-card" style="--cor:#6d28d9"><span class="ar-tag">VAR</span>
+        <div class="ar-ico"><i class="fa-solid fa-tv"></i></div>
+        <h3>Como pontua</h3>
+        <p>Acerto vale 100, mais até 50 de rapidez e +10 por acerto seguido. Acertar parte (a marcação sem o cartão) vale 40. Chamou o VAR? O lance vale 60%.</p>
+        <a class="ar-btn sec" href="{% url 'arbitro:ranking' %}"><i class="fa-solid fa-ranking-star"></i> Ver o ranking</a>
+    </div>
+</div>
+
+<h2 class="ar-secao"><i class="fa-solid fa-book"></i> O que cai no apito</h2>
+<div class="ap-cats mb-4">
+    {% for nome, icone in categorias %}<span><i class="fa-solid {{ icone }}"></i> {{ nome }}</span>{% endfor %}
+</div>
+
+{% if recentes %}
+<h2 class="ar-secao"><i class="fa-solid fa-clipboard-list"></i> Minhas súmulas</h2>
+<div class="ar-tabela mb-5">
+    {% for p in recentes %}<a class="ar-linha text-decoration-none" href="{% url 'arbitro:resultado' p.pk %}"><span class="pos">{% if p.acertos == p.total %}👑{% else %}🟨{% endif %}</span>
+        <span><span class="nome">{{ p.acertos }}/{{ p.total }} acertos</span><span class="d-block sub">{{ p.finalizado_em|date:"d/m/Y H:i" }} · sequência {{ p.melhor_sequencia }}{% if p.premio %} · +{{ p.premio }} coins{% endif %}</span></span>
+        <span class="pts">{{ p.pontos }}</span></a>{% endfor %}
+</div>
+{% endif %}
+{% endblock %}

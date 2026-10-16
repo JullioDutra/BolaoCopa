@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     'avisos',       # Notificações push + caixa de entrada + WhatsApp
     'gestao',       # Painel da staff (usuários, auditoria, sistema)
     'setezero',     # Jogo "7 a 0": simulador do Brasileirão histórico
+    'arbitro',      # Jogo "Apito Final": decisões de arbitragem (VAR, impedimento, linha do gol)
 ]
 
 MIDDLEWARE = [

@@ -38,6 +38,9 @@ CATALOGO = OrderedDict([
     ('campeao_mundo', ('Campeão do Mundo', 'Venceu a Busca pelo Mundial do 7 a 0', 'fa-earth-americas', '#1d4ed8')),
     ('sete_vitorias', ('7 a 0 de Verdade', 'Campeão do draft sem perder e sem pênaltis', 'fa-medal', '#be123c')),
     ('campeao_7a0', ('Campeão dos Campeões', 'Ganhou um campeonato do 7 a 0', 'fa-trophy', '#a16207')),
+    ('apito_inicial', ('Apito Inicial', 'Terminou uma partida do Apito Final', 'fa-flag', '#a16207')),
+    ('arbitro_fifa', ('Árbitro FIFA', 'Acertou 8 ou mais lances numa partida do Apito Final', 'fa-earth-americas', '#0f766e')),
+    ('apito_de_ouro', ('Apito de Ouro', 'Acertou os 10 lances numa partida do Apito Final', 'fa-crown', '#ca8a04')),
 ])
 
 
@@ -56,6 +59,16 @@ def _setezero(u):
         return {'jogos': 0, 'maior_saldo': 0, 'titulos': 0, 'copas': 0, 'mundiais': 0, 'invictos': 0}
 
 
+def _arbitro(u):
+    """ Melhor número de acertos numa partida do Apito Final (tolerante a tabela ainda não migrada). """
+    try:
+        from arbitro.models import PartidaArbitro
+        fim = PartidaArbitro.objects.filter(usuario=u, status='fim')
+        return {'jogos': fim.count(), 'max_acertos': fim.aggregate(m=Max('acertos'))['m'] or 0}
+    except Exception:
+        return {'jogos': 0, 'max_acertos': 0}
+
+
 def _regras(u):
     from accounts.models import PerfilUsuario
     from futebol.models import Comparativo, Voto
@@ -67,7 +80,11 @@ def _regras(u):
     perfil = PerfilUsuario.objects.filter(usuario=u).first()
     saldo = coins.saldo(u)
     sete = _setezero(u)
+    apito = _arbitro(u)
     return {
+        'apito_inicial': apito['jogos'] > 0,
+        'arbitro_fifa': apito['max_acertos'] >= 8,
+        'apito_de_ouro': apito['max_acertos'] >= 10,
         'tecnico': sete['jogos'] > 0,
         'goleador_7a0': sete['maior_saldo'] >= 4,
         'sete_a_zero': sete['maior_saldo'] >= 7,

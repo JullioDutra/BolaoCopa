@@ -1,0 +1,224 @@
+{% extends 'base.html' %}
+{% block title %}Apito Final - Em campo{% endblock %}
+{% block content %}
+{% include 'arbitro/_estilo.html' %}
+
+<div class="ap-painel mt-3 mb-4" id="ap-jogo">
+    <div class="ap-topo">
+        <div class="d-flex flex-wrap gap-2">
+            <span class="ap-chip"><i class="fa-solid fa-flag"></i> Lance <b id="ap-num">1</b>/<span id="ap-total">{{ partida.total }}</span></span>
+            <span class="ap-chip"><i class="fa-solid fa-star"></i> <b id="ap-pontos">{{ partida.pontos }}</b> pts</span>
+            <span class="ap-chip fogo"><i class="fa-solid fa-fire"></i> <b id="ap-seq">{{ partida.sequencia }}</b> seguidos</span>
+        </div>
+        <a href="{% url 'arbitro:hub' %}" class="ap-chip text-decoration-none"><i class="fa-solid fa-arrow-left"></i> Sair</a>
+    </div>
+
+    <div class="d-flex flex-wrap gap-2 align-items-center">
+        <span class="ap-chip"><i class="fa-solid" id="ap-cat-ico"></i> <span id="ap-cat">...</span></span>
+        <span class="ap-chip hist d-none" id="ap-hist"><i class="fa-solid fa-landmark"></i> Lance real</span>
+    </div>
+    <h2 class="ap-titulo" id="ap-titulo">Carregando o lance...</h2>
+    <p class="ap-contexto" id="ap-contexto"></p>
+
+    <div class="ap-palco">
+        {% include 'arbitro/_cena2d.html' %}
+        <div class="ap-ferramentas">
+            <button type="button" id="btn-rever"><i class="fa-solid fa-rotate-left"></i> Rever</button>
+            <button type="button" class="btn-var" id="btn-var"><i class="fa-solid fa-tv"></i> VAR <small>(lance vale 60%)</small></button>
+        </div>
+    </div>
+    <div class="ap-dica d-none" id="ap-dica" role="status"></div>
+
+    <div id="ap-decisao">
+        <div class="ap-pergunta" id="ap-pergunta"></div>
+        <div id="ap-grupos"></div>
+        <div class="ap-tempo" title="Bônus por decidir rápido"><i id="ap-barra"></i></div>
+        <button type="button" class="ap-apitar" id="btn-apitar" disabled><i class="fa-solid fa-bullhorn"></i> Apitar</button>
+    </div>
+    <div class="ap-veredito d-none" id="ap-veredito" role="status" aria-live="polite"></div>
+</div>
+
+<div class="modal fade sz-modal" id="modalFimArbitro" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="fimTitulo" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content text-center">
+            <div class="modal-body p-4 p-md-5">
+                <div class="fim-icone"><i class="fa-solid fa-crown" id="fim-icone"></i></div>
+                <h2 class="fim-titulo" id="fimTitulo">Fim de jogo!</h2>
+                <div class="fim-placar">
+                    <div class="lado"><div class="nome">Acertos</div><div class="pts" id="fim-acertos">0</div></div>
+                    <div class="x">·</div>
+                    <div class="lado"><div class="nome">Pontos</div><div class="pts" id="fim-pontos">0</div></div>
+                </div>
+                <h5 class="fim-vencedor" id="fim-sub"></h5>
+                <div class="fim-resposta"><small>Prêmio</small><b id="fim-premio">-</b></div>
+                <a href="{% url 'arbitro:resultado' partida.pk %}" class="btn fim-botao w-100 mb-2"><i class="fa-solid fa-clipboard-list"></i> Ver a súmula</a>
+                <form method="post" action="{% url 'arbitro:nova' %}">{% csrf_token %}
+                    <button type="submit" class="btn btn-outline-light w-100"><i class="fa-solid fa-rotate-right"></i> Apitar outra partida</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    const csrfToken = '{{ csrf_token }}';
+    const URL_LANCE = "{% url 'arbitro:api_lance' partida.pk %}";
+    const URL_VAR = "{% url 'arbitro:api_var' partida.pk %}";
+    const URL_RESP = "{% url 'arbitro:api_responder' partida.pk %}";
+    const JANELA_MS = 20000;
+    const $ = id => document.getElementById(id);
+
+    let lance = null, escolhas = {}, travado = false, relogio = null, varUsado = false;
+
+    function placar(p) {
+        $('ap-num').textContent = Math.min(p.indice + 1, p.total);
+        $('ap-total').textContent = p.total;
+        $('ap-pontos').textContent = p.pontos;
+        $('ap-seq').textContent = p.sequencia;
+    }
+
+    function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+    function montarGrupos() {
+        $('ap-grupos').innerHTML = lance.grupos.map(g => `
+            <div class="ap-grupo" data-grupo="${g.id}">
+                ${lance.grupos.length > 1 ? `<div class="rot">${esc(g.rotulo)}</div>` : ''}
+                <div class="ap-ops">${g.opcoes.map(([id, txt]) =>
+                    `<button type="button" class="ap-op ${g.id === 'cartao' && id !== 'nenhum' ? 'cartao-' + id : ''}" data-op="${id}">${esc(txt)}</button>`).join('')}</div>
+            </div>`).join('');
+        document.querySelectorAll('#ap-grupos .ap-op').forEach(b => b.addEventListener('click', () => {
+            if (travado) return;
+            const g = b.closest('.ap-grupo').dataset.grupo;
+            escolhas[g] = b.dataset.op;
+            b.parentElement.querySelectorAll('.ap-op').forEach(o => o.classList.toggle('sel', o === b));
+            $('btn-apitar').disabled = lance.grupos.some(gr => !escolhas[gr.id]);
+        }));
+    }
+
+    function iniciarRelogio(atrasoMs) {
+        cancelAnimationFrame(relogio);
+        const inicio = performance.now() + atrasoMs, barra = $('ap-barra');
+        const passo = agora => {
+            const q = Math.max(0, Math.min(1, 1 - (agora - inicio) / JANELA_MS));
+            barra.style.transform = `scaleX(${q})`;
+            if (!travado && q > 0) relogio = requestAnimationFrame(passo);
+        };
+        relogio = requestAnimationFrame(passo);
+    }
+
+    function mostrarDica(v) {
+        if (v && v.dica) { $('ap-dica').innerHTML = '<i class="fa-solid fa-tv me-1"></i> <b>VAR:</b> ' + esc(v.dica); $('ap-dica').classList.remove('d-none'); }
+    }
+
+    function render(d) {
+        lance = d.lance; escolhas = {}; travado = false; varUsado = d.var_usado;
+        placar(d.placar);
+        $('ap-cat').textContent = lance.categoria;
+        $('ap-cat-ico').className = 'fa-solid ' + lance.icone;
+        $('ap-hist').classList.toggle('d-none', !lance.historico);
+        $('ap-titulo').textContent = lance.titulo;
+        $('ap-contexto').textContent = lance.contexto;
+        $('ap-pergunta').textContent = lance.pergunta;
+        $('ap-dica').classList.add('d-none');
+        $('ap-veredito').classList.add('d-none');
+        $('ap-decisao').classList.remove('d-none');
+        $('btn-apitar').disabled = true;
+        $('btn-var').disabled = varUsado || !lance.tem_var;
+        montarGrupos();
+        CenaArbitro.carregar(lance.cena);
+        ultimoVar = null; clearTimeout(voltaVar);
+        if (varUsado && d.var) { aplicarVar(d.var); mostrarDica(d.var); }
+        iniciarRelogio(lance.anim_ms);
+        window.scrollTo({ top: $('ap-jogo').offsetTop - 70, behavior: 'smooth' });
+    }
+
+    async function carregar() {
+        const d = await (await fetch(URL_LANCE)).json();
+        if (d.fim) { placar(d.placar); abrirFim(d.resumo); return; }
+        render(d);
+    }
+
+    async function post(url, corpo) {
+        const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken }, body: JSON.stringify(corpo || {}) });
+        return r.json();
+    }
+
+    // rever a jogada inteira; se o VAR já estava na tela, ele volta ao fim do replay
+    let ultimoVar = null, voltaVar = null;
+    $('btn-rever').addEventListener('click', () => {
+        CenaArbitro.rever();
+        clearTimeout(voltaVar);
+        if (ultimoVar) voltaVar = setTimeout(() => CenaArbitro.var(ultimoVar), lance.anim_ms);
+    });
+    function aplicarVar(v) { clearTimeout(voltaVar); ultimoVar = v; CenaArbitro.var(v); }
+
+    $('btn-var').addEventListener('click', async () => {
+        if (varUsado || travado) return;
+        $('btn-var').disabled = true;
+        const d = await post(URL_VAR);
+        if (!d.ok) { $('btn-var').disabled = false; return alert(d.erro || 'Não foi possível chamar o VAR.'); }
+        varUsado = true;
+        aplicarVar(d.var);
+        mostrarDica(d.var);
+    });
+
+    $('btn-apitar').addEventListener('click', async () => {
+        if (travado) return;
+        travado = true;
+        $('btn-apitar').disabled = true;
+        const d = await post(URL_RESP, { indice: lance.indice, resposta: escolhas });
+        if (!d.ok) {
+            travado = false; $('btn-apitar').disabled = false;
+            if ((d.erro || '').includes('já foi apitado')) return carregar();
+            return alert(d.erro || 'Erro ao enviar a decisão.');
+        }
+        cancelAnimationFrame(relogio);
+        $('btn-var').disabled = true;
+        // marca o gabarito nos botões
+        document.querySelectorAll('#ap-grupos .ap-grupo').forEach(gr => {
+            const g = gr.dataset.grupo;
+            gr.querySelectorAll('.ap-op').forEach(b => {
+                b.disabled = true;
+                if (b.dataset.op === d.gabarito[g]) b.classList.add('certa');
+                else if (b.dataset.op === escolhas[g]) b.classList.add('errada');
+            });
+        });
+        aplicarVar(d.var);
+        placar(d.placar);
+        const tipo = d.acertou ? 'ok' : d.parcial ? 'meio' : 'erro';
+        const titulo = d.acertou ? 'Apitou certo!' : d.parcial ? 'Meio certo' : 'Errou o apito';
+        const bon = d.acertou ? `base ${d.base} · rapidez +${d.bonus_tempo} · sequência +${d.bonus_seq}` : (d.parcial ? 'acertou só parte da decisão' : 'sequência zerada');
+        const v = $('ap-veredito');
+        v.className = 'ap-veredito ' + tipo;
+        v.innerHTML = `
+            <div class="d-flex justify-content-between align-items-start gap-2">
+                <div><h3><i class="fa-solid ${d.acertou ? 'fa-circle-check' : d.parcial ? 'fa-circle-half-stroke' : 'fa-circle-xmark'}"></i> ${titulo}</h3><div class="bon">${bon}</div></div>
+                <div class="pts">+${d.pontos}</div>
+            </div>
+            <div class="certa">Decisão correta: ${d.correta.map(c => `<b>${esc(c.resposta)}</b>`).join(' + ')}</div>
+            <p>${esc(d.explicacao)}</p>
+            <button type="button" class="ap-apitar" id="btn-proximo">${d.fim ? '<i class="fa-solid fa-flag-checkered"></i> Fim de jogo' : 'Próximo lance <i class="fa-solid fa-forward-step ms-1"></i>'}</button>`;
+        $('ap-decisao').classList.add('d-none');
+        mostrarDica(d.var);
+        $('btn-proximo').addEventListener('click', () => d.fim ? abrirFim(d.resumo) : carregar());
+        v.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+
+    function abrirFim(r) {
+        $('fim-icone').className = 'fa-solid ' + r.icone;
+        $('fimTitulo').textContent = r.titulo;
+        $('fim-acertos').textContent = `${r.acertos}/${r.total}`;
+        $('fim-pontos').textContent = r.pontos;
+        $('fim-sub').textContent = (r.recorde ? '🏆 Novo recorde pessoal! ' : '') + `Melhor sequência: ${r.melhor_sequencia} acertos seguidos.`;
+        $('fim-premio').textContent = r.premio ? `+${r.premio} Cartola Coins` : 'Sem coins desta vez';
+        const modal = $('modalFimArbitro');
+        modal.classList.toggle('venceu', r.acertos >= 8);
+        modal.classList.toggle('perdeu', r.acertos < 5);
+        new bootstrap.Modal(modal).show();
+    }
+
+    carregar();
+})();
+</script>
+{% endblock %}

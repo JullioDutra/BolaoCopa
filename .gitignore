@@ -8,3 +8,6 @@ cache_django/
 
 # a logo do PWA fica em static_files/media (não confundir com o media/ de uploads)
 !static_files/media/
+
+# saídas do plugin playwright (screenshots/logs de teste)
+.playwright-mcp/

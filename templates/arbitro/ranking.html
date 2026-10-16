@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% load avatares %}
+{% block title %}Quadro de honra - Apito Final{% endblock %}
+{% block content %}
+{% include 'arbitro/_estilo.html' %}
+<section class="ar-hero ap-hero"><h1><span class="apito">Apito Final</span> · Quadro de honra</h1><p>Os árbitros mais certeiros da resenha.</p>
+<div class="ar-chips"><a class="ar-chip text-decoration-none text-white" href="{% url 'arbitro:hub' %}"><i class="fa-solid fa-arrow-left"></i> Apito Final</a></div></section>
+
+<h2 class="ar-secao"><i class="fa-solid fa-star"></i> Recordes</h2>
+{% if recordistas|length >= 3 %}
+<div class="ar-podio">
+    {% with u=recordistas.1 %}<div class="ar-pod p2"><div class="medalha">🥈</div><div class="nome">{{ u.first_name|default:u.username }}</div><div class="valor">{{ u.recorde }} pts</div></div>{% endwith %}
+    {% with u=recordistas.0 %}<div class="ar-pod p1"><div class="medalha">🥇</div><div class="nome">{{ u.first_name|default:u.username }}</div><div class="valor">{{ u.recorde }} pts</div></div>{% endwith %}
+    {% with u=recordistas.2 %}<div class="ar-pod p3"><div class="medalha">🥉</div><div class="nome">{{ u.first_name|default:u.username }}</div><div class="valor">{{ u.recorde }} pts</div></div>{% endwith %}
+</div>
+{% endif %}
+<div class="ar-tabela mb-4">
+{% for u in recordistas %}<div class="ar-linha {% if u.id == request.user.id %}eu{% endif %}"><span class="pos">{{ forloop.counter }}º</span>
+  <span><span class="nome">{% avatar u.perfil.avatar 24 %} <a class="nome-jogador" href="{% url 'conta:perfil_publico' u.pk %}">{{ u.first_name|default:u.username }}</a></span><span class="d-block sub">{{ u.partidas }} partida{{ u.partidas|pluralize }}{% if u.ouros %} · {{ u.ouros }} apito{{ u.ouros|pluralize }} de ouro{% endif %}</span></span>
+  <span class="pts">{{ u.recorde }}</span></div>
+{% empty %}<div class="ar-vazio">Ninguém apitou ainda. Seja o primeiro!</div>{% endfor %}</div>
+
+<h2 class="ar-secao"><i class="fa-solid fa-bullseye"></i> Mais precisos <small class="text-muted" style="font-size:.7rem">(mín. 3 partidas)</small></h2>
+<div class="ar-tabela mb-4">
+{% for u in precisos %}<div class="ar-linha {% if u.id == request.user.id %}eu{% endif %}"><span class="pos">{{ forloop.counter }}º</span>
+  <span><span class="nome">{% avatar u.perfil.avatar 24 %} {{ u.first_name|default:u.username }}</span><span class="d-block sub">{{ u.total_acertos }} acertos em {{ u.partidas }} partidas</span></span>
+  <span class="pts">{{ u.precisao }}%</span></div>
+{% empty %}<div class="ar-vazio">Ainda ninguém com 3 partidas.</div>{% endfor %}</div>
+
+<h2 class="ar-secao"><i class="fa-solid fa-crown"></i> Apito de Ouro <small class="text-muted" style="font-size:.7rem">(10 de 10)</small></h2>
+<div class="ar-tabela mb-5">
+{% for u in ouro %}<div class="ar-linha {% if u.id == request.user.id %}eu{% endif %}"><span class="pos">👑</span>
+  <span><span class="nome">{{ u.first_name|default:u.username }}</span><span class="d-block sub">recorde {{ u.recorde }} pts</span></span>
+  <span class="pts">{{ u.ouros }}x</span></div>
+{% empty %}<div class="ar-vazio">Ninguém acertou os 10 lances ainda.</div>{% endfor %}</div>
+{% endblock %}

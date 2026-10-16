@@ -26,13 +26,21 @@ Projeto Django 6 (`bolao_cartolandia/settings.py`), templates em `templates/<app
 - **Cartola Coins**: só via `accounts/coins.py` (`creditar`, `debitar`, `saldo`) — nunca mexer em `CarteiraCoins.saldo` direto. Crédito sempre decidido no servidor.
 - **Conquistas**: regras em `avisos/conquistas.py` (`checar(usuario)`) se o jogo destravar algo.
 - **Fim de jogo**: `templates/partials/modal_fim.html`.
+- **IA (Claude)**: só via `ia/cliente.py` (`gerar_json(usuario, system, mensagem, schema)`), que já usa Haiku, JSON estruturado,
+  cota diária por usuário e devolve `None` sem chave/erro. Todo jogo precisa de texto pronto para o `None`. A IA escolhe entre
+  opções que o servidor valida (enums, `ia.limitar`, `ia.cortar`); nunca decide placar, pontos ou coins. Texto do usuário vai
+  delimitado (`<resposta>…</resposta>`) e o prompt manda tratá-lo como dado. Crônica pós-jogo: `ia/narrador.py`.
+- **Voz**: `{% include 'partials/voz.html' %}` + `Voz.falar(texto, {animado})` e um botão `data-voz-toggle`.
+- **Avatares**: toda conquista nova em `avisos/conquistas.py` precisa de um avatar em `accounts/avatares.POR_CONQUISTA` (código ≤ 8 letras).
 - **Menu/hub**: adicionar o card/link onde os outros jogos aparecem (a arena de jogos é `templates/duelos/listar_desafios.html`; conferir também o menu em `templates/base.html`).
 - Cena 2D → seguir a skill `jogo-canvas-2d`.
 
 ## 4. Testes e verificação
 
 - `tests.py` do app: engine com semente fixa, telas retornam 200 para jogador logado e redirecionam anônimo, APIs recusam usuário de fora da partida e não creditam coins duas vezes.
-- Rodar: `python manage.py test <app>` (e `python manage.py check`).
+- Rodar: `python manage.py test <app>` (e `python manage.py check`); antes de abrir PR, a suíte inteira. Confira a linha
+  `OK`/`FAILED` da saída: em `... | tail`, o código de saída é o do `tail`, não o dos testes.
+- As migrations não vão para o Git (são geradas no servidor): para testar localmente, gere e apague depois.
 - Ver no navegador com o plugin **playwright** (desktop e viewport de celular).
 
 ## 5. Entrega

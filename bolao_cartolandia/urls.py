@@ -46,6 +46,9 @@ urlpatterns = [
     path('gestao/', include('gestao.urls')),
     path('setezero/', include('setezero.urls')),
     path('arbitro/', include('arbitro.urls')),
+    path('quem-sou-eu/', include('quemsoueu.urls')),
+    path('craque/', include('craque.urls')),
+    path('cabecudos/', include('cabecudos.urls')),
     path('sw.js', sw_js, name='sw'),
 ]
 

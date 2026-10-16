@@ -16,4 +16,5 @@ urlpatterns = [
     path('api/partida/<int:pk>/lance/', views.api_lance, name='api_lance'),
     path('api/partida/<int:pk>/var/', views.api_var, name='api_var'),
     path('api/partida/<int:pk>/responder/', views.api_responder, name='api_responder'),
+    path('api/partida/<int:pk>/resenha/', views.api_resenha, name='api_resenha'),
 ]

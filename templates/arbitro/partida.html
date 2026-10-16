@@ -2,6 +2,7 @@
 {% block title %}Apito Final - Em campo{% endblock %}
 {% block content %}
 {% include 'arbitro/_estilo.html' %}
+{% include 'partials/voz.html' %}
 
 <div class="ap-painel mt-3 mb-4" id="ap-jogo">
     <div class="ap-topo">
@@ -10,7 +11,8 @@
             <span class="ap-chip"><i class="fa-solid fa-star"></i> <b id="ap-pontos">{{ partida.pontos }}</b> pts</span>
             <span class="ap-chip fogo"><i class="fa-solid fa-fire"></i> <b id="ap-seq">{{ partida.sequencia }}</b> seguidos</span>
         </div>
-        <a href="{% url 'arbitro:hub' %}" class="ap-chip text-decoration-none"><i class="fa-solid fa-arrow-left"></i> Sair</a>
+        <span class="d-flex gap-2"><button type="button" class="ap-chip" data-voz-toggle aria-pressed="false">Voz</button>
+        <a href="{% url 'arbitro:hub' %}" class="ap-chip text-decoration-none"><i class="fa-solid fa-arrow-left"></i> Sair</a></span>
     </div>
 
     <div class="d-flex flex-wrap gap-2 align-items-center">
@@ -130,6 +132,7 @@
         ultimoVar = null; clearTimeout(voltaVar);
         if (varUsado && d.var) { aplicarVar(d.var); mostrarDica(d.var); }
         iniciarRelogio(lance.anim_ms);
+        Voz.falar(`${lance.titulo}. ${lance.contexto} ${lance.pergunta}`);
         window.scrollTo({ top: $('ap-jogo').offsetTop - 70, behavior: 'smooth' });
     }
 
@@ -201,6 +204,7 @@
             <button type="button" class="ap-apitar" id="btn-proximo">${d.fim ? '<i class="fa-solid fa-flag-checkered"></i> Fim de jogo' : 'Próximo lance <i class="fa-solid fa-forward-step ms-1"></i>'}</button>`;
         $('ap-decisao').classList.add('d-none');
         mostrarDica(d.var);
+        Voz.falar(`${titulo}! ${d.explicacao}`, {animado: d.acertou});
         $('btn-proximo').addEventListener('click', () => d.fim ? abrirFim(d.resumo) : carregar());
         v.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     });

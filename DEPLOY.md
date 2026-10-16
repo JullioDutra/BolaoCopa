@@ -90,3 +90,23 @@ Entrada: `/arbitro/` (card "Apito Final" na Arena X1). Ranking em `/arbitro/rank
 - 10 lances por partida: 4 lances reais de Copas (`arbitro/historicos.py`) e 6 gerados pela regra (impedimento, bola na linha,
   contato dentro/fora da área, falta e cartão, reinício). Gabarito e pontuação ficam só no servidor.
 - Prêmio: 3 coins por acerto (+30 no 10/10), no máximo 5 partidas premiadas por dia. Conquistas novas: Apito Inicial, Árbitro FIFA e Apito de Ouro.
+
+## Jogos com IA: Quem Sou Eu?, Vida de Craque, Cabeçudos e Narrador
+```bash
+pip install -r requirements.txt          # novo: anthropic (SDK oficial da Claude)
+python manage.py makemigrations ia quemsoueu craque cabecudos arbitro && python manage.py migrate
+```
+No `.env` (opcional, veja `.env.example`): `ANTHROPIC_API_KEY=...` (chave em console.anthropic.com).
+`api.anthropic.com` já está na lista liberada da conta gratuita do PythonAnywhere.
+Sem a chave, tudo funciona com textos prontos: perguntas rápidas no Quem Sou Eu?, cenas, coletivas e narrações
+prontas no Vida de Craque, crônicas prontas no 7 a 0 e no Apito Final.
+
+- **IA**: modelo `claude-haiku-5-5` (o mais barato), respostas curtas em JSON e limite de 60 chamadas por usuário por
+  dia (`IA_LIMITE_DIARIO`). O uso fica em Admin → "Uso de IA" (chamadas e tokens por usuário e dia).
+  A IA nunca decide placar, pontos nem coins: escolhe só entre opções que o servidor valida.
+- **Quem Sou Eu?** (`/quem-sou-eu/`): craque do dia (44 fichas em `quemsoueu/craques.py`), ranking diário e geral, até 10 coins.
+- **Vida de Craque** (`/craque/`): carreira de 8 temporadas com jogos simulados, coletivas e propostas; até 50 coins por temporada (3 por dia).
+- **Cabeçudos** (`/cabecudos/`): futebol de cabeção 2D, 8 fases contra bots; o servidor só aceita partidas com duração plausível.
+- **Narrador**: voz do navegador (botão "Voz") no 7 a 0, Apito Final e nos jogos novos; crônica pós-jogo com IA no 7 a 0 e
+  comentarista de arbitragem na súmula do Apito Final (campo novo `resenha` em `arbitro`, daí o `makemigrations arbitro`).
+- 4 conquistas novas (Detetive, Faro Apurado, Craque Campeão, Rei dos Cabeçudos), cada uma com avatar.

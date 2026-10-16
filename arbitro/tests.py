@@ -217,3 +217,29 @@ def _recompensas_conquistas(usuario):
     from avisos.conquistas import RECOMPENSA
     from avisos.models import Conquista
     return RECOMPENSA * Conquista.objects.filter(usuario=usuario).count()
+
+
+class ResenhaTests(TestCase):
+    def test_resenha_do_comentarista(self):
+        from unittest import mock
+        from django.test import override_settings
+        user = User.objects.create_user('juiz2', password='x')
+        self.client.force_login(user)
+        self.client.post(reverse('arbitro:nova'))
+        partida = PartidaArbitro.objects.get(usuario=user)
+        url = reverse('arbitro:api_resenha', args=[partida.pk])
+        self.assertEqual(self.client.post(url).status_code, 400)          # só no fim
+        for _ in range(partida.total):
+            partida.refresh_from_db()
+            self.client.post(reverse('arbitro:api_responder', args=[partida.pk]),
+                             json.dumps({'indice': partida.indice, 'resposta': _resposta_certa(partida.lances[partida.indice])}),
+                             content_type='application/json')
+        with override_settings(ANTHROPIC_API_KEY=None):
+            r = self.client.post(url).json()
+        self.assertEqual((r['ok'], r['fonte']), (True, 'pronta'))
+        with override_settings(ANTHROPIC_API_KEY='teste'), \
+                mock.patch('ia.cliente.gerar_json', return_value={'titulo': 'Apito de ouro!', 'texto': 'Que atuação.'}):
+            r = self.client.post(url).json()
+        self.assertEqual(r['titulo'], 'Apito de ouro!')
+        partida.refresh_from_db()
+        self.assertEqual(partida.resenha['fonte'], 'ia')

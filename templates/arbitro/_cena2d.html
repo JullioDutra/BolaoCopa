@@ -24,7 +24,7 @@ window.CenaArbitro = (function () {
     const TL = 1400;                                // linha: chegada da bola
 
     let W = 0, H = 0, dpr = 1;
-    let cena = null, t0 = 0, varDados = null, varT0 = 0, rodando = true;
+    let cena = null, t0 = 0, varDados = null, varT0 = 0;
 
     const lerp = (a, b, p) => a + (b - a) * p;
     const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
@@ -330,7 +330,8 @@ window.CenaArbitro = (function () {
     }
 
     function quadro(t) {
-        if (!rodando) return;
+        requestAnimationFrame(quadro);
+        if (document.hidden) return;          // aba oculta: o navegador nem chama, mas por garantia não desenha
         if (!W) medir();
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         ctx.clearRect(0, 0, W, H);
@@ -340,14 +341,9 @@ window.CenaArbitro = (function () {
         } else {
             ctx.fillStyle = '#0b1220'; ctx.fillRect(0, 0, W, H);
         }
-        requestAnimationFrame(quadro);
     }
 
     window.addEventListener('resize', medir);
-    document.addEventListener('visibilitychange', () => {
-        rodando = !document.hidden;
-        if (rodando) requestAnimationFrame(quadro);
-    });
     medir();
     requestAnimationFrame(quadro);
 

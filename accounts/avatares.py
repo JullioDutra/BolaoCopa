@@ -25,6 +25,8 @@ POR_CONQUISTA = {
     'multipla_ouro': 'multipla', 'eleitor': 'eleitor', 'professor': 'professo', 'banqueiro': 'banco', 'tecnico': 'tecnico',
     'goleador_7a0': 'goleada', 'sete_a_zero': 'seteazer', 'campeao_7a0': 'campeao', 'rei_da_copa': 'reicopa',
     'sete_vitorias': 'invicto', 'campeao_mundo': 'mundo',
+    'apito_inicial': 'apitoini', 'arbitro_fifa': 'fifa', 'apito_de_ouro': 'apitouro',
+    'detetive': 'detetive', 'faro_de_gol': 'faro', 'craque_campeao': 'craquecp', 'cabecudo_rei': 'cabecudo',
 }
 
 

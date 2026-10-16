@@ -41,6 +41,10 @@ CATALOGO = OrderedDict([
     ('apito_inicial', ('Apito Inicial', 'Terminou uma partida do Apito Final', 'fa-flag', '#a16207')),
     ('arbitro_fifa', ('Árbitro FIFA', 'Acertou 8 ou mais lances numa partida do Apito Final', 'fa-earth-americas', '#0f766e')),
     ('apito_de_ouro', ('Apito de Ouro', 'Acertou os 10 lances numa partida do Apito Final', 'fa-crown', '#ca8a04')),
+    ('detetive', ('Detetive', 'Descobriu o craque do dia no Quem Sou Eu?', 'fa-user-secret', '#6d28d9')),
+    ('faro_de_gol', ('Faro Apurado', 'Descobriu o craque do dia com 5 perguntas ou menos', 'fa-magnifying-glass', '#7c3aed')),
+    ('craque_campeao', ('Craque Campeão', 'Foi campeão com seu jogador no Vida de Craque', 'fa-shirt', '#c2410c')),
+    ('cabecudo_rei', ('Rei dos Cabeçudos', 'Venceu O Fenômeno na final do Cabeçudos', 'fa-futbol', '#15803d')),
 ])
 
 
@@ -69,6 +73,30 @@ def _arbitro(u):
         return {'jogos': 0, 'max_acertos': 0}
 
 
+def _jogos_ia(u):
+    """ Quem Sou Eu?, Vida de Craque e Cabeçudos (tolerante a tabelas ainda não migradas). """
+    r = {'detetive': False, 'faro': False, 'craque_campeao': False, 'cabecudo_rei': False}
+    try:
+        from quemsoueu.models import PartidaQSE
+        acertos = list(PartidaQSE.objects.filter(usuario=u, modo='diario', status='acertou').values_list('perguntas', flat=True))
+        r['detetive'] = bool(acertos)
+        r['faro'] = any(len(p) <= 5 for p in acertos)
+    except Exception:
+        pass
+    try:
+        from craque.models import Carreira
+        r['craque_campeao'] = any(c.get('carreira', {}).get('titulos') for c in Carreira.objects.filter(usuario=u).values_list('estado', flat=True))
+    except Exception:
+        pass
+    try:
+        from cabecudos.fases import FASES
+        from cabecudos.models import PartidaCabecudos
+        r['cabecudo_rei'] = PartidaCabecudos.objects.filter(usuario=u, status='vitoria', fase=len(FASES)).exists()
+    except Exception:
+        pass
+    return r
+
+
 def _regras(u):
     from accounts.models import PerfilUsuario
     from futebol.models import Comparativo, Voto
@@ -81,7 +109,12 @@ def _regras(u):
     saldo = coins.saldo(u)
     sete = _setezero(u)
     apito = _arbitro(u)
+    novos = _jogos_ia(u)
     return {
+        'detetive': novos['detetive'],
+        'faro_de_gol': novos['faro'],
+        'craque_campeao': novos['craque_campeao'],
+        'cabecudo_rei': novos['cabecudo_rei'],
         'apito_inicial': apito['jogos'] > 0,
         'arbitro_fifa': apito['max_acertos'] >= 8,
         'apito_de_ouro': apito['max_acertos'] >= 10,

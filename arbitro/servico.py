@@ -175,3 +175,30 @@ def numeros_usuario(usuario):
     return {'partidas': n, 'recorde': agg['recorde'] or 0,
             'precisao': round(100 * (agg['acertos'] or 0) / (n * engine.LANCES_POR_PARTIDA)) if n else 0,
             'ouros': fim.filter(acertos=engine.LANCES_POR_PARTIDA).count()}
+
+
+def resenha(partida, usuario):
+    """ Comentário de arbitragem sobre a partida do usuário: IA uma vez (guardado), senão texto pronto. """
+    if partida.resenha:
+        return partida.resenha
+    from ia import narrador
+    linhas = [f'Partida do jogo "Apito Final": o usuário apitou {partida.total} lances e acertou {partida.acertos}, '
+              f'fez {partida.pontos} pontos, chamou o VAR {partida.vars_chamados} vez(es) e teve sequência máxima de '
+              f'{partida.melhor_sequencia} acertos. Título recebido: {engine.titulo_arbitro(partida.acertos)["nome"]}.']
+    for i, r in enumerate(partida.respostas):
+        lance = partida.lances[i]
+        marca = 'ACERTOU' if r['acertou'] else 'MEIO CERTO' if r['parcial'] else 'ERROU'
+        linhas.append(f"- {lance['titulo']} ({engine.CATEGORIAS[lance['categoria']][0]}): {marca}")
+    texto = narrador.cronica(usuario, '\n'.join(linhas),
+                             estilo='Você é um comentarista de arbitragem da TV analisando o desempenho do árbitro (o usuário): '
+                                    'elogie os acertos difíceis, brinque com os erros e termine com um veredito.')
+    if texto is None:
+        titulo = engine.titulo_arbitro(partida.acertos)['nome']
+        return {'titulo': titulo, 'fonte': 'pronta',
+                'texto': f'{partida.acertos} acertos em {partida.total} lances. '
+                         + ('Atuação de gala, o apito estava afinado!' if partida.acertos >= 8 else
+                            'Teve lance para rever no monitor, mas o jogo terminou nas suas mãos.' if partida.acertos >= 5 else
+                            'Hoje a regra não estava clara para você. Bora estudar e voltar!')}
+    partida.resenha = texto
+    partida.save(update_fields=['resenha'])
+    return texto

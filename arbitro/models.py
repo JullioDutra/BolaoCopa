@@ -20,6 +20,7 @@ class PartidaArbitro(models.Model):
     vars_chamados = models.PositiveSmallIntegerField(default=0)
     status = models.CharField(max_length=10, choices=STATUS, default='andamento')
     premio = models.PositiveIntegerField(default=0)
+    resenha = models.JSONField(default=dict, blank=True)    # comentário do narrador/comentarista (IA) no fim
     criado_em = models.DateTimeField(auto_now_add=True)
     finalizado_em = models.DateTimeField(null=True, blank=True)
 

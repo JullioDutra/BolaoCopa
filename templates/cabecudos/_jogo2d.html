@@ -1,0 +1,423 @@
+<canvas id="cabecudos" aria-label="Partida de Cabeçudos" role="img"></canvas>
+<script>
+/*
+ * Cabeçudos — futebol de cabeção em tempo real, desenhado em <canvas>, sem bibliotecas.
+ * Mundo lógico 1000 x 560 (escalado para a tela), física em passo fixo de 1/120 s.
+ * O jogador (esquerda) ataca o gol da direita; o bot (direita) ataca o gol da esquerda.
+ * API: Cabecudos.iniciar(config, {aoAcabar(golsPro, golsContra), aoGol(lado)}), .entrada(acao, ligado), .som(ligado)
+ */
+window.Cabecudos = (function () {
+    const cv = document.getElementById('cabecudos');
+    const ctx = cv.getContext('2d');
+    if (!ctx.roundRect) {   // Safari < 16
+        ctx.roundRect = function (x, y, w, h, r) {
+            this.moveTo(x + r, y); this.arcTo(x + w, y, x + w, y + h, r); this.arcTo(x + w, y + h, x, y + h, r);
+            this.arcTo(x, y + h, x, y, r); this.arcTo(x, y, x + w, y, r); this.closePath();
+        };
+    }
+    const palco = cv.parentElement;
+
+    const MW = 1000, MH = 560, CHAO = 500;
+    const G = 1900, DT = 1 / 120;
+    const VEL = 380, PULO = 800, R_BOLA = 17, R_CABECA = 36, R_PE = 15, CHUTE = 920;
+    const TRAVE_Y = 348, GOL_FUNDO = 54, GOL_BOCA = 70;      // travessão e profundidade do gol
+    const lerp = (a, b, p) => a + (b - a) * p;
+    const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+
+    let W = 0, H = 0, dpr = 1, esc = 1, ox = 0, oy = 0;
+    let cfg = null, cb = {}, estado = 'parado', relogio = 0, contagem = 0, pausaGol = 0;
+    let placar = [0, 0], tremor = 0, flash = 0, particulas = [], rastro = [], faixa = null;
+    let acumulado = 0, ultimo = 0, somLigado = true, audio = null;
+    const teclas = {esq: false, dir: false, pulo: false, chute: false, super: false};
+    let jog, bot, bola;
+
+    /* ------------------------------------------------------------ medidas */
+    function medir() {
+        const r = palco.getBoundingClientRect();
+        dpr = Math.min(window.devicePixelRatio || 1, 2);
+        W = r.width; H = r.height;
+        cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+        cv.style.width = W + 'px'; cv.style.height = H + 'px';
+        esc = Math.min(W / MW, H / MH);
+        ox = (W - MW * esc) / 2; oy = (H - MH * esc) / 2;
+        fundo = null;
+    }
+
+    /* ------------------------------------------------------------ som (sintetizado, sem arquivos) */
+    function som(tipo) {
+        if (!somLigado) return;
+        try {
+            audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+            const t = audio.currentTime;
+            if (tipo === 'apito') {
+                [0, 0.32].forEach((d, i) => {
+                    const o = audio.createOscillator(), g = audio.createGain();
+                    o.type = 'square'; o.frequency.setValueAtTime(2100, t + d); o.frequency.linearRampToValueAtTime(2300, t + d + 0.22);
+                    g.gain.setValueAtTime(0.0001, t + d); g.gain.exponentialRampToValueAtTime(0.05, t + d + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + d + (i ? 0.5 : 0.25));
+                    o.connect(g).connect(audio.destination); o.start(t + d); o.stop(t + d + 0.55);
+                });
+            } else if (tipo === 'chute' || tipo === 'cabeca') {
+                const o = audio.createOscillator(), g = audio.createGain();
+                o.type = 'sine'; o.frequency.setValueAtTime(tipo === 'chute' ? 160 : 260, t); o.frequency.exponentialRampToValueAtTime(60, t + 0.12);
+                g.gain.setValueAtTime(0.25, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.14);
+                o.connect(g).connect(audio.destination); o.start(t); o.stop(t + 0.15);
+            } else if (tipo === 'gol' || tipo === 'torcida') {
+                const dur = tipo === 'gol' ? 2.2 : 1.0, n = audio.sampleRate * dur;
+                const buf = audio.createBuffer(1, n, audio.sampleRate), d = buf.getChannelData(0);
+                for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.sin(Math.PI * i / n);
+                const src = audio.createBufferSource(), f = audio.createBiquadFilter(), g = audio.createGain();
+                src.buffer = buf; f.type = 'bandpass'; f.frequency.value = 900; f.Q.value = 0.6; g.gain.value = tipo === 'gol' ? 0.5 : 0.18;
+                src.connect(f).connect(g).connect(audio.destination); src.start(t);
+                if (tipo === 'gol') {
+                    const o = audio.createOscillator(), g2 = audio.createGain();
+                    o.type = 'sawtooth'; o.frequency.value = 233; g2.gain.setValueAtTime(0.0001, t); g2.gain.exponentialRampToValueAtTime(0.06, t + 0.05); g2.gain.exponentialRampToValueAtTime(0.0001, t + 0.9);
+                    o.connect(g2).connect(audio.destination); o.start(t); o.stop(t + 0.95);
+                }
+            }
+        } catch (e) { /* sem áudio: segue o jogo */ }
+    }
+
+    /* ------------------------------------------------------------ entidades */
+    function novoJogador(lado) {
+        return {lado, x: lado === 'jog' ? 280 : 720, y: CHAO, vx: 0, vy: 0, noChao: true, dir: lado === 'jog' ? 1 : -1,
+                chute: 0, superCarga: 0, superAtivo: 0, pensarEm: 0, alvo: 0, querPular: false, querChutar: false};
+    }
+    function reposicionar(quemSofreu) {
+        jog = Object.assign(jog || {}, novoJogador('jog'), {superCarga: jog ? jog.superCarga : 0});
+        bot = Object.assign(bot || {}, novoJogador('bot'), {superCarga: bot ? bot.superCarga : 0});
+        bola = {x: MW / 2 + (quemSofreu === 'jog' ? -40 : quemSofreu === 'bot' ? 40 : 0), y: 140, vx: 0, vy: 0, giro: 0, fogo: 0};
+        historico.length = 0;
+    }
+    const cabeca = p => ({x: p.x, y: p.y - 74});
+    function pe(p) {
+        const s = p.chute > 0 ? Math.sin(Math.PI * (1 - p.chute / 0.22)) : 0;
+        return {x: p.x + p.dir * (20 + 26 * s), y: p.y - 14 - 22 * s, s};
+    }
+
+    /* ------------------------------------------------------------ física */
+    function colisaoCirculo(cx, cy, r, p, elast, impulso) {
+        const dx = bola.x - cx, dy = bola.y - cy, d = Math.hypot(dx, dy), min = r + R_BOLA;
+        if (d >= min || d === 0) return false;
+        const nx = dx / d, ny = dy / d;
+        bola.x = cx + nx * min; bola.y = cy + ny * min;
+        const rvx = bola.vx - p.vx, rvy = bola.vy - p.vy, vn = rvx * nx + rvy * ny;
+        if (vn < 0) { bola.vx -= (1 + elast) * vn * nx; bola.vy -= (1 + elast) * vn * ny; }
+        bola.vx += p.vx * 0.35 + nx * impulso; bola.vy += p.vy * 0.25 + ny * impulso;
+        return true;
+    }
+
+    function passoJogador(p, ctrl, dt) {
+        const vel = p.lado === 'bot' ? VEL * cfg.vel : VEL;
+        p.vx = (ctrl.dir ? vel : 0) - (ctrl.esq ? vel : 0);
+        if (ctrl.pulo && p.noChao) { p.vy = -PULO * (p.lado === 'bot' ? 0.96 : 1); p.noChao = false; }
+        if (ctrl.chute && p.chute <= 0) { p.chute = 0.22; som('chute'); }
+        if (ctrl.super && p.superCarga >= 1 && !p.superAtivo) { p.superAtivo = 2.5; p.superCarga = 0; }
+        p.vy += G * dt; p.x += p.vx * dt; p.y += p.vy * dt;
+        if (p.y >= CHAO) { p.y = CHAO; p.vy = 0; p.noChao = true; }
+        p.x = clamp(p.x, GOL_BOCA - 20, MW - GOL_BOCA + 20);
+        p.chute = Math.max(0, p.chute - dt);
+        p.superAtivo = Math.max(0, p.superAtivo - dt);
+        p.superCarga = Math.min(1, p.superCarga + dt / 14);
+    }
+
+    function passoBola(dt) {
+        bola.vy += G * 0.82 * dt;
+        bola.vx *= 0.9993; bola.vy *= 0.9993;
+        bola.x += bola.vx * dt; bola.y += bola.vy * dt;
+        bola.giro += bola.vx * dt / R_BOLA;
+        bola.fogo = Math.max(0, bola.fogo - dt);
+        if (bola.y > CHAO - R_BOLA) { bola.y = CHAO - R_BOLA; bola.vy *= -0.68; bola.vx *= 0.985; if (Math.abs(bola.vy) < 40) bola.vy = 0; }
+        if (bola.y < R_BOLA) { bola.y = R_BOLA; bola.vy = Math.abs(bola.vy) * 0.7; }
+        if (bola.x < R_BOLA) { bola.x = R_BOLA; bola.vx = Math.abs(bola.vx) * 0.6; }
+        if (bola.x > MW - R_BOLA) { bola.x = MW - R_BOLA; bola.vx = -Math.abs(bola.vx) * 0.6; }
+        // travessões (retângulos finos no topo de cada gol)
+        for (const [x0, x1] of [[0, GOL_BOCA], [MW - GOL_BOCA, MW]]) {
+            if (bola.x > x0 - R_BOLA && bola.x < x1 + R_BOLA && Math.abs(bola.y - TRAVE_Y) < R_BOLA + 5) {
+                const ponta = x0 === 0 ? x1 : x0;
+                if (Math.abs(bola.x - ponta) < R_BOLA && Math.abs(bola.y - TRAVE_Y) < R_BOLA) {     // bateu na quina
+                    const dx = bola.x - ponta, dy = bola.y - TRAVE_Y, d = Math.hypot(dx, dy) || 1;
+                    bola.x = ponta + dx / d * (R_BOLA + 1); bola.y = TRAVE_Y + dy / d * (R_BOLA + 1);
+                    const vn = bola.vx * dx / d + bola.vy * dy / d;
+                    if (vn < 0) { bola.vx -= 1.6 * vn * dx / d; bola.vy -= 1.6 * vn * dy / d; som('cabeca'); }
+                } else if (bola.y < TRAVE_Y) { bola.y = TRAVE_Y - R_BOLA - 5; bola.vy = -Math.abs(bola.vy) * 0.6; }
+                else { bola.y = TRAVE_Y + R_BOLA + 5; bola.vy = Math.abs(bola.vy) * 0.5; }
+            }
+        }
+        const v = Math.hypot(bola.vx, bola.vy);
+        if (v > 1600) { bola.vx *= 1600 / v; bola.vy *= 1600 / v; }
+    }
+
+    function contatos(p) {
+        const c = cabeca(p);
+        if (colisaoCirculo(c.x, c.y, R_CABECA, p, 0.85, 40)) som('cabeca');
+        const f = pe(p);
+        if (p.chute > 0 && f.s > 0.25 && Math.hypot(bola.x - f.x, bola.y - f.y) < R_PE + R_BOLA + 10) {
+            const forca = CHUTE * (p.lado === 'bot' ? cfg.chute : 1) * (p.superAtivo ? 1.75 : 1);
+            bola.vx = p.dir * forca * (0.82 + Math.random() * 0.12);
+            bola.vy = -forca * (bola.y > CHAO - 60 ? 0.5 : 0.22) * (0.85 + Math.random() * 0.3);
+            if (p.superAtivo) { bola.fogo = 1.6; p.superAtivo = 0; tremor = 10; som('torcida'); }
+            p.chute = 0.05;
+        } else {
+            colisaoCirculo(f.x, f.y, R_PE, p, 0.45, 0);
+        }
+        // corpo (tronco) como círculo baixo
+        colisaoCirculo(p.x, p.y - 34, 20, p, 0.4, 0);
+    }
+
+    function empurrarJogadores() {
+        const d = bot.x - jog.x, min = 70;
+        if (Math.abs(d) < min && Math.abs(jog.y - bot.y) < 90) {
+            const s = d >= 0 ? 1 : -1, sobra = (min - Math.abs(d)) / 2;
+            jog.x -= s * sobra; bot.x += s * sobra;
+        }
+    }
+
+    /* ------------------------------------------------------------ inteligência do bot */
+    const historico = [];       // posições da bola (o bot "enxerga" com atraso = reação)
+    function cerebroBot(t) {
+        historico.push({t, x: bola.x, y: bola.y, vx: bola.vx, vy: bola.vy});
+        while (historico.length > 2 && historico[1].t <= t - cfg.reacao) historico.shift();
+        const b = historico[0];
+        const ctrl = {esq: false, dir: false, pulo: false, chute: false, super: false};
+        // prevê onde a bola vai estar daqui a pouco
+        const prev = clamp(b.x + b.vx * 0.25, 30, MW - 30);
+        let alvo;
+        if (prev > bot.x - 15) alvo = prev + 45;                         // bola nas costas: volta para ficar atrás dela
+        else alvo = prev + 28;                                            // ataca empurrando para a esquerda
+        const limite = lerp(MW - 140, 260, cfg.ousadia);                  // até onde ele avança sem a bola
+        if (prev > limite) alvo = Math.max(alvo, limite);
+        if (t >= bot.pensarEm) { bot.alvo = alvo + (Math.random() - 0.5) * 60 * cfg.erro; bot.pensarEm = t + 0.08 + cfg.reacao * 0.5; }
+        const dx = bot.alvo - bot.x;
+        if (dx < -10) ctrl.esq = true; else if (dx > 10) ctrl.dir = true;
+        const perto = Math.abs(b.x - bot.x) < 110, alta = b.y < CHAO - 120;
+        if (perto && alta && b.vy > -150 && Math.random() < cfg.pulo * 0.12) ctrl.pulo = true;
+        const f = pe(bot);
+        if (Math.hypot(b.x - f.x, b.y - f.y) < 70 && b.x < bot.x + 10 && Math.random() > cfg.erro) ctrl.chute = true;
+        if (bot.superCarga >= 1 && b.x < bot.x && Math.abs(b.x - bot.x) < 160 && Math.random() < 0.02) ctrl.super = true;
+        return ctrl;
+    }
+
+    /* ------------------------------------------------------------ gols e fluxo */
+    function checarGol() {
+        if (bola.y > TRAVE_Y + 6 && bola.x < GOL_FUNDO) return 'bot';       // entrou no gol da esquerda: gol do rival
+        if (bola.y > TRAVE_Y + 6 && bola.x > MW - GOL_FUNDO) return 'jog';
+        return null;
+    }
+
+    function gol(quem) {
+        placar[quem === 'jog' ? 0 : 1]++;
+        pausaGol = 1.8; tremor = 16; flash = 1;
+        faixa = {texto: quem === 'jog' ? 'GOOOOL!' : `Gol do ${cfg.nome}`, cor: quem === 'jog' ? '#facc15' : '#f87171', t: 0};
+        const cor = quem === 'jog' ? ['#facc15', '#22c55e', '#ffffff'] : [cfg.cor, '#ffffff'];
+        for (let i = 0; i < 90; i++) particulas.push({x: bola.x, y: bola.y, vx: (Math.random() - 0.5) * 900, vy: -Math.random() * 900, v: 1.6, cor: cor[i % cor.length]});
+        som('gol');
+        if (cb.aoGol) cb.aoGol(quem, placar.slice());
+    }
+
+    function atualizar(dt, t) {
+        if (estado === 'contagem') { contagem -= dt; if (contagem <= 0) { estado = 'jogando'; som('apito'); } return; }
+        if (estado !== 'jogando') return;
+        if (pausaGol > 0) {
+            pausaGol -= dt;
+            if (pausaGol <= 0) { reposicionar(faixa && faixa.texto === 'GOOOOL!' ? 'bot' : 'jog'); faixa = null; }
+            return;
+        }
+        relogio -= dt;
+        passoJogador(jog, teclas, dt);
+        passoJogador(bot, cerebroBot(t), dt);
+        empurrarJogadores();
+        passoBola(dt);
+        contatos(jog); contatos(bot);
+        if (bola.fogo) rastro.push({x: bola.x, y: bola.y, v: 0.35});
+        const quem = checarGol();
+        if (quem) gol(quem);
+        if (relogio <= 0 && pausaGol <= 0) {
+            relogio = 0; estado = 'fim'; som('apito');
+            if (cb.aoAcabar) cb.aoAcabar(placar[0], placar[1]);
+        }
+    }
+
+    /* ------------------------------------------------------------ desenho */
+    let fundo = null;
+    function desenharFundo() {
+        fundo = document.createElement('canvas');
+        fundo.width = Math.round(MW * esc * dpr); fundo.height = Math.round(MH * esc * dpr);
+        const f = fundo.getContext('2d');
+        f.scale(esc * dpr, esc * dpr);
+        const ceu = f.createLinearGradient(0, 0, 0, CHAO);
+        ceu.addColorStop(0, '#05070c'); ceu.addColorStop(1, '#142033');
+        f.fillStyle = ceu; f.fillRect(0, 0, MW, CHAO);
+        // refletores
+        for (const x of [120, 880]) {
+            const g = f.createRadialGradient(x, 30, 5, x, 30, 260);
+            g.addColorStop(0, 'rgba(255,255,230,.35)'); g.addColorStop(1, 'rgba(255,255,230,0)');
+            f.fillStyle = g; f.fillRect(0, 0, MW, 300);
+        }
+        // torcida com semente fixa
+        let s = 11; const rnd = () => (s = (s * 9301 + 49297) % 233280) / 233280;
+        for (let i = 0; i < 1400; i++) {
+            const x = rnd() * MW, y = 70 + rnd() * 210, c = rnd();
+            f.fillStyle = c < 0.45 ? 'rgba(250,204,21,.55)' : c < 0.75 ? 'rgba(34,197,94,.5)' : c < 0.9 ? 'rgba(37,99,235,.5)' : 'rgba(255,255,255,.4)';
+            f.fillRect(x, y, 3, 3);
+        }
+        // placas
+        f.fillStyle = '#0f172a'; f.fillRect(0, 282, MW, 34);
+        f.font = '800 22px "Barlow Condensed", sans-serif'; f.textBaseline = 'middle';
+        const placa = 'CARTOLÂNDIA ★ CABEÇUDOS ★ ', passo = f.measureText(placa).width;
+        for (let x = 10, i = 0; x < MW; x += passo, i++) { f.fillStyle = i % 2 ? '#facc15' : '#22c55e'; f.fillText(placa, x, 300); }
+        // gramado
+        for (let i = 0; i < 10; i++) { f.fillStyle = i % 2 ? '#1f7a3a' : '#23873f'; f.fillRect(i * 100, 316, 100, MH - 316); }
+        f.fillStyle = 'rgba(0,0,0,.18)'; f.fillRect(0, CHAO, MW, MH - CHAO);
+        f.strokeStyle = 'rgba(255,255,255,.75)'; f.lineWidth = 3;
+        f.beginPath(); f.moveTo(0, CHAO); f.lineTo(MW, CHAO); f.stroke();
+        f.beginPath(); f.moveTo(MW / 2, 316); f.lineTo(MW / 2, CHAO); f.stroke();
+        f.beginPath(); f.ellipse(MW / 2, CHAO - 40, 90, 28, 0, 0, Math.PI * 2); f.stroke();
+        // gols (rede + travessão)
+        for (const lado of [0, 1]) {
+            const x0 = lado ? MW - GOL_BOCA : 0;
+            f.fillStyle = 'rgba(255,255,255,.08)'; f.fillRect(x0, TRAVE_Y, GOL_BOCA, CHAO - TRAVE_Y);
+            f.strokeStyle = 'rgba(255,255,255,.28)'; f.lineWidth = 1;
+            for (let y = TRAVE_Y; y < CHAO; y += 12) { f.beginPath(); f.moveTo(x0, y); f.lineTo(x0 + GOL_BOCA, y); f.stroke(); }
+            for (let x = x0; x <= x0 + GOL_BOCA; x += 12) { f.beginPath(); f.moveTo(x, TRAVE_Y); f.lineTo(x, CHAO); f.stroke(); }
+            f.fillStyle = '#f8fafc'; f.fillRect(x0, TRAVE_Y - 5, GOL_BOCA, 10);
+            const poste = lado ? x0 : x0 + GOL_BOCA - 6;
+            f.fillRect(poste, TRAVE_Y - 5, 6, CHAO - TRAVE_Y + 5);
+        }
+    }
+
+    function desenharJogador(p, cor, pele, nome, numero) {
+        const c = cabeca(p), f = pe(p);
+        ctx.fillStyle = 'rgba(0,0,0,.3)';
+        ctx.beginPath(); ctx.ellipse(p.x, CHAO + 4, 34 * (1 - (CHAO - p.y) / 600), 7, 0, 0, Math.PI * 2); ctx.fill();
+        // tronco
+        ctx.fillStyle = cor; ctx.beginPath(); ctx.roundRect(p.x - 20, p.y - 52, 40, 40, 10); ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.font = '800 20px "Barlow Condensed", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(numero, p.x, p.y - 32);
+        // perna e chuteira
+        ctx.strokeStyle = pele; ctx.lineWidth = 9; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(p.x + p.dir * 6, p.y - 14); ctx.lineTo(f.x, f.y); ctx.stroke();
+        ctx.fillStyle = '#111827'; ctx.beginPath(); ctx.ellipse(f.x + p.dir * 4, f.y + 2, R_PE, 9, 0, 0, Math.PI * 2); ctx.fill();
+        if (p.superAtivo) { ctx.fillStyle = 'rgba(249,115,22,.55)'; ctx.beginPath(); ctx.arc(f.x, f.y, R_PE + 8 + Math.random() * 4, 0, Math.PI * 2); ctx.fill(); }
+        // cabeçona
+        ctx.fillStyle = pele; ctx.beginPath(); ctx.arc(c.x, c.y, R_CABECA, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#1c1917'; ctx.beginPath(); ctx.arc(c.x, c.y - 6, R_CABECA, Math.PI * 1.08, Math.PI * 1.92); ctx.fill();
+        // olhos que acompanham a bola
+        const ang = Math.atan2(bola.y - c.y, bola.x - c.x);
+        for (const k of [-1, 1]) {
+            const ex = c.x + p.dir * 9 + k * 11, ey = c.y - 2;
+            ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.ellipse(ex, ey, 8, 10, 0, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#0f172a'; ctx.beginPath(); ctx.arc(ex + Math.cos(ang) * 3.5, ey + Math.sin(ang) * 4, 4, 0, Math.PI * 2); ctx.fill();
+        }
+        ctx.strokeStyle = '#7f1d1d'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(c.x + p.dir * 8, c.y + 14, 9, 0.15 * Math.PI, 0.85 * Math.PI); ctx.stroke();
+        // nome
+        ctx.font = '700 15px Inter, sans-serif';
+        const w = ctx.measureText(nome).width + 14;
+        ctx.fillStyle = 'rgba(15,23,42,.75)'; ctx.beginPath(); ctx.roundRect(c.x - w / 2, c.y - R_CABECA - 30, w, 22, 8); ctx.fill();
+        ctx.fillStyle = '#f8fafc'; ctx.fillText(nome, c.x, c.y - R_CABECA - 18);
+    }
+
+    function desenharBola() {
+        for (const r of rastro) { ctx.fillStyle = `rgba(249,115,22,${r.v})`; ctx.beginPath(); ctx.arc(r.x, r.y, R_BOLA * (0.6 + r.v), 0, Math.PI * 2); ctx.fill(); }
+        ctx.fillStyle = 'rgba(0,0,0,.28)';
+        ctx.beginPath(); ctx.ellipse(bola.x, CHAO + 4, R_BOLA * (1 - (CHAO - bola.y) / 700), 5, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.save(); ctx.translate(bola.x, bola.y); ctx.rotate(bola.giro);
+        ctx.fillStyle = bola.fogo ? '#fed7aa' : '#fff'; ctx.strokeStyle = '#111'; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.arc(0, 0, R_BOLA, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = '#111';
+        ctx.beginPath(); ctx.arc(0, 0, 5, 0, Math.PI * 2); ctx.fill();
+        for (let i = 0; i < 5; i++) { const a = i * Math.PI * 2 / 5; ctx.beginPath(); ctx.arc(Math.cos(a) * 12, Math.sin(a) * 12, 3.2, 0, Math.PI * 2); ctx.fill(); }
+        ctx.restore();
+    }
+
+    function hud() {
+        // placar
+        ctx.fillStyle = 'rgba(15,23,42,.88)'; ctx.beginPath(); ctx.roundRect(MW / 2 - 190, 10, 380, 52, 14); ctx.fill();
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.font = '800 34px "Barlow Condensed", sans-serif';
+        ctx.fillStyle = '#facc15'; ctx.fillText(`${placar[0]}  x  ${placar[1]}`, MW / 2, 37);
+        ctx.font = '700 16px Inter, sans-serif'; ctx.fillStyle = '#e2e8f0';
+        ctx.textAlign = 'right'; ctx.fillText(cfg.jogador, MW / 2 - 62, 37);
+        ctx.textAlign = 'left'; ctx.fillText(cfg.nome, MW / 2 + 62, 37);
+        // relógio
+        const s = Math.ceil(Math.max(0, relogio));
+        ctx.textAlign = 'center'; ctx.font = '700 18px "JetBrains Mono", monospace';
+        ctx.fillStyle = s <= 10 && estado === 'jogando' ? '#f87171' : '#f8fafc';
+        ctx.fillText(`0:${String(s).padStart(2, '0')}`, MW / 2, 78);
+        // super
+        barraSuper(jog.superCarga, 24, '#f97316', 'SUPER');
+        barraSuper(bot.superCarga, MW - 184, cfg.cor, 'SUPER');
+    }
+    function barraSuper(v, x, cor, rot) {
+        ctx.fillStyle = 'rgba(15,23,42,.75)'; ctx.beginPath(); ctx.roundRect(x, 22, 160, 16, 8); ctx.fill();
+        ctx.fillStyle = v >= 1 ? '#facc15' : cor; ctx.beginPath(); ctx.roundRect(x + 2, 24, 156 * v, 12, 6); ctx.fill();
+        ctx.font = '700 11px "JetBrains Mono", monospace'; ctx.fillStyle = '#fff'; ctx.textAlign = 'center';
+        ctx.fillText(v >= 1 ? '🔥 SUPER PRONTO' : rot, x + 80, 31);
+    }
+
+    function quadroDesenho(dtReal) {
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.fillStyle = '#05070c'; ctx.fillRect(0, 0, W, H);
+        if (!fundo) desenharFundo();
+        const tx = tremor ? (Math.random() - 0.5) * tremor : 0, ty = tremor ? (Math.random() - 0.5) * tremor : 0;
+        tremor = Math.max(0, tremor - dtReal * 40);
+        ctx.drawImage(fundo, ox + tx, oy + ty, MW * esc, MH * esc);
+        ctx.setTransform(dpr * esc, 0, 0, dpr * esc, dpr * (ox + tx), dpr * (oy + ty));
+        if (!cfg) return;
+        desenharJogador(bot, cfg.cor, cfg.pele, cfg.nome, '9');
+        desenharJogador(jog, '#16a34a', cfg.pele_jogador || '#e0ac69', cfg.jogador, '10');
+        desenharBola();
+        for (const q of particulas) { ctx.fillStyle = q.cor; ctx.globalAlpha = Math.min(1, q.v); ctx.fillRect(q.x, q.y, 6, 9); }
+        ctx.globalAlpha = 1;
+        hud();
+        if (flash > 0) { ctx.fillStyle = `rgba(255,255,255,${flash * 0.35})`; ctx.fillRect(0, 0, MW, MH); flash = Math.max(0, flash - dtReal * 2); }
+        if (faixa) {
+            faixa.t += dtReal;
+            const k = Math.min(1, faixa.t * 4);
+            ctx.save(); ctx.translate(MW / 2, 220); ctx.scale(0.6 + 0.4 * k, 0.6 + 0.4 * k);
+            ctx.font = '800 92px "Barlow Condensed", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.lineWidth = 10; ctx.strokeStyle = 'rgba(0,0,0,.6)'; ctx.strokeText(faixa.texto, 0, 0);
+            ctx.fillStyle = faixa.cor; ctx.fillText(faixa.texto, 0, 0); ctx.restore();
+        }
+        if (estado === 'contagem') {
+            ctx.font = '800 140px "Barlow Condensed", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillStyle = '#facc15'; ctx.strokeStyle = 'rgba(0,0,0,.6)'; ctx.lineWidth = 10;
+            const n = String(Math.ceil(contagem)); ctx.strokeText(n, MW / 2, 230); ctx.fillText(n, MW / 2, 230);
+        }
+    }
+
+    function quadro(agora) {
+        requestAnimationFrame(quadro);
+        if (document.hidden) { ultimo = 0; return; }     // aba oculta: jogo congela e retoma sem salto
+        if (!W) medir();
+        const dtReal = Math.min(0.1, ultimo ? (agora - ultimo) / 1000 : 0);
+        ultimo = agora;
+        if (cfg) {
+            acumulado += dtReal;
+            while (acumulado >= DT) { atualizar(DT, agora / 1000); acumulado -= DT; }
+            for (const q of particulas) { q.x += q.vx * dtReal; q.y += q.vy * dtReal; q.vy += 1400 * dtReal; q.v -= dtReal; }
+            particulas = particulas.filter(q => q.v > 0);
+            for (const r of rastro) r.v -= dtReal * 1.2;
+            rastro = rastro.filter(r => r.v > 0);
+        }
+        quadroDesenho(dtReal);
+    }
+
+    window.addEventListener('resize', medir);
+    medir();
+    requestAnimationFrame(quadro);
+
+    return {
+        iniciar(config, callbacks) {
+            cfg = config; cb = callbacks || {};
+            placar = [0, 0]; relogio = config.duracao; contagem = 3; estado = 'contagem';
+            particulas = []; rastro = []; faixa = null; pausaGol = 0; jog = null; bot = null;
+            reposicionar(null);
+        },
+        entrada(acao, ligado) { if (acao in teclas) teclas[acao] = ligado; },
+        som(ligado) { somLigado = ligado; },
+        get estado() { return estado; },
+        _medir: medir,
+    };
+})();
+</script>

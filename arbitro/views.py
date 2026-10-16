@@ -91,3 +91,12 @@ def api_responder(request, pk):
         return JsonResponse({'ok': True, **servico.responder(pk, request.user, indice, dados.get('resposta'))})
     except servico.ErroJogo as e:
         return JsonResponse({'ok': False, 'erro': str(e)}, status=400)
+
+
+@acesso_liberado_required
+@require_POST
+def api_resenha(request, pk):
+    p = get_object_or_404(PartidaArbitro, pk=pk, usuario=request.user)
+    if p.status != 'fim':
+        return JsonResponse({'ok': False, 'erro': 'A resenha sai no fim da partida.'}, status=400)
+    return JsonResponse({'ok': True, **servico.resenha(p, request.user)})

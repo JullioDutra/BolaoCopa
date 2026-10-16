@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% load avatares %}
+{% block title %}Cabeçudos - Cartolândia{% endblock %}
+{% block content %}
+<style>
+.cb-hero { background: radial-gradient(circle at 80% 20%, rgba(34,197,94,.35), transparent 45%), linear-gradient(135deg,#052e16,#14532d 55%,#ca8a04); }
+.cb-hero h1 .bola { color:#fde68a; }
+.cb-fases { display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:12px; margin-bottom:26px; }
+.cb-fase { --cor:#334155; position:relative; display:block; border-radius:18px; padding:14px; color:#fff; text-decoration:none; overflow:hidden;
+  background:linear-gradient(160deg, color-mix(in srgb, var(--cor) 88%, #000), color-mix(in srgb, var(--cor) 45%, #000)); box-shadow:0 8px 20px rgba(0,0,0,.2); transition:transform .15s; }
+.cb-fase:hover { transform:translateY(-4px); color:#fff; }
+.cb-fase .n { font-family:var(--fonte-mono); font-size:.7rem; opacity:.85; }
+.cb-fase h3 { font-family:var(--fonte-titulo); text-transform:uppercase; font-size:1.45rem; margin:2px 0; line-height:1.05; }
+.cb-fase .cabeca { position:absolute; right:-12px; bottom:-14px; width:86px; height:86px; border-radius:50%; background:var(--pele); box-shadow:inset 0 14px 0 #1c1917; opacity:.9; }
+.cb-fase .cabeca::before, .cb-fase .cabeca::after { content:""; position:absolute; top:34px; width:14px; height:16px; border-radius:50%; background:#fff; box-shadow:inset -4px 0 0 #0f172a; }
+.cb-fase .cabeca::before { left:16px; } .cb-fase .cabeca::after { left:36px; }
+.cb-fase.travada { filter:grayscale(1) brightness(.7); pointer-events:none; }
+.cb-fase .estrelas { font-size:.8rem; color:#fde68a; }
+</style>
+<section class="ar-hero cb-hero">
+    <h1><span class="bola">Cabeçudos</span> · futebol de cabeção</h1>
+    <p>Um contra um, 60 segundos, cabeçonas e super chute de fogo. Vença os 8 rivais, da várzea à final do mundial, cada um mais esperto que o outro.</p>
+    <div class="ar-chips">
+        <span class="ar-chip"><i class="fa-solid fa-trophy"></i> {{ numeros.titulos }} título{{ numeros.titulos|pluralize }}</span>
+        <span class="ar-chip"><i class="fa-solid fa-check"></i> {{ numeros.vitorias }} vitória{{ numeros.vitorias|pluralize }} em {{ numeros.jogos }} jogo{{ numeros.jogos|pluralize }}</span>
+        <span class="ar-chip"><i class="fa-solid fa-futbol"></i> {{ numeros.gols }} gols</span>
+    </div>
+</section>
+
+<h2 class="ar-secao"><i class="fa-solid fa-route"></i> Campanha</h2>
+<div class="cb-fases">
+{% for f in fases %}
+    <a class="cb-fase {% if not f.liberada %}travada{% endif %}" style="--cor:{{ f.cor }};--pele:{{ f.pele }}" href="{% if f.liberada %}{% url 'cabecudos:jogar' f.n %}{% else %}#{% endif %}" {% if not f.liberada %}aria-disabled="true"{% endif %}>
+        <div class="n">FASE {{ f.n }} · {{ f.palco|upper }}</div>
+        <h3>{{ f.nome }}</h3>
+        <div class="estrelas">{% if f.liberada %}<i class="fa-solid fa-play"></i> Jogar{% else %}<i class="fa-solid fa-lock"></i> Vença a fase anterior{% endif %}</div>
+        <span class="cabeca" aria-hidden="true"></span>
+    </a>
+{% endfor %}
+</div>
+
+<h2 class="ar-secao"><i class="fa-solid fa-ranking-star"></i> Ranking</h2>
+<div class="ar-tabela mb-5">
+{% for u in ranking %}<div class="ar-linha {% if u.id == request.user.id %}eu{% endif %}"><span class="pos">{{ forloop.counter }}º</span>
+  <span><span class="nome">{% avatar u.perfil.avatar 24 %} {{ u.first_name|default:u.username }}</span><span class="d-block sub">até a fase {{ u.fase_max }} · {{ u.gols_cab|default:0 }} gols{% if u.titulos_cab %} · {{ u.titulos_cab }} título{{ u.titulos_cab|pluralize }}{% endif %}</span></span>
+  <span class="pts">{% if u.titulos_cab %}🏆{% else %}{{ u.fase_max }}/8{% endif %}</span></div>
+{% empty %}<div class="ar-vazio">Ninguém venceu uma partida ainda.</div>{% endfor %}</div>
+{% endblock %}

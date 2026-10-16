@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block title %}Súmula - Apito Final{% endblock %}
+{% block content %}
+{% include 'arbitro/_estilo.html' %}
+<section class="ar-hero ap-hero">
+    <h1><i class="fa-solid {{ resumo.icone }} apito"></i> {{ resumo.titulo }}</h1>
+    <p>{{ resumo.acertos }} de {{ resumo.total }} lances certos · {{ resumo.pontos }} pontos{% if resumo.recorde %} · 🏆 seu recorde{% endif %}</p>
+    <div class="ar-chips">
+        <span class="ar-chip"><i class="fa-solid fa-fire"></i> melhor sequência: {{ resumo.melhor_sequencia }}</span>
+        <span class="ar-chip"><i class="fa-solid fa-tv"></i> VAR chamado {{ partida.vars_chamados }}x</span>
+        <span class="ar-chip"><i class="fa-solid fa-coins"></i> {% if resumo.premio %}+{{ resumo.premio }} coins{% else %}sem coins{% endif %}</span>
+        <a class="ar-chip text-decoration-none text-white" href="{% url 'arbitro:hub' %}"><i class="fa-solid fa-arrow-left"></i> Apito Final</a>
+    </div>
+</section>
+
+<form method="post" action="{% url 'arbitro:nova' %}" class="mb-4">{% csrf_token %}
+    <button type="submit" class="ap-apitar"><i class="fa-solid fa-rotate-right"></i> Apitar outra partida</button></form>
+
+<h2 class="ar-secao"><i class="fa-solid fa-clipboard-list"></i> Súmula lance a lance</h2>
+<div class="ar-tabela ap-sumula mb-5">
+    {% for l in sumula %}
+    <div class="ar-linha">
+        <span class="ap-marca {% if l.acertou %}ok{% elif l.parcial %}meio{% else %}erro{% endif %}"><i class="fa-solid {% if l.acertou %}fa-check{% elif l.parcial %}fa-circle-half-stroke{% else %}fa-xmark{% endif %}"></i></span>
+        <details>
+            <summary><span class="nome">{{ l.n }}. {{ l.titulo }}</span>
+                <span class="d-block sub"><i class="fa-solid {{ l.icone }}"></i> {{ l.categoria }}{% if l.historico %} · lance real{% endif %}{% if l.var %} · VAR{% endif %}</span>
+                <span class="d-block sub">você: {{ l.minha }}{% if not l.acertou %} · certo: {{ l.certa }}{% endif %}</span></summary>
+            <div class="exp">{{ l.explicacao }}</div>
+        </details>
+        <span class="pts">+{{ l.pontos }}</span>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

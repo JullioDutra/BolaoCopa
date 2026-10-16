@@ -1,0 +1,365 @@
+<canvas id="cena-arbitro" aria-hidden="true"></canvas>
+<script>
+/*
+ * Cena 2D do Apito Final — desenhada em <canvas>, sem bibliotecas.
+ * Dois tipos de cena, vindos do servidor:
+ *   campo: vista de cima (metros, x 0..105 com o azul atacando para a direita, y 0..68).
+ *          A jogada anda até o "momento" (passe, contato, último toque), congela e termina.
+ *   linha: câmera da linha do gol/fundo (centímetros; c = centro da bola a partir da borda da linha do lado do campo).
+ * CenaArbitro.var(dados) congela no momento decisivo e desenha as linhas/zoom do VAR.
+ */
+window.CenaArbitro = (function () {
+    const cv = document.getElementById('cena-arbitro');
+    const ctx = cv.getContext('2d');
+    if (!ctx.roundRect) {   // Safari < 16
+        ctx.roundRect = function (x, y, w, h, r) {
+            this.moveTo(x + r, y); this.arcTo(x + w, y, x + w, y + h, r); this.arcTo(x + w, y + h, x, y + h, r);
+            this.arcTo(x, y + h, x, y, r); this.arcTo(x, y, x + w, y, r); this.closePath();
+        };
+    }
+    const palco = cv.parentElement;
+
+    const COR = { a: '#2563eb', d: '#dc2626', g: '#fb923c' };
+    const T1 = 1700, TP = 800, T2 = 1500;          // campo: até o momento, pausa no momento, depois
+    const TL = 1400;                                // linha: chegada da bola
+
+    let W = 0, H = 0, dpr = 1;
+    let cena = null, t0 = 0, varDados = null, varT0 = 0, rodando = true;
+
+    const lerp = (a, b, p) => a + (b - a) * p;
+    const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+    const easeOut = p => 1 - Math.pow(1 - p, 3);
+    const easeInOut = p => p < .5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
+
+    function medir() {
+        const r = palco.getBoundingClientRect();
+        dpr = Math.min(window.devicePixelRatio || 1, 2);
+        W = r.width; H = r.height;
+        cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+        cv.style.width = W + 'px'; cv.style.height = H + 'px';
+    }
+
+    function claro(hex) {
+        const n = parseInt(hex.slice(1), 16);
+        return (0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) > 160;
+    }
+    const corTime = t => (cena && cena.cores && cena.cores[t]) || COR[t];
+
+    /* ================================================================ CAMPO */
+    let V = { x0: 0, y0: 0, x1: 105, y1: 68 }, S = 1, OX = 0, OY = 0;
+
+    function enquadrar(v) {
+        S = Math.min(W / (v[2] - v[0]), H / (v[3] - v[1]));
+        OX = (W - (v[2] - v[0]) * S) / 2 - v[0] * S;
+        OY = (H - (v[3] - v[1]) * S) / 2 - v[1] * S;
+        // sobrou largura numa jogada perto do gol: encosta o gol na borda direita em vez de mostrar o vazio atrás dele
+        if (v[2] >= 105 && W / S > v[2] - v[0]) OX = W - v[2] * S;
+    }
+    const X = x => OX + x * S, Y = y => OY + y * S;
+
+    // Em lances de contato/mão/último toque, o recorte vertical foca no ponto decisivo (±12 m),
+    // para o lance não ficar minúsculo em telas largas. Impedimento mostra a altura toda.
+    function vistaFocada(c) {
+        const v = c.vista, pts = [];
+        if (c.contato) pts.push(c.contato);
+        if (c.mao) pts.push(c.mao);
+        for (const j of c.jogadores) if (j.foco || j.toque) pts.push(j.p);
+        if (!c.contato && !c.mao && !c.jogadores.some(j => j.toque)) return v;
+        pts.push(c.bola.p);
+        let y0 = Math.min(...pts.map(p => p[1])) - 12, y1 = Math.max(...pts.map(p => p[1])) + 12;
+        if (y1 - y0 < 24) { const m = (y0 + y1) / 2; y0 = m - 12; y1 = m + 12; }
+        if (y0 < v[1]) { y1 += v[1] - y0; y0 = v[1]; }
+        if (y1 > v[3]) { y0 -= y1 - v[3]; y1 = v[3]; }
+        return [v[0], Math.max(v[1], y0), v[2], y1];
+    }
+
+    function vistaAtual(t) {
+        const base = cena._vista || cena.vista;
+        if (!varDados || !varDados.zoom || typeof varDados.zoom !== 'object') return base;
+        const z = varDados.zoom, a = W / H;
+        const alvo = [z.x - z.r * a, z.y - z.r, z.x + z.r * a, z.y + z.r];
+        const p = easeInOut(clamp((t - varT0) / 700));
+        return base.map((v, i) => lerp(v, alvo[i], p));
+    }
+
+    function gramado() {
+        ctx.fillStyle = '#1b6e34'; ctx.fillRect(0, 0, W, H);
+        for (let k = -6; k < 26; k++) {
+            if (k % 2) continue;
+            ctx.fillStyle = '#23873f';
+            ctx.fillRect(X(k * 5.25), 0, 5.25 * S + 0.5, H);
+        }
+        // fora do campo um pouco mais escuro
+        ctx.fillStyle = 'rgba(0,0,0,.22)';
+        ctx.fillRect(0, 0, W, Math.max(0, Y(0))); ctx.fillRect(0, Y(68), W, H);
+        ctx.fillRect(X(105), 0, W, H); ctx.fillRect(0, 0, Math.max(0, X(0)), H);
+    }
+
+    function linhasCampo() {
+        ctx.strokeStyle = 'rgba(255,255,255,.88)'; ctx.lineWidth = Math.max(1.5, 0.12 * S);
+        const ret = (x0, y0, x1, y1) => { ctx.strokeRect(X(x0), Y(y0), (x1 - x0) * S, (y1 - y0) * S); };
+        ret(0, 0, 105, 68);
+        ctx.beginPath(); ctx.moveTo(X(52.5), Y(0)); ctx.lineTo(X(52.5), Y(68)); ctx.stroke();
+        ctx.beginPath(); ctx.arc(X(52.5), Y(34), 9.15 * S, 0, Math.PI * 2); ctx.stroke();
+        for (const lado of [0, 1]) {
+            const m = x => lado ? 105 - x : x;           // espelha para o gol da direita
+            ret(Math.min(m(0), m(16.5)), 13.84, Math.max(m(0), m(16.5)), 54.16);
+            ret(Math.min(m(0), m(5.5)), 24.84, Math.max(m(0), m(5.5)), 43.16);
+            ctx.fillStyle = 'rgba(255,255,255,.9)';
+            ctx.beginPath(); ctx.arc(X(m(11)), Y(34), Math.max(1.5, 0.2 * S), 0, Math.PI * 2); ctx.fill();
+            const ang = Math.acos(5.5 / 9.15);
+            ctx.beginPath();
+            if (lado) ctx.arc(X(94), Y(34), 9.15 * S, Math.PI - ang, Math.PI + ang);
+            else ctx.arc(X(11), Y(34), 9.15 * S, -ang, ang);
+            ctx.stroke();
+            // gol com rede
+            const gx0 = lado ? 105 : -2.2, gx1 = lado ? 107.2 : 0;
+            ctx.save();
+            ctx.fillStyle = 'rgba(255,255,255,.08)'; ctx.fillRect(X(gx0), Y(30.34), 2.2 * S, 7.32 * S);
+            ctx.strokeStyle = 'rgba(255,255,255,.25)'; ctx.lineWidth = 1;
+            for (let yy = 30.34; yy <= 37.66; yy += 0.6) { ctx.beginPath(); ctx.moveTo(X(gx0), Y(yy)); ctx.lineTo(X(gx1), Y(yy)); ctx.stroke(); }
+            for (let xx = gx0; xx <= gx1; xx += 0.6) { ctx.beginPath(); ctx.moveTo(X(xx), Y(30.34)); ctx.lineTo(X(xx), Y(37.66)); ctx.stroke(); }
+            ctx.restore();
+            ctx.fillStyle = '#f8fafc';
+            for (const yy of [30.34, 37.66]) { ctx.beginPath(); ctx.arc(X(lado ? 105 : 0), Y(yy), Math.max(2.5, 0.25 * S), 0, Math.PI * 2); ctx.fill(); }
+        }
+    }
+
+    function fases(t) {
+        const e = t - t0;
+        return { p1: clamp(e / T1), pausa: e >= T1 && e < T1 + TP, p2: clamp((e - T1 - TP) / T2), e };
+    }
+
+    function posJogador(j, f) {
+        const de = j.de || j.p, ate = j.ate || j.p;
+        if (varDados || f.p2 === 0) { const q = varDados ? 1 : easeInOut(f.p1); return [lerp(de[0], j.p[0], q), lerp(de[1], j.p[1], q)]; }
+        const q = easeOut(f.p2);
+        return [lerp(j.p[0], ate[0], q), lerp(j.p[1], ate[1], q)];
+    }
+
+    function posBola(f) {
+        const b = cena.bola;
+        if (varDados || f.p2 === 0) { const q = varDados ? 1 : easeInOut(f.p1); return [lerp(b.de[0], b.p[0], q), lerp(b.de[1], b.p[1], q)]; }
+        const pts = [b.p].concat(b.ate.length ? b.ate : [b.p]);
+        const seg = pts.length - 1, q = easeOut(f.p2) * seg, i = Math.min(seg - 1, Math.floor(q)), r = q - i;
+        if (seg === 0) return b.p;
+        return [lerp(pts[i][0], pts[i + 1][0], r), lerp(pts[i][1], pts[i + 1][1], r)];
+    }
+
+    function desenharJogador(j, pos, f, t) {
+        const R = Math.min(17, Math.max(7, 0.85 * S)), x = X(pos[0]), y = Y(pos[1]);
+        const cor = corTime(j.t), caido = j.cai && !varDados && f.p2 > 0.45;
+        ctx.save();
+        ctx.translate(x, y);
+        // sombra
+        ctx.fillStyle = 'rgba(0,0,0,.28)';
+        ctx.beginPath(); ctx.ellipse(R * 0.25, R * 0.35, R * (caido ? 1.6 : 1.05), R * 0.8, 0, 0, Math.PI * 2); ctx.fill();
+        if (j.foco) {
+            const pulso = 0.5 + 0.5 * Math.sin(t / 220);
+            ctx.strokeStyle = `rgba(250,204,21,${0.55 + 0.45 * pulso})`; ctx.lineWidth = 3;
+            ctx.beginPath(); ctx.arc(0, 0, R + 4 + pulso * 2, 0, Math.PI * 2); ctx.stroke();
+        }
+        if (j.toque && (varDados || f.p2 > 0 || f.pausa)) {
+            ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.setLineDash([4, 3]);
+            ctx.beginPath(); ctx.arc(0, 0, R + 9, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+        }
+        ctx.fillStyle = cor; ctx.strokeStyle = 'rgba(0,0,0,.45)'; ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        if (caido) ctx.ellipse(0, 0, R * 1.5, R * 0.7, 0.5, 0, Math.PI * 2); else ctx.arc(0, 0, R, 0, Math.PI * 2);
+        ctx.fill(); ctx.stroke();
+        if (j.t === 'g') { ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(0, 0, R * 0.72, 0, Math.PI * 2); ctx.stroke(); }
+        ctx.fillStyle = claro(cor) ? '#0f172a' : '#fff';
+        ctx.font = `800 ${Math.round(R * 1.05)}px "Barlow Condensed", sans-serif`;
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(j.n, 0, 1);
+        if (j.nome) {
+            ctx.font = `600 ${Math.min(13, Math.max(10, Math.round(R * 0.85)))}px Inter, sans-serif`;
+            const w = ctx.measureText(j.nome).width + 10, h = Math.max(15, R * 1.2);
+            ctx.fillStyle = j.foco ? 'rgba(250,204,21,.92)' : 'rgba(15,23,42,.78)';
+            ctx.beginPath(); ctx.roundRect(-w / 2, R + 4, w, h, 6); ctx.fill();
+            ctx.fillStyle = j.foco ? '#1a1200' : '#f1f5f9';
+            ctx.fillText(j.nome, 0, R + 4 + h / 2 + 1);
+        }
+        ctx.restore();
+    }
+
+    function desenharBola(pos, t) {
+        const r = Math.min(9, Math.max(4, 0.45 * S)), x = X(pos[0]), y = Y(pos[1]);
+        ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.ellipse(x + r * 0.4, y + r * 0.5, r, r * 0.7, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#fff'; ctx.strokeStyle = '#111'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = '#111'; ctx.beginPath(); ctx.arc(x + Math.cos(t / 90) * r * 0.35, y + Math.sin(t / 90) * r * 0.35, r * 0.32, 0, Math.PI * 2); ctx.fill();
+    }
+
+    function desenharContato(t) {
+        if (cena.contato) {
+            const [cx, cy] = cena.contato, x = X(cx), y = Y(cy), R = Math.min(22, Math.max(10, 1.3 * S)) * (1 + 0.12 * Math.sin(t / 150));
+            ctx.save(); ctx.translate(x, y);
+            ctx.fillStyle = 'rgba(250,204,21,.85)'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            for (let i = 0; i < 16; i++) { const a = i * Math.PI / 8, rr = i % 2 ? R * 0.45 : R; ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); }
+            ctx.closePath(); ctx.globalAlpha = 0.75; ctx.fill(); ctx.globalAlpha = 1; ctx.stroke();
+            ctx.restore();
+        }
+        if (cena.mao) {
+            const x = X(cena.mao[0]) + 14, y = Y(cena.mao[1]) - 14, R = Math.min(16, Math.max(11, 1.2 * S));
+            ctx.fillStyle = 'rgba(220,38,38,.8)'; ctx.beginPath(); ctx.arc(x, y, R, 0, Math.PI * 2); ctx.fill();
+            ctx.font = `${Math.round(R * 1.2)}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText('✋', x, y + 1);
+        }
+    }
+
+    function faixa(texto, cor) {
+        ctx.font = `800 ${Math.max(14, Math.min(22, W * 0.045))}px "Barlow Condensed", sans-serif`;
+        const w = ctx.measureText(texto).width + 26, h = Math.max(26, Math.min(34, W * 0.07));
+        ctx.fillStyle = cor; ctx.beginPath(); ctx.roundRect(W / 2 - w / 2, 10, w, h, 8); ctx.fill();
+        ctx.fillStyle = '#0b1220'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(texto, W / 2, 10 + h / 2 + 1);
+    }
+
+    function linhasVar() {
+        if (!varDados || !varDados.linhas) return;
+        const ls = varDados.linhas;
+        if (ls.length === 2) {
+            const xa = X(Math.min(ls[0].x, ls[1].x)), xb = X(Math.max(ls[0].x, ls[1].x));
+            ctx.fillStyle = 'rgba(168,85,247,.22)'; ctx.fillRect(xa, 0, Math.max(1, xb - xa), H);
+        }
+        for (const l of ls) {
+            const x = X(l.x);
+            ctx.strokeStyle = l.t === 'd' ? '#f87171' : '#60a5fa'; ctx.lineWidth = 2.5;
+            ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+            // etiquetas lado a lado: a da linha mais à esquerda fica à esquerda dela
+            ctx.font = '700 11px "JetBrains Mono", monospace'; ctx.textAlign = 'center';
+            const rot = l.t === 'd' ? 'DEFESA' : 'ATAQUE', w = ctx.measureText(rot).width + 10;
+            const outra = ls.find(o => o !== l), aEsquerda = outra ? l.x <= outra.x : false;
+            const lx = aEsquerda ? x - w - 3 : x + 3, yy = 52;
+            ctx.fillStyle = l.t === 'd' ? '#dc2626' : '#2563eb';
+            ctx.beginPath(); ctx.roundRect(lx, yy, w, 17, 4); ctx.fill();
+            ctx.fillStyle = '#fff'; ctx.textBaseline = 'middle'; ctx.fillText(rot, lx + w / 2, yy + 9);
+        }
+    }
+
+    function quadroCampo(t) {
+        enquadrar(vistaAtual(t));
+        gramado(); linhasCampo();
+        const f = fases(t);
+        const congelado = varDados || f.pausa;
+        if (varDados || f.p1 >= 1) desenharContato(t);
+        linhasVar();
+        for (const j of cena.jogadores) if (!j.foco) desenharJogador(j, posJogador(j, f), f, t);
+        for (const j of cena.jogadores) if (j.foco) desenharJogador(j, posJogador(j, f), f, t);
+        desenharBola(posBola(f), congelado ? 0 : t);
+        if (congelado) faixa('⏸ ' + (cena.momento || 'MOMENTO'), '#facc15');
+        else if (f.p2 >= 1) faixa('↺ toque em "Rever" para ver de novo', 'rgba(241,245,249,.85)');
+    }
+
+    /* ================================================================ LINHA DO GOL */
+    function quadroLinha(t) {
+        const larg = varDados ? Math.max(70, Math.abs(cena.c - 6) * 2 + 60) : 230;
+        const centro = varDados ? (cena.c + 6) / 2 : -15;
+        const s = W / larg, cx0 = centro - larg / 2, cy = cena.y || 0;
+        const LX = c => (c - cx0) * s, LY = y => H / 2 + (y - cy) * s;
+        // gramado com textura fixa
+        ctx.fillStyle = '#1f7a3a'; ctx.fillRect(0, 0, W, H);
+        ctx.fillStyle = 'rgba(255,255,255,.035)';
+        for (let i = -20; i < 40; i++) { const c = i * 12; ctx.fillRect(LX(c), 0, 6 * s, H); }
+        // do outro lado da linha
+        const fundoX = LX(12);
+        if (cena.eixo === 'gol') {
+            ctx.fillStyle = '#165c2c'; ctx.fillRect(fundoX, 0, W - fundoX, H);
+            ctx.save(); ctx.beginPath(); ctx.rect(fundoX, 0, W - fundoX, H); ctx.clip();
+            ctx.strokeStyle = 'rgba(255,255,255,.12)'; ctx.lineWidth = 1;
+            const passo = 14 * s;
+            for (let x = fundoX - H; x < W; x += passo) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x + H, H); ctx.stroke(); ctx.beginPath(); ctx.moveTo(x, H); ctx.lineTo(x + H, 0); ctx.stroke(); }
+            ctx.restore();
+        } else {
+            ctx.fillStyle = '#145026'; ctx.fillRect(fundoX, 0, W - fundoX, H);
+        }
+        // a linha (12 cm)
+        ctx.fillStyle = '#f8fafc'; ctx.fillRect(LX(0), 0, 12 * s, H);
+        ctx.fillStyle = 'rgba(0,0,0,.08)';
+        for (let y = 0; y < H; y += 9) ctx.fillRect(LX(0), y, 12 * s, 1);
+        // rótulos
+        ctx.font = '700 11px "JetBrains Mono", monospace'; ctx.textBaseline = 'top';
+        ctx.fillStyle = 'rgba(255,255,255,.75)'; ctx.textAlign = 'left';
+        ctx.fillText('← CAMPO', 10, 44);
+        ctx.textAlign = 'right';
+        ctx.fillText(cena.eixo === 'gol' ? 'DENTRO DO GOL →' : 'FORA DE CAMPO →', W - 10, 44);
+        // bola
+        const e = t - t0, p = varDados ? 1 : easeOut(clamp(e / TL));
+        let bc, by, altura;
+        if (cena.origem === 'quique') { bc = lerp(cena.c + 60, cena.c, p); by = cy - lerp(40, 0, p); altura = Math.sin(p * Math.PI) * 0.6 + (1 - p) * 0.5; }
+        else { bc = lerp(-150, cena.c, p); by = cy + lerp(30, 0, p); altura = 0; }
+        const R = 11 * s, bx = LX(bc), byy = LY(by) - altura * 40 * s;
+        ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.ellipse(LX(bc) + 3 * s, LY(by) + 4 * s, R * (1 - altura * 0.3), R * 0.85, 0, 0, Math.PI * 2); ctx.fill();
+        const rr = R * (1 + altura * 0.35);
+        const grad = ctx.createRadialGradient(bx - rr * 0.35, byy - rr * 0.35, rr * 0.1, bx, byy, rr);
+        grad.addColorStop(0, '#ffffff'); grad.addColorStop(1, '#cbd5e1');
+        ctx.fillStyle = grad; ctx.strokeStyle = '#111'; ctx.lineWidth = Math.max(1, s * 0.6);
+        ctx.beginPath(); ctx.arc(bx, byy, rr, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        const giro = cena.origem === 'rasteira' ? bc / 11 : p * 3;
+        ctx.fillStyle = '#1f2937';
+        for (let i = 0; i < 5; i++) {
+            const a = giro + i * Math.PI * 2 / 5;
+            ctx.beginPath(); ctx.arc(bx + Math.cos(a) * rr * 0.55, byy + Math.sin(a) * rr * 0.55, rr * 0.2, 0, Math.PI * 2); ctx.fill();
+        }
+        ctx.beginPath(); ctx.arc(bx, byy, rr * 0.24, 0, Math.PI * 2); ctx.fill();
+        // VAR: borda da linha e borda da bola
+        if (varDados) {
+            ctx.setLineDash([6, 4]); ctx.lineWidth = 2;
+            ctx.strokeStyle = '#22d3ee'; ctx.beginPath(); ctx.moveTo(LX(12), 0); ctx.lineTo(LX(12), H); ctx.stroke();
+            ctx.strokeStyle = '#facc15'; ctx.beginPath(); ctx.moveTo(LX(cena.c - 11), 0); ctx.lineTo(LX(cena.c - 11), H); ctx.stroke();
+            ctx.setLineDash([]);
+        }
+        // HUD da câmera
+        ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.beginPath(); ctx.roundRect(10, 10, 168, 24, 6); ctx.fill();
+        ctx.fillStyle = Math.floor(t / 500) % 2 ? '#ef4444' : '#7f1d1d';
+        ctx.beginPath(); ctx.arc(22, 22, 4, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#f1f5f9'; ctx.font = '700 11px "JetBrains Mono", monospace'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+        ctx.fillText(cena.eixo === 'gol' ? 'CAM · LINHA DO GOL' : 'CAM · LINHA DE FUNDO', 32, 23);
+        if (p >= 1 && !varDados) faixa('⏸ PONTO MÁXIMO DA BOLA', '#facc15');
+    }
+
+    /* ================================================================ VAR (moldura) */
+    function molduraVar(t) {
+        if (!varDados) return;
+        ctx.strokeStyle = 'rgba(168,85,247,.9)'; ctx.lineWidth = 6; ctx.strokeRect(3, 3, W - 6, H - 6);
+        ctx.fillStyle = '#7c3aed'; ctx.beginPath(); ctx.roundRect(W - 62, 12, 50, 24, 6); ctx.fill();
+        ctx.fillStyle = '#fff'; ctx.font = '800 16px "Barlow Condensed", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('VAR', W - 37, 25);
+    }
+
+    function quadro(t) {
+        if (!rodando) return;
+        if (!W) medir();
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, W, H);
+        if (cena) {
+            if (cena.tipo === 'linha') quadroLinha(t); else quadroCampo(t);
+            molduraVar(t);
+        } else {
+            ctx.fillStyle = '#0b1220'; ctx.fillRect(0, 0, W, H);
+        }
+        requestAnimationFrame(quadro);
+    }
+
+    window.addEventListener('resize', medir);
+    document.addEventListener('visibilitychange', () => {
+        rodando = !document.hidden;
+        if (rodando) requestAnimationFrame(quadro);
+    });
+    medir();
+    requestAnimationFrame(quadro);
+
+    return {
+        carregar(novaCena) {
+            medir(); cena = novaCena; varDados = null; t0 = performance.now();
+            if (cena.tipo === 'campo') cena._vista = vistaFocada(cena);
+        },
+        rever() { varDados = null; t0 = performance.now(); },
+        var(dados) { varDados = dados || {}; varT0 = performance.now(); },
+        semVar() { varDados = null; },
+        _medir: medir,
+    };
+})();
+</script>

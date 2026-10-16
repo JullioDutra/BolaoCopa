@@ -83,3 +83,10 @@ Entrada: `/setezero/` → "Busca pelo Mundial". Hino: por padrão é sintetizado
 - **NPCs do modo carreira**: os "jogadores reais" criados como usuários agora ficam inativos e marcados `[NPC]`. Para ajustar os que já existem:
   `python manage.py ajustar_npcs` (simula) e `python manage.py ajustar_npcs --aplicar` (ou o botão "Separar NPCs" em /gestao/sistema/).
   Só mexe em quem nunca entrou no site, não é staff e não tem participação nem palpites. Os scripts `popular_reais*` já criam NPCs do jeito novo.
+
+## Apito Final (jogo do árbitro)
+App novo `arbitro`: `python manage.py makemigrations arbitro && python manage.py migrate`. Sem seed, sem dependência nova.
+Entrada: `/arbitro/` (card "Apito Final" na Arena X1). Ranking em `/arbitro/ranking/`, súmula de cada partida em `/arbitro/partida/<id>/sumula/`.
+- 10 lances por partida: 4 lances reais de Copas (`arbitro/historicos.py`) e 6 gerados pela regra (impedimento, bola na linha,
+  contato dentro/fora da área, falta e cartão, reinício). Gabarito e pontuação ficam só no servidor.
+- Prêmio: 3 coins por acerto (+30 no 10/10), no máximo 5 partidas premiadas por dia. Conquistas novas: Apito Inicial, Árbitro FIFA e Apito de Ouro.

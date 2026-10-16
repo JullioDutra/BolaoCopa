@@ -1,0 +1,68 @@
+<style>
+/* ===== Apito Final ===== */
+.ap-hero { background: radial-gradient(circle at 88% 15%, rgba(250,204,21,.35), transparent 45%), linear-gradient(135deg,#0b0b0f,#1f2937 60%,#3f3f46); }
+.ap-hero h1 .apito { color:#facc15; }
+.ap-hero::before { background: repeating-linear-gradient(135deg, transparent 0 26px, rgba(250,204,21,.6) 26px 28px); opacity:.08; }
+
+.ap-painel { background:linear-gradient(160deg,#0f172a,#111827 60%,#0b1f17); color:#e2e8f0; border-radius:20px; padding:16px; box-shadow:0 12px 30px rgba(0,0,0,.28); }
+.ap-topo { display:flex; flex-wrap:wrap; align-items:center; gap:8px; justify-content:space-between; margin-bottom:12px; }
+.ap-chip { display:inline-flex; align-items:center; gap:6px; padding:5px 12px; border-radius:999px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12); font-family:var(--fonte-mono); font-size:.78rem; color:#e2e8f0; }
+.ap-chip i { color:#facc15; }
+.ap-chip.fogo i { color:#fb923c; }
+.ap-chip.hist { background:rgba(250,204,21,.16); border-color:rgba(250,204,21,.45); color:#fde68a; }
+.ap-titulo { font-family:var(--fonte-titulo); text-transform:uppercase; letter-spacing:1px; font-size:clamp(1.4rem,4.4vw,1.9rem); line-height:1.05; margin:4px 0 6px; color:#fff; }
+.ap-contexto { color:#cbd5e1; font-size:.95rem; margin-bottom:12px; }
+
+.ap-palco { position:relative; width:100%; aspect-ratio:16/10; max-height:58vh; border-radius:16px; overflow:hidden; background:#0b1220; box-shadow:inset 0 0 0 1px rgba(255,255,255,.08); }
+#cena-arbitro { position:absolute; inset:0; display:block; }
+.ap-ferramentas { position:absolute; left:10px; bottom:10px; display:flex; gap:8px; z-index:2; }
+.ap-ferramentas button { border:0; border-radius:10px; padding:7px 12px; font-family:var(--fonte-titulo); font-weight:700; letter-spacing:.5px; text-transform:uppercase; font-size:.95rem; background:rgba(15,23,42,.82); color:#f1f5f9; backdrop-filter:blur(4px); }
+.ap-ferramentas button:hover { background:rgba(15,23,42,.95); }
+.ap-ferramentas .btn-var { background:#7c3aed; }
+.ap-ferramentas .btn-var:hover { background:#6d28d9; }
+.ap-ferramentas .btn-var[disabled] { opacity:.55; }
+.ap-ferramentas small { font-family:var(--fonte-mono); font-size:.68rem; opacity:.85; text-transform:none; }
+
+.ap-dica { margin-top:10px; border-radius:12px; padding:10px 12px; background:rgba(124,58,237,.18); border:1px solid rgba(168,85,247,.45); color:#ede9fe; font-size:.9rem; }
+.ap-pergunta { font-weight:700; font-size:1.05rem; margin:14px 0 8px; color:#fff; }
+.ap-grupo { margin-bottom:10px; }
+.ap-grupo .rot { font-family:var(--fonte-mono); font-size:.72rem; text-transform:uppercase; letter-spacing:.6px; color:#94a3b8; margin-bottom:6px; }
+.ap-ops { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:8px; }
+.ap-op { border:2px solid rgba(255,255,255,.16); background:rgba(255,255,255,.05); color:#f1f5f9; border-radius:12px; padding:10px 12px; font-weight:600; text-align:center; transition:transform .1s, background .12s, border-color .12s; }
+.ap-op:hover { background:rgba(255,255,255,.1); }
+.ap-op.sel { border-color:#facc15; background:rgba(250,204,21,.16); color:#fff; }
+.ap-op.certa { border-color:#22c55e; background:rgba(34,197,94,.2); }
+.ap-op.errada { border-color:#ef4444; background:rgba(239,68,68,.18); }
+.ap-op[disabled] { cursor:default; }
+.ap-op[disabled]:not(.sel):not(.certa) { opacity:.5; }
+.ap-op.cartao-amarelo::before, .ap-op.cartao-vermelho::before { content:""; display:inline-block; width:10px; height:14px; border-radius:2px; margin-right:7px; vertical-align:-2px; }
+.ap-op.cartao-amarelo::before { background:#facc15; } .ap-op.cartao-vermelho::before { background:#ef4444; }
+
+.ap-tempo { height:6px; border-radius:99px; background:rgba(255,255,255,.1); overflow:hidden; margin:10px 0 12px; }
+.ap-tempo i { display:block; height:100%; width:100%; background:linear-gradient(90deg,#22c55e,#facc15); transform-origin:left; }
+.ap-apitar { width:100%; border:0; border-radius:14px; padding:13px; font-family:var(--fonte-titulo); font-weight:800; letter-spacing:1.5px; text-transform:uppercase; font-size:1.2rem; background:linear-gradient(180deg,#fde68a,#f59e0b); color:#1a1200; }
+.ap-apitar[disabled] { filter:grayscale(.8); opacity:.55; }
+
+.ap-veredito { border-radius:16px; padding:14px; margin-top:12px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.14); }
+.ap-veredito.ok { background:rgba(34,197,94,.14); border-color:rgba(34,197,94,.5); }
+.ap-veredito.erro { background:rgba(239,68,68,.12); border-color:rgba(239,68,68,.45); }
+.ap-veredito.meio { background:rgba(250,204,21,.12); border-color:rgba(250,204,21,.45); }
+.ap-veredito h3 { font-family:var(--fonte-titulo); text-transform:uppercase; letter-spacing:1px; font-size:1.6rem; margin:0; color:#fff; }
+.ap-veredito .pts { font-family:var(--fonte-titulo); font-size:1.9rem; color:#facc15; line-height:1; }
+.ap-veredito .bon { font-family:var(--fonte-mono); font-size:.72rem; color:#cbd5e1; }
+.ap-veredito .certa { margin:8px 0; font-size:.92rem; }
+.ap-veredito .certa b { color:#fff; }
+.ap-veredito p { color:#e2e8f0; font-size:.93rem; margin:0 0 12px; }
+
+/* Súmula */
+.ap-sumula .ar-linha { grid-template-columns:40px 1fr auto; align-items:start; }
+.ap-sumula details summary { cursor:pointer; list-style:none; }
+.ap-sumula details summary::-webkit-details-marker { display:none; }
+.ap-sumula .exp { color:#cbd5e1; font-size:.85rem; margin-top:6px; }
+.ap-marca { width:30px; height:30px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:.9rem; }
+.ap-marca.ok { background:rgba(34,197,94,.22); color:#4ade80; } .ap-marca.erro { background:rgba(239,68,68,.22); color:#f87171; } .ap-marca.meio { background:rgba(250,204,21,.2); color:#facc15; }
+.ap-cats { display:flex; flex-wrap:wrap; gap:8px; }
+.ap-cats span { display:inline-flex; align-items:center; gap:7px; padding:7px 14px; border-radius:999px; background:#0f172a; color:#e2e8f0; font-size:.85rem; }
+.ap-cats span i { color:#facc15; }
+@media (max-width:576px){ .ap-painel{padding:12px;border-radius:16px;} .ap-palco{aspect-ratio:4/3;} .ap-ops{grid-template-columns:1fr 1fr;} }
+</style>

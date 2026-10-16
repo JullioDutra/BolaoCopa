@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+{% block title %}Quem Sou Eu? - Cartolândia{% endblock %}
+{% block content %}
+{% include 'quemsoueu/_estilo.html' %}
+{% include 'partials/voz.html' %}
+
+<div class="qse-palco mt-3" id="qse-palco">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <a href="{% url 'quemsoueu:hub' %}" class="qse-chip text-decoration-none text-white"><i class="fa-solid fa-arrow-left"></i> Sair</a>
+        <span class="qse-chip"><i class="fa-solid {% if partida.modo == 'diario' %}fa-calendar-day{% else %}fa-dumbbell{% endif %}"></i> {{ partida.get_modo_display }}</span>
+        <button type="button" class="qse-voz" data-voz-toggle aria-pressed="false">Voz</button>
+    </div>
+    <div class="qse-silhueta" id="qse-silhueta"><i class="fa-solid fa-user"></i><span class="q">?</span></div>
+    <h1 class="qse-nome" id="qse-nome">Quem sou eu?</h1>
+    <div class="qse-chips">
+        <span class="qse-chip"><i class="fa-solid fa-circle-question"></i> <b id="qse-perg">{{ max_perguntas }}</b> perguntas</span>
+        <span class="qse-chip"><i class="fa-solid fa-bullseye"></i> <b id="qse-palp">3</b> palpites</span>
+        <span class="qse-chip"><i class="fa-solid fa-star"></i> valendo <b id="qse-pts">100</b></span>
+    </div>
+</div>
+
+<div class="qse-painel">
+    <div class="qse-feed" id="qse-feed" aria-live="polite">
+        <div class="qse-vazio" id="qse-vazio"><i class="fa-solid fa-microphone-lines"></i> Estou pensando num craque do futebol.
+            Faça perguntas de <b>sim ou não</b> e descubra quem é com o menor número de perguntas!</div>
+        <div class="qse-digitando" id="qse-digitando"><span></span><span></span><span></span></div>
+    </div>
+
+    <div id="qse-jogo">
+        <form class="qse-form" id="qse-form-perg" autocomplete="off">
+            <input id="qse-pergunta" maxlength="140" placeholder="Ex.: Jogou na Itália?" aria-label="Sua pergunta">
+            <button class="qse-btn" id="qse-btn-perg" type="submit"><i class="fa-solid fa-paper-plane"></i> Perguntar</button>
+        </form>
+        <div class="small mt-1" style="color:#94a3b8" id="qse-ia-info"></div>
+
+        <div class="qse-rot">Perguntas rápidas</div>
+        <div class="qse-rapidas" id="qse-rapidas">
+            {% for id, texto in rapidas %}<button type="button" data-rapida="{{ id }}">{{ texto }}</button>{% endfor %}
+        </div>
+
+        <div class="qse-rot">Dicas <small>(cada uma custa 8 pontos)</small></div>
+        <ul class="qse-dicas" id="qse-dicas"></ul>
+        <button type="button" class="qse-btn sec btn-sm" id="qse-btn-dica"><i class="fa-solid fa-lightbulb"></i> Pedir dica</button>
+
+        <div class="qse-rot">Já sabe? Dê o palpite</div>
+        <form class="qse-form" id="qse-form-palp" autocomplete="off">
+            <input id="qse-palpite" maxlength="60" placeholder="Nome do craque" aria-label="Seu palpite">
+            <button class="qse-btn ouro" type="submit"><i class="fa-solid fa-bullseye"></i> Chutar</button>
+        </form>
+        <div class="qse-erros" id="qse-erros"></div>
+        <div class="text-end mt-2"><button type="button" class="btn btn-link btn-sm text-secondary" id="qse-desistir">Desistir e ver quem era</button></div>
+    </div>
+
+    <div class="qse-fim d-none" id="qse-fim"></div>
+</div>
+
+<script>
+(function () {
+    const csrfToken = '{{ csrf_token }}';
+    const U = {
+        estado: "{% url 'quemsoueu:api_estado' partida.pk %}", rapida: "{% url 'quemsoueu:api_rapida' partida.pk %}",
+        perguntar: "{% url 'quemsoueu:api_perguntar' partida.pk %}", dica: "{% url 'quemsoueu:api_dica' partida.pk %}",
+        palpite: "{% url 'quemsoueu:api_palpite' partida.pk %}", desistir: "{% url 'quemsoueu:api_desistir' partida.pk %}",
+    };
+    const RESP = {sim: 'Sim', nao: 'Não', talvez: 'Mais ou menos', nao_sei: 'Não sei'};
+    const $ = id => document.getElementById(id);
+    const esc = s => { const d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; };
+    let mostradas = 0, ocupado = false;
+
+    async function chamar(url, corpo) {
+        const r = await fetch(url, corpo === undefined ? {} : {method: 'POST', headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken}, body: JSON.stringify(corpo)});
+        return r.json();
+    }
+
+    function msg(html, classe) {
+        const d = document.createElement('div');
+        d.className = 'qse-msg ' + classe; d.innerHTML = html;
+        $('qse-feed').insertBefore(d, $('qse-digitando'));
+        $('qse-feed').scrollTop = $('qse-feed').scrollHeight;
+    }
+
+    function digitando(sim) { $('qse-digitando').style.display = sim ? 'block' : 'none'; if (sim) $('qse-feed').scrollTop = $('qse-feed').scrollHeight; }
+
+    function render(e, falarUltima) {
+        $('qse-vazio').classList.toggle('d-none', e.perguntas.length > 0);
+        for (; mostradas < e.perguntas.length; mostradas++) {
+            const p = e.perguntas[mostradas];
+            msg(esc(p.texto), 'eu');
+            msg(`<span class="quem"><i class="fa-solid fa-microphone"></i> Apresentador</span><span class="selo ${p.resposta}">${RESP[p.resposta] || p.resposta}</span>${esc(p.comentario)}`, 'ele');
+            if (falarUltima && mostradas === e.perguntas.length - 1) Voz.falar(`${RESP[p.resposta]}! ${p.comentario || ''}`, {animado: p.resposta === 'sim'});
+        }
+        $('qse-perg').textContent = e.restam_perguntas;
+        $('qse-palp').textContent = e.restam_palpites;
+        $('qse-pts').textContent = e.pontos_agora;
+        $('qse-dicas').innerHTML = e.dicas.map(d => `<li>${esc(d)}</li>`).join('');
+        $('qse-btn-dica').disabled = !e.tem_dica;
+        $('qse-erros').textContent = e.palpites.length ? 'Não é: ' + e.palpites.join(', ') : '';
+        document.querySelectorAll('#qse-rapidas button').forEach(b => b.disabled = e.restam_perguntas === 0 || e.rapidas_usadas.includes(b.dataset.rapida));
+        const semIa = !e.ia;
+        $('qse-pergunta').disabled = semIa || e.restam_perguntas === 0;
+        $('qse-btn-perg').disabled = semIa || e.restam_perguntas === 0;
+        $('qse-ia-info').innerHTML = semIa
+            ? '<i class="fa-solid fa-plug-circle-xmark"></i> O apresentador com IA está desligado: use as perguntas rápidas e as dicas.'
+            : `<i class="fa-solid fa-robot"></i> Perguntas livres respondidas pela IA · ${e.ia_restantes} restante(s) hoje`;
+        if (e.status !== 'jogando') fim(e);
+    }
+
+    function fim(e) {
+        const r = e.revelado;
+        $('qse-jogo').classList.add('d-none');
+        $('qse-silhueta').classList.add('revelado');
+        $('qse-silhueta').innerHTML = '<i class="fa-solid fa-user-check"></i>';
+        $('qse-nome').textContent = r.nome;
+        const titulo = e.status === 'acertou' ? `<h3 class="qse-resultado" style="color:#4ade80">Acertou! ${r.pontos} pontos</h3>` : `<h3 class="qse-resultado" style="color:#f87171">Era ${esc(r.nome)}!</h3>`;
+        $('qse-fim').innerHTML = `${titulo}
+            <div class="clubes"><b>${esc(r.posicao)}</b> · ${esc(r.pais)} · ${r.clubes.map(esc).join(', ')}</div>
+            <ul class="mt-2">${r.curiosidades.map(c => `<li>${esc(c)}</li>`).join('')}</ul>
+            ${r.premio ? `<div class="mb-2"><i class="fa-solid fa-coins text-warning"></i> +${r.premio} Cartola Coins</div>` : ''}
+            <div class="qse-emojis mb-2">${esc(e.compartilhar.split('\n')[1])}</div>
+            <div class="d-flex flex-wrap gap-2">
+                <button type="button" class="qse-btn ouro" id="qse-share"><i class="fa-solid fa-share-nodes"></i> Compartilhar</button>
+                <a class="qse-btn sec text-decoration-none" href="{% url 'quemsoueu:hub' %}"><i class="fa-solid fa-ranking-star"></i> Ranking</a>
+            </div>`;
+        $('qse-fim').classList.remove('d-none');
+        Voz.falar(e.status === 'acertou' ? `Acertou! Eu sou ${r.nome}!` : `Eu era ${r.nome}!`, {animado: true});
+        $('qse-share').addEventListener('click', async () => {
+            try {
+                if (navigator.share) await navigator.share({text: e.compartilhar + '\n' + location.origin + '{% url "quemsoueu:hub" %}'});
+                else { await navigator.clipboard.writeText(e.compartilhar); $('qse-share').innerHTML = '<i class="fa-solid fa-check"></i> Copiado!'; }
+            } catch (err) { /* compartilhamento cancelado */ }
+        });
+    }
+
+    function erro(d) { msg(`<i class="fa-solid fa-circle-info"></i> ${esc(d.erro || 'Algo deu errado.')}`, 'aviso'); }
+
+    async function acao(url, corpo, comDigitando) {
+        if (ocupado) return null; ocupado = true;
+        if (comDigitando) digitando(true);
+        try {
+            const d = await chamar(url, corpo);
+            if (!d.ok) { erro(d); return null; }
+            if (d.aviso) msg(`<i class="fa-solid fa-hand"></i> ${esc(d.aviso)}`, 'aviso');
+            render(d, true);
+            return d;
+        } catch (e) { erro({}); return null; }
+        finally { ocupado = false; digitando(false); }
+    }
+
+    $('qse-form-perg').addEventListener('submit', async ev => {
+        ev.preventDefault();
+        const t = $('qse-pergunta').value.trim(); if (!t) return;
+        $('qse-pergunta').value = '';
+        if (await acao(U.perguntar, {texto: t}, true) === null) $('qse-pergunta').value = t;
+    });
+    document.querySelectorAll('#qse-rapidas button').forEach(b => b.addEventListener('click', () => acao(U.rapida, {id: b.dataset.rapida}, true)));
+    $('qse-btn-dica').addEventListener('click', () => acao(U.dica, {}));
+    $('qse-form-palp').addEventListener('submit', async ev => {
+        ev.preventDefault();
+        const t = $('qse-palpite').value.trim(); if (!t) return;
+        $('qse-palpite').value = '';
+        const d = await acao(U.palpite, {palpite: t});
+        if (d && d.status === 'jogando') { msg(`<i class="fa-solid fa-xmark"></i> Não sou ${esc(t)}!`, 'aviso'); Voz.falar(`Não sou ${t}!`); }
+    });
+    $('qse-desistir').addEventListener('click', () => { if (confirm('Desistir e ver quem era?')) acao(U.desistir, {}); });
+
+    chamar(U.estado).then(d => render(d, false));
+})();
+</script>
+{% endblock %}

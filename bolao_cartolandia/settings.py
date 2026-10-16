@@ -62,6 +62,10 @@ INSTALLED_APPS = [
     'gestao',       # Painel da staff (usuários, auditoria, sistema)
     'setezero',     # Jogo "7 a 0": simulador do Brasileirão histórico
     'arbitro',      # Jogo "Apito Final": decisões de arbitragem (VAR, impedimento, linha do gol)
+    'ia',           # Cliente da Claude (Anthropic) compartilhado pelos jogos, com limite diário por usuário
+    'quemsoueu',    # Jogo "Quem Sou Eu?": adivinhe o craque perguntando para a IA
+    'craque',       # Jogo "Vida de Craque": carreira narrada pela IA, com coletivas
+    'cabecudos',    # Jogo "Cabeçudos": futebol de cabeção 2D em tempo real
 ]
 
 MIDDLEWARE = [
@@ -248,6 +252,12 @@ WHATSAPP_GRUPO_URL = os.environ.get('WHATSAPP_GRUPO_URL', '')
 # Token secreto do endpoint /palpites/api/sincronizar/<token>/ (para cron externo).
 # Sem a variável definida o endpoint fica desligado.
 SYNC_SECRET_TOKEN = os.environ.get('SYNC_SECRET_TOKEN')
+
+# --- IA dos jogos (Claude, da Anthropic) ---
+# Sem chave, os jogos funcionam com textos prontos. api.anthropic.com está na lista liberada do PythonAnywhere.
+ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY')
+IA_MODELO = os.environ.get('IA_MODELO', 'claude-haiku-5-5')
+IA_LIMITE_DIARIO = int(os.environ.get('IA_LIMITE_DIARIO', '60'))   # chamadas de IA por usuário por dia
 
 # Notícias do feed: modelo de URL de RSS com {q} (busca). Padrão = Google News filtrando o ge.globo.com.
 NOTICIAS_RSS_URL = os.environ.get(

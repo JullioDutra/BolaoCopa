@@ -87,6 +87,15 @@ def api_estado(request, pk):
 
 @acesso_liberado_required
 @require_POST
+def api_cronica(request, pk):
+    p = get_object_or_404(Partida7a0, pk=pk, usuario=request.user)
+    if p.estado.get('status') != 'fim':
+        return JsonResponse({'erro': 'A crônica sai no apito final.'}, status=400)
+    return JsonResponse(servico.cronica(p, request.user))
+
+
+@acesso_liberado_required
+@require_POST
 def api_avancar(request, pk):
     """ Joga alguns minutos. Corpo: {"ate": "intervalo"|"fim"|N, "maximo": minutos, "desde": índice, "ajuste": {...}} """
     p = get_object_or_404(Partida7a0, pk=pk, usuario=request.user)

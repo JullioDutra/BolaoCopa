@@ -13,6 +13,29 @@
     </div>
 </section>
 
+{% include 'partials/voz.html' %}
+<div class="ap-painel mb-3" id="ap-resenha">
+    <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap">
+        <span class="ap-chip"><i class="fa-solid fa-microphone-lines"></i> Comentarista de arbitragem</span>
+        <button type="button" class="ap-chip" data-voz-toggle aria-pressed="false">Voz</button>
+    </div>
+    <div id="ap-resenha-corpo" class="mt-2">
+        <button type="button" class="ap-apitar" id="ap-btn-resenha" style="font-size:1rem"><i class="fa-solid fa-tv"></i> Ouvir a análise do comentarista</button>
+    </div>
+</div>
+<script>
+document.getElementById('ap-btn-resenha').addEventListener('click', async function () {
+    this.disabled = true; this.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> O comentarista está revendo os lances...';
+    const r = await fetch("{% url 'arbitro:api_resenha' partida.pk %}", {method: 'POST', headers: {'X-CSRFToken': '{{ csrf_token }}'}}).then(x => x.json()).catch(() => ({ok: false}));
+    const corpo = document.getElementById('ap-resenha-corpo');
+    if (!r.ok) { this.disabled = false; this.textContent = r.erro || 'Tente de novo.'; return; }
+    corpo.innerHTML = '<h3 class="ap-titulo"></h3><p class="ap-contexto mb-0"></p>';
+    corpo.querySelector('h3').textContent = r.titulo;
+    corpo.querySelector('p').textContent = r.texto;
+    Voz.falar(r.titulo + '. ' + r.texto, {animado: true});
+});
+</script>
+
 <form method="post" action="{% url 'arbitro:nova' %}" class="mb-4">{% csrf_token %}
     <button type="submit" class="ap-apitar"><i class="fa-solid fa-rotate-right"></i> Apitar outra partida</button></form>
 

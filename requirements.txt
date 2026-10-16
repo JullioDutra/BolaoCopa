@@ -1,3 +1,4 @@
+anthropic==1.15.0
 asgiref==3.11.1
 Django==6.0.4
 django-jazzmin==3.0.5

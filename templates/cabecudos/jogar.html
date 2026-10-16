@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+{% block title %}Cabeçudos - {{ rival.nome }}{% endblock %}
+{% block content %}
+{% include 'partials/voz.html' %}
+<style>
+.cb-topo { display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:space-between; margin:14px 0 10px; }
+.cb-chip { display:inline-flex; align-items:center; gap:6px; padding:5px 12px; border-radius:999px; background:#0f172a; color:#e2e8f0; font-family:var(--fonte-mono); font-size:.78rem; border:1px solid rgba(255,255,255,.12); text-decoration:none; }
+.cb-chip i { color:#facc15; }
+.cb-chip.ligada { background:#7c3aed; }
+.cb-palco { position:relative; width:100%; aspect-ratio:1000/560; max-height:78vh; margin:0 auto; border-radius:18px; overflow:hidden; background:#05070c; box-shadow:0 16px 36px rgba(0,0,0,.35); touch-action:none; user-select:none; -webkit-user-select:none; }
+.cb-palco:fullscreen { max-height:none; border-radius:0; }
+#cabecudos { position:absolute; inset:0; display:block; }
+.cb-toque { position:absolute; bottom:10px; display:none; gap:10px; z-index:2; }
+.cb-toque.esq { left:10px; } .cb-toque.dir { right:10px; }
+.cb-toque button { width:clamp(52px,12vw,74px); height:clamp(52px,12vw,74px); border-radius:50%; border:2px solid rgba(255,255,255,.35); background:rgba(15,23,42,.55); color:#fff; font-size:clamp(1.1rem,4vw,1.6rem); touch-action:none; }
+.cb-toque button.ativo { background:rgba(250,204,21,.55); }
+.cb-toque button.super { background:rgba(249,115,22,.55); }
+@media (pointer:coarse) { .cb-toque { display:flex; } }
+.cb-inicio { position:absolute; inset:0; z-index:3; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; color:#fff; background:radial-gradient(circle, rgba(15,23,42,.6), rgba(5,7,12,.92)); padding:16px; }
+.cb-inicio h2 { font-family:var(--fonte-titulo); text-transform:uppercase; letter-spacing:2px; font-size:clamp(1.6rem,6vw,3rem); margin:0; color:#facc15; }
+.cb-inicio .vs { font-family:var(--fonte-titulo); font-size:clamp(1rem,3vw,1.4rem); opacity:.85; margin:4px 0 14px; }
+.cb-jogar { border:0; border-radius:14px; padding:12px 28px; font-family:var(--fonte-titulo); font-weight:800; letter-spacing:1.5px; text-transform:uppercase; font-size:1.3rem; background:linear-gradient(180deg,#fde68a,#f59e0b); color:#1a1200; }
+.cb-ajuda { font-family:var(--fonte-mono); font-size:.72rem; color:#cbd5e1; margin-top:12px; line-height:1.6; }
+.cb-girar { display:none; font-size:.8rem; color:#fde68a; margin-top:8px; }
+@media (orientation:portrait) and (pointer:coarse) { .cb-girar { display:block; } }
+.kbd { display:inline-block; border:1px solid rgba(255,255,255,.35); border-radius:5px; padding:0 5px; margin:0 1px; }
+</style>
+
+<div class="cb-topo">
+    <a class="cb-chip" href="{% url 'cabecudos:hub' %}"><i class="fa-solid fa-arrow-left"></i> Campanha</a>
+    <span class="cb-chip"><i class="fa-solid fa-trophy"></i> Fase {{ fase }}/{{ total_fases }} · {{ rival.palco }}</span>
+    <span class="d-flex gap-2">
+        <button type="button" class="cb-chip" id="cb-som"><i class="fa-solid fa-volume-high"></i> Som</button>
+        <button type="button" class="cb-chip" data-voz-toggle aria-pressed="false">Voz</button>
+        <button type="button" class="cb-chip" id="cb-tela"><i class="fa-solid fa-expand"></i></button>
+    </span>
+</div>
+
+<div class="cb-palco" id="cb-palco">
+    {% include 'cabecudos/_jogo2d.html' %}
+    <div class="cb-toque esq">
+        <button type="button" data-acao="esq" aria-label="Esquerda"><i class="fa-solid fa-caret-left"></i></button>
+        <button type="button" data-acao="dir" aria-label="Direita"><i class="fa-solid fa-caret-right"></i></button>
+    </div>
+    <div class="cb-toque dir">
+        <button type="button" data-acao="super" class="super" aria-label="Super chute">🔥</button>
+        <button type="button" data-acao="pulo" aria-label="Pular"><i class="fa-solid fa-arrow-up"></i></button>
+        <button type="button" data-acao="chute" aria-label="Chutar">👟</button>
+    </div>
+    <div class="cb-inicio" id="cb-inicio">
+        <h2>{{ rival.nome }}</h2>
+        <div class="vs">{{ rival.palco }} · 60 segundos · vença para liberar a próxima fase</div>
+        <button type="button" class="cb-jogar" id="cb-jogar"><i class="fa-solid fa-play"></i> Bola rolando</button>
+        <div class="cb-ajuda">
+            <span class="kbd">←</span><span class="kbd">→</span> ou <span class="kbd">A</span><span class="kbd">D</span> andar ·
+            <span class="kbd">↑</span>/<span class="kbd">W</span>/<span class="kbd">Espaço</span> pular ·
+            <span class="kbd">S</span>/<span class="kbd">K</span> chutar · <span class="kbd">L</span>/<span class="kbd">Shift</span> super chute
+        </div>
+        <div class="cb-girar"><i class="fa-solid fa-mobile-screen-button fa-rotate-90"></i> Gire o celular para jogar melhor</div>
+    </div>
+</div>
+
+<div class="modal fade sz-modal" id="cb-fim" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="cb-fim-titulo" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered"><div class="modal-content text-center"><div class="modal-body p-4 p-md-5">
+        <div class="fim-icone"><i class="fa-solid fa-futbol" id="cb-fim-ico"></i></div>
+        <h2 class="fim-titulo" id="cb-fim-titulo">Fim de jogo</h2>
+        <div class="fim-placar">
+            <div class="lado"><div class="nome">{{ request.user.first_name|default:request.user.username }}</div><div class="pts" id="cb-gp">0</div></div>
+            <div class="x">x</div>
+            <div class="lado"><div class="nome">{{ rival.nome }}</div><div class="pts" id="cb-gc">0</div></div>
+        </div>
+        <h5 class="fim-vencedor" id="cb-fim-msg"></h5>
+        <div class="d-grid gap-2">
+            <a class="btn fim-botao d-none" id="cb-proxima" href="#"><i class="fa-solid fa-forward"></i> Próxima fase</a>
+            <a class="btn fim-botao" id="cb-revanche" href="{% url 'cabecudos:jogar' fase %}"><i class="fa-solid fa-rotate-right"></i> Jogar de novo</a>
+            <a class="btn btn-outline-light" href="{% url 'cabecudos:hub' %}">Voltar para a campanha</a>
+        </div>
+    </div></div></div>
+</div>
+
+<script>
+(function () {
+    const csrfToken = '{{ csrf_token }}';
+    const FASE = {{ fase }};
+    const URL_JOGAR = "{% url 'cabecudos:jogar' 0 %}".replace('/0/', '/');
+    const NOME = '{{ request.user.first_name|default:request.user.username|truncatechars:14|escapejs }}' || 'Você';
+    const $ = id => document.getElementById(id);
+    let token = null, somLigado = true;
+
+    async function post(url, corpo) {
+        const r = await fetch(url, {method: 'POST', headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken}, body: JSON.stringify(corpo)});
+        return r.json();
+    }
+
+    // teclado
+    const MAPA = {ArrowLeft: 'esq', KeyA: 'esq', ArrowRight: 'dir', KeyD: 'dir', ArrowUp: 'pulo', KeyW: 'pulo', Space: 'pulo',
+                  KeyS: 'chute', ArrowDown: 'chute', KeyK: 'chute', KeyL: 'super', ShiftLeft: 'super', ShiftRight: 'super'};
+    const tecla = ligado => e => { const a = MAPA[e.code]; if (!a || Cabecudos.estado === 'parado') return; e.preventDefault(); Cabecudos.entrada(a, ligado); };
+    window.addEventListener('keydown', tecla(true));
+    window.addEventListener('keyup', tecla(false));
+
+    // toque (multi-toque: cada botão segura o próprio ponteiro)
+    document.querySelectorAll('.cb-toque button').forEach(b => {
+        const solta = e => { b.classList.remove('ativo'); Cabecudos.entrada(b.dataset.acao, false); };
+        b.addEventListener('pointerdown', e => { e.preventDefault(); b.setPointerCapture(e.pointerId); b.classList.add('ativo'); Cabecudos.entrada(b.dataset.acao, true); });
+        b.addEventListener('pointerup', solta); b.addEventListener('pointercancel', solta); b.addEventListener('lostpointercapture', solta);
+        b.addEventListener('contextmenu', e => e.preventDefault());
+    });
+
+    $('cb-som').addEventListener('click', () => {
+        somLigado = !somLigado; Cabecudos.som(somLigado);
+        $('cb-som').classList.toggle('ligada', !somLigado);
+        $('cb-som').innerHTML = somLigado ? '<i class="fa-solid fa-volume-high"></i> Som' : '<i class="fa-solid fa-volume-xmark"></i> Mudo';
+    });
+    $('cb-tela').addEventListener('click', () => {
+        const p = $('cb-palco');
+        if (document.fullscreenElement) document.exitFullscreen(); else if (p.requestFullscreen) p.requestFullscreen().then(() => { try { screen.orientation.lock('landscape'); } catch (e) {} }).catch(() => {});
+    });
+    document.addEventListener('fullscreenchange', () => setTimeout(Cabecudos._medir, 50));
+
+    $('cb-jogar').addEventListener('click', async () => {
+        $('cb-jogar').disabled = true;
+        const d = await post("{% url 'cabecudos:api_iniciar' %}", {fase: FASE});
+        if (!d.ok) { alert(d.erro || 'Não foi possível começar.'); $('cb-jogar').disabled = false; return; }
+        token = d.token;
+        $('cb-inicio').style.display = 'none';
+        Voz.falar(`Começa o jogo contra ${d.nome}!`, {animado: true});
+        Cabecudos.iniciar({...d, jogador: NOME, pele_jogador: '#e0ac69'}, {
+            aoGol: (quem, placar) => Voz.falar(quem === 'jog' ? `Goooool! ${NOME}! ${placar[0]} a ${placar[1]}!` : `Gol do ${d.nome}. ${placar[0]} a ${placar[1]}.`, {animado: quem === 'jog'}),
+            aoAcabar: (gp, gc) => terminar(gp, gc),
+        });
+    });
+
+    async function terminar(gp, gc) {
+        $('cb-gp').textContent = gp; $('cb-gc').textContent = gc;
+        const r = await post("{% url 'cabecudos:api_finalizar' %}", {token, gols_pro: gp, gols_contra: gc});
+        const modal = $('cb-fim');
+        if (!r.ok) {
+            $('cb-fim-titulo').textContent = 'Partida não registrada'; $('cb-fim-msg').textContent = r.erro || '';
+        } else {
+            const venceu = r.status === 'vitoria', empate = r.status === 'empate';
+            modal.classList.toggle('venceu', venceu); modal.classList.toggle('perdeu', r.status === 'derrota');
+            $('cb-fim-ico').className = 'fa-solid ' + (venceu ? 'fa-trophy' : empate ? 'fa-handshake' : 'fa-face-frown');
+            const campeao = venceu && r.fase === r.total_fases;
+            $('cb-fim-titulo').textContent = campeao ? 'Campeão do mundo!' : venceu ? 'Vitória!' : empate ? 'Empate' : 'Derrota';
+            $('cb-fim-msg').textContent = (venceu ? (campeao ? 'Você venceu O Fenômeno!' : 'Próxima fase liberada.') : empate ? 'Precisa vencer para avançar.' : 'Bora para a revanche!')
+                + (r.premio ? `  +${r.premio} Cartola Coins` : '');
+            if (venceu && r.fase < r.total_fases) { $('cb-proxima').href = URL_JOGAR + (r.fase + 1) + '/'; $('cb-proxima').classList.remove('d-none'); }
+            Voz.falar(campeao ? 'É campeão! É campeão!' : venceu ? 'Fim de jogo, vitória!' : 'Fim de jogo.', {animado: venceu});
+        }
+        if (document.fullscreenElement) document.exitFullscreen();
+        new bootstrap.Modal(modal).show();
+    }
+})();
+</script>
+{% endblock %}

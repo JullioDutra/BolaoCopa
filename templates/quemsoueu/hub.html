@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% load avatares %}
+{% block title %}Quem Sou Eu? - Cartolândia{% endblock %}
+{% block content %}
+{% include 'quemsoueu/_estilo.html' %}
+<section class="ar-hero qse-hero">
+    <h1><span class="q">Quem Sou Eu?</span> · o craque misterioso</h1>
+    <p>Todo dia um craque diferente. Pergunte o que quiser para o apresentador (ele é uma IA e responde sim ou não) e descubra quem é com o menor número de perguntas.</p>
+    <div class="ar-chips">
+        <span class="ar-chip"><i class="fa-solid fa-fire"></i> sequência: {{ numeros.sequencia }} dia{{ numeros.sequencia|pluralize }}</span>
+        <span class="ar-chip"><i class="fa-solid fa-check"></i> {{ numeros.acertos }}/{{ numeros.jogados }} desafios</span>
+        <span class="ar-chip"><i class="fa-solid fa-star"></i> {{ numeros.pontos }} pts</span>
+    </div>
+</section>
+
+<div class="ar-grid mb-4">
+    <a class="ar-card text-decoration-none" style="--cor:#6d28d9" href="{% url 'quemsoueu:desafio' %}"><span class="ar-tag">DESAFIO DO DIA</span>
+        <div class="ar-ico"><i class="fa-solid fa-user-secret"></i></div>
+        {% if do_dia and do_dia.terminou %}
+        <h3>{% if do_dia.status == 'acertou' %}Acertou! {{ do_dia.pontos }} pts{% else %}Não foi hoje{% endif %}</h3>
+        <p>Volte amanhã para um craque novo. Veja como foi e compartilhe o resultado.</p><span class="ar-btn">Ver resultado</span>
+        {% elif do_dia %}
+        <h3>Em andamento</h3><p>{{ do_dia.perguntas|length }} pergunta(s) feitas. O craque está esperando.</p><span class="ar-btn">Continuar</span>
+        {% else %}
+        <h3>Craque de hoje</h3><p>Até {{ max_perguntas }} perguntas e {{ max_palpites }} palpites. Vale ranking e até 10 Cartola Coins.</p><span class="ar-btn">Jogar</span>
+        {% endif %}
+    </a>
+    <div class="ar-card" style="--cor:#0f766e"><span class="ar-tag">LIVRE</span>
+        <div class="ar-ico"><i class="fa-solid fa-dumbbell"></i></div>
+        <h3>Treino</h3><p>Um craque sorteado entre {{ total_craques }} lendas e estrelas atuais. Sem ranking, para afiar o faro.</p>
+        <form method="post" action="{% url 'quemsoueu:treino' %}">{% csrf_token %}<button class="ar-btn" type="submit"><i class="fa-solid fa-play"></i> Treinar</button></form>
+    </div>
+</div>
+
+<h2 class="ar-secao"><i class="fa-solid fa-calendar-day"></i> Ranking de hoje</h2>
+<div class="ar-tabela mb-4">
+{% for p in ranking_dia %}<div class="ar-linha {% if p.usuario_id == request.user.id %}eu{% endif %}"><span class="pos">{{ forloop.counter }}º</span>
+  <span><span class="nome">{{ p.usuario.first_name|default:p.usuario.username }}</span><span class="d-block sub">{{ p.perguntas|length }} pergunta(s) · {{ p.palpites|length }} erro(s) · {{ p.dicas|length }} dica(s)</span></span>
+  <span class="pts">{{ p.pontos }}</span></div>
+{% empty %}<div class="ar-vazio">Ninguém descobriu o craque de hoje ainda.</div>{% endfor %}</div>
+
+<h2 class="ar-secao"><i class="fa-solid fa-ranking-star"></i> Detetives da temporada</h2>
+<div class="ar-tabela mb-5">
+{% for u in ranking_geral %}<div class="ar-linha {% if u.id == request.user.id %}eu{% endif %}"><span class="pos">{{ forloop.counter }}º</span>
+  <span><span class="nome">{% avatar u.perfil.avatar 24 %} {{ u.first_name|default:u.username }}</span><span class="d-block sub">{{ u.acertos_qse }} craque{{ u.acertos_qse|pluralize }} do dia</span></span>
+  <span class="pts">{{ u.pontos_qse }}</span></div>
+{% empty %}<div class="ar-vazio">O ranking começa com o primeiro acerto.</div>{% endfor %}</div>
+{% endblock %}

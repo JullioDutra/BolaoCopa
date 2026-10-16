@@ -348,3 +348,33 @@ def visao(partida):
             'craque': r['craque'], 'nota_craque': r['nota_craque'], 'modo': partida.modo,
             'penaltis': e.get('penaltis'), 'mata_mata': e.get('mata_mata', False), 'vencedor': engine.vencedor(e),
             'resultado': partida.resultado, 'premio': partida.premio, 'total_eventos': len(e['eventos'])}
+
+
+def cronica(partida, usuario):
+    """ Crônica do narrador depois do jogo: gerada pela IA uma vez e guardada no estado; sem IA, texto pronto. """
+    e = partida.estado
+    if e.get('cronica'):
+        return e['cronica']
+    from ia import narrador
+    v = visao(partida)
+    casa, fora = v['lados']['casa'], v['lados']['fora']
+    importantes = [ev for ev in e['eventos'] if ev['tipo'] in ('gol', 'vermelho', 'penalti_perdido', 'pen_gol', 'pen_erro', 'trave')]
+    linhas = [f"{casa['nome']} ({casa['ano']}) {e['placar']['casa']} x {e['placar']['fora']} {fora['nome']} ({fora['ano']}), "
+              f"jogo do simulador de times históricos do Brasileirão.",
+              f"O usuário comandou o {v['lados'][partida.lado_usuario]['nome']}."]
+    if v.get('penaltis'):
+        linhas.append(f"Pênaltis: {v['penaltis']['casa']} x {v['penaltis']['fora']}.")
+    linhas += [f"{ev['min']}' {ev['texto']}" for ev in importantes[:14]]
+    if v.get('craque'):
+        linhas.append(f"Craque do jogo: {v['craque']} (nota {v['nota_craque']:.1f}).")
+    texto = narrador.cronica(usuario, '\n'.join(linhas))
+    if texto is None:
+        gols = [ev for ev in e['eventos'] if ev['tipo'] == 'gol']
+        resumo = f"{casa['nome']} {e['placar']['casa']} x {e['placar']['fora']} {fora['nome']}."
+        destaque = f" {len(gols)} gol{'s' if len(gols) != 1 else ''} na conta" + (f", e o craque foi {v['craque']}." if v.get('craque') else '.')
+        texto = {'titulo': 'Fim de papo!', 'texto': f"Termina o jogo! {resumo}{destaque} Que partida, minha gente!", 'fonte': 'pronta'}
+    else:
+        e['cronica'] = texto
+        partida.estado = e
+        partida.save(update_fields=['estado'])
+    return texto

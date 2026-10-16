@@ -561,3 +561,29 @@ class DificuldadeMundialTests(TestCase):
                 valores += [dados.obter(k)['overall'] for k in d.estado['rivais']]
             return statistics.mean(valores)
         self.assertGreater(forca_media('mundial'), forca_media('brasil') + 3)
+
+
+class CronicaTests(TestCase):
+    def setUp(self):
+        self.u = User.objects.create_user('cronista', password='x')
+        self.client.force_login(self.u)
+
+    def test_cronica_so_no_fim_com_ia_guardada_e_sem_ia_pronta(self):
+        from unittest import mock
+        from django.test import override_settings
+        p = servico.criar_partida(self.u, 'amistoso', 'fla-2019', 'pal-2021')
+        url = reverse('setezero:api_cronica', args=[p.pk])
+        self.assertEqual(self.client.post(url).status_code, 400)
+        while p.estado['status'] != 'fim':          # o avançar pausa no intervalo
+            servico.avancar(p, 'fim')
+        with override_settings(ANTHROPIC_API_KEY=None):
+            c = self.client.post(url).json()
+        self.assertEqual(c['fonte'], 'pronta')
+        self.assertIn(str(p.gols_usuario), c['texto'])
+        with override_settings(ANTHROPIC_API_KEY='teste'), \
+                mock.patch('ia.cliente.gerar_json', return_value={'titulo': 'Show no Maracanã', 'texto': 'Gooool! Que jogo!'}) as g:
+            c = self.client.post(url).json()
+            self.assertEqual((c['titulo'], c['fonte']), ('Show no Maracanã', 'ia'))
+            self.client.post(url)                       # segunda vez vem do estado, sem nova chamada
+        self.assertEqual(g.call_count, 1)
+        self.assertIn('FATOS:', g.call_args.args[2])

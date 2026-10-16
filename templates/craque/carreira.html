@@ -1,0 +1,184 @@
+{% extends 'base.html' %}
+{% block title %}{{ c.estado.nome }} - Vida de Craque{% endblock %}
+{% block content %}
+{% include 'craque/_estilo.html' %}
+{% include 'partials/voz.html' %}
+
+<div class="vc-grid">
+    <aside>
+        <div class="vc-carta" id="vc-carta">
+            <div class="vc-topo">
+                <div class="vc-ovr"><span id="vc-ovr">--</span><small id="vc-pos">---</small></div>
+                <div class="vc-camisa" id="vc-camisa">10</div>
+            </div>
+            <div class="vc-nome" id="vc-nome">{{ c.estado.nome }}</div>
+            <div class="vc-sub" id="vc-sub"></div>
+            <div class="vc-barras" id="vc-atrib"></div>
+        </div>
+        <div class="vc-medidores" id="vc-med"></div>
+        <div class="vc-temp" id="vc-temp"></div>
+        <div class="d-flex gap-2 mt-2">
+            <a href="{% url 'craque:hub' %}" class="vc-voz text-decoration-none"><i class="fa-solid fa-arrow-left"></i> Hub</a>
+            <button type="button" class="vc-voz" data-voz-toggle aria-pressed="false">Voz</button>
+        </div>
+    </aside>
+
+    <main>
+        <div class="vc-palco" id="vc-palco" aria-live="polite"></div>
+        <div class="vc-jornal" id="vc-jornal"></div>
+    </main>
+</div>
+
+<script>
+(function () {
+    const csrfToken = '{{ csrf_token }}';
+    const U = {
+        estado: "{% url 'craque:api_estado' c.pk %}", decidir: "{% url 'craque:api_decidir' c.pk %}",
+        coletiva: "{% url 'craque:api_coletiva' c.pk %}", seguir: "{% url 'craque:api_seguir' c.pk %}",
+    };
+    const $ = id => document.getElementById(id);
+    const esc = s => { const d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; };
+    const SIGLA = {Atacante: 'ATA', Meia: 'MEI', Volante: 'VOL', Lateral: 'LAT', Zagueiro: 'ZAG'};
+    const MEDS = [['forma', 'Forma', 'fa-heart-pulse'], ['moral', 'Moral', 'fa-face-smile'], ['fama', 'Fama', 'fa-star'], ['torcida', 'Torcida', 'fa-people-group'], ['tecnico', 'Técnico', 'fa-clipboard-user']];
+    let V = null, ocupado = false, ultimoJogo = null;
+
+    async function chamar(url, corpo) {
+        const r = await fetch(url, corpo === undefined ? {} : {method: 'POST', headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken}, body: JSON.stringify(corpo)});
+        return r.json();
+    }
+    const barra = (rot, v, max = 99, classe = '') => `<div class="vc-barra"><span>${rot}</span><i><b class="${classe}" style="width:${Math.round(100 * v / max)}%"></b></i><span>${v}</span></div>`;
+    const chips = mudou => mudou && mudou.length ? `<div class="vc-mudou">${mudou.map(m => `<span class="${m.delta > 0 ? 'mais' : 'menos'}">${m.delta > 0 ? '+' : ''}${m.delta} ${esc(m.rotulo)}</span>`).join('')}</div>` : '';
+
+    function lateral() {
+        $('vc-carta').style.setProperty('--cor', V.cor);
+        $('vc-ovr').textContent = V.overall; $('vc-pos').textContent = SIGLA[V.posicao] || V.posicao;
+        $('vc-camisa').textContent = V.numero;
+        $('vc-sub').textContent = `${V.clube} · ${V.idade} anos`;
+        $('vc-atrib').innerHTML = barra('Técnica', V.atrib.tecnica) + barra('Físico', V.atrib.fisico) + barra('Mental', V.atrib.mental);
+        $('vc-med').innerHTML = MEDS.map(([k, r, i]) => barra(`<i class="fa-solid ${i}"></i> ${r}`, V.med[k], 100, V.med[k] < 30 ? 'baixo' : '')).join('');
+        const t = V.tempo;
+        $('vc-temp').innerHTML = `<div class="d-flex justify-content-between mb-2"><b>Temporada ${Math.min(V.temporada, 99)}</b><span class="text-secondary">rodada ${V.rodada}/${V.rodadas}</span></div>
+            <div class="grade"><div><div class="num">${t.gols}</div><small>gols</small></div><div><div class="num">${t.assist}</div><small>assist.</small></div>
+            <div><div class="num">${t.media == null ? '-' : String(t.media).replace('.', ',')}</div><small>média</small></div><div><div class="num">${t.v}-${t.e}-${t.d}</div><small>V-E-D</small></div></div>
+            <div class="mt-2 text-secondary small">Carreira: ${V.carreira.gols} gols · ${V.carreira.titulos.length} título(s) · ${V.pontuacao} pts de lenda</div>`;
+    }
+
+    function etiqueta(fonte, texto, icone) { return `<span class="vc-etiqueta ${fonte === 'ia' ? 'ia' : ''}"><i class="fa-solid ${icone}"></i> ${texto}${fonte === 'ia' ? ' · IA' : ''}</span>`; }
+
+    function palco() {
+        const p = V.pendente, el = $('vc-palco');
+        let html = '';
+        if (ultimoJogo) html += relatorioJogo(ultimoJogo);
+        if (p.tipo === 'cena') {
+            html += `${etiqueta(p.fonte, 'Fora de campo', 'fa-mobile-screen')}<div class="vc-texto">${esc(p.texto)}</div>
+                <div class="vc-opcoes">${p.opcoes.map((o, i) => `<button type="button" class="vc-opcao" data-op="${i}"><span class="n">${i + 1}</span>${esc(o.texto)}</button>`).join('')}</div>`;
+        } else if (p.tipo === 'coletiva') {
+            html += `<div class="vc-coletiva">${etiqueta(p.fonte, 'Entrevista coletiva', 'fa-microphone')}
+                <div class="vc-microfones mt-2">🎙️🎙️🎙️</div>
+                <div class="vc-jornalista"><div class="av"><i class="fa-solid fa-user-pen"></i></div><div><b>${esc(p.jornalista)}</b><div class="small text-secondary">${esc(p.veiculo)}</div></div></div>
+                <div class="vc-pergunta">${esc(p.pergunta)}</div>
+                ${V.ia ? `<textarea id="vc-resp" maxlength="400" placeholder="Responda com as suas palavras. O tom da resposta mexe com a fama, a torcida e o técnico."></textarea>
+                    <div class="d-flex justify-content-between align-items-center mt-2"><small class="text-secondary" id="vc-cont">0/400</small><button type="button" class="vc-btn" id="vc-enviar"><i class="fa-solid fa-paper-plane"></i> Responder</button></div>
+                    <div class="small text-secondary mt-3">ou use uma resposta pronta:</div>` : '<div class="small text-secondary mt-3">Escolha sua resposta:</div>'}
+                <div class="vc-prontas">${V.respostas_prontas.map((r, i) => `<button type="button" data-pronta="${i}">${esc(r)}</button>`).join('')}</div></div>`;
+            Voz.falar(`${p.jornalista}, ${p.veiculo}: ${p.pergunta}`);
+        } else if (p.tipo === 'fim_temporada' || p.tipo === 'aposentadoria') {
+            const r = p.resumo;
+            html += `${etiqueta('', `Fim da temporada ${r.temporada}`, 'fa-flag-checkered')}
+                <h2 class="vc-nome mt-2" style="color:#fde68a">${esc(r.colocacao)}</h2>
+                <div class="vc-resumo"><div><b>${r.jogos}</b><small>jogos</small></div><div><b>${r.gols}</b><small>gols</small></div><div><b>${r.assist}</b><small>assist.</small></div><div><b>${String(r.media).replace('.', ',')}</b><small>média</small></div></div>
+                ${r.premios_nomes.length || r.titulos.length ? `<div class="vc-premios mb-2">${r.titulos.map(t => `<span>🏆 ${esc(t)}</span>`).join('')}${r.premios_nomes.map(t => `<span>🏅 ${esc(t)}</span>`).join('')}</div>` : ''}
+                ${r.premio ? `<div class="mb-2"><i class="fa-solid fa-coins text-warning"></i> +${r.premio} Cartola Coins</div>` : ''}`;
+            if (p.tipo === 'fim_temporada') {
+                html += `<div class="mt-3"><b>Propostas para a próxima temporada</b></div>
+                    <div class="vc-propostas">${p.propostas.map(cl => `<button type="button" class="vc-proposta" data-clube="${esc(cl)}" style="--cor:${(V.cores || {})[cl] || '#334155'}">${esc(cl)}<small>quer te contratar</small></button>`).join('') || '<div class="text-secondary">Nenhuma proposta desta vez.</div>'}</div>
+                    <button type="button" class="vc-btn sec w-100 mt-3" data-clube=""><i class="fa-solid fa-house"></i> Ficar no ${esc(V.clube)}</button>`;
+            } else {
+                html += `<p class="mt-2">Foram ${r.temporada} temporadas. Hora de pendurar as chuteiras e entrar para a história.</p><button type="button" class="vc-btn w-100" data-clube=""><i class="fa-solid fa-landmark"></i> Pendurar as chuteiras</button>`;
+            }
+        } else if (p.tipo === 'encerrada') {
+            html += `${etiqueta('', 'Carreira encerrada', 'fa-landmark')}<h2 class="vc-nome mt-2" style="color:#fde68a">${esc(V.nome)}</h2>
+                <p>${V.carreira.jogos} jogos, ${V.carreira.gols} gols, ${V.carreira.assist} assistências, ${V.carreira.titulos.length} título(s) e ${V.carreira.premios.length} prêmio(s) individuais.<br>Clubes: ${V.carreira.clubes.map(esc).join(' → ')}.</p>
+                <div class="vc-ovr" style="color:#facc15">${V.pontuacao}<small>pontos de lenda</small></div>
+                <a class="vc-btn d-inline-block mt-3 text-decoration-none" href="{% url 'craque:hub' %}"><i class="fa-solid fa-user-plus"></i> Começar outra carreira</a>`;
+        } else {
+            html += rolando();
+        }
+        el.innerHTML = html;
+        el.querySelectorAll('.vc-opcao').forEach(b => b.addEventListener('click', () => decidir(+b.dataset.op)));
+        el.querySelectorAll('[data-pronta]').forEach(b => b.addEventListener('click', () => coletiva({pronta: +b.dataset.pronta})));
+        el.querySelectorAll('[data-clube]').forEach(b => b.addEventListener('click', () => seguir(b.dataset.clube)));
+        const resp = $('vc-resp');
+        if (resp) {
+            resp.addEventListener('input', () => $('vc-cont').textContent = `${resp.value.length}/400`);
+            $('vc-enviar').addEventListener('click', () => resp.value.trim() && coletiva({texto: resp.value.trim()}));
+        }
+        if (ultimoJogo) digitar(ultimoJogo.texto);
+    }
+
+    function rolando() {
+        return `<div class="vc-rolando"><div class="vc-bola">⚽</div><div class="vc-relogio" id="vc-relogio">0'</div><div class="text-secondary">Bola rolando...</div></div>`;
+    }
+
+    function relatorioJogo(j) {
+        const f = j.fatos;
+        const resultado = {V: 'Vitória', E: 'Empate', D: 'Derrota'}[f.resultado];
+        return `<div class="mb-3">${etiqueta(j.fonte, `Rodada ${f.rodada}`, 'fa-futbol')}
+            <div class="vc-placar">${esc(j.placar).replace(/ (\d+) x (\d+) /, ' <span class="g">$1</span> x <span class="g">$2</span> ')}</div>
+            <div class="d-flex justify-content-between small"><b class="vc-resultado ${f.resultado}">${resultado}</b><span>${f.minutos ? `${f.minutos}' · nota ${String(f.nota).replace('.', ',')}` : 'não saiu do banco'}</span></div>
+            <div class="vc-texto vc-cursor" id="vc-narracao"></div>${chips(f.mudou)}<hr style="opacity:.15"></div>`;
+    }
+
+    function digitar(texto) {
+        const alvo = $('vc-narracao'); if (!alvo) return;
+        Voz.falar(texto, {animado: ultimoJogo.fatos.gols > 0});
+        let i = 0;
+        const passo = () => { alvo.textContent = texto.slice(0, i); i += 2; if (i <= texto.length + 1) setTimeout(passo, 14); else alvo.classList.remove('vc-cursor'); };
+        passo();
+        ultimoJogo = null;
+    }
+
+    function jornal() {
+        const tipos = {jogo: 'Jogo', decisao: 'Fora de campo', coletiva: 'Coletiva', temporada: 'Temporada', marco: 'Carreira'};
+        $('vc-jornal').innerHTML = `<h2 class="ar-secao"><i class="fa-solid fa-newspaper"></i> Jornal do craque</h2>` + V.historico.map(h => {
+            let corpo = '';
+            if (h.tipo === 'jogo') corpo = `<h4>${esc(h.titulo)}</h4><p><b>${esc(h.placar)}</b> · ${esc(h.texto)}</p>`;
+            else if (h.tipo === 'decisao') corpo = `<p>${esc(h.cena)}</p><h4>→ ${esc(h.texto)}</h4>${chips(h.mudou)}`;
+            else if (h.tipo === 'coletiva') corpo = `<h4>“${esc(h.titulo)}”</h4><p><i>${esc(h.jornalista)}: ${esc(h.pergunta)}</i></p><p class="mt-1">— ${esc(h.resposta)}</p><p class="mt-1"><b>Tom: ${esc(h.tom)}</b> (${h.qualidade}/10)${h.texto ? ' · ' + esc(h.texto) : ''}</p>${chips(h.mudou)}`;
+            else corpo = `<h4>${esc(h.titulo)}</h4><p>${esc(h.texto)}</p>`;
+            return `<article class="vc-materia ${h.tipo}"><div class="tipo">${tipos[h.tipo] || ''}</div>${corpo}</article>`;
+        }).join('');
+    }
+
+    function render(d) { V = d; lateral(); palco(); jornal(); }
+
+    async function acao(url, corpo, comJogo) {
+        if (ocupado) return; ocupado = true;
+        let rel = null;
+        if (comJogo) {
+            $('vc-palco').innerHTML = rolando();
+            let m = 0; rel = setInterval(() => { m = Math.min(90, m + 7); const r = $('vc-relogio'); if (r) r.textContent = m + "'"; }, 180);
+        } else {
+            $('vc-palco').querySelectorAll('button, textarea').forEach(b => b.disabled = true);
+        }
+        try {
+            const d = await chamar(url, corpo);
+            if (!d.ok) { alert(d.erro || 'Algo deu errado.'); const e = await chamar(U.estado); render(e); return; }
+            ultimoJogo = comJogo ? d.historico.find(h => h.tipo === 'jogo') || null : null;
+            render(d);
+            window.scrollTo({top: $('vc-palco').getBoundingClientRect().top + window.scrollY - 80, behavior: 'smooth'});
+        } catch (e) { alert('Falha de conexão.'); }
+        finally { clearInterval(rel); ocupado = false; }
+    }
+    const decidir = op => acao(U.decidir, {opcao: op}, true);
+    const coletiva = corpo => acao(U.coletiva, corpo, false);
+    const seguir = clube => acao(U.seguir, {clube: clube}, false);
+
+    chamar(U.estado).then(d => {
+        render(d);
+        const aguardar = () => chamar(U.estado).then(e => { render(e); if (e.pendente.tipo === 'processando') setTimeout(aguardar, 5000); });
+        if (d.pendente.tipo === 'processando') setTimeout(aguardar, 5000);
+    });
+})();
+</script>
+{% endblock %}

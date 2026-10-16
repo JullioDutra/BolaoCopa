@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block title %}Vida de Craque - Cartolândia{% endblock %}
+{% block content %}
+{% include 'craque/_estilo.html' %}
+{% if messages %}{% for m in messages %}<div class="alert alert-{% if m.tags == 'error' %}danger{% else %}{{ m.tags|default:'info' }}{% endif %} mt-3">{{ m }}</div>{% endfor %}{% endif %}
+<section class="ar-hero vc-hero">
+    <h1><span class="ouro">Vida de Craque</span> · do sub-17 ao Hall da Fama</h1>
+    <p>Crie seu jogador e viva a carreira: decisões fora de campo, jogos narrados, coletivas em que você responde com suas palavras e propostas da Europa. A imprensa e os personagens são movidos por IA.</p>
+    <div class="ar-chips">
+        <span class="ar-chip"><i class="fa-solid fa-calendar"></i> {{ max_temporadas }} temporadas de carreira</span>
+        <span class="ar-chip"><i class="fa-solid fa-microphone"></i> coletivas com resposta livre</span>
+        <span class="ar-chip"><i class="fa-solid fa-coins"></i> até 50 coins por temporada</span>
+    </div>
+</section>
+
+{% if ativa %}
+<div class="ar-grid mb-4">
+    <a class="ar-card text-decoration-none" style="--cor:#c2410c" href="{% url 'craque:carreira' ativa.pk %}"><span class="ar-tag">EM ANDAMENTO</span>
+        <div class="ar-ico"><i class="fa-solid fa-shirt"></i></div>
+        <h3>{{ ativa.estado.nome }}</h3>
+        <p>{{ ativa.estado.posicao }} do {{ ativa.estado.clube }} · {{ ativa.estado.idade }} anos · temporada {{ ativa.estado.temporada }}, rodada {{ ativa.estado.rodada }}/10</p>
+        <span class="ar-btn">Voltar para a carreira</span></a>
+</div>
+{% else %}
+<h2 class="ar-secao"><i class="fa-solid fa-user-plus"></i> Crie seu craque</h2>
+<form method="post" action="{% url 'craque:nova' %}" class="vc-form mb-4">{% csrf_token %}
+    <div class="row g-3">
+        <div class="col-md-6"><label for="vc-nome" class="d-block">Nome do jogador</label><input id="vc-nome" name="nome" maxlength="30" required placeholder="Ex.: Joãozinho Matador"></div>
+        <div class="col-6 col-md-3"><label for="vc-pos" class="d-block">Posição</label>
+            <select id="vc-pos" name="posicao">{% for p in posicoes %}<option {% if p == 'Atacante' %}selected{% endif %}>{{ p }}</option>{% endfor %}</select></div>
+        <div class="col-6 col-md-3"><label for="vc-num" class="d-block">Camisa</label><input id="vc-num" name="numero" type="number" min="1" max="99" value="10"></div>
+        <div class="col-12"><label class="d-block">Clube que vai te revelar <small class="text-secondary">(clube maior = mais difícil virar titular)</small></label>
+            <div class="vc-clubes">{% for nome, forca, cor in clubes %}
+                <label class="vc-clube" style="--cor:{{ cor }}"><input type="radio" name="clube" value="{{ nome }}" {% if forloop.first %}checked{% endif %}><span class="faixa"></span>{{ nome }}<small>força {{ forca }}</small></label>
+            {% endfor %}</div></div>
+        <div class="col-12"><button type="submit" class="vc-btn w-100"><i class="fa-solid fa-file-signature"></i> Assinar o primeiro contrato</button></div>
+    </div>
+</form>
+{% endif %}
+
+<h2 class="ar-secao" id="hall"><i class="fa-solid fa-landmark"></i> Hall da Fama</h2>
+<div class="ar-tabela mb-4">
+{% for c in hall %}<div class="ar-linha {% if c.usuario_id == request.user.id %}eu{% endif %}"><span class="pos">{{ forloop.counter }}º</span>
+  <span><span class="nome">{{ c.estado.nome }} <small class="text-secondary">({{ c.usuario.first_name|default:c.usuario.username }})</small></span>
+  <span class="d-block sub">{{ c.estado.posicao }} · {{ c.estado.carreira.gols }} gols · {{ c.estado.carreira.titulos|length }} título(s) · {{ c.estado.carreira.clubes|join:", " }}{% if c.status == 'ativa' %} · em atividade{% endif %}</span></span>
+  <span class="pts">{{ c.pontuacao }}</span></div>
+{% empty %}<div class="ar-vazio">Nenhuma lenda ainda. A sua pode ser a primeira.</div>{% endfor %}</div>
+
+{% if encerradas %}
+<h2 class="ar-secao"><i class="fa-solid fa-box-archive"></i> Minhas carreiras encerradas</h2>
+<div class="ar-tabela mb-5">{% for c in encerradas %}
+  <a class="ar-linha text-decoration-none" href="{% url 'craque:carreira' c.pk %}"><span class="pos"><i class="fa-solid fa-shirt"></i></span>
+  <span><span class="nome">{{ c.estado.nome }}</span><span class="d-block sub">{{ c.estado.carreira.clubes|join:" → " }}</span></span><span class="pts">{{ c.pontuacao }}</span></a>
+{% endfor %}</div>
+{% endif %}
+{% endblock %}

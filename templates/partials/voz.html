@@ -1,0 +1,52 @@
+{% comment %}
+Voz dos jogos (narrador, apresentador): síntese de fala do próprio navegador, em pt-BR, sem custo nem API.
+Uso: incluir este parcial e chamar Voz.falar('Gooool!', {animado: true}); botão liga/desliga: <button data-voz-toggle>.
+{% endcomment %}
+<script>
+window.Voz = window.Voz || (function () {
+    const CHAVE = 'cartolandia.voz';
+    const suportado = 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
+    let ativo = false, vozBr = null;
+    try { ativo = localStorage.getItem(CHAVE) === '1'; } catch (e) { /* navegação privada: começa desligado */ }
+
+    function escolherVoz() {
+        if (!suportado) return;
+        const vozes = speechSynthesis.getVoices();
+        vozBr = vozes.find(v => v.lang === 'pt-BR' && /google|luciana|francisca|natural/i.test(v.name))
+             || vozes.find(v => v.lang === 'pt-BR') || vozes.find(v => (v.lang || '').startsWith('pt')) || null;
+    }
+    if (suportado) { escolherVoz(); speechSynthesis.onvoiceschanged = escolherVoz; }
+
+    function atualizarBotoes() {
+        document.querySelectorAll('[data-voz-toggle]').forEach(b => {
+            b.classList.toggle('ligada', ativo);
+            b.setAttribute('aria-pressed', ativo ? 'true' : 'false');
+            b.innerHTML = ativo ? '<i class="fa-solid fa-volume-high"></i> Voz ligada' : '<i class="fa-solid fa-volume-xmark"></i> Voz desligada';
+            if (!suportado) { b.disabled = true; b.title = 'Seu navegador não tem voz sintetizada'; }
+        });
+    }
+
+    function falar(texto, opcoes) {
+        if (!ativo || !suportado || !texto) return;
+        const o = opcoes || {};
+        const u = new SpeechSynthesisUtterance(String(texto).replace(/<[^>]+>/g, ''));
+        u.lang = 'pt-BR'; if (vozBr) u.voice = vozBr;
+        u.rate = o.animado ? 1.12 : 1.02; u.pitch = o.animado ? 1.15 : 1;
+        if (o.interromper !== false) speechSynthesis.cancel();
+        speechSynthesis.speak(u);
+    }
+
+    function alternar() {
+        ativo = !ativo;
+        try { localStorage.setItem(CHAVE, ativo ? '1' : '0'); } catch (e) { /* sem armazenamento: vale só nesta página */ }
+        if (!ativo && suportado) speechSynthesis.cancel();
+        atualizarBotoes();
+        if (ativo) falar('Voz ligada!');
+    }
+
+    document.addEventListener('click', e => { if (e.target.closest('[data-voz-toggle]')) alternar(); });
+    document.addEventListener('DOMContentLoaded', atualizarBotoes);
+    setTimeout(atualizarBotoes, 0);
+    return { falar, alternar, get ativo() { return ativo; }, suportado };
+})();
+</script>

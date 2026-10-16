@@ -1,0 +1,62 @@
+<style>
+/* ===== Quem Sou Eu? ===== */
+.qse-hero { background: radial-gradient(circle at 50% -10%, rgba(168,85,247,.45), transparent 55%), linear-gradient(135deg,#0b0820,#1e1b4b 60%,#312e81); }
+.qse-hero h1 .q { color:#facc15; }
+.qse-palco { position:relative; border-radius:22px; overflow:hidden; color:#f1f5f9; padding:22px 16px 18px; text-align:center;
+  background: radial-gradient(ellipse at 50% 0%, rgba(250,204,21,.28), transparent 50%), radial-gradient(circle at 50% 120%, rgba(124,58,237,.55), transparent 60%), #0b0820;
+  box-shadow:0 14px 34px rgba(11,8,32,.45); }
+.qse-palco::before { content:""; position:absolute; inset:0; pointer-events:none; opacity:.08;
+  background: repeating-linear-gradient(0deg, rgba(255,255,255,.6) 0 1px, transparent 1px 3px); }
+.qse-palco > * { position:relative; }
+.qse-silhueta { width:118px; height:118px; margin:0 auto 10px; border-radius:50%; display:flex; align-items:center; justify-content:center; position:relative;
+  background:radial-gradient(circle at 50% 35%, #1f1b3a, #05040f); box-shadow:0 0 0 4px rgba(250,204,21,.35), 0 0 40px rgba(250,204,21,.25); }
+.qse-silhueta i { font-size:4.2rem; color:#0b0820; filter:drop-shadow(0 0 1px rgba(250,204,21,.6)); }
+.qse-silhueta .q { position:absolute; right:-4px; top:-4px; width:38px; height:38px; border-radius:50%; background:#facc15; color:#1a1200;
+  font-family:var(--fonte-titulo); font-weight:800; font-size:1.6rem; display:flex; align-items:center; justify-content:center; animation:qsePulso 1.6s infinite; }
+.qse-silhueta.revelado { background:radial-gradient(circle at 50% 35%, #fde68a, #f59e0b); box-shadow:0 0 0 4px #fde68a, 0 0 60px rgba(250,204,21,.6); }
+.qse-silhueta.revelado i { color:#1a1200; filter:none; }
+@keyframes qsePulso { 50% { transform:scale(1.12); } }
+.qse-nome { font-family:var(--fonte-titulo); text-transform:uppercase; letter-spacing:1.5px; font-size:clamp(1.6rem,6vw,2.4rem); color:#fff; line-height:1; margin:0; }
+.qse-chips { display:flex; flex-wrap:wrap; justify-content:center; gap:8px; margin-top:12px; }
+.qse-chip { display:inline-flex; align-items:center; gap:6px; padding:5px 12px; border-radius:999px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.14); font-family:var(--fonte-mono); font-size:.76rem; }
+.qse-chip i { color:#facc15; }
+.qse-voz { border:1px solid rgba(255,255,255,.25); background:rgba(0,0,0,.25); color:#e2e8f0; border-radius:999px; padding:5px 12px; font-size:.78rem; font-family:var(--fonte-mono); }
+.qse-voz.ligada { background:#7c3aed; border-color:#a78bfa; color:#fff; }
+
+.qse-painel { background:#0f172a; color:#e2e8f0; border-radius:20px; padding:14px; margin-top:14px; box-shadow:0 10px 26px rgba(0,0,0,.2); }
+.qse-feed { display:flex; flex-direction:column; gap:10px; max-height:46vh; overflow-y:auto; padding:4px 2px 8px; scroll-behavior:smooth; }
+.qse-vazio { color:#94a3b8; text-align:center; padding:14px 6px; font-size:.92rem; }
+.qse-msg { max-width:86%; border-radius:16px; padding:9px 13px; font-size:.95rem; line-height:1.35; animation:qseEntra .25s ease; }
+.qse-msg.eu { align-self:flex-end; background:#facc15; color:#1a1200; border-bottom-right-radius:4px; font-weight:600; }
+.qse-msg.ele { align-self:flex-start; background:#1e1b4b; border:1px solid rgba(167,139,250,.35); border-bottom-left-radius:4px; }
+.qse-msg.ele .quem { font-family:var(--fonte-mono); font-size:.68rem; color:#a78bfa; text-transform:uppercase; letter-spacing:.6px; display:block; margin-bottom:3px; }
+.qse-msg .selo { display:inline-block; font-family:var(--fonte-titulo); font-weight:800; letter-spacing:1px; text-transform:uppercase; border-radius:8px; padding:1px 10px; margin-right:6px; font-size:1.05rem; }
+.selo.sim { background:#16a34a; color:#fff; } .selo.nao { background:#dc2626; color:#fff; } .selo.talvez { background:#ca8a04; color:#fff; } .selo.nao_sei { background:#475569; color:#fff; }
+.qse-msg.aviso { align-self:center; background:rgba(250,204,21,.12); border:1px dashed rgba(250,204,21,.5); color:#fde68a; font-size:.85rem; }
+.qse-digitando { align-self:flex-start; background:#1e1b4b; border-radius:16px; padding:10px 14px; display:none; }
+.qse-digitando span { display:inline-block; width:7px; height:7px; border-radius:50%; background:#a78bfa; margin:0 2px; animation:qseDot 1s infinite; }
+.qse-digitando span:nth-child(2){animation-delay:.15s} .qse-digitando span:nth-child(3){animation-delay:.3s}
+@keyframes qseDot { 50% { transform:translateY(-5px); opacity:.5; } }
+@keyframes qseEntra { from { transform:translateY(6px); opacity:0; } }
+
+.qse-form { display:flex; gap:8px; margin-top:8px; }
+.qse-form input { flex:1; min-width:0; border-radius:12px; border:2px solid rgba(255,255,255,.14); background:rgba(255,255,255,.06); color:#fff; padding:10px 12px; }
+.qse-form input:focus { outline:none; border-color:#a78bfa; }
+.qse-form input::placeholder { color:#94a3b8; }
+.qse-btn { border:0; border-radius:12px; padding:10px 14px; font-family:var(--fonte-titulo); font-weight:700; letter-spacing:.8px; text-transform:uppercase; background:#7c3aed; color:#fff; white-space:nowrap; }
+.qse-btn:hover { background:#6d28d9; } .qse-btn[disabled] { opacity:.5; }
+.qse-btn.ouro { background:linear-gradient(180deg,#fde68a,#f59e0b); color:#1a1200; }
+.qse-btn.sec { background:rgba(255,255,255,.1); color:#e2e8f0; }
+.qse-rapidas { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+.qse-rapidas button { border:1px solid rgba(255,255,255,.18); background:rgba(255,255,255,.05); color:#e2e8f0; border-radius:999px; padding:5px 11px; font-size:.82rem; }
+.qse-rapidas button:hover { background:rgba(255,255,255,.12); } .qse-rapidas button[disabled] { opacity:.35; text-decoration:line-through; }
+.qse-rot { font-family:var(--fonte-mono); font-size:.7rem; text-transform:uppercase; letter-spacing:.6px; color:#94a3b8; margin-top:12px; }
+.qse-dicas { margin:8px 0 0; padding:0; list-style:none; }
+.qse-dicas li { background:rgba(250,204,21,.1); border-left:3px solid #facc15; border-radius:8px; padding:6px 10px; margin-bottom:6px; font-size:.88rem; color:#fde68a; }
+.qse-erros { font-size:.82rem; color:#fca5a5; margin-top:6px; }
+.qse-fim { text-align:left; }
+.qse-resultado { font-family:var(--fonte-titulo); text-transform:uppercase; letter-spacing:1px; font-size:1.7rem; margin:0 0 6px; }
+.qse-fim .clubes { font-size:.88rem; color:#cbd5e1; }
+.qse-fim ul { padding-left:18px; color:#e2e8f0; font-size:.9rem; }
+.qse-emojis { font-size:1.2rem; letter-spacing:2px; word-break:break-all; }
+</style>
